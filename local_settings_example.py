@@ -6,3 +6,6 @@
 
 # Credentials for server authentication
 #CREDENTIALS = ('user', 'password')
+
+# Minimal level of messages to log
+#LOGGING_LEVEL = "INFO"
