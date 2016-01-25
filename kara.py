@@ -2,12 +2,11 @@ import vlc
 import time
 import requests
 import os
+from settings import KARA_FOLDER_PATH, SERVER_URL, CREDENTIALS
 
-KARA_FOLDER_PATH = "/home/flore/real karaoke/kara/"
-SERVER_URL = "http://127.0.0.1:8000/"
 
 def get_next_song():
-    response = requests.get(SERVER_URL + "player/status/", auth=('flore', 'admin'))
+    response = requests.get(SERVER_URL + "player/status/", auth=CREDENTIALS)
     if response.ok:
         json = response.json()
         if json:
