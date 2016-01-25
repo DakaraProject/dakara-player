@@ -60,3 +60,9 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+# Vim stuff
+*.sw[op]
+
+# local config
+local_settings.py
