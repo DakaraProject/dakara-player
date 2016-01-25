@@ -90,4 +90,7 @@ def daemon():
         time.sleep(0.1)
 
 if __name__ == "__main__":
-    daemon()
+    try:
+        daemon()
+    except KeyboardInterrupt:
+        logging.info("Exiting normally")
