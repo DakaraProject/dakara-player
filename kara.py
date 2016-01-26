@@ -16,6 +16,9 @@ logging.basicConfig(
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 def get_next_song():
+    """ Request next song from the server
+        return json of next playlist_entry or None if there is no more song in the playlist
+    """
     logging.debug("Asking new song to server")
     response = requests.get(SERVER_URL + "player/status/", auth=CREDENTIALS)
     if response.ok:
@@ -26,15 +29,19 @@ def get_next_song():
     return None
 
 
-def server_status(playing_id, timing):
+def server_status(playing_id, timing, paused):
+    """ Send current status to the server
+        return requested status from the server
+    """
     logging.debug("Sending status to server")
     data = {
         "playlist_entry": playing_id,
-        "timing": timing/1000.
+        "timing": timing/1000.,
+        "paused": paused
         }
     response = requests.put(SERVER_URL + "player/status/", json=data, auth=CREDENTIALS)
     if response.ok:
-        pass
+        return response.json()
     else:
         logging.error("Unable to send status to server")
 
@@ -48,17 +55,17 @@ def daemon():
     idle = True
 
     while True:
-        playing_status = player.is_playing()
+        player_state = player.get_state()
         timing = player.get_time()
         if timing == -1:
             timing = 0 
 
-        if not playing_status:
+        if player_state == vlc.State.Ended or player_state == vlc.State.NothingSpecial:
             #request next music to play from server
             next_song = get_next_song()
 
             if next_song:
-                file_path = KARA_FOLDER_PATH + next_song["song"]["file_path"]
+                file_path = os.path.join(KARA_FOLDER_PATH,next_song["song"]["file_path"])
                 logging.info("New song to play: {}".format(file_path))
                 if os.path.isfile(file_path):
                     media = instance.media_new("file://" + file_path)
@@ -68,21 +75,25 @@ def daemon():
                     idle = False
                     #TODO : error management
 
-                    while not player.is_playing():
-                        pass
+                   # while not player.is_playing():
+                   #     pass
                 else:
                     logging.error("File not found")
             else:
                 logging.info("Player idle")
                 playing_id = None
                 if not idle:
-                    server_status(playing_id,0)
+                    server_status(playing_id,0,False)
                     idle = True
                 time.sleep(1)
 
         if i >= 30:
             #send status to server
-            server_status(playing_id, timing)
+            requested_status = server_status(playing_id, timing, player_state == vlc.State.Paused)
+            if requested_status["pause"] and player_state == vlc.State.Playing:
+                player.pause()
+            elif not requested_status["pause"] and player_state == vlc.State.Paused:
+                player.play()
             i = 0
         else:
             i += 1
