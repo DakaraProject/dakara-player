@@ -2,7 +2,7 @@ import vlc
 import time
 import requests
 import os
-from settings import KARA_FOLDER_PATH, SERVER_URL, CREDENTIALS, LOGGING_LEVEL
+from settings import KARA_FOLDER_PATH, SERVER_URL, CREDENTIALS, LOGGING_LEVEL, DELAY_BETWEEN_REQUESTS
 
 import logging
 logging_level_numeric = getattr(logging, LOGGING_LEVEL.upper(), None)
@@ -53,51 +53,75 @@ def daemon():
     i = 0
     playing_id = None
     idle = True
+    previous_request_time = 0
+    previous_status = 'start'
+    skip = False
 
     while True:
-        player_state = player.get_state()
-        timing = player.get_time()
-        if timing == -1:
-            timing = 0 
+        
+        #first case : player is playing
+        if player.get_state() in (vlc.State.Playing,vlc.State.Opening,vlc.State.Buffering,vlc.State.Paused):
+            #if we just switched state, or the previous request we sent was more than DELAY_BETWEEN_REQUEST seconds ago
+            if previous_status != 'playing' or time.time() - previous_request > DELAY_BETWEEN_REQUESTS:
+                previous_request = time.time()
+                #get timing
+                timing = player.get_time()
+                if timing == -1:
+                    timing = 0 
 
-        if player_state == vlc.State.Ended or player_state == vlc.State.NothingSpecial:
-            #request next music to play from server
-            next_song = get_next_song()
+                #send status to server
+                requested_status = server_status(playing_id, timing, player.get_state()  == vlc.State.Paused)
+                #manage pause request
+                if requested_status["pause"] and player.get_state() == vlc.State.Playing:
+                    player.pause()
+                    logging.info("Player is now paused")
+                elif not requested_status["pause"] and player.get_state() == vlc.State.Paused:
+                    player.play()
+                    logging.info("Player resumed play")
+                #manage skip request
+                if requested_status["skip"]:
+                    #wanted to do a simple player.stop() but it closes the window
+                    skip = True 
 
-            if next_song:
-                file_path = os.path.join(KARA_FOLDER_PATH,next_song["song"]["file_path"])
-                logging.info("New song to play: {}".format(file_path))
-                if os.path.isfile(file_path):
+            previous_status = 'playing'
+
+
+
+        #second case : player has stopped or a skip request is issued 
+        if skip or player.get_state() in (vlc.State.Ended,vlc.State.NothingSpecial,vlc.State.Stopped):
+            skip = False
+            #if we juste switched states, or the last request we sent was more than DELAY_BETWEEN_REQUEST seconds ago
+            if previous_status != 'stopped' or time.time() - previous_song_request > DELAY_BETWEEN_REQUESTS:
+                previous_song_request = time.time()
+                #request next music to play from server
+                next_song = get_next_song()
+
+                if next_song:
+                    file_path = os.path.join(KARA_FOLDER_PATH,next_song["song"]["file_path"])
+                    logging.info("New song to play: {}".format(file_path))
+                    #don't check file exists : handle any kind of error (file missing, invalid file...) in the same place
                     media = instance.media_new("file://" + file_path)
                     player.set_media(media)
                     player.play()
                     playing_id = next_song["id"]
-                    idle = False
-                    #TODO : error management
-
-                   # while not player.is_playing():
-                   #     pass
                 else:
-                    logging.error("File not found")
-            else:
-                logging.info("Player idle")
-                playing_id = None
-                if not idle:
+                    logging.info("Player idle")
+                    playing_id = None
+                    player.stop()
                     server_status(playing_id,0,False)
-                    idle = True
-                time.sleep(1)
 
-        if i >= 30:
-            #send status to server
-            requested_status = server_status(playing_id, timing, player_state == vlc.State.Paused)
-            if requested_status["pause"] and player_state == vlc.State.Playing:
-                player.pause()
-            elif not requested_status["pause"] and player_state == vlc.State.Paused:
-                player.play()
-            i = 0
-        else:
-            i += 1
+            previous_status = 'stopped'
 
+
+        #third case : error while playing
+        if player.get_state() == vlc.State.Error:
+            logging.error("Error while playing {}".format(playing_id))
+            player.stop()
+            playing_id = None
+            previous_status = 'error'
+            #No error management server side, can only exit to avoid infinite looping trying to play the same file again and again
+            raise Exception('Error while playing')        
+        #wait between each loop
         time.sleep(0.1)
 
 if __name__ == "__main__":
