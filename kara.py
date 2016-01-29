@@ -50,9 +50,7 @@ def daemon():
     player = instance.media_player_new()
     logging.info("Daemon started")
 
-    i = 0
     playing_id = None
-    idle = True
     previous_request_time = 0
     previous_status = 'start'
     skip = False
