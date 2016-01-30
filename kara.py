@@ -110,6 +110,8 @@ def server_status(playing_id, timing, paused):
 def daemon():
     instance = vlc.Instance()
     player = instance.media_player_new()
+    version = vlc.libvlc_get_version()
+    logging.info("VLC " + version.decode())
     logging.info("Daemon started")
 
     playing_id = None
