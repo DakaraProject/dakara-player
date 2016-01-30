@@ -4,6 +4,7 @@ CREDENTIALS = ()
 LOGGING_LEVEL = "INFO"
 DELAY_BETWEEN_REQUESTS = 1
 REQUESTS_LOGGING_DISABLED = True
+FULLSCREEN_MODE = False
 
 try:
     from local_settings import *

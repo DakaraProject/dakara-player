@@ -7,6 +7,9 @@ SERVER_URL = "http://127.0.0.1:8000/"
 # Credentials for server authentication
 CREDENTIALS = ('user', 'password')
 
+# Enable or disable fullscreen mode
+FULLSCREEN_MODE = False
+
 # Minimal level of messages to log
 #LOGGING_LEVEL = "INFO"
 

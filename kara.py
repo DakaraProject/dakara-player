@@ -9,7 +9,8 @@ from settings import KARA_FOLDER_PATH, \
                      CREDENTIALS, \
                      LOGGING_LEVEL, \
                      DELAY_BETWEEN_REQUESTS, \
-                     REQUESTS_LOGGING_DISABLED
+                     REQUESTS_LOGGING_DISABLED, \
+                     FULLSCREEN_MODE
 
 ##
 # Loggings
@@ -118,6 +119,7 @@ def send_status(playing_id, timing, paused):
 def daemon():
     instance = vlc.Instance()
     player = instance.media_player_new()
+    player.set_fullscreen(FULLSCREEN_MODE)
     version = vlc.libvlc_get_version()
     logging.info("VLC " + version.decode())
     logging.info("Daemon started")
