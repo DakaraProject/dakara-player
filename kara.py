@@ -63,6 +63,10 @@ def get_next_song():
         return json or None
 
     logging.critical("Unable to get new song response from server")
+    logging.debug("Error code: {code}\n{message}".format(
+        code=response.status_code,
+        message=response.text
+        ))
     raise ServerCommunicationError
 
 def send_error(playing_id, error_message):
@@ -105,6 +109,10 @@ def server_status(playing_id, timing, paused):
         return response.json()
 
     logging.critical("Unable to send status to server")
+    logging.debug("Error code: {code}\n{message}".format(
+        code=response.status_code,
+        message=response.text
+        ))
     raise ServerCommunicationError
 
 def daemon():
