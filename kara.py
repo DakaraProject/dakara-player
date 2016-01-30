@@ -37,6 +37,14 @@ class Status(Enum):
     STOPPED, START, PLAYING, ERROR = range(4)
 
 ##
+# Error classes
+#
+
+class ServerCommunicationError(Exception):
+    """ Class for handling errors when communicating with server
+    """ 
+
+##
 # Routines
 #
 
@@ -54,8 +62,8 @@ def get_next_song():
         json = response.json()
         return json or None
 
-    logging.error("Unable to get new song response from server")
-    return None
+    logging.critical("Unable to get new song response from server")
+    raise ServerCommunicationError
 
 def server_status(playing_id, timing, paused):
     """ Send current status to the server
@@ -74,8 +82,8 @@ def server_status(playing_id, timing, paused):
     if response.ok:
         return response.json()
 
-    logging.error("Unable to send status to server")
-    return None
+    logging.critical("Unable to send status to server")
+    raise ServerCommunicationError
 
 def daemon():
     instance = vlc.Instance()
@@ -215,3 +223,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logging.info("Exiting normally")
         exit(0)
+    except ServerCommunicationError:
+        logging.info("Emergency stop")
+        exit(1)
