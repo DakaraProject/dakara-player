@@ -65,6 +65,28 @@ def get_next_song():
     logging.critical("Unable to get new song response from server")
     raise ServerCommunicationError
 
+def send_error(playing_id, error_message):
+    """ Send provided error message to the server
+        return nothing
+    """
+    logging.debug("Sending error to server")
+    data = {
+            "playlist_entry": playing_id,
+            "error_message": error_message,
+            }
+    response = requests.post(
+            SERVER_URL + "player/error/",
+            auth=CREDENTIALS,
+            json=data
+            )
+    if not response.ok:
+        logging.critical("Unable to send error message to server")
+        logging.debug("Error code: {code}\n{message}".format(
+            code=response.status_code,
+            message=response.text
+            ))
+        raise ServerCommunicationError
+
 def server_status(playing_id, timing, paused):
     """ Send current status to the server
         return requested status from the server
@@ -198,24 +220,20 @@ def daemon():
 
         ##
         # Third case
-        # error while playing
+        # error while playing (or not)
         #
-
         if player.get_state() == vlc.State.Error:
             logging.error("Error while playing {}".format(
                 file_path
                 ))
+            error_message = vlc.libvlc_errmsg() or "No detail"
             player.stop()
+            send_error(playing_id, error_message)
             playing_id = None
             previous_status = Status.ERROR
-            # No error management server side,
-            # can only exit to avoid infinite looping trying to
-            # play the same file again and again
-            raise Exception('Error while playing')
 
         #wait between each loop
         time.sleep(0.1)
-
 
 if __name__ == "__main__":
     try:
