@@ -21,6 +21,15 @@ logging.basicConfig(
 if REQUESTS_LOGGING_DISABLED:
     logging.getLogger("requests").setLevel(logging.WARNING)
 
+##
+# Enums
+#
+
+class Status:
+    """ Enum for player statuses
+    """
+    STOPPED, START, PLAYING, ERROR = range(4)
+
 def get_next_song():
     """ Request next song from the server
         return json of next playlist_entry or None if there is no more song in the playlist
@@ -58,7 +67,7 @@ def daemon():
 
     playing_id = None
     previous_request_time = 0
-    previous_status = 'start'
+    previous_status = Status.START
     skip = False
 
     while True:
@@ -66,7 +75,9 @@ def daemon():
         #first case : player is playing
         if player.get_state() in (vlc.State.Playing,vlc.State.Opening,vlc.State.Buffering,vlc.State.Paused):
             #if we just switched state, or the previous request we sent was more than DELAY_BETWEEN_REQUEST seconds ago
-            if previous_status != 'playing' or time.time() - previous_request > DELAY_BETWEEN_REQUESTS:
+            if previous_status != Status.PLAYING \
+                    or time.time() - previous_request \
+                        > DELAY_BETWEEN_REQUESTS:
                 previous_request = time.time()
                 #get timing
                 timing = player.get_time()
@@ -87,15 +98,36 @@ def daemon():
                     #wanted to do a simple player.stop() but it closes the window
                     skip = True 
 
-            previous_status = 'playing'
+            previous_status = Status.PLAYING
 
 
 
-        #second case : player has stopped or a skip request is issued 
-        if skip or player.get_state() in (vlc.State.Ended,vlc.State.NothingSpecial,vlc.State.Stopped):
+                # manage skip request
+                if requested_status["skip"]:
+                    # wanted to do a simple player.stop() but
+                    # it closes the window
+                    skip = True
+
+            previous_status = Status.PLAYING
+
+        ##
+        # Second case
+        # player has stopped or a skip request is issued
+        #
+
+        if skip or player.get_state() in (
+                vlc.State.Ended,
+                vlc.State.NothingSpecial,
+                vlc.State.Stopped
+                ):
+            if skip:
+                logging.info("Song skipped")
             skip = False
-            #if we juste switched states, or the last request we sent was more than DELAY_BETWEEN_REQUEST seconds ago
-            if previous_status != 'stopped' or time.time() - previous_song_request > DELAY_BETWEEN_REQUESTS:
+            # if we juste switched states, or the last request we
+            # sent was more than DELAY_BETWEEN_REQUEST seconds ago
+            if previous_status != Status.STOPPED \
+                    or time.time() - previous_song_request \
+                        > DELAY_BETWEEN_REQUESTS:
                 previous_song_request = time.time()
                 #request next music to play from server
                 next_song = get_next_song()
@@ -114,7 +146,7 @@ def daemon():
                     player.stop()
                     server_status(playing_id,0,False)
 
-            previous_status = 'stopped'
+            previous_status = Status.STOPPED
 
 
         #third case : error while playing
@@ -122,7 +154,7 @@ def daemon():
             logging.error("Error while playing {}".format(playing_id))
             player.stop()
             playing_id = None
-            previous_status = 'error'
+            previous_status = Status.ERROR
             #No error management server side, can only exit to avoid infinite looping trying to play the same file again and again
             raise Exception('Error while playing')        
         #wait between each loop
