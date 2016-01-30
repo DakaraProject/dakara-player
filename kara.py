@@ -3,6 +3,7 @@ import time
 import requests
 import os
 import logging
+from enum import Enum
 from settings import KARA_FOLDER_PATH, \
                      SERVER_URL, \
                      CREDENTIALS, \
@@ -30,7 +31,7 @@ if REQUESTS_LOGGING_DISABLED:
 # Enums
 #
 
-class Status:
+class Status(Enum):
     """ Enum for player statuses
     """
     STOPPED, START, PLAYING, ERROR = range(4)
