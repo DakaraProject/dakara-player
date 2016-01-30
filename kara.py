@@ -48,7 +48,7 @@ class ServerCommunicationError(Exception):
 # Routines
 #
 
-def get_next_song():
+def send_next_song_status():
     """ Request next song from the server
         return json of next playlist_entry or None if there is no more
         song in the playlist
@@ -91,7 +91,7 @@ def send_error(playing_id, error_message):
             ))
         raise ServerCommunicationError
 
-def server_status(playing_id, timing, paused):
+def send_status(playing_id, timing, paused):
     """ Send current status to the server
         return requested status from the server
     """
@@ -151,7 +151,7 @@ def daemon():
                     timing = 0 
 
                 # send status to server
-                requested_status = server_status(
+                requested_status = send_status(
                         playing_id,
                         timing,
                         player.get_state() == vlc.State.Paused
@@ -196,7 +196,7 @@ def daemon():
                         > DELAY_BETWEEN_REQUESTS:
                 previous_song_request = time.time()
                 # request next music to play from server
-                next_song = get_next_song()
+                next_song = send_next_song_status()
 
                 if next_song:
                     file_path = os.path.join(
@@ -220,7 +220,7 @@ def daemon():
                     logging.info("Player idle")
                     playing_id = None
                     player.stop()
-                    server_status(
+                    send_status(
                             playing_id,
                             0,
                             False
