@@ -9,3 +9,6 @@
 
 # Minimal level of messages to log
 #LOGGING_LEVEL = "INFO"
+
+# Disable requests module log entries of level lower than WARNING
+#REQUESTS_LOGGING_DISABLED = True

@@ -2,9 +2,14 @@ import vlc
 import time
 import requests
 import os
-from settings import KARA_FOLDER_PATH, SERVER_URL, CREDENTIALS, LOGGING_LEVEL, DELAY_BETWEEN_REQUESTS
-
 import logging
+from settings import KARA_FOLDER_PATH, \
+                     SERVER_URL, \
+                     CREDENTIALS, \
+                     LOGGING_LEVEL, \
+                     DELAY_BETWEEN_REQUESTS, \
+                     REQUESTS_LOGGING_DISABLED
+
 logging_level_numeric = getattr(logging, LOGGING_LEVEL.upper(), None)
 if not isinstance(logging_level_numeric, int):
     raise ValueError('Invalid log level: {}'.format(LOGGING_LEVEL))
@@ -13,7 +18,8 @@ logging.basicConfig(
         level=logging_level_numeric
         )
 # Disable requests log messages
-logging.getLogger("requests").setLevel(logging.WARNING)
+if REQUESTS_LOGGING_DISABLED:
+    logging.getLogger("requests").setLevel(logging.WARNING)
 
 def get_next_song():
     """ Request next song from the server
