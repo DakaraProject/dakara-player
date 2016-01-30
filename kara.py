@@ -238,7 +238,7 @@ def daemon():
             logging.error("Error while playing {}".format(
                 file_path
                 ))
-            error_message = vlc.libvlc_errmsg() or "No detail"
+            error_message = vlc.libvlc_errmsg().decode() or "No detail"
             player.stop()
             send_error(playing_id, error_message)
             playing_id = None
