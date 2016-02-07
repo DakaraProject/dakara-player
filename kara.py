@@ -43,7 +43,7 @@ class Status(Enum):
 
 class ServerCommunicationError(Exception):
     """ Class for handling errors when communicating with server
-    """ 
+    """
 
 ##
 # Routines
@@ -101,7 +101,7 @@ def send_status(playing_id, timing, paused):
     """ Send current status to the server
         return requested status from the server
     """
-    logging.debug("""Sending status to server:\n
+    logging.debug("""Sending status to server:
 Playing entry ID: {playing_id}
 Timing: {timing}
 Paused: {paused}""".format(
