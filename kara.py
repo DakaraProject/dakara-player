@@ -74,7 +74,12 @@ def send_error(playing_id, error_message):
     """ Send provided error message to the server
         return nothing
     """
-    logging.debug("Sending error to server")
+    logging.debug("""Sending error to server:
+Playing entry ID:{playing_id}
+Error:{error_message}""".format(
+        playing_id=playing_id,
+        error_message=error_message
+        ))
     data = {
             "playlist_entry": playing_id,
             "error_message": error_message,
@@ -96,7 +101,14 @@ def send_status(playing_id, timing, paused):
     """ Send current status to the server
         return requested status from the server
     """
-    logging.debug("Sending status to server")
+    logging.debug("""Sending status to server:\n
+Playing entry ID: {playing_id}
+Timing: {timing}
+Paused: {paused}""".format(
+    playing_id=playing_id,
+    timing=timing,
+    paused=paused
+    ))
     data = {
         "playlist_entry": playing_id,
         "timing": timing/1000.,
