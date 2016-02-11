@@ -3,6 +3,7 @@ import time
 import requests
 import os
 import logging
+import urllib
 from enum import Enum
 from settings import KARA_FOLDER_PATH, \
                      SERVER_URL, \
@@ -225,7 +226,7 @@ def daemon():
                     # (file missing, invalid file...) in the same place;
                     # see third case below
 
-                    media = instance.media_new("file://" + file_path)
+                    media = instance.media_new("file://" + urllib.parse.quote(file_path))
                     player.set_media(media)
                     player.play()
                     playing_id = next_song["id"]
