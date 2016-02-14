@@ -39,14 +39,6 @@ class Status(Enum):
     STOPPED, START, PLAYING, ERROR = range(4)
 
 ##
-# Error classes
-#
-
-class ServerCommunicationError(Exception):
-    """ Class for handling errors when communicating with server
-    """
-
-##
 # Routines
 #
 
@@ -56,20 +48,24 @@ def send_next_song_status():
         song in the playlist
     """
     logging.debug("Asking new song to server")
-    response = requests.get(
-            SERVER_URL + "player/status/",
-            auth=CREDENTIALS
-            )
+    try:
+        response = requests.get(
+                SERVER_URL + "player/status/",
+                auth=CREDENTIALS
+                )
+    except requests.exceptions.RequestException as e:
+        logging.exception("Network Error")
+        return None
+
     if response.ok:
         json = response.json()
         return json or None
 
-    logging.critical("Unable to get new song response from server")
+    logging.error("Unable to get new song response from server")
     logging.debug("Error code: {code}\n{message}".format(
         code=response.status_code,
         message=response.text
         ))
-    raise ServerCommunicationError
 
 def send_error(playing_id, error_message):
     """ Send provided error message to the server
@@ -85,18 +81,21 @@ Error:{error_message}""".format(
             "playlist_entry": playing_id,
             "error_message": error_message,
             }
-    response = requests.post(
-            SERVER_URL + "player/error/",
-            auth=CREDENTIALS,
-            json=data
-            )
+    try:
+        response = requests.post(
+                SERVER_URL + "player/error/",
+                auth=CREDENTIALS,
+                json=data
+                )
+    except requests.exceptions.RequestException as e:
+        logging.exception("Network Error")
+        return
     if not response.ok:
-        logging.critical("Unable to send error message to server")
+        logging.error("Unable to send error message to server")
         logging.debug("Error code: {code}\n{message}".format(
             code=response.status_code,
             message=response.text
             ))
-        raise ServerCommunicationError
 
 def send_status(playing_id, timing, paused):
     """ Send current status to the server
@@ -115,19 +114,24 @@ Paused: {paused}""".format(
         "timing": timing/1000.,
         "paused": paused
         }
-    response = requests.put(
-            SERVER_URL + "player/status/",
-            json=data,
-            auth=CREDENTIALS)
+    try:
+        response = requests.put(
+                SERVER_URL + "player/status/",
+                json=data,
+                auth=CREDENTIALS)
+    except requests.exceptions.RequestException as e:
+        logging.exception("Network Error")
+        return {'pause': True, 'skip': False}
+
     if response.ok:
         return response.json()
 
-    logging.critical("Unable to send status to server")
+    logging.error("Unable to send status to server")
     logging.debug("Error code: {code}\n{message}".format(
         code=response.status_code,
         message=response.text
         ))
-    raise ServerCommunicationError
+    return {'pause': True, 'skip': False}
 
 def daemon():
     instance = vlc.Instance()
@@ -266,6 +270,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logging.info("Exiting normally")
         exit(0)
-    except ServerCommunicationError:
+    except:
         logging.info("Emergency stop")
         exit(1)
