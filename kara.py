@@ -110,7 +110,7 @@ Paused: {paused}""".format(
     paused=paused
     ))
     data = {
-        "playlist_entry": playing_id,
+        "playlist_entry_id": playing_id,
         "timing": timing/1000.,
         "paused": paused
         }
