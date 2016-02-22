@@ -29,18 +29,22 @@ logging.basicConfig(
 if REQUESTS_LOGGING_DISABLED:
     logging.getLogger("requests").setLevel(logging.WARNING)
 
+
 ##
 # Enums
 #
+
 
 class Status(Enum):
     """ Enum for player statuses
     """
     STOPPED, START, PLAYING, ERROR = range(4)
 
+
 ##
 # Routines
 #
+
 
 def send_next_song_status():
     """ Request next song from the server
@@ -53,7 +57,8 @@ def send_next_song_status():
                 SERVER_URL + "player/status/",
                 auth=CREDENTIALS
                 )
-    except requests.exceptions.RequestException as e:
+
+    except requests.exceptions.RequestException:
         logging.exception("Network Error")
         return None
 
@@ -67,6 +72,7 @@ def send_next_song_status():
         message=response.text
         ))
 
+
 def send_error(playing_id, error_message):
     """ Send provided error message to the server
         return nothing
@@ -77,25 +83,30 @@ Error:{error_message}""".format(
         playing_id=playing_id,
         error_message=error_message
         ))
+
     data = {
             "playlist_entry": playing_id,
             "error_message": error_message,
             }
+
     try:
         response = requests.post(
                 SERVER_URL + "player/error/",
                 auth=CREDENTIALS,
                 json=data
                 )
-    except requests.exceptions.RequestException as e:
+
+    except requests.exceptions.RequestException:
         logging.exception("Network Error")
         return
+
     if not response.ok:
         logging.error("Unable to send error message to server")
         logging.debug("Error code: {code}\n{message}".format(
             code=response.status_code,
             message=response.text
             ))
+
 
 def send_status(playing_id, timing, paused):
     """ Send current status to the server
@@ -105,21 +116,25 @@ def send_status(playing_id, timing, paused):
 Playing entry ID: {playing_id}
 Timing: {timing}
 Paused: {paused}""".format(
-    playing_id=playing_id,
-    timing=timing,
-    paused=paused
-    ))
+        playing_id=playing_id,
+        timing=timing,
+        paused=paused
+        ))
+
     data = {
         "playlist_entry_id": playing_id,
         "timing": timing/1000.,
         "paused": paused
         }
+
     try:
         response = requests.put(
                 SERVER_URL + "player/status/",
                 json=data,
-                auth=CREDENTIALS)
-    except requests.exceptions.RequestException as e:
+                auth=CREDENTIALS
+                )
+
+    except requests.exceptions.RequestException:
         logging.exception("Network Error")
         return {'pause': True, 'skip': False}
 
@@ -131,7 +146,9 @@ Paused: {paused}""".format(
         code=response.status_code,
         message=response.text
         ))
+
     return {'pause': True, 'skip': False}
+
 
 def daemon():
     instance = vlc.Instance()
@@ -160,14 +177,14 @@ def daemon():
                 ):
             # if we just switched state, or the previous request we
             # sent was more than DELAY_BETWEEN_REQUEST seconds ago
-            if previous_status != Status.PLAYING \
-                    or time.time() - previous_request \
-                        > DELAY_BETWEEN_REQUESTS:
-                previous_request = time.time()
+            if previous_status != Status.PLAYING or \
+                    time.time() - previous_request_time \
+                    > DELAY_BETWEEN_REQUESTS:
+                previous_request_time = time.time()
                 # get timing
                 timing = player.get_time()
                 if timing == -1:
-                    timing = 0 
+                    timing = 0
 
                 # send status to server
                 requested_status = send_status(
@@ -177,13 +194,13 @@ def daemon():
                         )
 
                 # manage pause request
-                if requested_status["pause"] \
-                        and player.get_state() == vlc.State.Playing:
+                if requested_status["pause"] and \
+                        player.get_state() == vlc.State.Playing:
                     player.pause()
                     logging.info("Player is now paused")
 
-                elif not requested_status["pause"] \
-                        and player.get_state() == vlc.State.Paused:
+                elif not requested_status["pause"] and \
+                        player.get_state() == vlc.State.Paused:
                     player.play()
                     logging.info("Player resumed play")
 
@@ -207,13 +224,15 @@ def daemon():
                 ):
             if skip:
                 logging.info("Song skipped")
+
             skip = False
+
             # if we juste switched states, or the last request we
             # sent was more than DELAY_BETWEEN_REQUEST seconds ago
-            if previous_status != Status.STOPPED \
-                    or time.time() - previous_song_request \
-                        > DELAY_BETWEEN_REQUESTS:
-                previous_song_request = time.time()
+            if previous_status != Status.STOPPED or \
+                    time.time() - previous_request_time \
+                    > DELAY_BETWEEN_REQUESTS:
+                previous_request_time = time.time()
                 # request next music to play from server
                 next_song = send_next_song_status()
 
@@ -222,6 +241,7 @@ def daemon():
                             KARA_FOLDER_PATH,
                             next_song["song"]["file_path"]
                             )
+
                     logging.info("New song to play: {}".format(
                         file_path
                         ))
@@ -230,7 +250,10 @@ def daemon():
                     # (file missing, invalid file...) in the same place;
                     # see third case below
 
-                    media = instance.media_new("file://" + urllib.parse.quote(file_path))
+                    media = instance.media_new(
+                            "file://" + urllib.parse.quote(file_path)
+                            )
+
                     player.set_media(media)
                     player.play()
                     playing_id = next_song["id"]
@@ -251,25 +274,29 @@ def daemon():
         # Third case
         # error while playing (or not)
         #
+
         if player.get_state() == vlc.State.Error:
             logging.error("Error while playing {}".format(
                 file_path
                 ))
+
             error_message = vlc.libvlc_errmsg().decode() or "No detail"
             player.stop()
             send_error(playing_id, error_message)
             playing_id = None
             previous_status = Status.ERROR
 
-        #wait between each loop
+        # wait between each loop
         time.sleep(0.1)
 
 if __name__ == "__main__":
     try:
         daemon()
+
     except KeyboardInterrupt:
         logging.info("Exiting normally")
         exit(0)
+
     except:
         logging.info("Emergency stop")
         exit(1)
