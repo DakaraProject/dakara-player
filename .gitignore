@@ -63,6 +63,7 @@ target/
 
 # Vim stuff
 *.sw[op]
+*.vim
 
 # local config
 local_settings.py
