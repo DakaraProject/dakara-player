@@ -300,6 +300,7 @@ if __name__ == "__main__":
         logging.info("Exiting normally")
         exit(0)
 
-    except:
+    except Exception as e:
+        logging.critical(e)
         logging.info("Emergency stop")
         exit(1)
