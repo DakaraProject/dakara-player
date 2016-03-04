@@ -11,7 +11,8 @@ from settings import KARA_FOLDER_PATH, \
                      LOGGING_LEVEL, \
                      DELAY_BETWEEN_REQUESTS, \
                      REQUESTS_LOGGING_DISABLED, \
-                     FULLSCREEN_MODE
+                     FULLSCREEN_MODE, \
+                     VLC_PARAMETERS
 
 ##
 # Loggings
@@ -151,7 +152,9 @@ Paused: {paused}""".format(
 
 
 def daemon():
-    instance = vlc.Instance()
+    if type(VLC_PARAMETERS) is not str:
+        raise ValueError('VLC parameters must be a string')
+    instance = vlc.Instance(VLC_PARAMETERS)
     player = instance.media_player_new()
     player.set_fullscreen(FULLSCREEN_MODE)
     version = vlc.libvlc_get_version()
