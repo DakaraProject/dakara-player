@@ -1,7 +1,43 @@
-# dakara-player-vlc
+# Dakara VLC player
 
-Dakara vlc player
+Interface between Dakara server and VLC, for the Dakara project.
 
-## Settings
+### Installation
+
+To install Dakara completely, you have to get all the parts of the project.
+Installation guidelines are provided over here:
+
+* [Dakara server](https://github.com/Nadeflore/dakara-server/);
+* [Dakara web client](https://github.com/Nadeflore/dakara-client-web/);
+
+#### System requirements
+
+* Python3, for the magic to take place;
+* [VLC](https://www.videolan.org/vlc/), duh.
+
+#### Virtual environment
+
+It is strongly recommended to run Dakara player VLC on virtual environment.
+
+#### Python dependencies
+
+Install dependencies, at root level of the repo:
+
+```
+pip install -r requirements.txt
+```
+
+#### Settings
 
 Copy the file `local_settings_example.py` to `local_settings.py`, then uncomment and modify the config values.
+Mandatory parameters are not commented. 
+
+### Start the player
+
+First, start the server.
+
+Activate the virtual environment, then start the player at the root level of the repo:
+
+```
+python kara.py
+```
