@@ -4,7 +4,11 @@ import requests
 import os
 import logging
 import urllib
+import shutil
+from codecs import open
 from enum import Enum
+from string import Template
+import tempfile
 from settings import KARA_FOLDER_PATH, \
                      SERVER_URL, \
                      CREDENTIALS, \
@@ -12,7 +16,13 @@ from settings import KARA_FOLDER_PATH, \
                      DELAY_BETWEEN_REQUESTS, \
                      REQUESTS_LOGGING_DISABLED, \
                      FULLSCREEN_MODE, \
-                     VLC_PARAMETERS
+                     VLC_PARAMETERS, \
+                     LOADER_TEXT_TEMPLATE_NAME, \
+                     LOADER_TEXT_TEMPLATE_DEFAULT_NAME, \
+                     LOADER_TEXT_NAME, \
+                     LOADER_BG_NAME, \
+                     LOADER_BG_DEFAULT_NAME, \
+                     LOADER_DURATION
 
 ##
 # Loggings
@@ -39,7 +49,15 @@ if REQUESTS_LOGGING_DISABLED:
 class Status(Enum):
     """ Enum for player statuses
     """
-    STOPPED, START, PLAYING, ERROR = range(4)
+    STOPPED, START, PLAYING, ERROR, LOADING = range(5)
+
+
+##
+# Temporary folders
+#
+
+
+tempdir = tempfile.mkdtemp(suffix="dakara")
 
 
 ##
@@ -151,6 +169,41 @@ Paused: {paused}""".format(
     return {'pause': True, 'skip': False}
 
 
+def load_loader_text_template():
+    """ Load the default or customized ASS template for
+        transition screen
+    """
+    if os.path.isfile(LOADER_TEXT_TEMPLATE_NAME):
+        loader_ass = LOADER_TEXT_TEMPLATE_NAME
+
+    elif os.path.isfile(LOADER_TEXT_TEMPLATE_DEFAULT_NAME):
+        loader_ass = LOADER_TEXT_TEMPLATE_DEFAULT_NAME
+
+    else:
+        raise IOError("No ASS file for loader found")
+
+    with open(loader_ass, 'r', encoding='utf8') as file:
+        loader_text_template = Template(''.join(file.readlines()))
+
+    return loader_text_template
+
+
+def load_loader_background():
+    """ Load the default or customized background for
+        transition screen
+    """
+    if os.path.isfile(LOADER_BG_NAME):
+        loader_bg = LOADER_BG_NAME
+
+    elif os.path.isfile(LOADER_BG_DEFAULT_NAME):
+        loader_bg = LOADER_BG_DEFAULT_NAME
+
+    else:
+        raise IOError("No background file for loader found")
+
+    return loader_bg
+
+
 def daemon():
     if type(VLC_PARAMETERS) is not str:
         raise ValueError('VLC parameters must be a string')
@@ -161,10 +214,20 @@ def daemon():
     logging.info("VLC " + version.decode())
     logging.info("Daemon started")
 
+    # load loader template and background
+    loader_bg_path = load_loader_background()
+    loader_text_template = load_loader_text_template()
+    loader_text_path = os.path.join(
+            tempdir,
+            LOADER_TEXT_NAME
+            )
+
     playing_id = None
     previous_request_time = 0
     previous_status = Status.START
     skip = False
+    loader_status = False
+    loader_end = 0
 
     while True:
         ##
@@ -180,16 +243,34 @@ def daemon():
                 ):
             # if we just switched state, or the previous request we
             # sent was more than DELAY_BETWEEN_REQUEST seconds ago
-            if previous_status != Status.PLAYING or \
+            if previous_status not in (
+                    Status.PLAYING,
+                    Status.LOADING,
+                    ) or \
                     time.time() - previous_request_time \
                     > DELAY_BETWEEN_REQUESTS:
-                previous_request_time = time.time()
-                # get timing
-                timing = player.get_time()
-                if timing == -1:
+
+                if loader_status:
+                    previous_status = Status.LOADING
+                    # if loader duration is elapsed
+                    if time.time() - loader_end > LOADER_DURATION:
+                        # play the preloaded song
+                        player.set_media(media)
+                        player.play()
+                        loader_status = False
+
+                    # no timing for loader
                     timing = 0
 
+                else:
+                    previous_status = Status.PLAYING
+                    # get timing
+                    timing = player.get_time()
+                    if timing == -1:
+                        timing = 0
+
                 # send status to server
+                previous_request_time = time.time()
                 requested_status = send_status(
                         playing_id,
                         timing,
@@ -212,8 +293,6 @@ def daemon():
                     # wanted to do a simple player.stop() but
                     # it closes the window
                     skip = True
-
-            previous_status = Status.PLAYING
 
         ##
         # Second case
@@ -253,13 +332,30 @@ def daemon():
                     # (file missing, invalid file...) in the same place;
                     # see third case below
 
+                    # preload media, play loader instead;
+                    # the media will be played after, see
+                    # first case
                     media = instance.media_new(
                             "file://" + urllib.parse.quote(file_path)
                             )
 
-                    player.set_media(media)
+                    loader = instance.media_new_path(
+                            loader_bg_path
+                            )
+
+                    loader_text = loader_text_template.substitute(
+                            title=next_song["song"]["title"]
+                            )
+
+                    with open(loader_text_path, 'w', encoding='utf8') as file:
+                        file.write(loader_text)
+
+                    player.set_media(loader)
                     player.play()
+                    player.video_set_subtitle_file(loader_text_path)
                     playing_id = next_song["id"]
+                    loader_status = True
+                    loader_end = time.time() + LOADER_DURATION
 
                 else:
                     logging.info("Player idle")
@@ -298,9 +394,18 @@ if __name__ == "__main__":
 
     except KeyboardInterrupt:
         logging.info("Exiting normally")
-        exit(0)
+        status = 0
 
     except Exception as e:
-        logging.critical(e)
-        logging.info("Emergency stop")
-        exit(1)
+        if LOGGING_LEVEL != "DEBUG":
+            logging.critical(e)
+            logging.info("Emergency stop")
+            status = 1
+
+        else:
+            raise
+
+    finally:
+        shutil.rmtree(tempdir)
+
+    exit(status)
