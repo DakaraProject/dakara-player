@@ -13,3 +13,7 @@ Style: Default,Roboto,70,&H00191919,&H00191919,&H00A01286,&H00000000,0,0,0,0,100
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 Dialogue: 0,0:00:00.00,0:00:05.00,Default,,0,0,0,,{\fad(500, 0)}${title}
+
+; DON'T TOUCH THIS FILE!
+; To make your own transition text, copy this file in `loader.ass` and modify it
+; Same goes for `loader.png.default`, use your own at `loader.png`

@@ -67,3 +67,5 @@ target/
 
 # local config
 local_settings.py
+loader.ass
+loader.png

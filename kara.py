@@ -5,10 +5,10 @@ import os
 import logging
 import urllib
 import shutil
+import tempfile
 from codecs import open
 from enum import Enum
 from string import Template
-import tempfile
 from settings import KARA_FOLDER_PATH, \
                      SERVER_URL, \
                      CREDENTIALS, \
@@ -24,9 +24,11 @@ from settings import KARA_FOLDER_PATH, \
                      LOADER_BG_DEFAULT_NAME, \
                      LOADER_DURATION
 
+
 ##
 # Loggings
 #
+
 
 logging_level_numeric = getattr(logging, LOGGING_LEVEL.upper(), None)
 if not isinstance(logging_level_numeric, int):
@@ -169,7 +171,7 @@ Paused: {paused}""".format(
     return {'pause': True, 'skip': False}
 
 
-def load_loader_text_template():
+def get_loader_text_template():
     """ Load the default or customized ASS template for
         transition screen
     """
@@ -188,8 +190,8 @@ def load_loader_text_template():
     return loader_text_template
 
 
-def load_loader_background():
-    """ Load the default or customized background for
+def get_loader_bg_path():
+    """ Give the default or customized background path for
         transition screen
     """
     if os.path.isfile(LOADER_BG_NAME):
@@ -215,8 +217,8 @@ def daemon():
     logging.info("Daemon started")
 
     # load loader template and background
-    loader_bg_path = load_loader_background()
-    loader_text_template = load_loader_text_template()
+    loader_bg_path = get_loader_bg_path()
+    loader_text_template = get_loader_text_template()
     loader_text_path = os.path.join(
             tempdir,
             LOADER_TEXT_NAME
@@ -250,6 +252,7 @@ def daemon():
                     time.time() - previous_request_time \
                     > DELAY_BETWEEN_REQUESTS:
 
+                # if a loader is playing
                 if loader_status:
                     previous_status = Status.LOADING
                     # if loader duration is elapsed
@@ -262,6 +265,7 @@ def daemon():
                     # no timing for loader
                     timing = 0
 
+                # if a song is playing
                 else:
                     previous_status = Status.PLAYING
                     # get timing
@@ -335,14 +339,18 @@ def daemon():
                     # preload media, play loader instead;
                     # the media will be played after, see
                     # first case
+                    playing_id = next_song["id"]
                     media = instance.media_new(
                             "file://" + urllib.parse.quote(file_path)
                             )
 
+                    loader_status = True
+                    loader_end = time.time() + LOADER_DURATION
                     loader = instance.media_new_path(
                             loader_bg_path
                             )
 
+                    # create custom loader text and save it
                     loader_text = loader_text_template.substitute(
                             title=next_song["song"]["title"]
                             )
@@ -352,10 +360,8 @@ def daemon():
 
                     player.set_media(loader)
                     player.play()
+                    # have to set subtitle after the video started playing
                     player.video_set_subtitle_file(loader_text_path)
-                    playing_id = next_song["id"]
-                    loader_status = True
-                    loader_end = time.time() + LOADER_DURATION
 
                 else:
                     logging.info("Player idle")
