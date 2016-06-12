@@ -352,7 +352,15 @@ def daemon():
 
                     # create custom loader text and save it
                     loader_text = loader_text_template.substitute(
-                            title=next_song["song"]["title"]
+                            title=next_song["song"]["title"],
+                            artists=", ".join((a["name"] for a in next_song["song"]["artists"])),
+                            works=", ".join((
+                                w["work"]["title"] +
+                                (" ({})".format(w["work"]["subtitle"]) if w["work"]["subtitle"] else "") +
+                                " - " + w["link_type"] +
+                                (str(w["link_type_number"]) if w["link_type_number"] else "")
+                                for w in next_song["song"]["works"])) \
+                                        if next_song["song"]["works"] else ""
                             )
 
                     with open(loader_text_path, 'w', encoding='utf8') as file:
@@ -403,7 +411,7 @@ if __name__ == "__main__":
         status = 0
 
     except Exception as e:
-        if LOGGING_LEVEL != "DEBUG":
+        if LOGGING_LEVEL.upper() != "DEBUG":
             logging.critical(e)
             logging.info("Emergency stop")
             status = 1
