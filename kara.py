@@ -16,7 +16,8 @@ from settings import KARA_FOLDER_PATH, \
                      DELAY_BETWEEN_REQUESTS, \
                      REQUESTS_LOGGING_DISABLED, \
                      FULLSCREEN_MODE, \
-                     VLC_PARAMETERS, \
+                     VLC_PARAMETERS_INSTANCE, \
+                     VLC_PARAMETERS_MEDIA, \
                      LOADER_TEXT_TEMPLATE_NAME, \
                      LOADER_TEXT_TEMPLATE_DEFAULT_NAME, \
                      LOADER_TEXT_NAME, \
@@ -207,9 +208,11 @@ def get_loader_bg_path():
 
 
 def daemon():
-    if type(VLC_PARAMETERS) is not str:
-        raise ValueError('VLC parameters must be a string')
-    instance = vlc.Instance(VLC_PARAMETERS)
+    if type(VLC_PARAMETERS_INSTANCE) is not str:
+        raise ValueError('VLC instance parameters must be a string')
+    if type(VLC_PARAMETERS_MEDIA) is not str:
+        raise ValueError('VLC media parameters must be a string')
+    instance = vlc.Instance(VLC_PARAMETERS_INSTANCE)
     player = instance.media_player_new()
     player.set_fullscreen(FULLSCREEN_MODE)
     version = vlc.libvlc_get_version()
@@ -343,6 +346,8 @@ def daemon():
                     media = instance.media_new(
                             "file://" + urllib.parse.quote(file_path)
                             )
+
+                    media.add_options(VLC_PARAMETERS_MEDIA)
 
                     loader_status = True
                     loader_end = time.time() + LOADER_DURATION
