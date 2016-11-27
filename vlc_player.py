@@ -41,8 +41,32 @@ class VlcPlayer:
     def song_end_callback(self, event):
         """ Callback called when song end reached occurs
         """
-        logging.info("Callback called")
-        thread = Thread(target = self.song_end_external_callback)
+        logging.debug("Song end callback called")
+        thread = Thread(target=self.song_end_external_callback)
+        thread.start()
+
+    def set_error_callback(self, callback):
+        """ Assign callback for when error occured
+        """
+        self.event_manager.event_attach(
+                vlc.EventType.MediaPlayerEncounteredError,
+                self.error_callback
+                )
+
+        self.error_external_callback = callback
+        
+    def error_callback(self, event):
+        """ Callback called when error occurs
+        """
+        logging.debug("Error callback called")
+        error_message = vlc.libvlc_errmsg().decode() or "No detail"
+        thread = Thread(
+                target=self.error_external_callback,
+                args=(
+                    self.playing_id,
+                    error_message
+                    )
+                )
         thread.start()
     
     def play_song(self, song):
@@ -56,11 +80,13 @@ class VlcPlayer:
                 song["song"]["file_path"]
                 )
 
-        # TODO: Check file exists
-
-        logging.info("New song to play: {}".format(
-            file_path
-            ))
+        # Check file exists
+        if not os.path.isfile(file_path):
+            self.error_external_callback(
+                    song['id'],
+                    "File not found: " + file_path
+                    )
+            return
 
         self.playing_id = song["id"]
         media = self.instance.media_new(

@@ -25,6 +25,12 @@ class KaraPlayer:
         self.vlc_player =  VlcPlayer()
         self.dakara_server = DakaraServer()
         self.vlc_player.set_song_end_callback(self.add_next_music)
+        self.vlc_player.set_error_callback(self.handle_error)
+
+    def handle_error(self, playing_id, message):
+        logging.error(message)
+        self.dakara_server.send_error(playing_id, message)
+        self.add_next_music()
 
     def add_next_music(self):
         next_song = self.dakara_server.get_next_song()
@@ -33,6 +39,7 @@ class KaraPlayer:
 
         else:
             self.vlc_player.play_idle_screen()
+            self.dakara_server.send_status_get_commands(None)
 
     def poll_server(self):
         if self.vlc_player.is_idle():

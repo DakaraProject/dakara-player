@@ -77,7 +77,7 @@ Error:{error_message}""".format(
                 ))
 
 
-    def send_status_get_commands(self, playing_id, timing, paused):
+    def send_status_get_commands(self, playing_id, timing=0, paused=False):
         """ Send current status to the server
             return requested status from the server
         """
