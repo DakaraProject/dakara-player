@@ -82,9 +82,9 @@ Error:{error_message}""".format(
             return requested status from the server
         """
         logging.debug("""Sending status to server:
-    Playing entry ID: {playing_id}
-    Timing: {timing}
-    Paused: {paused}""".format(
+Playing entry ID: {playing_id}
+Timing: {timing}
+Paused: {paused}""".format(
             playing_id=playing_id,
             timing=timing,
             paused=paused

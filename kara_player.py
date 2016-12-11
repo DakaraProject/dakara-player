@@ -21,18 +21,26 @@ logging.basicConfig(
 class KaraPlayer:
 
     def __init__(self):
-
-        self.vlc_player =  VlcPlayer()
+        self.vlc_player = VlcPlayer()
         self.dakara_server = DakaraServer()
-        self.vlc_player.set_song_end_callback(self.add_next_music)
+        self.vlc_player.set_song_end_callback(self.handle_song_end)
         self.vlc_player.set_error_callback(self.handle_error)
 
     def handle_error(self, playing_id, message):
+        """ Callback when a VLC error occurs
+        """
         logging.error(message)
         self.dakara_server.send_error(playing_id, message)
         self.add_next_music()
 
+    def handle_song_end(self):
+        """ Callback when a song ends
+        """
+        self.add_next_music()
+
     def add_next_music(self):
+        """ Ask for new song to play, otherwise plays the idle screen
+        """
         next_song = self.dakara_server.get_next_song()
         if next_song:
             self.vlc_player.play_song(next_song)
@@ -42,6 +50,11 @@ class KaraPlayer:
             self.dakara_server.send_status_get_commands(None)
 
     def poll_server(self):
+        """ Deal with server communication
+            Query server for a next song if idle,
+            send status to server otherwise
+            The method calls itself every second
+        """
         if self.vlc_player.is_idle():
             # idle : check if there is a song to play
             next_song = self.dakara_server.get_next_song()
@@ -60,7 +73,7 @@ class KaraPlayer:
                     paused)
             if commands['pause'] is not paused:
                 self.vlc_player.set_pause(commands['pause'])
-            
+
             if commands['skip']:
                 self.add_next_music()
 
@@ -69,23 +82,30 @@ class KaraPlayer:
         self.server_timer.start()
 
     def deamon(self):
-        def signal_handler(signal, frame):
+        """ Starts, wait for Ctrl+C and then, stop
+        """
+        def handle_signal(signal, frame):
             self.stop()
 
         self.start()
-        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGINT, handle_signal)
         signal.pause()
 
     def start(self):
+        """ Query music, then communicate with the server
+            (thus, start server polling)
+        """
         logging.info("Daemons started")
         self.add_next_music()
         self.poll_server()
 
     def stop(self):
+        """ Stop VLC and stop polling server
+        """
         self.server_timer.cancel()
-        self.vlc_player.stop()
+        self.vlc_player.clean()
         logging.info("Daemon stopped")
-        
+
 
 if __name__ == '__main__':
     kara_player = KaraPlayer()
