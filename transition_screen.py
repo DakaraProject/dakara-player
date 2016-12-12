@@ -14,10 +14,14 @@ from settings import LOADER_TEXT_TEMPLATE_NAME, \
 class TransitionScreen:
 
     def __init__(self):
+        # load elements
         self.load_bg_path()
         self.load_text_template()
+
+        # create temporary directory
         self.tempdir = tempfile.mkdtemp(suffix=".dakara")
-        logging.debug("Creating temporary directory in '{}'".format(self.tempdir))
+        logging.debug("Creating temporary directory \"{}\"".format(self.tempdir))
+
         self.loader_text_path = os.path.join(
                 self.tempdir,
                 LOADER_TEXT_NAME
@@ -27,11 +31,14 @@ class TransitionScreen:
         """ Create custom loader text and save it
 
             Args:
-                playlist_entry: dictionary containing keys for title, artists and works
+                playlist_entry: dictionary containing keys for title,
+                    artists and works.
 
             Returns:
-                load_bg_path: path of the background image or video
-                loader_text_path: path of the text containing the transition data
+                tuple containing two values:
+
+                `load_bg_path`: path of the background image or video.
+                `loader_text_path`: path of the text containing the transition data.
         """
         song = playlist_entry["song"]
 
@@ -49,7 +56,7 @@ class TransitionScreen:
 
             work_str += " - {}{}".format(
                     work["link_type"],
-                    ["link_type_number"] or ""
+                    work["link_type_number"] or ""
                     )
 
         works_string = ", ".join(works)
@@ -63,13 +70,15 @@ class TransitionScreen:
         with open(self.loader_text_path, 'w', encoding='utf8') as file:
             file.write(loader_text)
 
-        logging.debug("Create transition screen text file")
+        logging.debug("Create transition screen text file in \"{}\"".format(self.loader_text_path))
 
         return self.loader_bg_path, self.loader_text_path
 
     def load_text_template(self):
-        """ Load the default or customized ASS template for
-            transition screen
+        """ Load transition text template file
+
+            Load the default or customized ASS template for
+            transition screen.
         """
         if os.path.isfile(LOADER_TEXT_TEMPLATE_NAME):
             loader_ass = LOADER_TEXT_TEMPLATE_NAME
@@ -86,8 +95,10 @@ class TransitionScreen:
         self.loader_text_template = loader_text_template
 
     def load_bg_path(self):
-        """ Load the default or customized background path for
-            transition screen
+        """ Load transition backgound file path
+
+            Load the default or customized background path for
+            transition screen.
         """
         if os.path.isfile(LOADER_BG_NAME):
             loader_bg = LOADER_BG_NAME
@@ -103,6 +114,6 @@ class TransitionScreen:
     def clean(self):
         """ Remove the temp directory
         """
-        logging.debug("Deleting temporary directory in '{}'".format(self.tempdir))
+        logging.debug("Deleting temporary directory \"{}\"".format(self.tempdir))
         shutil.rmtree(self.tempdir)
         self.tempdir = None

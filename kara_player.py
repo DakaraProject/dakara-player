@@ -1,6 +1,7 @@
 import signal
 import logging
 from threading import Timer
+import coloredlogs
 from vlc_player import VlcPlayer
 from dakara_server import DakaraServer
 from settings import LOGGING_LEVEL
@@ -9,12 +10,12 @@ from settings import LOGGING_LEVEL
 # Loggings
 #
 
-
 logging_level_numeric = getattr(logging, LOGGING_LEVEL.upper(), None)
 if not isinstance(logging_level_numeric, int):
     raise ValueError('Invalid log level: {}'.format(LOGGING_LEVEL))
-logging.basicConfig(
-        format='[%(asctime)s][%(levelname)s] %(message)s',
+
+coloredlogs.install(
+        fmt='[%(asctime)s] %(levelname)s %(message)s',
         level=logging_level_numeric
         )
 
@@ -28,6 +29,10 @@ class KaraPlayer:
 
     def handle_error(self, playing_id, message):
         """ Callback when a VLC error occurs
+
+            Args:
+                playing_id: playlist entry ID.
+                message: text describing the error.
         """
         logging.error(message)
         self.dakara_server.send_error(playing_id, message)
@@ -50,10 +55,12 @@ class KaraPlayer:
             self.dakara_server.send_status_get_commands(None)
 
     def poll_server(self):
-        """ Deal with server communication
+        """ Manage communication with the server
+
             Query server for a next song if idle,
-            send status to server otherwise
-            The method calls itself every second
+            send status to server otherwise.
+
+            The method calls itself every second.
         """
         if self.vlc_player.is_idle():
             # idle : check if there is a song to play
@@ -82,7 +89,9 @@ class KaraPlayer:
         self.server_timer.start()
 
     def deamon(self):
-        """ Starts, wait for Ctrl+C and then, stop
+        """ Daemonization looper
+
+            Start, wait for Ctrl+C and then, stop.
         """
         def handle_signal(signal, frame):
             self.stop()
