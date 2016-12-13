@@ -66,6 +66,4 @@ target/
 *.vim
 
 # local config
-local_settings.py
-loader.ass
-loader.png
+config.ini

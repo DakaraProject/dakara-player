@@ -1,0 +1,31 @@
+[Player]
+# Path of the karaoke folder
+karaFolder = /path/to/folder 
+
+# Enable or disable fullscreen mode
+fullscreen = False
+
+# If you need to disable hardware acceleration:
+# (Taken from here: http://stackoverflow.com/a/35251905)
+#mediaParameter = avcodec-hw=none
+
+# If you want subtitle rendering to use screen resolution instead of video's:
+#instanceParameter = --vout x11
+# This may slow down the rendering if hardware decoding cannot be properly
+# called
+# Consult VLC expanded help for a complete list of parameters:
+#   vlc --longhelp --advanced
+# Not all parameters are allowed thought
+# Some parameters only work on the instance, others only on the media 
+
+[Server]
+# Server URL
+url = http://127.0.0.1:8000/
+
+# Credentials for server authentication
+login = login
+password = pass
+
+[Global]
+# Minimal level of messages to log
+loglevel = info

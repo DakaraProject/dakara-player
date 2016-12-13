@@ -1,19 +1,14 @@
 import requests
 import logging
-from settings import SERVER_URL, \
-                     CREDENTIALS, \
-                     REQUESTS_LOGGING_DISABLED
 
-# Disable requests log messages
-if REQUESTS_LOGGING_DISABLED:
-    logging.getLogger("requests").setLevel(logging.WARNING)
 
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 class DakaraServer:
 
-    def __init__(self):
-        self.server_url = SERVER_URL
-        self.credentials = CREDENTIALS
+    def __init__(self, config):
+        self.server_url = config['url'] 
+        self.credentials = (config['login'], config['password'])
 
     def get_next_song(self):
         """ Request next song from the server

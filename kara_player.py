@@ -1,31 +1,46 @@
 import signal
 import logging
-from threading import Timer
 import coloredlogs
+from threading import Timer
+from configparser import ConfigParser
 from vlc_player import VlcPlayer
 from dakara_server import DakaraServer
 from settings import LOGGING_LEVEL
+
+CONFIG_FILE_PATH = "config.ini"
 
 ##
 # Loggings
 #
 
-logging_level_numeric = getattr(logging, LOGGING_LEVEL.upper(), None)
-if not isinstance(logging_level_numeric, int):
-    raise ValueError('Invalid log level: {}'.format(LOGGING_LEVEL))
-
-coloredlogs.install(
-        fmt='[%(asctime)s] %(levelname)s %(message)s',
-        level=logging_level_numeric
-        )
 
 class KaraPlayer:
 
     def __init__(self):
-        self.vlc_player = VlcPlayer()
-        self.dakara_server = DakaraServer()
+        # load config from file
+        config = ConfigParser()
+        config.read(CONFIG_FILE_PATH)
+        global_config = config['Global']
+        server_config = config['Server']
+        player_config = config['Player']
+        
+        self.configure_logger(global_config)
+
+        self.vlc_player = VlcPlayer(player_config)
+        self.dakara_server = DakaraServer(server_config)
         self.vlc_player.set_song_end_callback(self.handle_song_end)
         self.vlc_player.set_error_callback(self.handle_error)
+
+    def configure_logger(self, config):
+        loglevel = config.get('loglevel')
+        logging_level_numeric = getattr(logging, loglevel.upper(), None)
+        if not isinstance(logging_level_numeric, int):
+            raise ValueError('Invalid log level: {}'.format(loglevel))
+
+        coloredlogs.install(
+                fmt='[%(asctime)s] %(levelname)s %(message)s',
+                level=logging_level_numeric
+                )
 
     def handle_error(self, playing_id, message):
         """ Callback when a VLC error occurs

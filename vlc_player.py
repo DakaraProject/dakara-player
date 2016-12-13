@@ -3,23 +3,29 @@ import os
 import logging
 import urllib
 from threading import Thread
-from transition_screen import TransitionScreen
-from settings import KARA_FOLDER_PATH, \
-                     FULLSCREEN_MODE, \
-                     VLC_PARAMETERS_INSTANCE, \
-                     VLC_PARAMETERS_MEDIA, \
-                     LOADER_DURATION, \
-                     LOADER_BG_DEFAULT_NAME
+from transition_text_generator import TransitionTextGenerator
 
+TRANSITION_DURATION = 2
+TRANSITION_BG_PATH = "transition.png.default"
+TRANSITION_TEMPLATE_PATH = "transition.ass.default"
+IDLE_BG_PATH = "idle.png.default"
+
+IDLE_DURATION = 10
 
 class VlcPlayer:
  
-    def __init__(self):
-        if type(VLC_PARAMETERS_INSTANCE) is not str:
-            raise ValueError('VLC instance parameters must be a string')
+    def __init__(self, config):
+        instance_parameter = config.get('instanceParameter', "")
+        fullscreen = config.getboolean('fullscreen', False)
+        
+        self.kara_folder_path = config.get('karaFolder', "")
+        self.media_parameter = config.get('mediaParameter', "")
 
-        if type(VLC_PARAMETERS_MEDIA) is not str:
-            raise ValueError('VLC media parameters must be a string')
+        self.transition_duration = config.getint('transitionDuration', TRANSITION_DURATION)
+        self.transition_bg_path = config.get('transitionBgPath', TRANSITION_BG_PATH)
+        transition_template_path = config.get('transitionTemplatePath', TRANSITION_TEMPLATE_PATH)
+
+        self.idle_bg_path = config.get('idleBgPath', IDLE_BG_PATH)
 
         # playlist entry id of the current song
         # if no songs are playing, its value is None
@@ -32,13 +38,13 @@ class VlcPlayer:
         self.media_pending = None
 
         # VLC objects
-        self.instance = vlc.Instance(VLC_PARAMETERS_INSTANCE)
+        self.instance = vlc.Instance(instance_parameter)
         self.player = self.instance.media_player_new()
-        self.player.set_fullscreen(FULLSCREEN_MODE)
+        self.player.set_fullscreen(fullscreen)
         self.event_manager = self.player.event_manager()
 
         # transition screen
-        self.transition_screen = TransitionScreen()
+        self.transition_text_generator = TransitionTextGenerator(transition_template_path)
 
         # display vlc version
         version = vlc.libvlc_get_version()
@@ -157,7 +163,7 @@ class VlcPlayer:
         """
         # file location
         file_path = os.path.join(
-                KARA_FOLDER_PATH,
+                self.kara_folder_path,
                 playlist_entry["song"]["file_path"]
                 )
 
@@ -172,15 +178,15 @@ class VlcPlayer:
         # create the media
         self.playing_id = playlist_entry["id"]
         self.media_pending = self.instance.media_new_path(file_path)
-        self.media_pending.add_options(VLC_PARAMETERS_MEDIA)
+        self.media_pending.add_options(self.media_parameter)
 
         # create the transition screen
-        loader_bg_path, loader_text_path = self.transition_screen.create_loader(playlist_entry)
-        media_transition = self.instance.media_new_path(loader_bg_path)
+        transition_text_path = self.transition_text_generator.create_transition_text(playlist_entry)
+        media_transition = self.instance.media_new_path(self.transition_bg_path)
         media_transition.add_options(
-                *VLC_PARAMETERS_MEDIA,
-                "sub-file={}".format(loader_text_path),
-                "image-duration={}".format(LOADER_DURATION)
+                self.media_parameter,
+                "sub-file={}".format(transition_text_path),
+                "image-duration={}".format(self.transition_duration)
                 )
         self.in_transition = True
 
@@ -193,12 +199,12 @@ class VlcPlayer:
         self.playing_id = None
         self.in_transition = False
         media = self.instance.media_new_path(
-                LOADER_BG_DEFAULT_NAME
+                self.idle_bg_path
                 )
 
-        media.add_options("image-duration={}".format(10000))
+        media.add_options("image-duration={}".format(IDLE_DURATION))
         self.play_media(media)
-        logging.info("Playing idle screen")
+        logging.debug("Playing idle screen")
 
     def is_idle(self):
         """ Get player idling status
@@ -269,4 +275,4 @@ class VlcPlayer:
         """ Stop playing music and clean generated materials
         """
         self.stop()
-        self.transition_screen.clean()
+        self.transition_text_generator.clean()
