@@ -106,5 +106,9 @@ class TransitionTextGenerator:
         """ Remove the temp directory
         """
         logging.debug("Deleting temporary directory \"{}\"".format(self.tempdir))
-        shutil.rmtree(self.tempdir)
-        self.tempdir = None
+        try:
+            shutil.rmtree(self.tempdir)
+            self.tempdir = None
+
+        except OSError:
+            logging.error("Unable to delete temporary directory")

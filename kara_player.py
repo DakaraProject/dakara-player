@@ -5,7 +5,6 @@ from threading import Timer
 from configparser import ConfigParser
 from vlc_player import VlcPlayer
 from dakara_server import DakaraServer
-from settings import LOGGING_LEVEL
 
 CONFIG_FILE_PATH = "config.ini"
 
@@ -23,13 +22,14 @@ class KaraPlayer:
         global_config = config['Global']
         server_config = config['Server']
         player_config = config['Player']
-        
+
         self.configure_logger(global_config)
 
         self.vlc_player = VlcPlayer(player_config)
         self.dakara_server = DakaraServer(server_config)
         self.vlc_player.set_song_end_callback(self.handle_song_end)
         self.vlc_player.set_error_callback(self.handle_error)
+        self.stop_flag = False
 
     def configure_logger(self, config):
         loglevel = config.get('loglevel')
@@ -92,7 +92,9 @@ class KaraPlayer:
             commands = self.dakara_server.send_status_get_commands(
                     playing_id,
                     timing,
-                    paused)
+                    paused
+                    )
+
             if commands['pause'] is not paused:
                 self.vlc_player.set_pause(commands['pause'])
 
@@ -100,15 +102,18 @@ class KaraPlayer:
                 self.add_next_music()
 
         # create timer calling poll_server
-        self.server_timer = Timer(1, self.poll_server)
-        self.server_timer.start()
+        if not self.stop_flag:
+            self.server_timer = Timer(1, self.poll_server)
+            self.server_timer.start()
 
     def deamon(self):
         """ Daemonization looper
 
             Start, wait for Ctrl+C and then, stop.
         """
-        def handle_signal(signal, frame):
+        def handle_signal(signum, frame):
+            # ignore any other Ctrl C
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
             self.stop()
 
         self.start()
@@ -120,12 +125,14 @@ class KaraPlayer:
             (thus, start server polling)
         """
         logging.info("Daemons started")
+        self.stop_flag = False
         self.add_next_music()
         self.poll_server()
 
     def stop(self):
         """ Stop VLC and stop polling server
         """
+        self.stop_flag = True
         self.server_timer.cancel()
         self.vlc_player.clean()
         logging.info("Daemon stopped")
