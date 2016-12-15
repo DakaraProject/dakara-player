@@ -8,24 +8,34 @@ from transition_text_generator import TransitionTextGenerator
 TRANSITION_DURATION = 2
 TRANSITION_BG_PATH = "transition.png.default"
 TRANSITION_TEMPLATE_PATH = "transition.ass.default"
-IDLE_BG_PATH = "idle.png.default"
 
 IDLE_DURATION = 10
+IDLE_BG_PATH = "idle.png.default"
 
 class VlcPlayer:
- 
+
     def __init__(self, config):
+        # parameters for instanciations or saved objects
         instance_parameter = config.get('instanceParameter', "")
         fullscreen = config.getboolean('fullscreen', False)
-        
+
+        # parameters that will be used later on
         self.kara_folder_path = config.get('karaFolder', "")
         self.media_parameter = config.get('mediaParameter', "")
 
-        self.transition_duration = config.getint('transitionDuration', TRANSITION_DURATION)
-        self.transition_bg_path = config.get('transitionBgPath', TRANSITION_BG_PATH)
-        transition_template_path = config.get('transitionTemplatePath', TRANSITION_TEMPLATE_PATH)
+        # parameters for transition screen
+        self.transition_duration = config.getint(
+                'transitionDuration', TRANSITION_DURATION)
 
-        self.idle_bg_path = config.get('idleBgPath', IDLE_BG_PATH)
+        self.load_transition_bg_path(
+                config.get('transitionBgPath', TRANSITION_BG_PATH))
+
+        transition_template_path = config.get(
+                'transitionTemplatePath', TRANSITION_TEMPLATE_PATH)
+
+        # parameters for idle screen
+        self.load_idle_bg_path(
+                config.get('idleBgPath', IDLE_BG_PATH))
 
         # playlist entry id of the current song
         # if no songs are playing, its value is None
@@ -49,6 +59,62 @@ class VlcPlayer:
         # display vlc version
         version = vlc.libvlc_get_version()
         logging.info("VLC " + version.decode())
+
+    def load_transition_bg_path(self, bg_path):
+        """ Load transition backgound file path
+
+            Load the customized background path or the
+            default background path for the transition
+            screen.
+
+            Args:
+                bg_path: path to the transition background.
+        """
+        if os.path.isfile(bg_path):
+            pass
+
+        elif os.path.isfile(TRANSITION_BG_PATH):
+            logging.warning("Transition background file not found \"{}\", \
+using default one".format(bg_path))
+
+            bg_path = TRANSITION_BG_PATH
+
+        else:
+            raise IOError("Unable to find a transition background file")
+
+        self.transition_bg_path = bg_path
+
+        logging.debug("Loading transition background file \"{}\"".format(
+            bg_path
+            ))
+
+    def load_idle_bg_path(self, bg_path):
+        """ Load idle backgound file path
+
+            Load the customized background path or the
+            default background path for the idle
+            screen.
+
+            Args:
+                bg_path: path to the idle background.
+        """
+        if os.path.isfile(bg_path):
+            pass
+
+        elif os.path.isfile(IDLE_BG_PATH):
+            logging.warning("Idle background file not found \"{}\", \
+using default one".format(bg_path))
+
+            bg_path = IDLE_BG_PATH
+
+        else:
+            raise IOError("Unable to find an idle background file")
+
+        self.idle_bg_path = bg_path
+
+        logging.debug("Loading idle background file \"{}\"".format(
+            bg_path
+            ))
 
     def set_song_end_callback(self, callback):
         """ Assign callback for when player reachs the end of current song

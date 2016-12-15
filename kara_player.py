@@ -1,3 +1,4 @@
+import os
 import signal
 import logging
 import coloredlogs
@@ -7,6 +8,7 @@ from vlc_player import VlcPlayer
 from dakara_server import DakaraServer
 
 CONFIG_FILE_PATH = "config.ini"
+LOGLEVEL = 'INFO'
 
 ##
 # Loggings
@@ -17,25 +19,42 @@ class KaraPlayer:
 
     def __init__(self):
         # load config from file
+        if not os.path.isfile(CONFIG_FILE_PATH):
+            raise IOError("No config file found")
+
         config = ConfigParser()
         config.read(CONFIG_FILE_PATH)
         global_config = config['Global']
         server_config = config['Server']
         player_config = config['Player']
 
+        # set logger config
         self.configure_logger(global_config)
 
+        # set modules up
         self.vlc_player = VlcPlayer(player_config)
         self.dakara_server = DakaraServer(server_config)
         self.vlc_player.set_song_end_callback(self.handle_song_end)
         self.vlc_player.set_error_callback(self.handle_error)
+
+        # flag to stop the server polling
         self.stop_flag = False
 
     def configure_logger(self, config):
-        loglevel = config.get('loglevel')
+        """ Set the logger config
+
+            Set a validated logging level from configuration and
+            the output format.
+
+            Args:
+                config: dictionary containing global parameters, among
+                    them logging parameters. It should contain the
+                    `loglevel` key.
+        """
+        loglevel = config.get('loglevel', LOGLEVEL)
         logging_level_numeric = getattr(logging, loglevel.upper(), None)
         if not isinstance(logging_level_numeric, int):
-            raise ValueError('Invalid log level: {}'.format(loglevel))
+            raise ValueError("Invalid log level \"{}\"".format(loglevel))
 
         coloredlogs.install(
                 fmt='[%(asctime)s] %(levelname)s %(message)s',

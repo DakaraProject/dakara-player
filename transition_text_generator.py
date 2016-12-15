@@ -85,23 +85,6 @@ class TransitionTextGenerator:
 
         self.transition_text_template = transition_text_template
 
-#    def load_bg_path(self):
-#        """ Load transition backgound file path
-#
-#            Load the default or customized background path for
-#            transition screen.
-#        """
-#        if os.path.isfile(transition_BG_NAME):
-#            transition_bg = transition_BG_NAME
-#
-#        elif os.path.isfile(transition_BG_DEFAULT_NAME):
-#            transition_bg = transition_BG_DEFAULT_NAME
-#
-#        else:
-#            raise IOError("No background file for loader found")
-#
-#        self.transition_bg_path = transition_bg
-
     def clean(self):
         """ Remove the temp directory
         """
