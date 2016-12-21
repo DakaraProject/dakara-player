@@ -7,6 +7,10 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 class DakaraServer:
 
     def __init__(self, config):
+        # create logger
+        self.logger = logging.getLogger('DakaraServer')
+
+        # setting config
         self.server_url = config['url'] 
         self.credentials = (config['login'], config['password'])
 
@@ -17,7 +21,7 @@ class DakaraServer:
                 dictionary of next playlist entry or `None` if there
                 is no more song in the playlist.
         """
-        logging.debug("Asking new song to server")
+        self.logger.debug("Asking new song to server")
         try:
             response = requests.get(
                     self.server_url + "player/status/",
@@ -25,15 +29,15 @@ class DakaraServer:
                     )
 
         except requests.exceptions.RequestException:
-            logging.error("Network Error")
+            self.logger.error("Network Error")
             return None
 
         if response.ok:
             json = response.json()
             return json or None
 
-        logging.error("Unable to get new song response from server")
-        logging.debug("""Error code: {code}
+        self.logger.error("Unable to get new song response from server")
+        self.logger.debug("""Error code: {code}
 Message: {message}""".format(
             code=response.status_code,
             message=response.text
@@ -42,7 +46,7 @@ Message: {message}""".format(
     def send_error(self, playing_id, error_message):
         """ Send provided error message to the server
         """
-        logging.debug("""Sending error to server:
+        self.logger.debug("""Sending error to server:
 Playing entry ID: {playing_id}
 Error: {error_message}""".format(
             playing_id=playing_id,
@@ -62,12 +66,12 @@ Error: {error_message}""".format(
                     )
 
         except requests.exceptions.RequestException:
-            logging.error("Network Error")
+            self.logger.error("Network Error")
             return
 
         if not response.ok:
-            logging.error("Unable to send error message to server")
-            logging.debug("""Error code: {code}
+            self.logger.error("Unable to send error message to server")
+            self.logger.debug("""Error code: {code}
 Message: {message}""".format(
                 code=response.status_code,
                 message=response.text
@@ -83,7 +87,7 @@ Message: {message}""".format(
             Returns:
                 requested status from the server.
         """
-        logging.debug("""Sending status to server:
+        self.logger.debug("""Sending status to server:
 Playing entry ID: {playing_id}
 Timing: {timing}
 Paused: {paused}""".format(
@@ -106,14 +110,14 @@ Paused: {paused}""".format(
                     )
 
         except requests.exceptions.RequestException:
-            logging.error("Network Error")
+            self.logger.error("Network Error")
             return {'pause': True, 'skip': False}
 
         if response.ok:
             return response.json()
 
-        logging.error("Unable to send status to server")
-        logging.debug("""Error code: {code}
+        self.logger.error("Unable to send status to server")
+        self.logger.debug("""Error code: {code}
 Message: {message}""".format(
             code=response.status_code,
             message=response.text

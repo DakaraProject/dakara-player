@@ -10,12 +10,15 @@ TRANSITION_TEXT_NAME = "transition.ass"
 class TransitionTextGenerator:
 
     def __init__(self, template_path):
-        # load template 
+        # create logger
+        self.logger = logging.getLogger('TransitionTextGenerator')
+
+        # load template
         self.load_text_template(template_path)
 
         # create temporary directory
         self.tempdir = tempfile.mkdtemp(suffix=".dakara")
-        logging.debug("Creating temporary directory \"{}\"".format(self.tempdir))
+        self.logger.debug("Creating temporary directory \"{}\"".format(self.tempdir))
 
         self.transition_text_path = os.path.join(
                 self.tempdir,
@@ -64,7 +67,7 @@ class TransitionTextGenerator:
         with open(self.transition_text_path, 'w', encoding='utf8') as file:
             file.write(transition_text)
 
-        logging.debug("Create transition screen text file in \"{}\"".format(self.transition_text_path))
+        self.logger.debug("Create transition screen text file in \"{}\"".format(self.transition_text_path))
 
         return self.transition_text_path
 
@@ -78,6 +81,7 @@ class TransitionTextGenerator:
             transition_ass = template_path 
 
         else:
+            self.clean()
             raise IOError("No ASS file for loader found")
 
         with open(transition_ass, 'r', encoding='utf8') as file:
@@ -88,10 +92,10 @@ class TransitionTextGenerator:
     def clean(self):
         """ Remove the temp directory
         """
-        logging.debug("Deleting temporary directory \"{}\"".format(self.tempdir))
+        self.logger.debug("Deleting temporary directory \"{}\"".format(self.tempdir))
         try:
             shutil.rmtree(self.tempdir)
             self.tempdir = None
 
         except OSError:
-            logging.error("Unable to delete temporary directory")
+            self.logger.error("Unable to delete temporary directory")

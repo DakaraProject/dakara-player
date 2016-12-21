@@ -1,29 +1,23 @@
 import os
 import signal
-import logging
-import coloredlogs
 from threading import Timer
 from configparser import ConfigParser
+import logging
+import coloredlogs
 from vlc_player import VlcPlayer
 from dakara_server import DakaraServer
 
 CONFIG_FILE_PATH = "config.ini"
 LOGLEVEL = 'INFO'
 
-##
-# Loggings
-#
-
-
 class KaraPlayer:
 
     def __init__(self):
-        # load config from file
-        if not os.path.isfile(CONFIG_FILE_PATH):
-            raise IOError("No config file found")
+        # create a logger
+        self.create_logger()
 
-        config = ConfigParser()
-        config.read(CONFIG_FILE_PATH)
+        # load the config
+        config = self.load_config(CONFIG_FILE_PATH)
         global_config = config['Global']
         server_config = config['Server']
         player_config = config['Player']
@@ -40,26 +34,59 @@ class KaraPlayer:
         # flag to stop the server polling
         self.stop_flag = False
 
+    def load_config(self, config_path):
+        """ Load the config from config file
+
+            Args:
+                config_path: path to the config file.
+
+            Returns:
+                dictionary of the config.
+        """
+        # check the config file is present
+        if not os.path.isfile(config_path):
+            raise IOError("No config file found")
+
+        config = ConfigParser()
+        config.read(config_path)
+
+        return config
+
+    def create_logger(self):
+        """ Create a logger for the instance of the class
+        """
+        # create a logger
+        self.logger = logging.getLogger('DakaraPlayer')
+
+        # set the logging handle
+        # use coloredlogs for coloring the output
+        # using default logging level
+        coloredlogs.install(
+                fmt='[%(asctime)s] %(name)s %(levelname)s %(message)s',
+                level = LOGLEVEL
+                )
+
+        # storing default level
+        self.loglevel = LOGLEVEL
+
     def configure_logger(self, config):
         """ Set the logger config
 
-            Set a validated logging level from configuration and
-            the output format.
+            Set a validated logging level from configuration.
 
             Args:
                 config: dictionary containing global parameters, among
                     them logging parameters. It should contain the
                     `loglevel` key.
         """
+        # select logging level
         loglevel = config.get('loglevel', LOGLEVEL)
-        logging_level_numeric = getattr(logging, loglevel.upper(), None)
-        if not isinstance(logging_level_numeric, int):
+        loglevel_numeric = getattr(logging, loglevel.upper(), None)
+        if not isinstance(loglevel_numeric, int):
             raise ValueError("Invalid log level \"{}\"".format(loglevel))
 
-        coloredlogs.install(
-                fmt='[%(asctime)s] %(levelname)s %(message)s',
-                level=logging_level_numeric
-                )
+        coloredlogs.set_level(loglevel_numeric)
+        self.loglevel = loglevel.upper()
 
     def handle_error(self, playing_id, message):
         """ Callback when a VLC error occurs
@@ -68,7 +95,7 @@ class KaraPlayer:
                 playing_id: playlist entry ID.
                 message: text describing the error.
         """
-        logging.error(message)
+        self.logger.error(message)
         self.dakara_server.send_error(playing_id, message)
         self.add_next_music()
 
@@ -135,15 +162,21 @@ class KaraPlayer:
             signal.signal(signal.SIGINT, signal.SIG_IGN)
             self.stop()
 
-        self.start()
-        signal.signal(signal.SIGINT, handle_signal)
-        signal.pause()
+        try:
+            self.start()
+            signal.signal(signal.SIGINT, handle_signal)
+            signal.pause()
+
+        except:
+            # stop the player
+            self.vlc_player.clean()
+            raise
 
     def start(self):
         """ Query music, then communicate with the server
             (thus, start server polling)
         """
-        logging.info("Daemons started")
+        self.logger.info("Daemons started")
         self.stop_flag = False
         self.add_next_music()
         self.poll_server()
@@ -154,9 +187,26 @@ class KaraPlayer:
         self.stop_flag = True
         self.server_timer.cancel()
         self.vlc_player.clean()
-        logging.info("Daemon stopped")
+        self.logger.info("Daemon stopped")
 
 
 if __name__ == '__main__':
-    kara_player = KaraPlayer()
-    kara_player.deamon()
+    try:
+        kara_player = KaraPlayer()
+        kara_player.deamon()
+
+    except Exception as error:
+        # if the error was raised after the constructor call,
+        # display the exception with backtrace in debug mode,
+        # or display the error message only in any other mode
+        try:
+            if kara_player.loglevel == 'DEBUG':
+                kara_player.logger.exception(error)
+
+            else:
+                kara_player.logger.critical(error)
+
+        # if the error was raised during the conscructor call,
+        # just display the error message only in the root logger
+        except:
+            logging.critical(error)

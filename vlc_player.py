@@ -15,6 +15,9 @@ IDLE_BG_PATH = "idle.png.default"
 class VlcPlayer:
 
     def __init__(self, config):
+        # create logger
+        self.logger = logging.getLogger('VlcPlayer')
+
         # parameters for instanciations or saved objects
         instance_parameter = config.get('instanceParameter', "")
         fullscreen = config.getboolean('fullscreen', False)
@@ -58,7 +61,7 @@ class VlcPlayer:
 
         # display vlc version
         version = vlc.libvlc_get_version()
-        logging.info("VLC " + version.decode())
+        self.logger.info("VLC " + version.decode())
 
     def load_transition_bg_path(self, bg_path):
         """ Load transition backgound file path
@@ -67,6 +70,8 @@ class VlcPlayer:
             default background path for the transition
             screen.
 
+            Called once by the constructor.
+
             Args:
                 bg_path: path to the transition background.
         """
@@ -74,7 +79,7 @@ class VlcPlayer:
             pass
 
         elif os.path.isfile(TRANSITION_BG_PATH):
-            logging.warning("Transition background file not found \"{}\", \
+            self.logger.warning("Transition background file not found \"{}\", \
 using default one".format(bg_path))
 
             bg_path = TRANSITION_BG_PATH
@@ -84,7 +89,7 @@ using default one".format(bg_path))
 
         self.transition_bg_path = bg_path
 
-        logging.debug("Loading transition background file \"{}\"".format(
+        self.logger.debug("Loading transition background file \"{}\"".format(
             bg_path
             ))
 
@@ -95,6 +100,8 @@ using default one".format(bg_path))
             default background path for the idle
             screen.
 
+            Called once by the constructor.
+
             Args:
                 bg_path: path to the idle background.
         """
@@ -102,7 +109,7 @@ using default one".format(bg_path))
             pass
 
         elif os.path.isfile(IDLE_BG_PATH):
-            logging.warning("Idle background file not found \"{}\", \
+            self.logger.warning("Idle background file not found \"{}\", \
 using default one".format(bg_path))
 
             bg_path = IDLE_BG_PATH
@@ -112,7 +119,7 @@ using default one".format(bg_path))
 
         self.idle_bg_path = bg_path
 
-        logging.debug("Loading idle background file \"{}\"".format(
+        self.logger.debug("Loading idle background file \"{}\"".format(
             bg_path
             ))
 
@@ -141,7 +148,7 @@ using default one".format(bg_path))
             Args:
                 event: VLC event object.
         """
-        logging.debug("Song end callback called")
+        self.logger.debug("Song end callback called")
 
         if self.in_transition:
             # if the transition screen has finished,
@@ -152,7 +159,7 @@ using default one".format(bg_path))
                     args=(self.media_pending, )
                     )
 
-            logging.info("Playing file")
+            self.logger.info("Playing file")
 
         else:
             # otherwise, the song has finished,
@@ -183,7 +190,7 @@ using default one".format(bg_path))
             Args:
                 event: VLC event object.
         """
-        logging.debug("Error callback called")
+        self.logger.debug("Error callback called")
 
         # according to this post in the VLC forum
         # (https://forum.videolan.org/viewtopic.php?t=90720), it is very
@@ -257,7 +264,7 @@ using default one".format(bg_path))
         self.in_transition = True
 
         self.play_media(media_transition)
-        logging.info("Playing transition for \"{}\"".format(file_path))
+        self.logger.info("Playing transition for \"{}\"".format(file_path))
 
     def play_idle_screen(self):
         """ Play idle screen
@@ -270,7 +277,7 @@ using default one".format(bg_path))
 
         media.add_options("image-duration={}".format(IDLE_DURATION))
         self.play_media(media)
-        logging.debug("Playing idle screen")
+        self.logger.debug("Playing idle screen")
 
     def is_idle(self):
         """ Get player idling status
@@ -302,6 +309,8 @@ using default one".format(bg_path))
             return 0
 
         timing = self.player.get_time()
+
+        # correct the way VLC handles when it hasn't started to play yet
         if timing == -1:
             timing = 0
 
@@ -325,17 +334,17 @@ using default one".format(bg_path))
         if not self.is_idle():
             if pause:
                 self.player.pause()
-                logging.info("Setting pause")
+                self.logger.info("Setting pause")
 
             else:
                 self.player.play()
-                logging.info("Resuming play")
+                self.logger.info("Resuming play")
 
     def stop(self):
         """ Stop playing music
         """
         self.player.stop()
-        logging.info("Stopping player")
+        self.logger.info("Stopping player")
 
     def clean(self):
         """ Stop playing music and clean generated materials
