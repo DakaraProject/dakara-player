@@ -159,7 +159,15 @@ using default one".format(bg_path))
                     args=(self.media_pending, )
                     )
 
-            self.logger.info("Playing file")
+            # get file path
+            # the file path ist stored as MRL, we have to bring it back
+            # to a more classic looking path format
+            file_mrl = self.media_pending.get_mrl()
+            file_mrl_parsed = urllib.parse.urlparse(file_mrl)
+            file_path = urllib.parse.unquote(file_mrl_parsed.path)
+            self.logger.info("Playing \"{}\"".format(
+                file_path
+                ))
 
         else:
             # otherwise, the song has finished,
