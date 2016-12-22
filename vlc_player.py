@@ -9,7 +9,7 @@ TRANSITION_DURATION = 2
 TRANSITION_BG_PATH = "transition.png.default"
 TRANSITION_TEMPLATE_PATH = "transition.ass.default"
 
-IDLE_DURATION = 10
+IDLE_DURATION = 60
 IDLE_BG_PATH = "idle.png.default"
 
 class VlcPlayer:
