@@ -17,14 +17,42 @@ class TransitionTextGenerator:
         self.load_text_template(template_path)
 
         # create temporary directory
-        self.tempdir = tempfile.mkdtemp(suffix=".dakara")
-        self.logger.debug("Creating temporary directory \"{}\"".format(self.tempdir))
+        self.create_temp_directory()
 
         self.transition_text_path = os.path.join(
                 self.tempdir,
                 TRANSITION_TEXT_NAME
                 )
 
+    def with_temp_directory(fun):
+        """ Decorator that checks there is a temporary directory created
+
+            The decorator will create a temporary directory and then
+            execute the given function.
+
+            Args:
+                fun: the function to decorate.
+
+            Returns:
+                the decorated function.
+        """
+        def call(self, *args, **kwargs):
+            if self.tempdir is None:
+                self.create_temp_directory()
+
+            return fun(self, *args, **kwargs)
+
+        return call
+
+    def create_temp_directory(self):
+        """ Create a temporary directory for text generation
+        """
+        self.tempdir = tempfile.mkdtemp(suffix=".dakara")
+        self.logger.debug("Creating temporary directory \"{}\"".format(
+            self.tempdir
+            ))
+
+    @with_temp_directory
     def create_transition_text(self, playlist_entry):
         """ Create custom transition text and save it
 
@@ -67,7 +95,8 @@ class TransitionTextGenerator:
         with open(self.transition_text_path, 'w', encoding='utf8') as file:
             file.write(transition_text)
 
-        self.logger.debug("Create transition screen text file in \"{}\"".format(self.transition_text_path))
+        self.logger.debug("Create transition screen text file in \
+\"{}\"".format(self.transition_text_path))
 
         return self.transition_text_path
 
@@ -92,7 +121,9 @@ class TransitionTextGenerator:
     def clean(self):
         """ Remove the temp directory
         """
-        self.logger.debug("Deleting temporary directory \"{}\"".format(self.tempdir))
+        self.logger.debug("Deleting temporary directory \"{}\"".format(
+            self.tempdir
+            ))
         try:
             shutil.rmtree(self.tempdir)
             self.tempdir = None
