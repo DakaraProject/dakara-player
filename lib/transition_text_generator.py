@@ -5,6 +5,11 @@ import tempfile
 from string import Template
 from codecs import open
 
+SHARE_DIR = 'share'
+
+TRANSITION_TEMPLATE_NAME = "transition.ass"
+TRANSITION_TEMPLATE_PATH = os.path.join(SHARE_DIR, TRANSITION_TEMPLATE_NAME)
+
 TRANSITION_TEXT_NAME = "transition.ass"
 
 class TransitionTextGenerator:
@@ -107,16 +112,26 @@ class TransitionTextGenerator:
             transition screen.
         """
         if os.path.isfile(template_path):
-            transition_ass = template_path 
+            pass
+
+        elif os.path.isfile(TRANSITION_TEMPLATE_PATH):
+            self.logger.warning("Transition template file not found \"{}\", \
+using default one".format(template_path))
+
+            template_path = TRANSITION_TEMPLATE_PATH
 
         else:
             self.clean()
             raise IOError("No ASS file for loader found")
 
-        with open(transition_ass, 'r', encoding='utf8') as file:
+        with open(template_path, 'r', encoding='utf8') as file:
             transition_text_template = Template(file.read())
 
         self.transition_text_template = transition_text_template
+
+        self.logger.debug("Loading transition template file \"{}\"".format(
+            template_path
+            ))
 
     def clean(self):
         """ Remove the temp directory

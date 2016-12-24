@@ -3,14 +3,18 @@ import os
 import logging
 import urllib
 from threading import Thread
-from transition_text_generator import TransitionTextGenerator
+from .transition_text_generator import TransitionTextGenerator, \
+                                       TRANSITION_TEMPLATE_PATH
+
+SHARE_DIR = 'share'
 
 TRANSITION_DURATION = 2
-TRANSITION_BG_PATH = "transition.png.default"
-TRANSITION_TEMPLATE_PATH = "transition.ass.default"
+TRANSITION_BG_NAME = "transition.png"
+TRANSITION_BG_PATH = os.path.join(SHARE_DIR, TRANSITION_BG_NAME)
 
 IDLE_DURATION = 60
-IDLE_BG_PATH = "idle.png.default"
+IDLE_BG_NAME = "idle.png"
+IDLE_BG_PATH = os.path.join(SHARE_DIR, IDLE_BG_NAME)
 
 class VlcPlayer:
 
@@ -28,17 +32,22 @@ class VlcPlayer:
 
         # parameters for transition screen
         self.transition_duration = config.getint(
-                'transitionDuration', TRANSITION_DURATION)
+                'transitionDuration', TRANSITION_DURATION
+                )
 
         self.load_transition_bg_path(
-                config.get('transitionBgPath', TRANSITION_BG_PATH))
+                config.get('transitionBgPath', TRANSITION_BG_PATH)
+                )
 
         transition_template_path = config.get(
-                'transitionTemplatePath', TRANSITION_TEMPLATE_PATH)
+                'transitionTemplatePath',
+                TRANSITION_TEMPLATE_PATH
+                )
 
         # parameters for idle screen
         self.load_idle_bg_path(
-                config.get('idleBgPath', IDLE_BG_PATH))
+                config.get('idleBgPath', IDLE_BG_PATH)
+                )
 
         # playlist entry id of the current song
         # if no songs are playing, its value is None
@@ -57,7 +66,9 @@ class VlcPlayer:
         self.event_manager = self.player.event_manager()
 
         # transition screen
-        self.transition_text_generator = TransitionTextGenerator(transition_template_path)
+        self.transition_text_generator = TransitionTextGenerator(
+                transition_template_path
+                )
 
         # display vlc version
         version = vlc.libvlc_get_version()

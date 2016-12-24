@@ -4,13 +4,13 @@ from threading import Timer
 from configparser import ConfigParser
 import logging
 import coloredlogs
-from vlc_player import VlcPlayer
-from dakara_server import DakaraServer
+from .vlc_player import VlcPlayer
+from .dakara_server import DakaraServer
 
 CONFIG_FILE_PATH = "config.ini"
 LOGLEVEL = 'INFO'
 
-class KaraPlayer:
+class DakaraPlayer:
 
     def __init__(self):
         # create a logger
@@ -188,25 +188,3 @@ class KaraPlayer:
         self.server_timer.cancel()
         self.vlc_player.clean()
         self.logger.info("Daemon stopped")
-
-
-if __name__ == '__main__':
-    try:
-        kara_player = KaraPlayer()
-        kara_player.deamon()
-
-    except Exception as error:
-        # if the error was raised after the constructor call,
-        # display the exception with backtrace in debug mode,
-        # or display the error message only in any other mode
-        try:
-            if kara_player.loglevel == 'DEBUG':
-                kara_player.logger.exception(error)
-
-            else:
-                kara_player.logger.critical(error)
-
-        # if the error was raised during the conscructor call,
-        # just display the error message only in the root logger
-        except:
-            logging.critical(error)
