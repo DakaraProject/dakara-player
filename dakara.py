@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import logging
 from lib.dakara_player import DakaraPlayer
 

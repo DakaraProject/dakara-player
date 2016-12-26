@@ -23,7 +23,7 @@ It is strongly recommended to run Dakara player VLC on virtual environment.
 
 Install dependencies, at root level of the repo:
 
-```
+```sh
 pip install -r requirements.txt
 ```
 
@@ -38,6 +38,6 @@ First, start the server.
 
 Activate the virtual environment, then start the player at the root level of the repo:
 
-```
-python dakara.py
+```sh
+./dakara.py
 ```
