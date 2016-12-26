@@ -176,7 +176,7 @@ using default one".format(bg_path))
             file_mrl = self.media_pending.get_mrl()
             file_mrl_parsed = urllib.parse.urlparse(file_mrl)
             file_path = urllib.parse.unquote(file_mrl_parsed.path)
-            self.logger.info("Playing \"{}\"".format(
+            self.logger.info("Now playing \"{}\"".format(
                 file_path
                 ))
 

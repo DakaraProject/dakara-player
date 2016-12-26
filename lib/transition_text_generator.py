@@ -61,6 +61,11 @@ class TransitionTextGenerator:
     def create_transition_text(self, playlist_entry):
         """ Create custom transition text and save it
 
+            The accepted placeholders in the template are:
+                - `title`: song title,
+                - `artists`: list of artists,
+                - `works`: list of works.
+
             Args:
                 playlist_entry: dictionary containing keys for title,
                     artists and works.
