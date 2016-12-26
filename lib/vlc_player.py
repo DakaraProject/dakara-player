@@ -31,7 +31,7 @@ class VlcPlayer:
         self.media_parameter = config.get('mediaParameter', "")
 
         # parameters for transition screen
-        self.transition_duration = config.getint(
+        self.transition_duration = config.getfloat(
                 'transitionDuration', TRANSITION_DURATION
                 )
 
