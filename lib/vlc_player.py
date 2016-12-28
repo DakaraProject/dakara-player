@@ -72,7 +72,7 @@ class VlcPlayer:
         self.event_manager = self.player.event_manager()
 
         # transition screen
-        self.transition_text_generator = TextGenerator(
+        self.text_generator = TextGenerator(
                 transition_template_path,
                 idle_template_path
                 )
@@ -281,7 +281,7 @@ using default one".format(bg_path))
         self.media_pending.add_options(self.media_parameter)
 
         # create the transition screen
-        transition_text_path = self.transition_text_generator.create_transition_text(playlist_entry)
+        transition_text_path = self.text_generator.create_transition_text(playlist_entry)
         media_transition = self.instance.media_new_path(self.transition_bg_path)
         media_transition.add_options(
                 self.media_parameter,
@@ -306,7 +306,7 @@ using default one".format(bg_path))
                 )
 
         # create the idle screen
-        idle_text_path = self.transition_text_generator.create_idle_text({
+        idle_text_path = self.text_generator.create_idle_text({
             'vlc_version': self.vlc_version
             })
 
@@ -389,4 +389,4 @@ using default one".format(bg_path))
         """ Stop playing music and clean generated materials
         """
         self.stop()
-        self.transition_text_generator.clean()
+        self.text_generator.clean()

@@ -1,3 +1,7 @@
+# DON'T TOUCH THIS FILE!
+# Your modification will be lost during the next update.
+# Copy it to `config.ini`, then modify it and let it roll!
+
 [Player]
 # Path of the karaoke folder
 karaFolder = /path/to/folder
