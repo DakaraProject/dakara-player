@@ -12,28 +12,41 @@ TRANSITION_TEMPLATE_PATH = os.path.join(SHARE_DIR, TRANSITION_TEMPLATE_NAME)
 
 TRANSITION_TEXT_NAME = "transition.ass"
 
-class TransitionTextGenerator:
+IDLE_TEMPLATE_NAME = "idle.ass"
+IDLE_TEMPLATE_PATH = os.path.join(SHARE_DIR, IDLE_TEMPLATE_NAME)
 
-    def __init__(self, template_path):
+IDLE_TEXT_NAME = "idle.ass"
+
+class TextGenerator:
+
+    def __init__(self, transition_template_path, idle_template_path):
         # create logger
-        self.logger = logging.getLogger('TransitionTextGenerator')
+        self.logger = logging.getLogger('TextGenerator')
 
-        # load template
-        self.load_text_template(template_path)
+        # load templates
+        self.load_transition_template(transition_template_path)
+        self.load_idle_template(idle_template_path)
 
         # create temporary directory
         self.create_temp_directory()
 
+        # set text paths
         self.transition_text_path = os.path.join(
                 self.tempdir,
                 TRANSITION_TEXT_NAME
                 )
 
-    def with_temp_directory(fun):
-        """ Decorator that checks there is a temporary directory created
+        self.idle_text_path = os.path.join(
+                self.tempdir,
+                IDLE_TEXT_NAME
+                )
 
-            The decorator will create a temporary directory and then
-            execute the given function.
+    def with_temp_directory(fun):
+        """ Decorator that checks there is a temporary
+            directory created
+
+            The decorator will create a temporary directory
+            and then execute the given function.
 
             Args:
                 fun: the function to decorate.
@@ -58,6 +71,33 @@ class TransitionTextGenerator:
             ))
 
     @with_temp_directory
+    def create_idle_text(self, info):
+        """ Create custom idle text and save it
+
+            The acceptable placeholders in the template are:
+                - `vlc_version`: version of VLC.
+
+            Args:
+                info: dictionnary of additionnal information.
+
+            Returns:
+                path of the text containing the idle screen content.
+        """
+        # using the template
+        idle_text = self.idle_template.substitute(
+                **info
+                )
+
+        with open(self.idle_text_path, 'w', encoding='utf8') as file:
+            file.write(idle_text)
+
+        self.logger.debug("Create idle screen text file in \
+\"{}\"".format(self.idle_text_path))
+
+        return self.idle_text_path
+
+
+    @with_temp_directory
     def create_transition_text(self, playlist_entry):
         """ Create custom transition text and save it
 
@@ -71,7 +111,8 @@ class TransitionTextGenerator:
                     artists and works.
 
             Returns:
-                path of the text containing the transition data.
+                path of the text containing the transition screen
+                content.
         """
         song = playlist_entry["song"]
 
@@ -96,7 +137,7 @@ class TransitionTextGenerator:
 
         works_string = ", ".join(works)
 
-        transition_text = self.transition_text_template.substitute(
+        transition_text = self.transition_template.substitute(
                 title=song["title"],
                 artists=artists_string,
                 works=works_string
@@ -110,8 +151,8 @@ class TransitionTextGenerator:
 
         return self.transition_text_path
 
-    def load_text_template(self, template_path):
-        """ Load transition text template file
+    def load_transition_template(self, template_path):
+        """ Load transition screen text template file
 
             Load the default or customized ASS template for
             transition screen.
@@ -127,14 +168,42 @@ using default one".format(template_path))
 
         else:
             self.clean()
-            raise IOError("No ASS file for loader found")
+            raise IOError("No template file for transition screen found")
 
         with open(template_path, 'r', encoding='utf8') as file:
-            transition_text_template = Template(file.read())
+            transition_template = Template(file.read())
 
-        self.transition_text_template = transition_text_template
+        self.transition_template = transition_template
 
         self.logger.debug("Loading transition template file \"{}\"".format(
+            template_path
+            ))
+
+    def load_idle_template(self, template_path):
+        """ Load idle screen text template file
+
+            Load the default or customized ASS template for
+            idle screen.
+        """
+        if os.path.isfile(template_path):
+            pass
+
+        elif os.path.isfile(IDLE_TEMPLATE_PATH):
+            self.logger.warning("Idle template file not found \"{}\", \
+using default one".format(template_path))
+
+            template_path = IDLE_TEMPLATE_PATH
+
+        else:
+            self.clean()
+            raise IOError("No template file for idle screen found")
+
+        with open(template_path, 'r', encoding='utf8') as file:
+            idle_template = Template(file.read())
+
+        self.idle_template = idle_template
+
+        self.logger.debug("Loading idle template file \"{}\"".format(
             template_path
             ))
 

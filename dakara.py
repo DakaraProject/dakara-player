@@ -9,6 +9,9 @@ if __name__ == '__main__':
         kara_player.deamon()
 
     except Exception as error:
+        if isinstance(error, NameError):
+            raise
+
         # if the error was raised after the constructor call,
         # display the exception with backtrace in debug mode,
         # or display the error message only in any other mode

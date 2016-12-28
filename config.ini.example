@@ -44,6 +44,13 @@ fullscreen = False
 # Default is share/idle.png
 #idleBgPath = path/to/idle/bg.file
 
+# Path to the template text file for the idle screen.
+# The template will display some information during the idle
+# screen by the mean of subtitle. Consult the default file
+# to create your own template. Anything VLC can handle as subtitle.
+# Default is share/idle.ass
+#idleTemplatePath = path/to/idle/template.file
+
 [Server]
 # Server URL
 url = http://127.0.0.1:8000/

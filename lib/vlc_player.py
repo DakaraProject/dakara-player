@@ -3,8 +3,9 @@ import os
 import logging
 import urllib
 from threading import Thread
-from .transition_text_generator import TransitionTextGenerator, \
-                                       TRANSITION_TEMPLATE_PATH
+from .text_generator import TextGenerator, \
+                            TRANSITION_TEMPLATE_PATH, \
+                            IDLE_TEMPLATE_PATH
 
 SHARE_DIR = 'share'
 
@@ -49,6 +50,11 @@ class VlcPlayer:
                 config.get('idleBgPath', IDLE_BG_PATH)
                 )
 
+        idle_template_path = config.get(
+                'idleTemplatePath',
+                IDLE_TEMPLATE_PATH
+                )
+
         # playlist entry id of the current song
         # if no songs are playing, its value is None
         self.playing_id = None
@@ -66,13 +72,14 @@ class VlcPlayer:
         self.event_manager = self.player.event_manager()
 
         # transition screen
-        self.transition_text_generator = TransitionTextGenerator(
-                transition_template_path
+        self.transition_text_generator = TextGenerator(
+                transition_template_path,
+                idle_template_path
                 )
 
         # display vlc version
-        version = vlc.libvlc_get_version()
-        self.logger.info("VLC " + version.decode())
+        self.vlc_version = vlc.libvlc_get_version().decode()
+        self.logger.info("VLC " + self.vlc_version)
 
     def load_transition_bg_path(self, bg_path):
         """ Load transition backgound file path
@@ -214,7 +221,8 @@ using default one".format(bg_path))
         # according to this post in the VLC forum
         # (https://forum.videolan.org/viewtopic.php?t=90720), it is very
         # unlikely that any error message will be caught this way
-        error_message = vlc.libvlc_errmsg() or "No details, consult player logs"
+        error_message = vlc.libvlc_errmsg() or \
+                "No details, consult player logs"
 
         if type(error_message) is bytes:
             error_message = error_message.decode()
@@ -288,13 +296,25 @@ using default one".format(bg_path))
     def play_idle_screen(self):
         """ Play idle screen
         """
+        # set idle status
         self.playing_id = None
         self.in_transition = False
+
+        # create idle screen media
         media = self.instance.media_new_path(
                 self.idle_bg_path
                 )
 
-        media.add_options("image-duration={}".format(IDLE_DURATION))
+        # create the idle screen
+        idle_text_path = self.transition_text_generator.create_idle_text({
+            'vlc_version': self.vlc_version
+            })
+
+        media.add_options(
+                "image-duration={}".format(IDLE_DURATION),
+                "sub-file={}".format(idle_text_path),
+                )
+
         self.play_media(media)
         self.logger.debug("Playing idle screen")
 
