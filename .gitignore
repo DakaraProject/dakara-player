@@ -15,8 +15,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
@@ -66,6 +64,4 @@ target/
 *.vim
 
 # local config
-local_settings.py
-loader.ass
-loader.png
+config.ini

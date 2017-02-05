@@ -23,13 +23,13 @@ It is strongly recommended to run Dakara player VLC on virtual environment.
 
 Install dependencies, at root level of the repo:
 
-```
+```sh
 pip install -r requirements.txt
 ```
 
 #### Settings
 
-Copy the file `local_settings_example.py` to `local_settings.py`, then uncomment and modify the config values.
+Copy the file `config.ini.example` to `config.py`, then uncomment and modify the different config values as you wish.
 Mandatory parameters are not commented. 
 
 ### Start the player
@@ -38,6 +38,6 @@ First, start the server.
 
 Activate the virtual environment, then start the player at the root level of the repo:
 
-```
-python kara.py
+```sh
+./dakara.py
 ```

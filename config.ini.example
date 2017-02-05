@@ -1,0 +1,68 @@
+# DON'T TOUCH THIS FILE!
+# Your modification will be lost during the next update.
+# Copy it to `config.ini`, then modify it and let it roll!
+
+[Player]
+# Path of the karaoke folder
+karaFolder = /path/to/folder
+
+# Enable or disable fullscreen mode
+fullscreen = False
+
+# If you need to disable hardware acceleration:
+# (Taken from here: http://stackoverflow.com/a/35251905)
+#mediaParameter = avcodec-hw=none
+
+# If you want subtitle rendering to use screen resolution instead of video's:
+#instanceParameter = --vout x11
+# This may slow down the rendering if hardware decoding cannot be properly
+# called
+# Consult VLC expanded help for a complete list of parameters:
+#   vlc --longhelp --advanced
+# Not all parameters are allowed thought
+# Some parameters only work on the instance, others only on the media 
+
+# Duration of the transition screen between two songs in seconds,
+# won't work if the background file is a video.
+# Default is 2 seconds.
+#transitionDuration = 2
+
+# Path to the background file of the transition screen.
+# Can be a steady picture or a video, anything VLC
+# can read. In case of a picture, it will be displayed
+# during transitionDuration seconds.
+# Default is share/transition.png
+#transitionBgPath = /path/to/transition/bg.file
+
+# Path to the template text file for the transition screen.
+# The template will display information about the
+# song to play (artist, details, etc.) during the transition
+# screen by the mean of subtitle. Consult the default file
+# to create your own template. Anything VLC can handle as subtitle.
+# Default is share/transition.ass
+#transitionTemplatePath = path/to/transition/template.file
+
+# Path to the idle screen background file.
+# Can be a steady picture or a video, anything VLC can read.
+# It will be looped as long as there is no song to play.
+# Default is share/idle.png
+#idleBgPath = path/to/idle/bg.file
+
+# Path to the template text file for the idle screen.
+# The template will display some information during the idle
+# screen by the mean of subtitle. Consult the default file
+# to create your own template. Anything VLC can handle as subtitle.
+# Default is share/idle.ass
+#idleTemplatePath = path/to/idle/template.file
+
+[Server]
+# Server URL
+url = http://127.0.0.1:8000/
+
+# Credentials for server authentication
+login = login
+password = pass
+
+[Global]
+# Minimal level of messages to log
+loglevel = info
