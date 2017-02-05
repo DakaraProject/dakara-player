@@ -12,7 +12,40 @@ class DakaraServer:
 
         # setting config
         self.server_url = config['url'] 
-        self.credentials = (config['login'], config['password'])
+
+        # authentication
+        self.authenticate(config)
+
+    def authenticate(self, config):
+        data = {
+            'username': config['login'],
+            'password': config['password'],
+            }
+
+        response = requests.post(
+                self.server_url + "api-token-auth/",
+                data=data
+                )
+
+        if response.ok:
+            token = response.json().get('token')
+            self.logger.info("Login success")
+            self.logger.debug("Token: " + token)
+            self.headers = {'Authorization': 'Token ' + token }
+            return
+
+        if response.status_code == 400:
+            raise AuthenticationError("Login failed, check config file") 
+
+        raise AuthenticationError(
+            """Unable to send status to server
+Error code: {code}
+Message: {message}""".format(
+                code=response.status_code,
+                message=response.text
+                )
+            )
+
 
     def get_next_song(self):
         """ Request next song from the server
@@ -25,7 +58,7 @@ class DakaraServer:
         try:
             response = requests.get(
                     self.server_url + "player/status/",
-                    auth=self.credentials
+                    headers=self.headers
                     )
 
         except requests.exceptions.RequestException:
@@ -61,7 +94,7 @@ Error: {error_message}""".format(
         try:
             response = requests.post(
                     self.server_url + "player/error/",
-                    auth=self.credentials,
+                    headers=self.headers,
                     json=data
                     )
 
@@ -105,7 +138,7 @@ Paused: {paused}""".format(
         try:
             response = requests.put(
                     self.server_url + "player/status/",
-                    auth=self.credentials,
+                    headers=self.headers,
                     json=data,
                     )
 
@@ -124,3 +157,7 @@ Message: {message}""".format(
             ))
 
         return {'pause': True, 'skip': False}
+
+class AuthenticationError(Exception):
+    """ Error raised when authentication fails
+    """
