@@ -4,11 +4,13 @@ import logging
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 
+
 class DakaraServer:
     """ Object representing a connection with the Dakara server
 
         Args:
-            config (): dictionary-like set of data regarding the connection.
+            config (configparser.SectionProxy): dictionary-like set of data
+                regarding the connection.
     """
 
     def __init__(self, config):
@@ -225,9 +227,11 @@ Message: {message}""".format(
 
         return {'pause': True, 'skip': False}
 
+
 class AuthenticationError(Exception):
     """ Error raised when authentication fails
     """
+
 
 class CommunicationError(Exception):
     """ Error raised when the communication with the server failed during a
