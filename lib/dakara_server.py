@@ -14,12 +14,14 @@ class DakaraServer:
         self.server_url = config['url'] 
 
         # authentication
-        self.authenticate(config)
+        self.token = None
+        self.login = config['login']
+        self.password = config['password']
 
-    def authenticate(self, config):
+    def authenticate(self):
         data = {
-            'username': config['login'],
-            'password': config['password'],
+            'username': self.login,
+            'password': self.password,
             }
 
         response = requests.post(
@@ -28,14 +30,14 @@ class DakaraServer:
                 )
 
         if response.ok:
-            token = response.json().get('token')
-            self.logger.info("Login success")
-            self.logger.debug("Token: " + token)
-            self.headers = {'Authorization': 'Token ' + token }
+            self.token = response.json().get('token')
+            self.logger.info("Login to server successful")
+            self.logger.debug("Token: " + self.token)
             return
 
         if response.status_code == 400:
-            raise AuthenticationError("Login failed, check config file") 
+            raise AuthenticationError("Login to server failed, check the \
+config file")
 
         raise AuthenticationError(
             """Unable to send status to server
@@ -46,7 +48,37 @@ Message: {message}""".format(
                 )
             )
 
+    def authenticated(fun):
+        """ Decorator that ensures the token is set when the given function is
+            called
 
+            Args:
+                fun (function): function to decorate.
+
+            Returns (function): decorated function.
+        """
+        def call(self, *args, **kwargs):
+            if self.token is None:
+                raise AuthenticationError("No connection established")
+
+            return fun(self, *args, **kwargs)
+
+        return call
+
+    @authenticated
+    def _get_token_header(self):
+        """ Get the connection token as it should appear in the header
+
+            Can be called only once login has been sucessful.
+
+            Returns:
+                (dict) formatted token.
+        """
+        return {
+                'Authorization': 'Token ' + self.token
+                }
+
+    @authenticated
     def get_next_song(self):
         """ Request next song from the server
 
@@ -58,7 +90,7 @@ Message: {message}""".format(
         try:
             response = requests.get(
                     self.server_url + "player/status/",
-                    headers=self.headers
+                    headers=self._get_token_header()
                     )
 
         except requests.exceptions.RequestException:
@@ -76,6 +108,7 @@ Message: {message}""".format(
             message=response.text
             ))
 
+    @authenticated
     def send_error(self, playing_id, error_message):
         """ Send provided error message to the server
         """
@@ -94,7 +127,7 @@ Error: {error_message}""".format(
         try:
             response = requests.post(
                     self.server_url + "player/error/",
-                    headers=self.headers,
+                    headers=self._get_token_header(),
                     json=data
                     )
 
@@ -110,6 +143,7 @@ Message: {message}""".format(
                 message=response.text
                 ))
 
+    @authenticated
     def send_status_get_commands(self, playing_id, timing=0, paused=False):
         """ Send current status to the server
 
@@ -138,7 +172,7 @@ Paused: {paused}""".format(
         try:
             response = requests.put(
                     self.server_url + "player/status/",
-                    headers=self.headers,
+                    headers=self._get_token_header(),
                     json=data,
                     )
 
