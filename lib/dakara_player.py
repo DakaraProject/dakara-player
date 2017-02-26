@@ -28,6 +28,7 @@ class DakaraPlayer:
         # set modules up
         self.vlc_player = VlcPlayer(player_config)
         self.dakara_server = DakaraServer(server_config)
+        self.dakara_server.authenticate()
         self.vlc_player.set_song_end_callback(self.handle_song_end)
         self.vlc_player.set_error_callback(self.handle_error)
 
