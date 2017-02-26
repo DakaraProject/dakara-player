@@ -3,9 +3,7 @@ import os
 import logging
 import urllib
 from threading import Thread
-from .text_generator import TextGenerator, \
-                            TRANSITION_TEMPLATE_PATH, \
-                            IDLE_TEMPLATE_PATH
+from .text_generator import TextGenerator
 
 SHARE_DIR = 'share'
 
@@ -40,19 +38,9 @@ class VlcPlayer:
                 config.get('transitionBgPath', TRANSITION_BG_PATH)
                 )
 
-        transition_template_path = config.get(
-                'transitionTemplatePath',
-                TRANSITION_TEMPLATE_PATH
-                )
-
         # parameters for idle screen
         self.load_idle_bg_path(
                 config.get('idleBgPath', IDLE_BG_PATH)
-                )
-
-        idle_template_path = config.get(
-                'idleTemplatePath',
-                IDLE_TEMPLATE_PATH
                 )
 
         # playlist entry id of the current song
@@ -72,10 +60,7 @@ class VlcPlayer:
         self.event_manager = self.player.event_manager()
 
         # transition screen
-        self.text_generator = TextGenerator(
-                transition_template_path,
-                idle_template_path
-                )
+        self.text_generator = TextGenerator(config)
 
         # display vlc version
         self.vlc_version = vlc.libvlc_get_version().decode()
