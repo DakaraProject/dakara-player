@@ -6,6 +6,7 @@ import logging
 import coloredlogs
 from .vlc_player import VlcPlayer
 from .dakara_server import DakaraServer
+from .font_loader import FontLoader
 
 CONFIG_FILE_PATH = "config.ini"
 LOGLEVEL = 'INFO'
@@ -26,6 +27,8 @@ class DakaraPlayer:
         self.configure_logger(global_config)
 
         # set modules up
+        self.font_loader = FontLoader()
+        self.font_loader.load()
         self.vlc_player = VlcPlayer(player_config)
         self.dakara_server = DakaraServer(server_config)
         self.dakara_server.authenticate()
@@ -161,17 +164,15 @@ class DakaraPlayer:
         def handle_signal(signum, frame):
             # ignore any other Ctrl C
             signal.signal(signal.SIGINT, signal.SIG_IGN)
-            self.stop()
 
         try:
             self.start()
             signal.signal(signal.SIGINT, handle_signal)
             signal.pause()
 
-        except:
-            # stop the player
-            self.vlc_player.clean()
-            raise
+        finally:
+            # stop the daemon
+            self.stop()
 
     def start(self):
         """ Query music, then communicate with the server
@@ -188,4 +189,5 @@ class DakaraPlayer:
         self.stop_flag = True
         self.server_timer.cancel()
         self.vlc_player.clean()
+        self.font_loader.unload()
         self.logger.info("Daemon stopped")

@@ -4,6 +4,7 @@ import shutil
 import tempfile
 from string import Template
 from codecs import open
+from configparser import ConfigParser
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 SHARE_DIR = 'share'
@@ -14,11 +15,16 @@ TRANSITION_TEXT_NAME = "transition.ass"
 IDLE_TEMPLATE_NAME = "idle.ass"
 IDLE_TEXT_NAME = "idle.ass"
 
+ICON_MAP_FILE = "font-awesome.ini"
+
 class TextGenerator:
 
     def __init__(self, config):
         # create logger
         self.logger = logging.getLogger('TextGenerator')
+
+        # load icon mapping
+        self.load_icon_map()
 
         # load templates
         self.load_templates(config)
@@ -38,7 +44,6 @@ class TextGenerator:
                 )
 
     def load_templates(self, config):
-
         # create Jinja2 environment
         self.environment = Environment(
                 loader=FileSystemLoader(
@@ -49,6 +54,10 @@ class TextGenerator:
                         )
                     )
                 )
+
+        # add filter for converting font icon name to character
+        self.environment.filters['icon'] = lambda name: \
+                chr(int(self.icon_map.get(name, '0020'), 16))
 
         transition_template_path = config.get('transitionTemplateName', TRANSITION_TEMPLATE_NAME)
         idle_template_path = config.get('idleTemplateName', IDLE_TEMPLATE_NAME)
@@ -138,6 +147,20 @@ class TextGenerator:
 \"{}\"".format(self.transition_text_path))
 
         return self.transition_text_path
+
+    def load_icon_map(self):
+        """ Load the icon map
+        """
+        icon_map_path = os.path.join(SHARE_DIR, ICON_MAP_FILE)
+
+        if not os.path.isfile(icon_map_path):
+            raise IOError("Icon font map file '{}' not found".format(
+                icon_map_path
+                ))
+
+        icon_map = ConfigParser()
+        icon_map.read(icon_map_path)
+        self.icon_map = icon_map['map']
 
     def load_transition_template(self, template_name):
         """ Load transition screen text template file
