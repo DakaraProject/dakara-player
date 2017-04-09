@@ -39,7 +39,7 @@ class DakaraServer:
         # connect to the server with login/password
         try:
             response = requests.post(
-                    self.server_url + "api-token-auth/",
+                    self.server_url + "token-auth/",
                     data=data
                     )
 
