@@ -1,5 +1,6 @@
 import requests
 import logging
+import urllib.parse
 
 
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -18,7 +19,7 @@ class DakaraServer:
         self.logger = logging.getLogger('DakaraServer')
 
         # setting config
-        self.server_url = config['url'] 
+        self.server_url = urllib.parse.urljoin(config['url'], 'api/')
 
         # authentication
         self.token = None
