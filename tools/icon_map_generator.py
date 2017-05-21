@@ -35,8 +35,6 @@ def generate(css_file, ini_file):
             code_hex = '0x' + code[1:]
 
         else:
-            import ipdb
-            ipdb.set_trace()
             code_hex = hex(ord(code))
 
         ini_dict[name] = code_hex
