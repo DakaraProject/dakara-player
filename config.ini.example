@@ -9,15 +9,38 @@ karaFolder = /path/to/folder
 # Enable or disable fullscreen mode
 fullscreen = False
 
-# If you need to disable hardware acceleration:
-# (Taken from here: http://stackoverflow.com/a/35251905)
+# VLC hardware acceleration
+# It is STRONGLY recommended to enable hardware acceleration if you run the
+# server and the player on the same computer. You will experience unpleasant
+# lags otherwise.
+# You have to choose which hardware acceleration VLC will use, depending on your
+# graphic card. Ensure that the corresponding drivers are installed on your
+# system. Selecting the wrong hardware acceleration driver will result into
+# laggy output or no output at all.
+#
+# For Linux:
+# For Intel and ATI cards, use VA-API:
+#mediaParameter = avcodec-hw=vaapi
+# For Nvidia cards, use VDPAU which is chosen automatically by default. You can
+# explicitely set it:
+#mediaParameter = avcodec-hw=any
+#
+# For Windows:
+# For any cards, use DirectX:
+#mediaParameter = avcodec-hw=dxva2
+#
+# If for reasons you need to disable hardware acceleration completely:
 #mediaParameter = avcodec-hw=none
 
-# If you want subtitle rendering to use screen resolution instead of video's:
+# You can force subtitle rendering to use screen resolution instead of video's.
+# This will enhance subtitles quality on videos of small resolution, but may
+# slow down the rendering if hardware decoding cannot be properly set.
+#
+# On Linux:
 #instanceParameter = --vout x11
-# This may slow down the rendering if hardware decoding cannot be properly
-# called
-# Consult VLC expanded help for a complete list of parameters:
+
+# For other options, consult VLC expanded help for a complete list of
+# parameters:
 #   vlc --longhelp --advanced
 # Not all parameters are allowed thought
 # Some parameters only work on the instance, others only on the media 
