@@ -3,7 +3,11 @@ import logging
 import urllib.parse
 
 
+# enforce loglevel warning for requests log messages
 logging.getLogger("requests").setLevel(logging.WARNING)
+
+
+logger = logging.getLogger(__name__)
 
 
 class DakaraServer:
@@ -15,9 +19,6 @@ class DakaraServer:
     """
 
     def __init__(self, config):
-        # create logger
-        self.logger = logging.getLogger('DakaraServer')
-
         # setting config
         self.server_url = urllib.parse.urljoin(config['url'], 'api/')
 
@@ -52,8 +53,8 @@ to the server for authentication")
         # store token
         if response.ok:
             self.token = response.json().get('token')
-            self.logger.info("Login to server successful")
-            self.logger.debug("Token: " + self.token)
+            logger.info("Login to server successful")
+            logger.debug("Token: " + self.token)
             return
 
         # manage failed connection response
@@ -110,7 +111,7 @@ Message: {message}""".format(
                 (dict) next playlist entry or `None` if there is no more song in
                 the playlist.
         """
-        self.logger.debug("Asking new song to server")
+        logger.debug("Asking new song to server")
         try:
             response = requests.get(
                     self.server_url + "player/status/",
@@ -118,15 +119,15 @@ Message: {message}""".format(
                     )
 
         except requests.exceptions.RequestException:
-            self.logger.error("Network error")
+            logger.error("Network error")
             return None
 
         if response.ok:
             json = response.json()
             return json or None
 
-        self.logger.error("Unable to get new song response from server")
-        self.logger.debug("""Error code: {code}
+        logger.error("Unable to get new song response from server")
+        logger.debug("""Error code: {code}
 Message: {message}""".format(
             code=response.status_code,
             message=response.text
@@ -140,7 +141,7 @@ Message: {message}""".format(
                 playing_id (int): ID of the playlist entry that failed.
                 error_message (str): message explaining the error.
         """
-        self.logger.debug("""Sending error to server:
+        logger.debug("""Sending error to server:
 Playing entry ID: {playing_id}
 Error: {error_message}""".format(
             playing_id=playing_id,
@@ -160,12 +161,12 @@ Error: {error_message}""".format(
                     )
 
         except requests.exceptions.RequestException:
-            self.logger.error("Network error")
+            logger.error("Network error")
             return
 
         if not response.ok:
-            self.logger.error("Unable to send error message to server")
-            self.logger.debug("""Error code: {code}
+            logger.error("Unable to send error message to server")
+            logger.debug("""Error code: {code}
 Message: {message}""".format(
                 code=response.status_code,
                 message=response.text
@@ -190,7 +191,7 @@ Message: {message}""".format(
             Returns:
                 requested status from the server.
         """
-        self.logger.debug("""Sending status to server:
+        logger.debug("""Sending status to server:
 Playing entry ID: {playing_id}
 Timing: {timing}
 Paused: {paused}""".format(
@@ -213,14 +214,14 @@ Paused: {paused}""".format(
                     )
 
         except requests.exceptions.RequestException:
-            self.logger.error("Network error")
+            logger.error("Network error")
             return {'pause': True, 'skip': False}
 
         if response.ok:
             return response.json()
 
-        self.logger.error("Unable to send status to server")
-        self.logger.debug("""Error code: {code}
+        logger.error("Unable to send status to server")
+        logger.debug("""Error code: {code}
 Message: {message}""".format(
             code=response.status_code,
             message=response.text

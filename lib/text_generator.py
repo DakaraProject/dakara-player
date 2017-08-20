@@ -17,12 +17,11 @@ IDLE_TEXT_NAME = "idle.ass"
 
 ICON_MAP_FILE = "font-awesome.ini"
 
+logger = logging.getLogger(__name__)
+
 class TextGenerator:
 
     def __init__(self, config):
-        # create logger
-        self.logger = logging.getLogger('TextGenerator')
-
         # load icon mapping
         self.load_icon_map()
 
@@ -91,7 +90,7 @@ class TextGenerator:
         """ Create a temporary directory for text generation
         """
         self.tempdir = tempfile.mkdtemp(suffix=".dakara")
-        self.logger.debug("Creating temporary directory \"{}\"".format(
+        logger.debug("Creating temporary directory \"{}\"".format(
             self.tempdir
             ))
 
@@ -116,7 +115,7 @@ class TextGenerator:
         with open(self.idle_text_path, 'w', encoding='utf8') as file:
             file.write(idle_text)
 
-        self.logger.debug("Create idle screen text file in \
+        logger.debug("Create idle screen text file in \
 \"{}\"".format(self.idle_text_path))
 
         return self.idle_text_path
@@ -143,7 +142,7 @@ class TextGenerator:
         with open(self.transition_text_path, 'w', encoding='utf8') as file:
             file.write(transition_text)
 
-        self.logger.debug("Create transition screen text file in \
+        logger.debug("Create transition screen text file in \
 \"{}\"".format(self.transition_text_path))
 
         return self.transition_text_path
@@ -175,7 +174,7 @@ class TextGenerator:
             pass
 
         elif os.path.isfile(template_default_path):
-            self.logger.warning("Transition template file not found \"{}\", \
+            logger.warning("Transition template file not found \"{}\", \
 using default one".format(template_path))
 
             template_name = TRANSITION_TEMPLATE_NAME
@@ -187,7 +186,7 @@ using default one".format(template_path))
         self.transition_template = self.environment.get_template(template_name)
 
 
-        self.logger.debug("Loading transition template file \"{}\"".format(
+        logger.debug("Loading transition template file \"{}\"".format(
             template_path
             ))
 
@@ -204,7 +203,7 @@ using default one".format(template_path))
             pass
 
         elif os.path.isfile(template_default_path):
-            self.logger.warning("Idle template file not found \"{}\", \
+            logger.warning("Idle template file not found \"{}\", \
 using default one".format(template_path))
 
             template_name = IDLE_TEMPLATE_NAME
@@ -215,14 +214,14 @@ using default one".format(template_path))
 
         self.idle_template = self.environment.get_template(template_name)
 
-        self.logger.debug("Loading idle template file \"{}\"".format(
+        logger.debug("Loading idle template file \"{}\"".format(
             template_path
             ))
 
     def clean(self):
         """ Remove the temp directory
         """
-        self.logger.debug("Deleting temporary directory \"{}\"".format(
+        logger.debug("Deleting temporary directory \"{}\"".format(
             self.tempdir
             ))
         try:
@@ -230,4 +229,4 @@ using default one".format(template_path))
             self.tempdir = None
 
         except OSError:
-            self.logger.error("Unable to delete temporary directory")
+            logger.error("Unable to delete temporary directory")

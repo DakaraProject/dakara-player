@@ -65,4 +65,6 @@ password = pass
 
 [Global]
 # Minimal level of messages to log
+# For debug level, you can call `dakara.py` with the `−d` flag to show
+# traceback on exceptions
 loglevel = info
