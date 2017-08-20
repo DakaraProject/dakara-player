@@ -25,11 +25,11 @@ class TextGenerator:
         # load icon mapping
         self.load_icon_map()
 
-        # load templates
-        self.load_templates(config)
-
         # create temporary directory
         self.create_temp_directory()
+
+        # load templates
+        self.load_templates(config)
 
         # set text paths
         self.transition_text_path = os.path.join(
@@ -183,12 +183,11 @@ using default one".format(template_path))
             self.clean()
             raise IOError("No template file for transition screen found")
 
-        self.transition_template = self.environment.get_template(template_name)
-
-
         logger.debug("Loading transition template file \"{}\"".format(
             template_path
             ))
+
+        self.transition_template = self.environment.get_template(template_name)
 
     def load_idle_template(self, template_name):
         """ Load idle screen text template file
@@ -212,11 +211,11 @@ using default one".format(template_path))
             self.clean()
             raise IOError("No template file for idle screen found")
 
-        self.idle_template = self.environment.get_template(template_name)
-
         logger.debug("Loading idle template file \"{}\"".format(
             template_path
             ))
+
+        self.idle_template = self.environment.get_template(template_name)
 
     def clean(self):
         """ Remove the temp directory
