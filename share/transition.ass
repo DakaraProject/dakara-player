@@ -27,6 +27,8 @@ Dialogue: 0,0:00:00.10,0:00:05.00,detail-text,,0,0,0,,{\fad(500, 0)}{{ artist.na
 Dialogue: 0,0:00:00.20,0:00:05.00,detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome\fs40}{{ work.work.work_type.icon_name|icon }}{\r} 
 Dialogue: 0,0:00:00.20,0:00:05.00,detail-text,,0,0,0,,{\fad(500, 0)}{{ work.work.title }}{% if work.work.subtitle %} {\alpha&H80&}{{ work.work.subtitle }}{\r}{% endif %} {{ work.link_type }}{{ work.link_type_number or '' }}
 {% endfor %}
+Dialogue: 0,0:00:00.10,0:00:05.00,detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome\fs40}{{ "user"|icon }}{\r} 
+Dialogue: 0,0:00:00.10,0:00:05.00,detail-text,,0,0,0,,{\fad(500, 0)}{{ owner.username }}
 
 ; DON'T TOUCH THIS FILE!
 ; Your modification will be lost during the next update.

@@ -128,6 +128,7 @@ class TextGenerator:
                 - `title`: song title,
                 - `artists`: list of artists,
                 - `works`: list of works.
+                - `owner`: user who requested tho song,
 
             Args:
                 playlist_entry: dictionary containing keys for title,
