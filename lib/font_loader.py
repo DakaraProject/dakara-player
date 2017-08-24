@@ -51,7 +51,7 @@ class FontLoaderLinux(FontLoader):
 
         # ensure that the user font directory exists
         if not os.path.isdir(self.FONT_DIRECTORY_USER):
-            os.path.mkdir(self.FONT_DIRECTORY_USER)
+            os.mkdir(self.FONT_DIRECTORY_USER)
 
     def load(self):
         for font_file_name in FONT_FILE_NAME_LIST:
