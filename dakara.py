@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import logging
 from argparse import ArgumentParser
-from lib.dakara_player import DakaraPlayer
+from lib.dakara_player_vlc import DakaraPlayerVlc
 
 
 logger = logging.getLogger('dakara')
@@ -27,11 +27,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
-        kara_player = DakaraPlayer()
-        kara_player.deamon()
+        dakara = DakaraPlayerVlc()
+        rtrn = dakara.run()
 
     except Exception as error:
         if args.debug:
             raise
 
         logger.critical(error)
+
+    finally:
+        exit(rtrn)

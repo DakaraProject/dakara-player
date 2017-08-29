@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+from .daemon import DaemonWorker, stop_on_error
 
 
 FONT_DIRECTORY = "share"
@@ -9,7 +10,7 @@ FONT_FILE_NAME_LIST = (
         )
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("font_loader")
 
 
 def get_font_loader_class():
@@ -19,25 +20,39 @@ def get_font_loader_class():
     if 'win' in sys.platform:
         return FontLoaderWindows
 
+    else:
+        raise NotImplementedError(
+                "This operating system is not currently supported"
+                )
 
-class FontLoader:
+
+class FontLoader(DaemonWorker):
     GREETINGS = "Dummy font loader selected"
 
-    def __init__(self):
+    def init_worker(self):
         # show type of font loader
         logger.debug(self.GREETINGS)
 
         # call child init
-        self.init()
+        self.init_custom()
 
-    def init(self):
+    def init_custom(self):
         pass
 
+    @stop_on_error
     def load(self):
         pass
 
+    @stop_on_error
     def unload(self):
         pass
+
+    def __enter__(self):
+        self.load()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.unload()
 
 
 class FontLoaderLinux(FontLoader):
@@ -45,7 +60,8 @@ class FontLoaderLinux(FontLoader):
     FONT_DIRECTORY_SYSTEM = "/usr/share/fonts"
     FONT_DIRECTORY_USER = os.path.join(os.environ['HOME'], ".fonts")
 
-    def init(self):
+    @stop_on_error
+    def init_custom(self):
         # create list of fonts
         self.fonts_loaded = []
 
@@ -53,6 +69,7 @@ class FontLoaderLinux(FontLoader):
         if not os.path.isdir(self.FONT_DIRECTORY_USER):
             os.mkdir(self.FONT_DIRECTORY_USER)
 
+    @stop_on_error
     def load(self):
         for font_file_name in FONT_FILE_NAME_LIST:
             # check if font is in the project font directory
@@ -104,6 +121,7 @@ class FontLoaderLinux(FontLoader):
 class FontLoaderWindows(FontLoader):
     GREETINGS = "Font loader for Windows selected"
 
+    @stop_on_error
     def load(self):
         # since there seems to be no workable way to install fonts on Windows
         # through Python, we ask the user to do it by themselve

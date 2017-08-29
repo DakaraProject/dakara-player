@@ -1,11 +1,11 @@
 import os
 import logging
 import shutil
-import tempfile
 from string import Template
 from codecs import open
 from configparser import ConfigParser
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+from .daemon import DaemonWorker, stop_on_error
 
 SHARE_DIR = 'share'
 
@@ -17,16 +17,14 @@ IDLE_TEXT_NAME = "idle.ass"
 
 ICON_MAP_FILE = "font-awesome.ini"
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("text_generator")
 
-class TextGenerator:
-
-    def __init__(self, config):
+class TextGenerator(DaemonWorker):
+    @stop_on_error
+    def init_worker(self, config, tempdir):
+        self.tempdir = tempdir
         # load icon mapping
         self.load_icon_map()
-
-        # create temporary directory
-        self.create_temp_directory()
 
         # load templates
         self.load_templates(config)
@@ -42,6 +40,7 @@ class TextGenerator:
                 IDLE_TEXT_NAME
                 )
 
+    @stop_on_error
     def load_templates(self, config):
         # create Jinja2 environment
         self.environment = Environment(
@@ -65,36 +64,7 @@ class TextGenerator:
         self.load_transition_template(transition_template_path)
         self.load_idle_template(idle_template_path)
 
-    def with_temp_directory(fun):
-        """ Decorator that checks there is a temporary
-            directory created
-
-            The decorator will create a temporary directory
-            and then execute the given function.
-
-            Args:
-                fun: the function to decorate.
-
-            Returns:
-                the decorated function.
-        """
-        def call(self, *args, **kwargs):
-            if self.tempdir is None:
-                self.create_temp_directory()
-
-            return fun(self, *args, **kwargs)
-
-        return call
-
-    def create_temp_directory(self):
-        """ Create a temporary directory for text generation
-        """
-        self.tempdir = tempfile.mkdtemp(suffix=".dakara")
-        logger.debug("Creating temporary directory \"{}\"".format(
-            self.tempdir
-            ))
-
-    @with_temp_directory
+    @stop_on_error
     def create_idle_text(self, info):
         """ Create custom idle text and save it
 
@@ -120,7 +90,7 @@ class TextGenerator:
 
         return self.idle_text_path
 
-    @with_temp_directory
+    @stop_on_error
     def create_transition_text(self, playlist_entry):
         """ Create custom transition text and save it
 
@@ -148,6 +118,7 @@ class TextGenerator:
 
         return self.transition_text_path
 
+    @stop_on_error
     def load_icon_map(self):
         """ Load the icon map
         """
@@ -162,6 +133,7 @@ class TextGenerator:
         icon_map.read(icon_map_path)
         self.icon_map = icon_map['map']
 
+    @stop_on_error
     def load_transition_template(self, template_name):
         """ Load transition screen text template file
 
@@ -181,7 +153,6 @@ using default one".format(template_path))
             template_name = TRANSITION_TEMPLATE_NAME
 
         else:
-            self.clean()
             raise IOError("No template file for transition screen found")
 
         logger.debug("Loading transition template file \"{}\"".format(
@@ -190,6 +161,7 @@ using default one".format(template_path))
 
         self.transition_template = self.environment.get_template(template_name)
 
+    @stop_on_error
     def load_idle_template(self, template_name):
         """ Load idle screen text template file
 
@@ -209,7 +181,6 @@ using default one".format(template_path))
             template_name = IDLE_TEMPLATE_NAME
 
         else:
-            self.clean()
             raise IOError("No template file for idle screen found")
 
         logger.debug("Loading idle template file \"{}\"".format(
@@ -217,16 +188,3 @@ using default one".format(template_path))
             ))
 
         self.idle_template = self.environment.get_template(template_name)
-
-    def clean(self):
-        """ Remove the temp directory
-        """
-        logger.debug("Deleting temporary directory \"{}\"".format(
-            self.tempdir
-            ))
-        try:
-            shutil.rmtree(self.tempdir)
-            self.tempdir = None
-
-        except OSError:
-            logger.error("Unable to delete temporary directory")

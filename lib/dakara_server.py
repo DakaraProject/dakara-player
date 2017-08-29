@@ -1,24 +1,25 @@
 import requests
 import logging
 import urllib.parse
+from .daemon import DaemonWorker, stop_on_error
 
 
 # enforce loglevel warning for requests log messages
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("dakara_server")
 
 
-class DakaraServer:
+class DakaraServer(DaemonWorker):
     """ Object representing a connection with the Dakara server
 
         Args:
             config (configparser.SectionProxy): dictionary-like set of data
                 regarding the connection.
     """
-
-    def __init__(self, config):
+    @stop_on_error
+    def init_worker(self, config):
         # setting config
         self.server_url = urllib.parse.urljoin(config['url'], 'api/')
 
@@ -27,6 +28,7 @@ class DakaraServer:
         self.login = config['login']
         self.password = config['password']
 
+    @stop_on_error
     def authenticate(self):
         """ Connect to the server
 
@@ -90,6 +92,7 @@ Message: {message}""".format(
 
         return call
 
+    @stop_on_error
     @authenticated
     def _get_token_header(self):
         """ Get the connection token as it should appear in the header
@@ -103,6 +106,7 @@ Message: {message}""".format(
                 'Authorization': 'Token ' + self.token
                 }
 
+    @stop_on_error
     @authenticated
     def get_next_song(self):
         """ Request next song from the server
@@ -133,6 +137,7 @@ Message: {message}""".format(
             message=response.text
             ))
 
+    @stop_on_error
     @authenticated
     def send_error(self, playing_id, error_message):
         """ Send provided error message to the server
@@ -172,6 +177,7 @@ Message: {message}""".format(
                 message=response.text
                 ))
 
+    @stop_on_error
     @authenticated
     def send_status_get_commands(self, playing_id, timing=0, paused=False):
         """ Send current status to the server

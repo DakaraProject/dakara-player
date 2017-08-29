@@ -3,7 +3,7 @@ import os
 import logging
 import urllib
 from threading import Thread
-from .text_generator import TextGenerator
+from .daemon import DaemonWorker, stop_on_error
 
 
 SHARE_DIR = 'share'
@@ -19,12 +19,13 @@ IDLE_BG_NAME = "idle.png"
 IDLE_BG_PATH = os.path.join(SHARE_DIR, IDLE_BG_NAME)
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("vlc_player")
 
 
-class VlcPlayer:
-
-    def __init__(self, config):
+class VlcPlayer(DaemonWorker):
+    @stop_on_error
+    def init_worker(self, config, text_generator):
+        self.text_generator = text_generator
         # parameters for instanciations or saved objects
         instance_parameter = config.get('instanceParameter', "")
         fullscreen = config.getboolean('fullscreen', False)
@@ -63,13 +64,11 @@ class VlcPlayer:
         self.player.set_fullscreen(fullscreen)
         self.event_manager = self.player.event_manager()
 
-        # transition screen
-        self.text_generator = TextGenerator(config)
-
         # display vlc version
         self.vlc_version = vlc.libvlc_get_version().decode()
         logger.info("VLC " + self.vlc_version)
 
+    @stop_on_error
     def load_transition_bg_path(self, bg_path):
         """ Load transition backgound file path
 
@@ -100,6 +99,7 @@ using default one".format(bg_path))
             bg_path
             ))
 
+    @stop_on_error
     def load_idle_bg_path(self, bg_path):
         """ Load idle backgound file path
 
@@ -130,6 +130,7 @@ using default one".format(bg_path))
             bg_path
             ))
 
+    @stop_on_error
     def set_song_end_callback(self, callback):
         """ Assign callback for when player reachs the end of current song
 
@@ -143,6 +144,7 @@ using default one".format(bg_path))
 
         self.song_end_external_callback = callback
 
+    @stop_on_error
     def song_end_callback(self, event):
         """ Callback called when song end reached occurs
 
@@ -183,6 +185,7 @@ using default one".format(bg_path))
 
         thread.start()
 
+    @stop_on_error
     def set_error_callback(self, callback):
         """ Assign callback for when error occured
 
@@ -196,6 +199,7 @@ using default one".format(bg_path))
 
         self.error_external_callback = callback
 
+    @stop_on_error
     def error_callback(self, event):
         """ Callback called when error occurs
 
@@ -228,6 +232,7 @@ using default one".format(bg_path))
         self.in_transition = False
         thread.start()
 
+    @stop_on_error
     def play_media(self, media):
         """ Play the given media
 
@@ -237,6 +242,7 @@ using default one".format(bg_path))
         self.player.set_media(media)
         self.player.play()
 
+    @stop_on_error
     def play_song(self, playlist_entry):
         """ Play music specified
 
@@ -282,6 +288,7 @@ using default one".format(bg_path))
         self.play_media(media_transition)
         logger.info("Playing transition for \"{}\"".format(file_path))
 
+    @stop_on_error
     def play_idle_screen(self):
         """ Play idle screen
         """
@@ -307,6 +314,7 @@ using default one".format(bg_path))
         self.play_media(media)
         logger.debug("Playing idle screen")
 
+    @stop_on_error
     def is_idle(self):
         """ Get player idling status
 
@@ -317,6 +325,7 @@ using default one".format(bg_path))
         """
         return self.playing_id is None
 
+    @stop_on_error
     def get_playing_id(self):
         """ Playlist entry ID getter
 
@@ -326,6 +335,7 @@ using default one".format(bg_path))
         """
         return self.playing_id
 
+    @stop_on_error
     def get_timing(self):
         """ Player timing getter
 
@@ -344,6 +354,7 @@ using default one".format(bg_path))
 
         return timing
 
+    @stop_on_error
     def is_paused(self):
         """ Player pause status getter
 
@@ -352,6 +363,7 @@ using default one".format(bg_path))
         """
         return self.player.get_state() == vlc.State.Paused
 
+    @stop_on_error
     def set_pause(self, pause):
         """ Pause playing song when True
             unpause when False
@@ -368,14 +380,11 @@ using default one".format(bg_path))
                 self.player.play()
                 logger.info("Resuming play")
 
-    def stop(self):
+    def stop_player(self):
         """ Stop playing music
         """
         self.player.stop()
         logger.info("Stopping player")
 
-    def clean(self):
-        """ Stop playing music and clean generated materials
-        """
-        self.stop()
-        self.text_generator.clean()
+    def __exit__(self, type, value, traceback):
+        self.stop_player()
