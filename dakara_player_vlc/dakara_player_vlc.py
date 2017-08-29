@@ -3,6 +3,7 @@ import logging
 from threading import Event, Thread
 from configparser import ConfigParser
 from tempfile import TemporaryDirectory
+from contextlib import ExitStack
 
 import coloredlogs
 
@@ -118,38 +119,51 @@ class DakaraDaemon(DaemonMaster):
                   in the daemon thread);
                 * an exception has been raised within the polling thread.
         """
-        # get the different daemon workers
-        with TemporaryDirectory(
-                suffix='.dakara'
-                ) as tempdir:
-            with FontLoader(
-                    self.stop
-                    ) as font_loader:
-                with TextGenerator(
-                        self.stop,
-                        self.config['Player'],
-                        tempdir
-                        ) as text_generator:
-                    with VlcPlayer(
-                            self.stop,
-                            self.config['Player'],
-                            text_generator
-                            ) as vlc_player:
-                        with DakaraServer(
-                                self.stop,
-                                self.config['Server']
-                                ) as dakara_server:
-                            with DakaraManager(
-                                    self.stop,
-                                    font_loader,
-                                    vlc_player,
-                                    dakara_server
-                                    ) as dakara_player:
-                                # start all the workers
-                                dakara_player.thread.start()
+        # get the different daemon workers as context managers
+        with ExitStack() as stack:
+            # temporary directory
+            tempdir = stack.enter_context(TemporaryDirectory(
+                    suffix='.dakara'
+                    ))
 
-                                # wait for stop event
-                                self.stop.wait()
+            # font loader
+            font_loader = stack.enter_context(FontLoader(
+                    self.stop
+                    ))
+
+            # text screen generator
+            text_generator = stack.enter_context(TextGenerator(
+                    self.stop,
+                    self.config['Player'],
+                    tempdir
+                    ))
+
+            # vlc player
+            vlc_player = stack.enter_context(VlcPlayer(
+                    self.stop,
+                    self.config['Player'],
+                    text_generator
+                    ))
+
+            # communication with the dakara server
+            dakara_server = stack.enter_context(DakaraServer(
+                    self.stop,
+                    self.config['Server']
+                    ))
+
+            # manager for the precedent workers
+            dakara_manager = stack.enter_context(DakaraManager(
+                    self.stop,
+                    font_loader,
+                    vlc_player,
+                    dakara_server
+                    ))
+
+            # start all the workers
+            dakara_manager.thread.start()
+
+            # wait for stop event
+            self.stop.wait()
 
     @staticmethod
     def load_config(config_path):
