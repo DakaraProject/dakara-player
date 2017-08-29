@@ -1,4 +1,4 @@
-from threading import Event, Timer
+from threading import Event, Timer, Thread
 import logging
 
 
@@ -55,17 +55,20 @@ class DaemonMaster(DaemonWorker):
         # create empty pool of threads
         self.threads = []
 
+        # create thread for itself
+        self.thread = Thread(target=self.run)
+
         # perform other custom actions
         self.init_master(*args, **kwargs)
 
     def init_master(self, *args, **kwargs):
         pass
 
-    def __exit__(self, type, value, traceback):
-        # stop the daemon
-        self.stop.set()
+    def run(self):
+        pass
 
-        # wait for all threads to close
+    def __exit__(self, type, value, traceback):
+        # request all threads to close
         threads_amount = len(self.threads)
         for index, thread in enumerate(self.threads):
             logger.debug("Closing thread '{}' {} of {}".format(
@@ -85,3 +88,8 @@ class DaemonMaster(DaemonWorker):
             # in all case, wait for termination
             thread.join()
 
+        # stop the daemon
+        self.stop.set()
+
+        # requeste to stop its own thread
+        self.thread.join()

@@ -27,52 +27,47 @@ coloredlogs.install(
         )
 
 
-CONFIG_FILE_PATH = "config.ini"
-
-
 class DakaraPlayerVlc:
-    def __init__(self):
+    def __init__(self, config_path):
         logger.debug("Starting main")
+
         # create stop event
         self.stop = Event()
 
+        # store arguments
+        self.config_path = config_path
+
     def run(self):
-        # create daemon thread
-        with DakaraDaemon(self.stop) as daemon:
-            error = False
-            try:
+        try:
+            # create daemon thread
+            with DakaraDaemon(self.stop, self.config_path) as daemon:
+                error = False
                 logger.debug("Create daemon thread")
-                daemon_thread = Thread(target=daemon.run)
-                daemon_thread.start()
+                daemon.thread.start()
 
                 # wait for stop event
                 logger.debug("Waiting for stop event")
-                while not self.stop.wait(1):
-                    pass
+                self.stop.wait()
 
-            # stop on Ctrl+C
-            except KeyboardInterrupt:
-                logger.debug("User stop caught")
-                self.stop.set()
+        # stop on Ctrl+C
+        except KeyboardInterrupt:
+            logger.debug("User stop caught")
+            self.stop.set()
 
-            # stop on error
-            else:
-                logger.debug("Internal error caught")
-                error = True
+        # stop on error
+        else:
+            logger.debug("Internal error caught")
+            error = True
 
-            # wait for daemon thread to finish
-            finally:
-                daemon_thread.join()
-
-            return error
+        return error
 
 
 class DakaraDaemon(DaemonMaster):
-    def init_master(self):
+    def init_master(self, config_path):
         logger.debug("Starting daemon")
 
         # load config
-        self.config = self.load_config(CONFIG_FILE_PATH)
+        self.config = self.load_config(config_path)
 
         # configure loader
         self.configure_logger()
@@ -123,7 +118,7 @@ class DakaraDaemon(DaemonMaster):
             Returns:
                 dictionary of the config.
         """
-        logger.debug("Reading config file '{}'".format(config_path))
+        logger.info("Reading config file '{}'".format(config_path))
 
         # check the config file is present
         if not os.path.isfile(config_path):
