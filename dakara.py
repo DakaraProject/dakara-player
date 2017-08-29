@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import logging
 from argparse import ArgumentParser
-from lib.dakara_player_vlc import DakaraPlayerVlc
+from dakara_player_vlc.dakara_player_vlc import DakaraPlayerVlc
 
 
 logger = logging.getLogger('dakara')
