@@ -54,9 +54,10 @@ class DakaraPlayerVlc:
         """ Launch the daemon and wait for the end
         """
         try:
+            error = False
+
             # create daemon thread
             with DakaraDaemon(self.stop, self.config_path) as daemon:
-                error = False
                 logger.debug("Create daemon thread")
                 daemon.thread.start()
 
@@ -146,7 +147,6 @@ class DakaraDaemon(DaemonMaster):
                                     ) as dakara_player:
                                 # start all the workers
                                 dakara_player.thread.start()
-                                self.threads.append(dakara_player.thread)
 
                                 # wait for stop event
                                 self.stop.wait()

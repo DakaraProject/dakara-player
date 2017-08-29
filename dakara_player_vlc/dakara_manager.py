@@ -19,9 +19,6 @@ class DakaraManager(DaemonWorker):
         self.vlc_player.set_song_end_callback(self.handle_song_end)
         self.vlc_player.set_error_callback(self.handle_error)
 
-        # set looping thread to a special initializer
-        self.thread = Timer(0, self.start)
-
     @stop_on_error
     def start(self):
         # initialize first steps

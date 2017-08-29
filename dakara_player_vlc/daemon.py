@@ -60,19 +60,16 @@ def stop_on_error(fun):
     return call
 
 
-class DaemonWorker:
-    """ Worker daemon
+class Daemon:
+    """ Base daemon class
 
-        The worker is bound to a stop event which when triggered will stop the
-        daemon.
+        The base daemon is bound to a stop event which when triggered will stop
+        the daemon.
 
-        Methods should be decorated with `stop_on_error` to stop the daemon if
-        the they encounter an exception during their call.
+        It behaves like a context manager that returns itself on enter and
+        triggers the stop event on exit.
 
-        The instance is a context manager that simply gives itself on enter and
-        does nothing on exit.
-
-        Initialisation must be performed through the `init_worker` method.
+        Initialisation must be performed through the `init_daemon` method.
     """
     def __init__(self, stop, *args, **kwargs):
         """ Initialization
@@ -86,6 +83,58 @@ class DaemonWorker:
         self.stop = stop
 
         # perform custom actions
+        self.init_daemon(*args, **kwargs)
+
+    def init_daemon(self, *args, **kwargs):
+        """ Stub for daemon custom initialization
+        """
+        pass
+
+    def __enter__(self):
+        """ Simple context manager enter
+
+            Just returns the instance.
+        """
+        return self
+
+    def __exit__(self, type, value, traceback):
+        """ Simple context manager exit
+
+            Just triggers the stop event.
+        """
+        # close daemon
+        self.stop.set()
+
+class DaemonWorker(Daemon):
+    """ Worker daemon
+
+        The worker daemon is bound to a stop event which when triggered will
+        stop the daemon.
+
+        It contains a timer thread `thread` already connected to the method
+        `start` which has to be redefined.
+
+        It behaves like a context manager that gives itself on enter. On exit,
+        it cancels and ends its timer thread and also triggers the stop event.
+
+        Methods should be decorated with `stop_on_error` to trigger the stop
+        event if they encounter an exception during their call.
+
+        Initialisation must be performed through the `init_worker` method.
+    """
+    def init_daemon(self, *args, **kwargs):
+        """ Daemon initialization
+
+            Cannot be modified directly by subclasses.
+
+            Assign the timer thread to the instance and make it target the
+            `start` method. The `start` method may call another method with a
+            timer after.
+        """
+        # create timer for itself
+        self.thread = Timer(0, self.start)
+
+        # perform other custom actions
         self.init_worker(*args, **kwargs)
 
     def init_worker(self, *args, **kwargs):
@@ -93,45 +142,57 @@ class DaemonWorker:
         """
         pass
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
+    def start(self):
+        """ Stub for the worker timer thread target
+        """
         pass
 
+    def __exit__(self, type, value, traceback):
+        """ Context manager exit
 
-class DaemonMaster(DaemonWorker):
+            Triggers the stop event, then cancels and close its timer thread.
+        """
+        # stop the daemon
+        self.stop.set()
+
+        # exit now if the timer is not running
+        if not self.thread.is_alive():
+            return
+
+        logger.debug("Closing worker thread '{}'".format(self.thread.getName()))
+
+        # cancel the timer, if the timer was waiting
+        self.thread.cancel()
+
+        # wait for termination, if the timer was running
+        self.thread.join()
+
+
+class DaemonMaster(Daemon):
     """ Master daemon
 
-        The master daemon is a special worker daemon. It is bound to a stop
-        event which when triggered will stop the daemon.
+        The master daemon is bound to a stop event which when triggered will
+        stop the daemon.
 
-        The master daemon contains a pool of threads and its own thread, that
-        should start its `run` method.
+        It contains a thread `thread` already connected to the method `run`
+        which has to be redefined.
 
-        The `run` method is designed to be called within the context manager
-        offered by the class.
+        The instance is a context manager that gives itself on enter. On exit,
+        it ends its own thread and also triggers the stop event.
 
-        Methods should be decorated with `stop_on_error` to stop the daemon if
-        they encounter an exception during their call.
-
-        The instance is a context manager that gives itself on enter and closes
-        all the thread pool members as well as its own thread on exit. Exiting
-        the context manager also triggers the stop event.
+        Methods should be decorated with `stop_on_error` to trigger the stop
+        event if they encounter an exception during their call.
 
         Initialisation must be performed through the `init_master` method.
     """
-    def init_worker(self, *args, **kwargs):
+    def init_daemon(self, *args, **kwargs):
         """ Worker custom initialization
 
             Cannot be modified directly by subclasses.
 
-            It creates the pool of threads controlled by the master daemon and
-            its own thread.
+            Assign its own thread to the instance and make it target the `run`
+            method.
         """
-        # create empty pool of threads
-        self.threads = []
-
         # create thread for itself
         self.thread = Thread(target=self.run)
 
@@ -144,38 +205,23 @@ class DaemonMaster(DaemonWorker):
         pass
 
     def run(self):
-        """ Stub for daemon run
+        """ Stub for daemon thread target
         """
         pass
 
     def __exit__(self, type, value, traceback):
-        """ Exit the context manager
+        """ Context manager exit
 
-            Make sure to terminate all threads in the pool, terminate its own
-            thread and trigger the stop event.
+            Triggers the stop event, then close its own thread.
         """
-        # request all threads to close
-        threads_amount = len(self.threads)
-        for index, thread in enumerate(self.threads):
-            logger.debug("Closing thread '{}' {} of {}".format(
-                thread.getName(),
-                index + 1,
-                threads_amount
-                ))
-
-            # leave if the thread is not running
-            if not thread.is_alive():
-                continue
-
-            # cancel if the thread is a timer
-            if isinstance(thread, Timer):
-                thread.cancel()
-
-            # in all case, wait for termination
-            thread.join()
-
         # stop the daemon
         self.stop.set()
 
-        # requeste to stop its own thread
+        # exit now if the timer is not running
+        if not self.thread.is_alive():
+            return
+
+        logger.debug("Closing daemon thread '{}'".format(self.thread.getName()))
+
+        # wait for termination
         self.thread.join()
