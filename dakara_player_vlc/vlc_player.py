@@ -1,8 +1,10 @@
-import vlc
 import os
 import logging
 import urllib
 from threading import Thread
+
+import vlc
+
 from .daemon import DaemonWorker, stop_on_error
 
 

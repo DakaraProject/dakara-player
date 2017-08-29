@@ -28,7 +28,20 @@ coloredlogs.install(
 
 
 class DakaraPlayerVlc:
+    """ Class associated with the main thread
+
+        It simply starts, launchs the daemon and waits for it to terminate or
+        for a user Ctrl+C to be fired.
+    """
     def __init__(self, config_path):
+        """ Initialization
+
+            Creates the daemon stop event
+
+            Args:
+                config_path (str): path to the config file. Will be passed to
+                    the daemon, who uses it.
+        """
         logger.debug("Starting main")
 
         # create stop event
@@ -38,6 +51,8 @@ class DakaraPlayerVlc:
         self.config_path = config_path
 
     def run(self):
+        """ Launch the daemon and wait for the end
+        """
         try:
             # create daemon thread
             with DakaraDaemon(self.stop, self.config_path) as daemon:
@@ -63,7 +78,19 @@ class DakaraPlayerVlc:
 
 
 class DakaraDaemon(DaemonMaster):
+    """ Class associated with the daemon thread
+
+        It simply starts, loads configuration, set the different worker daemons,
+        launches the main polling thread and waits for the end.
+    """
     def init_master(self, config_path):
+        """ Initialization
+
+            Load the config and set the logger loglevel.
+
+            Args:
+                config_path (str): path to the config file.
+        """
         logger.debug("Starting daemon")
 
         # load config
@@ -74,6 +101,22 @@ class DakaraDaemon(DaemonMaster):
 
     @stop_on_error
     def run(self):
+        """ Daemon main method
+
+            It sets up the different worker daemons and uses them as context
+            managers, which guarantee that their different clean methods will be
+            called prorperly.
+
+            Then its starts the polling thread (unique member of the threads
+            pool) and wait for the end.
+
+            When `run` is called, the end can come for several reasons:
+                * the main thread (who calls the daemon thread) has caught a
+                  Ctrl+C from the user;
+                * an exception has been raised within the `run` method (directly
+                  in the daemon thread);
+                * an exception has been raised within the polling thread.
+        """
         # get the different daemon workers
         with TemporaryDirectory(
                 suffix='.dakara'
@@ -129,7 +172,6 @@ class DakaraDaemon(DaemonMaster):
 
         return config
 
-    @stop_on_error
     def configure_logger(self):
         """ Set the logger config
 

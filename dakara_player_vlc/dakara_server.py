@@ -47,9 +47,9 @@ class DakaraServer(DaemonWorker):
                     data=data
                     )
 
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as error:
             raise CommunicationError("Network error, unable to talk \
-to the server for authentication")
+to the server for authentication") from error
 
         # manage sucessful connection response
         # store token
