@@ -20,7 +20,9 @@ stop event, as triggering it from anywhere leads to stop the whole daemon:
 """
 
 
+import sys
 from threading import Event, Timer, Thread
+from queue import Queue
 import logging
 
 
@@ -50,12 +52,18 @@ def stop_on_error(fun):
         assert isinstance(self.stop, Event), \
                 "Stop attribute must be of type Event"
 
+        assert hasattr(self, 'errors'), \
+                "{} must have an errors attribute".format(object_name)
+
+        assert isinstance(self.errors, Queue), \
+                "Errors attribute must be of type Queue"
+
         try:
             return fun(self, *args, **kwargs)
 
         except:
             self.stop.set()
-            raise
+            self.errors.put_nowait(sys.exc_info())
 
     return call
 
@@ -64,23 +72,28 @@ class Daemon:
     """ Base daemon class
 
         The base daemon is bound to a stop event which when triggered will stop
-        the daemon.
+        the daemon. It has also an errors queue to communicate errors to the
+        main thread.
 
         It behaves like a context manager that returns itself on enter and
         triggers the stop event on exit.
 
         Initialisation must be performed through the `init_daemon` method.
     """
-    def __init__(self, stop, *args, **kwargs):
+    def __init__(self, stop, errors, *args, **kwargs):
         """ Initialization
 
             Cannot be modified directly by subclasses.
 
-            Assign the mandatory stop event to the instance.
+            Assign the mandatory stop event and errors queue to the instance.
         """
         # associate the stop event
         assert isinstance(stop, Event), "Stop attribute must be of type Event"
         self.stop = stop
+
+        # associate the errors queue
+        assert isinstance(errors, Queue), "Errors attribute must be of type Queue"
+        self.errors = errors
 
         # perform custom actions
         self.init_daemon(*args, **kwargs)
@@ -109,7 +122,8 @@ class DaemonWorker(Daemon):
     """ Worker daemon
 
         The worker daemon is bound to a stop event which when triggered will
-        stop the daemon.
+        stop the daemon. It has also an errors queue to communicate errors to
+        the main thread.
 
         It contains a timer thread `thread` already connected to the method
         `start` which has to be redefined.
@@ -172,7 +186,8 @@ class DaemonMaster(Daemon):
     """ Master daemon
 
         The master daemon is bound to a stop event which when triggered will
-        stop the daemon.
+        stop the daemon. It has also an errors queue to communicate errors to
+        the main thread.
 
         It contains a thread `thread` already connected to the method `run`
         which has to be redefined.

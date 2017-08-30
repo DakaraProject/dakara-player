@@ -40,13 +40,11 @@ if __name__ == '__main__':
                 args.config
                 )
 
-        rtrn = dakara.run()
+        dakara.run()
 
     except Exception as error:
         if args.debug:
             raise
 
         logger.critical(error)
-
-    finally:
-        exit(rtrn)
+        exit(1)

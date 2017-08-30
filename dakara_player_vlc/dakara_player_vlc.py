@@ -4,6 +4,7 @@ from threading import Event, Thread
 from configparser import ConfigParser
 from tempfile import TemporaryDirectory
 from contextlib import ExitStack
+from queue import Queue, Empty
 
 import coloredlogs
 
@@ -48,6 +49,9 @@ class DakaraPlayerVlc:
         # create stop event
         self.stop = Event()
 
+        # create errors queue
+        self.errors = Queue()
+
         # store arguments
         self.config_path = config_path
 
@@ -55,10 +59,13 @@ class DakaraPlayerVlc:
         """ Launch the daemon and wait for the end
         """
         try:
-            error = False
-
             # create daemon thread
-            with DakaraDaemon(self.stop, self.config_path) as daemon:
+            with DakaraDaemon(
+                    self.stop,
+                    self.errors,
+                    self.config_path
+                    ) as daemon:
+
                 logger.debug("Create daemon thread")
                 daemon.thread.start()
 
@@ -74,9 +81,16 @@ class DakaraPlayerVlc:
         # stop on error
         else:
             logger.debug("Internal error caught")
-            error = True
 
-        return error
+            # get the error from the error queue and re-raise it
+            try:
+                _, error, traceback = self.errors.get(5)
+                error.with_traceback(traceback)
+                raise error
+
+            # if there is no error in the error queue, raise a general error
+            except Empty as empty_error:
+                raise RuntimeError("Unknown error happened") from empty_error
 
 
 class DakaraDaemon(DaemonMaster):
@@ -120,6 +134,7 @@ class DakaraDaemon(DaemonMaster):
                 * an exception has been raised within the polling thread.
         """
         # get the different daemon workers as context managers
+        # ExitStack makes the management of multiple context managers simpler
         with ExitStack() as stack:
             # temporary directory
             tempdir = stack.enter_context(TemporaryDirectory(
@@ -128,12 +143,14 @@ class DakaraDaemon(DaemonMaster):
 
             # font loader
             font_loader = stack.enter_context(FontLoader(
-                    self.stop
+                    self.stop,
+                    self.errors
                     ))
 
             # text screen generator
             text_generator = stack.enter_context(TextGenerator(
                     self.stop,
+                    self.errors,
                     self.config['Player'],
                     tempdir
                     ))
@@ -141,6 +158,7 @@ class DakaraDaemon(DaemonMaster):
             # vlc player
             vlc_player = stack.enter_context(VlcPlayer(
                     self.stop,
+                    self.errors,
                     self.config['Player'],
                     text_generator
                     ))
@@ -148,12 +166,14 @@ class DakaraDaemon(DaemonMaster):
             # communication with the dakara server
             dakara_server = stack.enter_context(DakaraServer(
                     self.stop,
+                    self.errors,
                     self.config['Server']
                     ))
 
             # manager for the precedent workers
             dakara_manager = stack.enter_context(DakaraManager(
                     self.stop,
+                    self.errors,
                     font_loader,
                     vlc_player,
                     dakara_server
@@ -195,6 +215,8 @@ class DakaraDaemon(DaemonMaster):
         loglevel = self.config['Global'].get('loglevel', LOGLEVEL)
         loglevel_numeric = getattr(logging, loglevel.upper(), None)
         if not isinstance(loglevel_numeric, int):
-            raise ValueError("Invalid log level \"{}\"".format(loglevel))
+            raise ValueError(
+                    "Invalid loglevel in configuration: '{}'".format(loglevel)
+                    )
 
         coloredlogs.set_level(loglevel_numeric)
