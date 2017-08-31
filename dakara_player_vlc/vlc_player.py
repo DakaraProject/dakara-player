@@ -5,7 +5,7 @@ from threading import Thread
 
 import vlc
 
-from .daemon import DaemonWorker, stop_on_error
+from .daemon import Daemon, stop_on_error
 
 
 SHARE_DIR = 'share'
@@ -24,9 +24,9 @@ IDLE_BG_PATH = os.path.join(SHARE_DIR, IDLE_BG_NAME)
 logger = logging.getLogger("vlc_player")
 
 
-class VlcPlayer(DaemonWorker):
+class VlcPlayer(Daemon):
     @stop_on_error
-    def init_worker(self, config, text_generator):
+    def init_daemon(self, config, text_generator):
         self.text_generator = text_generator
         # parameters for instanciations or saved objects
         instance_parameter = config.get('instanceParameter', "")

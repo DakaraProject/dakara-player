@@ -1,11 +1,12 @@
 import os
 import logging
 import shutil
-from string import Template
 from codecs import open
 from configparser import ConfigParser
+
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
-from .daemon import DaemonWorker, stop_on_error
+
+from .daemon import Daemon, stop_on_error
 
 SHARE_DIR = 'share'
 
@@ -19,9 +20,9 @@ ICON_MAP_FILE = "font-awesome.ini"
 
 logger = logging.getLogger("text_generator")
 
-class TextGenerator(DaemonWorker):
+class TextGenerator(Daemon):
     @stop_on_error
-    def init_worker(self, config, tempdir):
+    def init_daemon(self, config, tempdir):
         self.tempdir = tempdir
         # load icon mapping
         self.load_icon_map()

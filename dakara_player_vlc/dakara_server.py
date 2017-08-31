@@ -1,7 +1,9 @@
-import requests
 import logging
 import urllib.parse
-from .daemon import DaemonWorker, stop_on_error
+
+import requests
+
+from .daemon import Daemon, stop_on_error
 
 
 # enforce loglevel warning for requests log messages
@@ -11,7 +13,7 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 logger = logging.getLogger("dakara_server")
 
 
-class DakaraServer(DaemonWorker):
+class DakaraServer(Daemon):
     """ Object representing a connection with the Dakara server
 
         Args:
@@ -19,7 +21,7 @@ class DakaraServer(DaemonWorker):
                 regarding the connection.
     """
     @stop_on_error
-    def init_worker(self, config):
+    def init_daemon(self, config):
         # setting config
         self.server_url = urllib.parse.urljoin(config['url'], 'api/')
 

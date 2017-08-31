@@ -1,7 +1,7 @@
 import os
 import sys
 import logging
-from .daemon import DaemonWorker, stop_on_error
+from .daemon import Daemon, stop_on_error
 
 
 FONT_DIRECTORY = "share"
@@ -26,10 +26,10 @@ def get_font_loader_class():
                 )
 
 
-class FontLoader(DaemonWorker):
+class FontLoader(Daemon):
     GREETINGS = "Dummy font loader selected"
 
-    def init_worker(self):
+    def init_daemon(self):
         # show type of font loader
         logger.debug(self.GREETINGS)
 
