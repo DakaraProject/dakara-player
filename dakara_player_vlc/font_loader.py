@@ -7,6 +7,8 @@ from .daemon import Daemon, stop_on_error
 FONT_DIRECTORY = "share"
 FONT_FILE_NAME_LIST = (
         "fontawesome-webfont.ttf",
+        "Roboto-Light.ttf",
+        "Roboto-Thin.ttf",
         )
 
 
