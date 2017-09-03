@@ -6,6 +6,8 @@ import logging
 FONT_DIRECTORY = "share"
 FONT_FILE_NAME_LIST = (
         "fontawesome-webfont.ttf",
+        "Roboto-Light.ttf",
+        "Roboto-Thin.ttf",
         )
 
 
