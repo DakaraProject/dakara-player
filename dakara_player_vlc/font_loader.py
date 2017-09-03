@@ -47,11 +47,10 @@ class FontLoader(Daemon):
     def unload(self):
         pass
 
-    def __enter__(self):
+    def enter_daemon(self):
         self.load()
-        return self
 
-    def __exit__(self, type, value, traceback):
+    def exit_daemon(self, type, value, traceback):
         self.unload()
 
 

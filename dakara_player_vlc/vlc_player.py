@@ -388,5 +388,5 @@ using default one".format(bg_path))
         self.player.stop()
         logger.info("Stopping player")
 
-    def __exit__(self, type, value, traceback):
+    def exit_daemon(self, type, value, traceback):
         self.stop_player()

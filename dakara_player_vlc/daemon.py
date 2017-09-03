@@ -108,7 +108,13 @@ class Daemon:
 
             Just returns the instance.
         """
+        # custom enter action
+        self.enter_daemon()
+
         return self
+
+    def enter_daemon(self):
+        pass
 
     def __exit__(self, type, value, traceback):
         """ Simple context manager exit
@@ -117,6 +123,12 @@ class Daemon:
         """
         # close daemon
         self.stop.set()
+
+        # custom exit action
+        self.exit_daemon(type, value, traceback)
+
+    def exit_daemon(self, type, value, traceback):
+        pass
 
 class DaemonWorker(Daemon):
     """ Worker daemon
@@ -161,7 +173,13 @@ class DaemonWorker(Daemon):
         """
         pass
 
-    def __exit__(self, type, value, traceback):
+    def enter_daemon(self):
+        self.enter_worker()
+
+    def enter_worker(self):
+        pass
+
+    def exit_daemon(self, type, value, traceback):
         """ Context manager exit
 
             Triggers the stop event, then cancels and close its timer thread.
@@ -173,13 +191,22 @@ class DaemonWorker(Daemon):
         if not self.thread.is_alive():
             return
 
-        logger.debug("Closing worker thread '{}'".format(self.thread.getName()))
+        logger.debug("Closing worker thread '{}' ({})".format(
+            self.thread.getName(),
+            self.__class__.__name__
+            ))
 
         # cancel the timer, if the timer was waiting
         self.thread.cancel()
 
         # wait for termination, if the timer was running
         self.thread.join()
+
+        # custom exit
+        self.exit_worker(type, value, traceback)
+
+    def exit_worker(self, type, value, traceback):
+        pass
 
 
 class DaemonMaster(Daemon):
@@ -224,7 +251,13 @@ class DaemonMaster(Daemon):
         """
         pass
 
-    def __exit__(self, type, value, traceback):
+    def enter_daemon(self):
+        self.enter_master()
+
+    def enter_master(self):
+        pass
+
+    def exit_daemon(self, type, value, traceback):
         """ Context manager exit
 
             Triggers the stop event, then close its own thread.
@@ -236,7 +269,16 @@ class DaemonMaster(Daemon):
         if not self.thread.is_alive():
             return
 
-        logger.debug("Closing daemon thread '{}'".format(self.thread.getName()))
+        logger.debug("Closing daemon thread '{}' ({})".format(
+            self.thread.getName(),
+            self.__class__.__name__
+            ))
 
         # wait for termination
         self.thread.join()
+
+        # custom exit action
+        self.exit_master(type, value, traceback)
+
+    def exit_master(self, type, value, traceback):
+        pass
