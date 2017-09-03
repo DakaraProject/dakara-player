@@ -1,28 +1,37 @@
 #!/usr/bin/env python3
 import logging
+from argparse import ArgumentParser
 from lib.dakara_player import DakaraPlayer
 
 
+logger = logging.getLogger('dakara')
+
+
+def get_parser():
+    parser = ArgumentParser(
+            description="Player for the Dakara project"
+            )
+
+    parser.add_argument(
+            '-d',
+            '--debug',
+            action='store_true',
+            help="Enable debug output"
+            )
+
+    return parser
+
+
 if __name__ == '__main__':
+    parser = get_parser()
+    args = parser.parse_args()
+
     try:
         kara_player = DakaraPlayer()
         kara_player.deamon()
 
     except Exception as error:
-        if isinstance(error, NameError):
+        if args.debug:
             raise
 
-        # if the error was raised after the constructor call,
-        # display the exception with backtrace in debug mode,
-        # or display the error message only in any other mode
-        try:
-            if kara_player.loglevel == 'DEBUG':
-                kara_player.logger.exception(error)
-
-            else:
-                kara_player.logger.critical(error)
-
-        # if the error was raised during the conscructor call,
-        # just display the error message only in the root logger
-        except:
-            logging.critical(error)
+        logger.critical(error)

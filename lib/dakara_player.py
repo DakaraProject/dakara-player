@@ -6,16 +6,28 @@ import logging
 import coloredlogs
 from .vlc_player import VlcPlayer
 from .dakara_server import DakaraServer
+from .font_loader import get_font_loader_class
+
+
+FontLoader = get_font_loader_class()
+
 
 CONFIG_FILE_PATH = "config.ini"
 LOGLEVEL = 'INFO'
 
+
+logger = logging.getLogger(__name__)
+
+
+coloredlogs.install(
+        fmt='[%(asctime)s] %(name)s %(levelname)s %(message)s',
+        level=LOGLEVEL
+        )
+
+
 class DakaraPlayer:
 
     def __init__(self):
-        # create a logger
-        self.create_logger()
-
         # load the config
         config = self.load_config(CONFIG_FILE_PATH)
         global_config = config['Global']
@@ -26,6 +38,8 @@ class DakaraPlayer:
         self.configure_logger(global_config)
 
         # set modules up
+        self.font_loader = FontLoader()
+        self.font_loader.load()
         self.vlc_player = VlcPlayer(player_config)
         self.dakara_server = DakaraServer(server_config)
         self.dakara_server.authenticate()
@@ -53,23 +67,6 @@ class DakaraPlayer:
 
         return config
 
-    def create_logger(self):
-        """ Create a logger for the instance of the class
-        """
-        # create a logger
-        self.logger = logging.getLogger('DakaraPlayer')
-
-        # set the logging handle
-        # use coloredlogs for coloring the output
-        # using default logging level
-        coloredlogs.install(
-                fmt='[%(asctime)s] %(name)s %(levelname)s %(message)s',
-                level = LOGLEVEL
-                )
-
-        # storing default level
-        self.loglevel = LOGLEVEL
-
     def configure_logger(self, config):
         """ Set the logger config
 
@@ -87,7 +84,6 @@ class DakaraPlayer:
             raise ValueError("Invalid log level \"{}\"".format(loglevel))
 
         coloredlogs.set_level(loglevel_numeric)
-        self.loglevel = loglevel.upper()
 
     def handle_error(self, playing_id, message):
         """ Callback when a VLC error occurs
@@ -96,7 +92,7 @@ class DakaraPlayer:
                 playing_id: playlist entry ID.
                 message: text describing the error.
         """
-        self.logger.error(message)
+        logger.error(message)
         self.dakara_server.send_error(playing_id, message)
         self.add_next_music()
 
@@ -161,23 +157,21 @@ class DakaraPlayer:
         def handle_signal(signum, frame):
             # ignore any other Ctrl C
             signal.signal(signal.SIGINT, signal.SIG_IGN)
-            self.stop()
 
         try:
             self.start()
             signal.signal(signal.SIGINT, handle_signal)
             signal.pause()
 
-        except:
-            # stop the player
-            self.vlc_player.clean()
-            raise
+        finally:
+            # stop the daemon
+            self.stop()
 
     def start(self):
         """ Query music, then communicate with the server
             (thus, start server polling)
         """
-        self.logger.info("Daemons started")
+        logger.info("Daemons started")
         self.stop_flag = False
         self.add_next_music()
         self.poll_server()
@@ -188,4 +182,5 @@ class DakaraPlayer:
         self.stop_flag = True
         self.server_timer.cancel()
         self.vlc_player.clean()
-        self.logger.info("Daemon stopped")
+        self.font_loader.unload()
+        logger.info("Daemon stopped")
