@@ -35,15 +35,15 @@ import logging
 logger = logging.getLogger("daemon")
 
 
-class BaseDaemonThread:
+class BaseControlledThread:
     """ Base class for thread executed within a Daemon
 
         The thread is connected to the stop event and the error queue. In case
         of failure from the threaded function, the stop event is set and the
         exception is put in the error queue. The thread closes immediatlely.
 
-        This mechanism allows to completely stop the execution of the daemon if
-        an exception has been raised in a sub-thread. The excetpion is not
+        This mechanism allows to completely stop the execution of the program
+        if an exception has been raised in a sub-thread. The excetpion is not
         shown on screen but passed to the main thread.
 
         This class is abstract and must be inherited with either
@@ -80,21 +80,22 @@ class BaseDaemonThread:
         try:
             return super().run()
 
-        # if an error occurs, put it in the error queue and stop the daemon
+        # if an error occurs, put it in the error queue and notify the stop
+        # event
         except:
             self.errors.put_nowait(sys.exc_info())
             self.stop.set()
 
 
-class DaemonThread(BaseDaemonThread, Thread):
+class ControlledThread(BaseControlledThread, Thread):
     """ Thread executed within a Daemon
 
         The thread is connected to the stop event and the error queue. In case
         of failure from the threaded function, the stop event is set and the
         exception is put in the error queue. The thread closes immediatlely.
 
-        This mechanism allows to completely stop the execution of the daemon if
-        an exception has been raised in a sub-thread. The excetpion is not
+        This mechanism allows to completely stop the execution of the program
+        if an exception has been raised in a sub-thread. The excetpion is not
         shown on screen but passed to the main thread.
 
         Attributes:
@@ -108,7 +109,7 @@ class DaemonThread(BaseDaemonThread, Thread):
     pass
 
 
-class DaemonTimer(BaseDaemonThread, Timer):
+class ControlledTimer(BaseControlledThread, Timer):
     """ Timer thread executed within a Daemon
 
         The timer thread is connected to the stop event and the error queue. In
@@ -116,8 +117,8 @@ class DaemonTimer(BaseDaemonThread, Timer):
         the exception is put in the error queue. The timer thread closes
         immediatlely.
 
-        This mechanism allows to completely stop the execution of the daemon if
-        an exception has been raised in a timer sub-thread. The excetpion is
+        This mechanism allows to completely stop the execution of the program
+        if an exception has been raised in a timer sub-thread. The excetpion is
         not shown on screen but passed to the main thread.
 
         Attributes:
@@ -135,7 +136,7 @@ class Daemon:
     """ Base daemon class
 
         The base daemon is bound to a stop event which when triggered will stop
-        the daemon. It has also an errors queue to communicate errors to the
+        the program. It has also an errors queue to communicate errors to the
         main thread.
 
         It behaves like a context manager that returns itself on enter and
@@ -206,7 +207,7 @@ class Daemon:
 
             Just triggers the stop event.
         """
-        # close daemon
+        # notify the stop event
         self.stop.set()
 
         # custom exit action
@@ -218,27 +219,27 @@ class Daemon:
         pass
 
     def create_thread(self, *args, **kwargs):
-        """ Helper to easily create a DaemonThread.
+        """ Helper to easily create a ControlledThread object.
 
             Returns:
-                DaemonThread: secured thread instance.
+                ControlledThread: secured thread instance.
         """
-        return DaemonThread(self.stop, self.errors, *args, **kwargs)
+        return ControlledThread(self.stop, self.errors, *args, **kwargs)
 
     def create_timer(self, *args, **kwargs):
-        """ Helper to easily create a DaemonTimer
+        """ Helper to easily create a ControlledTimer object.
 
             Returns:
-                DaemonTimer: secured timer thread instance.
+                ControlledTimer: secured timer thread instance.
         """
-        return DaemonTimer(self.stop, self.errors, *args, **kwargs)
+        return ControlledTimer(self.stop, self.errors, *args, **kwargs)
 
 
 class DaemonWorker(Daemon):
     """ Worker daemon
 
         The worker daemon is bound to a stop event which when triggered will
-        stop the daemon. It has also an errors queue to communicate errors to
+        stop the program. It has also an errors queue to communicate errors to
         the main thread.
 
         It contains a timer thread `timer` already connected to the method
@@ -304,7 +305,7 @@ class DaemonWorker(Daemon):
             Triggers the stop event, then cancels and close its timer thread.
             It calls the worker context manager method.
         """
-        # stop the daemon
+        # notify the stop event
         self.stop.set()
 
         # exit now if the timer is not running
@@ -335,7 +336,7 @@ class DaemonMaster(Daemon):
     """ Master daemon
 
         The master daemon is bound to a stop event which when triggered will
-        stop the daemon. It has also an errors queue to communicate errors to
+        stop the program. It has also an errors queue to communicate errors to
         the main thread.
 
         It contains a thread `thread` already connected to the method `run`
@@ -378,7 +379,7 @@ class DaemonMaster(Daemon):
         pass
 
     def run(self):
-        """ Stub for daemon thread target
+        """ Stub for master thread target
         """
         pass
 
@@ -401,7 +402,7 @@ class DaemonMaster(Daemon):
             worker context manager method.
 
         """
-        # stop the daemon
+        # notify the stop event
         self.stop.set()
 
         # exit now if the thread is not running
