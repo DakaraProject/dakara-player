@@ -1,28 +1,30 @@
 import os
 import logging
-import shutil
 from codecs import open
 from configparser import ConfigParser
 
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+from jinja2 import Environment, FileSystemLoader
 
-from .daemon import Daemon, stop_on_error
 
 SHARE_DIR = 'share'
+
 
 TRANSITION_TEMPLATE_NAME = "transition.ass"
 TRANSITION_TEXT_NAME = "transition.ass"
 
+
 IDLE_TEMPLATE_NAME = "idle.ass"
 IDLE_TEXT_NAME = "idle.ass"
 
+
 ICON_MAP_FILE = "font-awesome.ini"
+
 
 logger = logging.getLogger("text_generator")
 
-class TextGenerator(Daemon):
-    @stop_on_error
-    def init_daemon(self, config, tempdir):
+
+class TextGenerator:
+    def __init__(self, config, tempdir):
         self.tempdir = tempdir
         # load icon mapping
         self.load_icon_map()
@@ -41,7 +43,6 @@ class TextGenerator(Daemon):
                 IDLE_TEXT_NAME
                 )
 
-    @stop_on_error
     def load_templates(self, config):
         # create Jinja2 environment
         self.environment = Environment(
@@ -56,16 +57,19 @@ class TextGenerator(Daemon):
 
         # add filter for converting font icon name to character
         self.environment.filters['icon'] = lambda name: \
-                chr(int(self.icon_map.get(name, '0020'), 16))
+            chr(int(self.icon_map.get(name, '0020'), 16))
 
-        transition_template_path = config.get('transitionTemplateName', TRANSITION_TEMPLATE_NAME)
+        transition_template_path = config.get(
+                'transitionTemplateName',
+                TRANSITION_TEMPLATE_NAME
+                )
+
         idle_template_path = config.get('idleTemplateName', IDLE_TEMPLATE_NAME)
 
         # load templates
         self.load_transition_template(transition_template_path)
         self.load_idle_template(idle_template_path)
 
-    @stop_on_error
     def create_idle_text(self, info):
         """ Create custom idle text and save it
 
@@ -91,7 +95,6 @@ class TextGenerator(Daemon):
 
         return self.idle_text_path
 
-    @stop_on_error
     def create_transition_text(self, playlist_entry):
         """ Create custom transition text and save it
 
@@ -119,7 +122,6 @@ class TextGenerator(Daemon):
 
         return self.transition_text_path
 
-    @stop_on_error
     def load_icon_map(self):
         """ Load the icon map
         """
@@ -134,7 +136,6 @@ class TextGenerator(Daemon):
         icon_map.read(icon_map_path)
         self.icon_map = icon_map['map']
 
-    @stop_on_error
     def load_transition_template(self, template_name):
         """ Load transition screen text template file
 
@@ -142,7 +143,10 @@ class TextGenerator(Daemon):
             transition screen.
         """
         template_path = os.path.join(SHARE_DIR, template_name)
-        template_default_path = os.path.join(SHARE_DIR, TRANSITION_TEMPLATE_NAME)
+        template_default_path = os.path.join(
+                SHARE_DIR,
+                TRANSITION_TEMPLATE_NAME
+                )
 
         if os.path.isfile(template_path):
             pass
@@ -162,7 +166,6 @@ using default one".format(template_path))
 
         self.transition_template = self.environment.get_template(template_name)
 
-    @stop_on_error
     def load_idle_template(self, template_name):
         """ Load idle screen text template file
 

@@ -3,8 +3,6 @@ import urllib.parse
 
 import requests
 
-from .daemon import Daemon, stop_on_error
-
 
 # enforce loglevel warning for requests log messages
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -13,15 +11,14 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 logger = logging.getLogger("dakara_server")
 
 
-class DakaraServer(Daemon):
+class DakaraServer:
     """ Object representing a connection with the Dakara server
 
         Args:
             config (configparser.SectionProxy): dictionary-like set of data
                 regarding the connection.
     """
-    @stop_on_error
-    def init_daemon(self, config):
+    def __init__(self, config):
         # setting config
         self.server_url = urllib.parse.urljoin(config['url'], 'api/')
 
@@ -30,7 +27,6 @@ class DakaraServer(Daemon):
         self.login = config['login']
         self.password = config['password']
 
-    @stop_on_error
     def authenticate(self):
         """ Connect to the server
 
@@ -84,7 +80,7 @@ Message: {message}""".format(
                 fun (function): function to decorate.
 
             Returns:
-                (function): decorated function.
+                function: decorated function.
         """
         def call(self, *args, **kwargs):
             if self.token is None:
@@ -94,7 +90,6 @@ Message: {message}""".format(
 
         return call
 
-    @stop_on_error
     @authenticated
     def _get_token_header(self):
         """ Get the connection token as it should appear in the header
@@ -102,20 +97,19 @@ Message: {message}""".format(
             Can be called only once login has been sucessful.
 
             Returns:
-                (dict): formatted token.
+                dict: formatted token.
         """
         return {
                 'Authorization': 'Token ' + self.token
                 }
 
-    @stop_on_error
     @authenticated
     def get_next_song(self):
         """ Request next song from the server
 
             Returns:
-                (dict) next playlist entry or `None` if there is no more song in
-                the playlist.
+                dict: next playlist entry or `None` if there is no more song
+                in the playlist.
         """
         logger.debug("Asking new song to server")
         try:
@@ -139,7 +133,6 @@ Message: {message}""".format(
             message=response.text
             ))
 
-    @stop_on_error
     @authenticated
     def send_error(self, playing_id, error_message):
         """ Send provided error message to the server
@@ -179,7 +172,6 @@ Message: {message}""".format(
                 message=response.text
                 ))
 
-    @stop_on_error
     @authenticated
     def send_status_get_commands(self, playing_id, timing=0, paused=False):
         """ Send current status to the server

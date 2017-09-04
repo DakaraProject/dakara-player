@@ -1,6 +1,6 @@
 import os
 import logging
-from threading import Event, Thread
+from threading import Event
 from configparser import ConfigParser
 from tempfile import TemporaryDirectory
 from contextlib import ExitStack
@@ -8,7 +8,7 @@ from queue import Queue, Empty
 
 import coloredlogs
 
-from .daemon import DaemonMaster, stop_on_error
+from .daemon import DaemonMaster
 from .text_generator import TextGenerator
 from .vlc_player import VlcPlayer
 from .dakara_server import DakaraServer
@@ -96,8 +96,8 @@ class DakaraPlayerVlc:
 class DakaraDaemon(DaemonMaster):
     """ Class associated with the daemon thread
 
-        It simply starts, loads configuration, set the different worker daemons,
-        launches the main polling thread and waits for the end.
+        It simply starts, loads configuration, set the different worker
+        daemons, launches the main polling thread and waits for the end.
     """
     def init_master(self, config_path):
         """ Initialization
@@ -115,13 +115,12 @@ class DakaraDaemon(DaemonMaster):
         # configure loader
         self.configure_logger()
 
-    @stop_on_error
     def run(self):
         """ Daemon main method
 
             It sets up the different worker daemons and uses them as context
-            managers, which guarantee that their different clean methods will be
-            called prorperly.
+            managers, which guarantee that their different clean methods will
+            be called prorperly.
 
             Then its starts the polling thread (unique member of the threads
             pool) and wait for the end.
@@ -129,12 +128,16 @@ class DakaraDaemon(DaemonMaster):
             When `run` is called, the end can come for several reasons:
                 * the main thread (who calls the daemon thread) has caught a
                   Ctrl+C from the user;
-                * an exception has been raised within the `run` method (directly
-                  in the daemon thread);
+                * an exception has been raised within the `run` method
+                  (directly in the daemon thread);
                 * an exception has been raised within the polling thread.
         """
         # get the different daemon workers as context managers
         # ExitStack makes the management of multiple context managers simpler
+        # This mechanism plus the use of Daemon classes allow to gracelly end
+        # the execution of any thread within the context manager. It guarantees
+        # as well that on leaving this context manager, all cleanup tasks will
+        # be executed.
         with ExitStack() as stack:
             # temporary directory
             tempdir = stack.enter_context(TemporaryDirectory(
@@ -142,18 +145,14 @@ class DakaraDaemon(DaemonMaster):
                     ))
 
             # font loader
-            font_loader = stack.enter_context(FontLoader(
-                    self.stop,
-                    self.errors
-                    ))
+            font_loader = stack.enter_context(FontLoader())
+            font_loader.load()
 
             # text screen generator
-            text_generator = stack.enter_context(TextGenerator(
-                    self.stop,
-                    self.errors,
+            text_generator = TextGenerator(
                     self.config['Player'],
                     tempdir
-                    ))
+                    )
 
             # vlc player
             vlc_player = stack.enter_context(VlcPlayer(
@@ -164,11 +163,8 @@ class DakaraDaemon(DaemonMaster):
                     ))
 
             # communication with the dakara server
-            dakara_server = stack.enter_context(DakaraServer(
-                    self.stop,
-                    self.errors,
-                    self.config['Server']
-                    ))
+            dakara_server = DakaraServer(self.config['Server'])
+            dakara_server.authenticate()
 
             # manager for the precedent workers
             dakara_manager = stack.enter_context(DakaraManager(
@@ -179,11 +175,14 @@ class DakaraDaemon(DaemonMaster):
                     dakara_server
                     ))
 
-            # start all the workers
-            dakara_manager.thread.start()
+            # start the worker thread
+            dakara_manager.timer.start()
 
             # wait for stop event
             self.stop.wait()
+
+            # leaving this method means leaving all the context managers and
+            # stop the program
 
     @staticmethod
     def load_config(config_path):

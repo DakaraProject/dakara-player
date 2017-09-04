@@ -1,11 +1,10 @@
 import os
 import logging
 import urllib
-from threading import Thread
 
 import vlc
 
-from .daemon import Daemon, stop_on_error
+from .daemon import Daemon
 
 
 SHARE_DIR = 'share'
@@ -25,7 +24,6 @@ logger = logging.getLogger("vlc_player")
 
 
 class VlcPlayer(Daemon):
-    @stop_on_error
     def init_daemon(self, config, text_generator):
         self.text_generator = text_generator
         # parameters for instanciations or saved objects
@@ -57,7 +55,8 @@ class VlcPlayer(Daemon):
         # flag set to True is a transition screen is playing
         self.in_transition = False
 
-        # media containing a song which will be played after the transition screen
+        # media containing a song which will be played after the transition
+        # screen
         self.media_pending = None
 
         # VLC objects
@@ -70,7 +69,6 @@ class VlcPlayer(Daemon):
         self.vlc_version = vlc.libvlc_get_version().decode()
         logger.info("VLC " + self.vlc_version)
 
-    @stop_on_error
     def load_transition_bg_path(self, bg_path):
         """ Load transition backgound file path
 
@@ -101,7 +99,6 @@ using default one".format(bg_path))
             bg_path
             ))
 
-    @stop_on_error
     def load_idle_bg_path(self, bg_path):
         """ Load idle backgound file path
 
@@ -132,7 +129,6 @@ using default one".format(bg_path))
             bg_path
             ))
 
-    @stop_on_error
     def set_song_end_callback(self, callback):
         """ Assign callback for when player reachs the end of current song
 
@@ -146,7 +142,6 @@ using default one".format(bg_path))
 
         self.song_end_external_callback = callback
 
-    @stop_on_error
     def song_end_callback(self, event):
         """ Callback called when song end reached occurs
 
@@ -165,7 +160,7 @@ using default one".format(bg_path))
             # if the transition screen has finished,
             # request to play the song itself
             self.in_transition = False
-            thread = Thread(
+            thread = self.create_thread(
                     target=self.play_media,
                     args=(self.media_pending, )
                     )
@@ -183,11 +178,10 @@ using default one".format(bg_path))
         else:
             # otherwise, the song has finished,
             # so do what should be done
-            thread = Thread(target=self.song_end_external_callback)
+            thread = self.create_thread(target=self.song_end_external_callback)
 
         thread.start()
 
-    @stop_on_error
     def set_error_callback(self, callback):
         """ Assign callback for when error occured
 
@@ -201,7 +195,6 @@ using default one".format(bg_path))
 
         self.error_external_callback = callback
 
-    @stop_on_error
     def error_callback(self, event):
         """ Callback called when error occurs
 
@@ -217,12 +210,12 @@ using default one".format(bg_path))
         # (https://forum.videolan.org/viewtopic.php?t=90720), it is very
         # unlikely that any error message will be caught this way
         error_message = vlc.libvlc_errmsg() or \
-                "No details, consult player logs"
+            "No details, consult player logs"
 
         if type(error_message) is bytes:
             error_message = error_message.decode()
 
-        thread = Thread(
+        thread = self.create_thread(
                 target=self.error_external_callback,
                 args=(
                     self.playing_id,
@@ -234,7 +227,6 @@ using default one".format(bg_path))
         self.in_transition = False
         thread.start()
 
-    @stop_on_error
     def play_media(self, media):
         """ Play the given media
 
@@ -244,7 +236,6 @@ using default one".format(bg_path))
         self.player.set_media(media)
         self.player.play()
 
-    @stop_on_error
     def play_song(self, playlist_entry):
         """ Play music specified
 
@@ -278,8 +269,14 @@ using default one".format(bg_path))
         self.media_pending.add_options(self.media_parameter)
 
         # create the transition screen
-        transition_text_path = self.text_generator.create_transition_text(playlist_entry)
-        media_transition = self.instance.media_new_path(self.transition_bg_path)
+        transition_text_path = self.text_generator.create_transition_text(
+                playlist_entry
+                )
+
+        media_transition = self.instance.media_new_path(
+                self.transition_bg_path
+                )
+
         media_transition.add_options(
                 self.media_parameter,
                 "sub-file={}".format(transition_text_path),
@@ -290,7 +287,6 @@ using default one".format(bg_path))
         self.play_media(media_transition)
         logger.info("Playing transition for \"{}\"".format(file_path))
 
-    @stop_on_error
     def play_idle_screen(self):
         """ Play idle screen
         """
@@ -316,7 +312,6 @@ using default one".format(bg_path))
         self.play_media(media)
         logger.debug("Playing idle screen")
 
-    @stop_on_error
     def is_idle(self):
         """ Get player idling status
 
@@ -327,7 +322,6 @@ using default one".format(bg_path))
         """
         return self.playing_id is None
 
-    @stop_on_error
     def get_playing_id(self):
         """ Playlist entry ID getter
 
@@ -337,7 +331,6 @@ using default one".format(bg_path))
         """
         return self.playing_id
 
-    @stop_on_error
     def get_timing(self):
         """ Player timing getter
 
@@ -356,7 +349,6 @@ using default one".format(bg_path))
 
         return timing
 
-    @stop_on_error
     def is_paused(self):
         """ Player pause status getter
 
@@ -365,7 +357,6 @@ using default one".format(bg_path))
         """
         return self.player.get_state() == vlc.State.Paused
 
-    @stop_on_error
     def set_pause(self, pause):
         """ Pause playing song when True
             unpause when False

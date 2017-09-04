@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import logging
 from argparse import ArgumentParser
+
 from dakara_player_vlc.dakara_player_vlc import DakaraPlayerVlc
 
 
@@ -24,7 +25,9 @@ def get_parser():
 
     parser.add_argument(
             '--config',
-            help="Path to the config file. Default: '{}'".format(CONFIG_FILE_PATH),
+            help="Path to the config file. Default: '{}'".format(
+                CONFIG_FILE_PATH
+                ),
             default=CONFIG_FILE_PATH
             )
 
