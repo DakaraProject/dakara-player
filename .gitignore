@@ -62,6 +62,7 @@ target/
 # Vim stuff
 *.sw[op]
 *.vim
+*.lvimrc
 
 # local config
 config.ini

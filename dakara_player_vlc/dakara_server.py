@@ -1,13 +1,14 @@
-import requests
 import logging
 import urllib.parse
+
+import requests
 
 
 # enforce loglevel warning for requests log messages
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("dakara_server")
 
 
 class DakaraServer:
@@ -17,7 +18,6 @@ class DakaraServer:
             config (configparser.SectionProxy): dictionary-like set of data
                 regarding the connection.
     """
-
     def __init__(self, config):
         # setting config
         self.server_url = urllib.parse.urljoin(config['url'], 'api/')
@@ -45,9 +45,9 @@ class DakaraServer:
                     data=data
                     )
 
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as error:
             raise CommunicationError("Network error, unable to talk \
-to the server for authentication")
+to the server for authentication") from error
 
         # manage sucessful connection response
         # store token
@@ -80,7 +80,7 @@ Message: {message}""".format(
                 fun (function): function to decorate.
 
             Returns:
-                (function): decorated function.
+                function: decorated function.
         """
         def call(self, *args, **kwargs):
             if self.token is None:
@@ -97,7 +97,7 @@ Message: {message}""".format(
             Can be called only once login has been sucessful.
 
             Returns:
-                (dict): formatted token.
+                dict: formatted token.
         """
         return {
                 'Authorization': 'Token ' + self.token
@@ -108,8 +108,8 @@ Message: {message}""".format(
         """ Request next song from the server
 
             Returns:
-                (dict) next playlist entry or `None` if there is no more song in
-                the playlist.
+                dict: next playlist entry or `None` if there is no more song
+                in the playlist.
         """
         logger.debug("Asking new song to server")
         try:

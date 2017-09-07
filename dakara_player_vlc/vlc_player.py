@@ -1,9 +1,10 @@
-import vlc
 import os
 import logging
 import urllib
-from threading import Thread
-from .text_generator import TextGenerator
+
+import vlc
+
+from .daemon import Daemon
 
 
 SHARE_DIR = 'share'
@@ -19,12 +20,12 @@ IDLE_BG_NAME = "idle.png"
 IDLE_BG_PATH = os.path.join(SHARE_DIR, IDLE_BG_NAME)
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("vlc_player")
 
 
-class VlcPlayer:
-
-    def __init__(self, config):
+class VlcPlayer(Daemon):
+    def init_daemon(self, config, text_generator):
+        self.text_generator = text_generator
         # parameters for instanciations or saved objects
         instance_parameter = config.get('instanceParameter', "")
         fullscreen = config.getboolean('fullscreen', False)
@@ -54,7 +55,8 @@ class VlcPlayer:
         # flag set to True is a transition screen is playing
         self.in_transition = False
 
-        # media containing a song which will be played after the transition screen
+        # media containing a song which will be played after the transition
+        # screen
         self.media_pending = None
 
         # VLC objects
@@ -62,9 +64,6 @@ class VlcPlayer:
         self.player = self.instance.media_player_new()
         self.player.set_fullscreen(fullscreen)
         self.event_manager = self.player.event_manager()
-
-        # transition screen
-        self.text_generator = TextGenerator(config)
 
         # display vlc version
         self.vlc_version = vlc.libvlc_get_version().decode()
@@ -161,7 +160,7 @@ using default one".format(bg_path))
             # if the transition screen has finished,
             # request to play the song itself
             self.in_transition = False
-            thread = Thread(
+            thread = self.create_thread(
                     target=self.play_media,
                     args=(self.media_pending, )
                     )
@@ -179,7 +178,7 @@ using default one".format(bg_path))
         else:
             # otherwise, the song has finished,
             # so do what should be done
-            thread = Thread(target=self.song_end_external_callback)
+            thread = self.create_thread(target=self.song_end_external_callback)
 
         thread.start()
 
@@ -211,12 +210,12 @@ using default one".format(bg_path))
         # (https://forum.videolan.org/viewtopic.php?t=90720), it is very
         # unlikely that any error message will be caught this way
         error_message = vlc.libvlc_errmsg() or \
-                "No details, consult player logs"
+            "No details, consult player logs"
 
         if type(error_message) is bytes:
             error_message = error_message.decode()
 
-        thread = Thread(
+        thread = self.create_thread(
                 target=self.error_external_callback,
                 args=(
                     self.playing_id,
@@ -270,8 +269,14 @@ using default one".format(bg_path))
         self.media_pending.add_options(self.media_parameter)
 
         # create the transition screen
-        transition_text_path = self.text_generator.create_transition_text(playlist_entry)
-        media_transition = self.instance.media_new_path(self.transition_bg_path)
+        transition_text_path = self.text_generator.create_transition_text(
+                playlist_entry
+                )
+
+        media_transition = self.instance.media_new_path(
+                self.transition_bg_path
+                )
+
         media_transition.add_options(
                 self.media_parameter,
                 "sub-file={}".format(transition_text_path),
@@ -368,14 +373,11 @@ using default one".format(bg_path))
                 self.player.play()
                 logger.info("Resuming play")
 
-    def stop(self):
+    def stop_player(self):
         """ Stop playing music
         """
         self.player.stop()
         logger.info("Stopping player")
 
-    def clean(self):
-        """ Stop playing music and clean generated materials
-        """
-        self.stop()
-        self.text_generator.clean()
+    def exit_daemon(self, type, value, traceback):
+        self.stop_player()

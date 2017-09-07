@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 import logging
 from argparse import ArgumentParser
-from lib.dakara_player import DakaraPlayer
+
+from dakara_player_vlc.dakara_player_vlc import DakaraPlayerVlc
 
 
 logger = logging.getLogger('dakara')
+
+
+CONFIG_FILE_PATH = "config.ini"
 
 
 def get_parser():
@@ -16,7 +20,15 @@ def get_parser():
             '-d',
             '--debug',
             action='store_true',
-            help="Enable debug output"
+            help="Enable debug output."
+            )
+
+    parser.add_argument(
+            '--config',
+            help="Path to the config file. Default: '{}'".format(
+                CONFIG_FILE_PATH
+                ),
+            default=CONFIG_FILE_PATH
             )
 
     return parser
@@ -27,11 +39,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
-        kara_player = DakaraPlayer()
-        kara_player.deamon()
+        dakara = DakaraPlayerVlc(
+                args.config
+                )
+
+        dakara.run()
 
     except Exception as error:
         if args.debug:
             raise
 
         logger.critical(error)
+        exit(1)
