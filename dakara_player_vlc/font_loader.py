@@ -3,12 +3,8 @@ import sys
 import logging
 
 
-FONT_DIRECTORY = "share"
-FONT_FILE_NAME_LIST = (
-        "fontawesome-webfont.ttf",
-        "Roboto-Light.ttf",
-        "Roboto-Thin.ttf",
-        )
+SHARE_DIRECTORY = "share"
+FONT_DIRECTORY = "fonts"
 
 
 logger = logging.getLogger("font_loader")
@@ -58,20 +54,40 @@ class FontLoaderLinux(FontLoader):
         # create list of fonts
         self.fonts_loaded = []
 
+    def load(self):
         # ensure that the user font directory exists
-        if not os.path.isdir(self.FONT_DIRECTORY_USER):
+        try:
             os.mkdir(self.FONT_DIRECTORY_USER)
 
-    def load(self):
-        for font_file_name in FONT_FILE_NAME_LIST:
-            # check if font is in the project font directory
-            font_source_path = os.path.join(FONT_DIRECTORY, font_file_name)
-            if not os.path.isfile(font_source_path):
-                raise IOError(
-                        "Font '{}' not found in project directories".format(
-                            font_file_name
-                            )
-                        )
+        except OSError:
+            pass
+
+        self.load_from_directory(os.path.join(
+            SHARE_DIRECTORY,
+            FONT_DIRECTORY
+            ))
+
+    def load_from_directory(self, directory):
+        # check the directory exists
+        if not os.path.isdir(directory):
+            raise IOError("Directory '{}' does not exist".format(directory))
+
+        logger.debug("Scanning directory '{}' for fonts".format(directory))
+
+        # get the fonts
+        font_file_path_list = []
+        for font_file_name in os.listdir(directory):
+            font_file_path_list.append(os.path.join(directory,
+                                       font_file_name))
+
+            logger.debug("Font '{}' found to install".format(font_file_name))
+
+        self.load_from_list(font_file_path_list)
+
+    def load_from_list(self, font_file_path_list):
+        for font_file_path in font_file_path_list:
+            # get font file name
+            font_file_name = os.path.basename(font_file_path)
 
             # check if the font is installed at system level
             if os.path.isfile(os.path.join(
@@ -99,29 +115,37 @@ class FontLoaderLinux(FontLoader):
 
                 continue
 
-            # if the font is not installed
-            font_target_path = os.path.join(
+            # then, if the font is not installed, install it
+            font_file_target_path = os.path.join(
                     self.FONT_DIRECTORY_USER,
                     font_file_name
                     )
 
             os.symlink(
-                    os.path.join(os.getcwd(), font_source_path),
-                    font_target_path
+                    os.path.join(os.getcwd(), font_file_path),
+                    font_file_target_path
                     )
 
-            self.fonts_loaded.append(font_target_path)
+            # register the font
+            self.fonts_loaded.append(font_file_target_path)
+
             logger.debug("Font '{}' loaded in user directory: '{}'".format(
-                font_file_name,
-                font_target_path
+                font_file_path,
+                font_file_target_path
                 ))
 
     def unload(self):
         for font_path in self.fonts_loaded:
-            os.unlink(font_path)
-            logger.debug("Font '{}' unloaded".format(
-                font_path
-                ))
+            try:
+                os.unlink(font_path)
+                logger.debug("Font '{}' unloaded".format(
+                    font_path
+                    ))
+
+            except OSError:
+                logger.error("Unable to unload '{}'".format(
+                    font_path
+                    ))
 
         self.fonts_loaded = []
 
@@ -130,12 +154,17 @@ class FontLoaderWindows(FontLoader):
     GREETINGS = "Font loader for Windows selected"
 
     def load(self):
+        font_path = os.path.join(
+            SHARE_DIRECTORY,
+            FONT_DIRECTORY
+            )
+
         # since there seems to be no workable way to install fonts on Windows
         # through Python, we ask the user to do it by themselve
         print("Please install the following fonts located in the '{}' folder \
-and press Enter:".format(FONT_DIRECTORY))
+and press Enter:".format(font_path))
 
-        for font in FONT_FILE_NAME_LIST:
-            print(font)
+        for font_file in os.listdir(font_path):
+            print(font_file)
 
         input()
