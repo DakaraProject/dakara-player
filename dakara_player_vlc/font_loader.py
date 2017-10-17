@@ -33,12 +33,6 @@ class FontLoader:
         # show type of font loader
         logger.debug(self.GREETINGS)
 
-        # call child init
-        self.init_custom()
-
-    def init_custom(self):
-        pass
-
     def load(self):
         pass
 
@@ -57,7 +51,10 @@ class FontLoaderLinux(FontLoader):
     FONT_DIRECTORY_SYSTEM = "/usr/share/fonts"
     FONT_DIRECTORY_USER = os.path.join(os.environ['HOME'], ".fonts")
 
-    def init_custom(self):
+    def __init__(self):
+        # call parent constructor
+        super().__init__()
+
         # create list of fonts
         self.fonts_loaded = []
 
