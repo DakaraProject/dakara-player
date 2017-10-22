@@ -33,6 +33,8 @@
 ### Added
 
 - Changelog.
+- Version file.
+- Display version in log and idle screen.
 
 ## 1.0.0 - 2017-10-22
 
