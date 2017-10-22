@@ -35,6 +35,7 @@
 - Changelog.
 - Version file.
 - Display version in log and idle screen.
+- Version bump script.
 
 ## 1.0.0 - 2017-10-22
 
