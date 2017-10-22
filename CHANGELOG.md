@@ -30,6 +30,8 @@
 
 ## Unreleased
 
+## 1.0.1 - 2017-10-22
+
 ### Added
 
 - Changelog.
