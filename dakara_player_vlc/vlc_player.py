@@ -279,6 +279,7 @@ using default one".format(bg_path))
 
         media_transition.add_options(
                 self.media_parameter,
+                "no-sub-autodetect-file",
                 "sub-file={}".format(transition_text_path),
                 "image-duration={}".format(self.transition_duration)
                 )
@@ -305,6 +306,7 @@ using default one".format(bg_path))
             })
 
         media.add_options(
+                "no-sub-autodetect-file",
                 "image-duration={}".format(IDLE_DURATION),
                 "sub-file={}".format(idle_text_path),
                 )
