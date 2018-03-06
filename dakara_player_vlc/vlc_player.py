@@ -1,6 +1,7 @@
 import os
 import logging
 import urllib
+from pkg_resources import parse_version
 
 import vlc
 
@@ -32,8 +33,8 @@ class VlcPlayer(Daemon):
 
         # parameters that will be used later on
         self.kara_folder_path = config.get('karaFolder', "")
-        self.media_parameters = []
-        self.media_parameters.append(config.get('mediaParameter', ""))
+        self.media_parameter = config.get('mediaParameter', "")
+        self.text_screen_media_parameters = []
 
         # parameters for transition screen
         self.transition_duration = config.getfloat(
@@ -77,7 +78,7 @@ class VlcPlayer(Daemon):
             # starting from version 3, VLC prioritizes subtitle files that are
             # nearby the media played, not the ones explicitally added; this
             # option forces VLC to use the explicitally added files only
-            self.media_parameters.append("no-sub-autodetect-file")
+            self.text_screen_media_parameters.append("no-sub-autodetect-file")
 
     def load_transition_bg_path(self, bg_path):
         """ Load transition backgound file path
@@ -276,7 +277,7 @@ using default one".format(bg_path))
         # create the media
         self.playing_id = playlist_entry["id"]
         self.media_pending = self.instance.media_new_path(file_path)
-        self.media_pending.add_options(*self.media_parameters)
+        self.media_pending.add_options(self.media_parameter)
 
         # create the transition screen
         transition_text_path = self.text_generator.create_transition_text(
@@ -288,7 +289,8 @@ using default one".format(bg_path))
                 )
 
         media_transition.add_options(
-                *self.media_parameters,
+                *self.text_screen_media_parameters,
+                self.media_parameter,
                 "sub-file={}".format(transition_text_path),
                 "image-duration={}".format(self.transition_duration)
                 )
@@ -315,7 +317,8 @@ using default one".format(bg_path))
             })
 
         media.add_options(
-                "no-sub-autodetect-file",
+                *self.text_screen_media_parameters,
+                self.media_parameter,
                 "image-duration={}".format(IDLE_DURATION),
                 "sub-file={}".format(idle_text_path),
                 )
