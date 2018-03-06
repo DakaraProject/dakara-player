@@ -32,7 +32,8 @@ class VlcPlayer(Daemon):
 
         # parameters that will be used later on
         self.kara_folder_path = config.get('karaFolder', "")
-        self.media_parameter = config.get('mediaParameter', "")
+        self.media_parameters = []
+        self.media_parameters.append(config.get('mediaParameter', ""))
 
         # parameters for transition screen
         self.transition_duration = config.getfloat(
@@ -65,9 +66,18 @@ class VlcPlayer(Daemon):
         self.player.set_fullscreen(fullscreen)
         self.event_manager = self.player.event_manager()
 
-        # display vlc version
+        # VLC version
         self.vlc_version = vlc.libvlc_get_version().decode()
         logger.info("VLC " + self.vlc_version)
+        version_str, _ = self.vlc_version.split()
+        version = parse_version(version_str)
+
+        # perform action according to VLC version
+        if version >= parse_version('3.0.0'):
+            # starting from version 3, VLC prioritizes subtitle files that are
+            # nearby the media played, not the ones explicitally added; this
+            # option forces VLC to use the explicitally added files only
+            self.media_parameters.append("no-sub-autodetect-file")
 
     def load_transition_bg_path(self, bg_path):
         """ Load transition backgound file path
@@ -266,7 +276,7 @@ using default one".format(bg_path))
         # create the media
         self.playing_id = playlist_entry["id"]
         self.media_pending = self.instance.media_new_path(file_path)
-        self.media_pending.add_options(self.media_parameter)
+        self.media_pending.add_options(*self.media_parameters)
 
         # create the transition screen
         transition_text_path = self.text_generator.create_transition_text(
@@ -278,8 +288,7 @@ using default one".format(bg_path))
                 )
 
         media_transition.add_options(
-                self.media_parameter,
-                "no-sub-autodetect-file",
+                *self.media_parameters,
                 "sub-file={}".format(transition_text_path),
                 "image-duration={}".format(self.transition_duration)
                 )
