@@ -42,7 +42,9 @@ Activate the virtual environment, then start the player at the root level of the
 ./dakara.py runplayer
 ```
 
-### Run tests
+### Development
+
+#### Run tests
 
 You can run the tests of the player. For that, activate the virtual environment, then type:
 
@@ -54,4 +56,20 @@ You can execute a specific test by passing its name to the command (like `unitte
 
 ```sh
 ./dakara.py test test_module_name
+```
+
+#### Hooks
+
+Git hooks are included in the `hooks` directory.
+
+Use the following command to use this hook folder for the project:
+
+```
+git config core.hooksPath hooks
+```
+
+If you're using git < 2.9 you can make a symlink instead:
+
+```
+ln -s -f ../../hooks/pre-commit .git/hooks/pre-commit
 ```

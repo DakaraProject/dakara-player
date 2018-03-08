@@ -1,0 +1,14 @@
+#!/bin/bash
+
+echo "Running Dakara player tests"
+
+python ./dakara.py test
+returned_value=$?
+
+if [[ $returned_value -gt 0 ]]
+then
+    >&2 echo "Commit denied, there were test failures."
+    exit 1
+fi
+
+exit 0
