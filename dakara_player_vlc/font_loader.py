@@ -14,12 +14,10 @@ logger = logging.getLogger("font_loader")
 def get_font_loader_class():
     """Get the font loader associated to the current platform
     """
-    platform = sys.platform
-
-    if 'linux' in platform:
+    if 'linux' in sys.platform:
         return FontLoaderLinux
 
-    if 'win' in platform:
+    if 'win' in sys.platform:
         return FontLoaderWindows
 
     raise NotImplementedError(
