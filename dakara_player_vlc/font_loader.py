@@ -4,6 +4,7 @@ import logging
 
 
 SHARE_DIRECTORY = "share"
+SHARE_DIRECTORY_ABSOLUTE = os.path.dirname(os.path.abspath(SHARE_DIRECTORY))
 FONT_DIRECTORY = "fonts"
 
 
@@ -11,10 +12,14 @@ logger = logging.getLogger("font_loader")
 
 
 def get_font_loader_class():
-    if 'linux' in sys.platform:
+    """Get the font loader associated to the current platform
+    """
+    platform = sys.platform
+
+    if 'linux' in platform:
         return FontLoaderLinux
 
-    if 'win' in sys.platform:
+    if 'win' in platform:
         return FontLoaderWindows
 
     raise NotImplementedError(
@@ -63,7 +68,7 @@ class FontLoaderLinux(FontLoader):
             pass
 
         self.load_from_directory(os.path.join(
-            SHARE_DIRECTORY,
+            SHARE_DIRECTORY_ABSOLUTE,
             FONT_DIRECTORY
             ))
 
@@ -122,7 +127,7 @@ class FontLoaderLinux(FontLoader):
                     )
 
             os.symlink(
-                    os.path.join(os.getcwd(), font_file_path),
+                    font_file_path,
                     font_file_target_path
                     )
 
