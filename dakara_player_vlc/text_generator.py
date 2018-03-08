@@ -7,6 +7,9 @@ from jinja2 import Environment, FileSystemLoader
 
 
 SHARE_DIR = 'share'
+SHARE_DIR_ABSOLUTE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  os.pardir,
+                                  SHARE_DIR)
 
 
 TRANSITION_TEMPLATE_NAME = "transition.ass"
@@ -46,13 +49,7 @@ class TextGenerator:
     def load_templates(self, config):
         # create Jinja2 environment
         self.environment = Environment(
-                loader=FileSystemLoader(
-                    os.path.join(
-                        os.path.dirname(os.path.abspath(__file__)),
-                        os.pardir,
-                        SHARE_DIR
-                        )
-                    )
+                loader=FileSystemLoader(SHARE_DIR_ABSOLUTE)
                 )
 
         # add filter for converting font icon name to character
@@ -125,7 +122,7 @@ class TextGenerator:
     def load_icon_map(self):
         """ Load the icon map
         """
-        icon_map_path = os.path.join(SHARE_DIR, ICON_MAP_FILE)
+        icon_map_path = os.path.join(SHARE_DIR_ABSOLUTE, ICON_MAP_FILE)
 
         if not os.path.isfile(icon_map_path):
             raise IOError("Icon font map file '{}' not found".format(
@@ -142,11 +139,9 @@ class TextGenerator:
             Load the default or customized ASS template for
             transition screen.
         """
-        template_path = os.path.join(SHARE_DIR, template_name)
-        template_default_path = os.path.join(
-                SHARE_DIR,
-                TRANSITION_TEMPLATE_NAME
-                )
+        template_path = os.path.join(SHARE_DIR_ABSOLUTE, template_name)
+        template_default_path = os.path.join(SHARE_DIR,
+                                             TRANSITION_TEMPLATE_NAME)
 
         if os.path.isfile(template_path):
             pass
@@ -172,8 +167,9 @@ using default one".format(template_path))
             Load the default or customized ASS template for
             idle screen.
         """
-        template_path = os.path.join(SHARE_DIR, template_name)
-        template_default_path = os.path.join(SHARE_DIR, IDLE_TEMPLATE_NAME)
+        template_path = os.path.join(SHARE_DIR_ABSOLUTE, template_name)
+        template_default_path = os.path.join(SHARE_DIR_ABSOLUTE,
+                                             IDLE_TEMPLATE_NAME)
 
         if os.path.isfile(template_path):
             pass
