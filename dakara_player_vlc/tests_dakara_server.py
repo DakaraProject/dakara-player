@@ -1,9 +1,14 @@
 from unittest import TestCase
 from unittest.mock import patch, ANY
+import logging
 
 from requests.exceptions import RequestException
 
 from dakara_server import DakaraServer, NetworkError, AuthenticationError
+
+
+# shut down dakara_server logging
+logging.getLogger('dakara_server').setLevel(logging.CRITICAL)
 
 
 class DakaraServerTestCase(TestCase):
