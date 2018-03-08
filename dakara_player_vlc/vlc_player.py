@@ -380,18 +380,21 @@ using default one".format(bg_path))
         """
         if not self.is_idle():
             if pause:
-                self.player.pause()
                 logger.info("Setting pause")
+                self.player.pause()
+                logger.debug("Set pause")
 
             else:
-                self.player.play()
                 logger.info("Resuming play")
+                self.player.play()
+                logger.debug("Resumed play")
 
     def stop_player(self):
         """ Stop playing music
         """
-        self.player.stop()
         logger.info("Stopping player")
+        self.player.stop()
+        logger.debug("Stopped player")
 
     def exit_daemon(self, type, value, traceback):
         self.stop_player()
