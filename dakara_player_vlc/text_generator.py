@@ -70,9 +70,6 @@ class TextGenerator:
     def create_idle_text(self, info):
         """ Create custom idle text and save it
 
-            The acceptable placeholders in the template are:
-                - `vlc_version`: version of VLC.
-
             Args:
                 info: dictionnary of additionnal information.
 
@@ -95,15 +92,9 @@ class TextGenerator:
     def create_transition_text(self, playlist_entry):
         """ Create custom transition text and save it
 
-            The accepted placeholders in the template are:
-                - `title`: song title,
-                - `artists`: list of artists,
-                - `works`: list of works.
-                - `owner`: user who requested tho song,
-
             Args:
-                playlist_entry: dictionary containing keys for title,
-                    artists and works.
+                playlist_entry: dictionary containing keys for the playlist
+                    entry.
 
             Returns:
                 path of the text containing the transition screen

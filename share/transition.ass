@@ -33,11 +33,11 @@ Dialogue: 0,0:00:00.10,0:00:05.00,detail-text,,0,0,70,,{\fad(500, 0)}{{ owner.us
 ; DON'T TOUCH THIS FILE!
 ; Your modification will be lost during the next update.
 
-; To make your own transition template, copy this file somewhere else
-; and modify it. Then uncomment the line `transitionTemplatePath` in
-; `config.ini` and modify it to point to your new template file.
-; Same goes for the transition background file, uncomment the line
-; `transitionBgPath` and modify it to point to your new background file.
+; To make your own transition template, copy this file with another name and
+; modify it. Then uncomment the line `transitionTemplateName` in `config.ini`
+; and modify it to point to your new template file. Same goes for the
+; transition background file, uncomment the line `transitionBgPath` and
+; modify it to point to your new background file.
 
 ; We have decided to use subtitle files for text display with VLC
 ; because we can get a fancy output quite easily. Subtitles allow
@@ -46,18 +46,49 @@ Dialogue: 0,0:00:00.10,0:00:05.00,detail-text,,0,0,70,,{\fad(500, 0)}{{ owner.us
 ; features and it is widely used for karaoke subbing. You should
 ; feel at home!
 
-; You can use any kind of subtitle format for the transition template file,
-; as long as VLC can display it. The template is handled in the Dakara
-; code by Python Template objects, and song information are added by
-; the mean of placeholders in the template. The available ones are:
-;   title: song title,
-;   artists: comma-separated list of artists name,
-;   works: comma-separated list of works title, with work subtitle
-;       in parenthesis and work link and work link number separated
-;       by a hyphen; ie: "title (subtitle) - LINK_TYPE LINK_TYPE_NUMBER"
-;
-; The different placeholders must be preceded by a dollar sign, and may
-; be embedded by curly braces. No single dollar sign should be hanging
-; around in the template. For further information, please consult the
-; documentation of Python Template:
-; https://docs.python.org/3.4/library/string.html#template-strings
+; You can use any kind of subtitle format for the transition template file, as
+; long as VLC can display it. The template is handled within the program by
+; the Jinja2 template engine. Playlist entry information are added by the
+; mean of placeholders in the template, which are associated to the data
+; structure of the playlist entry:
+
+; {
+;     "song": {
+;         "title": "song title",
+;         "artists": [
+;             {
+;                 "id": "id of the artist",
+;                 "name": "artist name"
+;             }
+;         ],
+;         "works": [
+;             {
+;                 "work": {
+;                     "id": "id of the work",
+;                     "title": "title of the work",
+;                     "subtitle": "subtitle of the work",
+;                     "work_type": {
+;                         "name": "name of the type of work",
+;                         "name_plural": "plural form of the name",
+;                         "query_name": "query name form of the name",
+;                         "icon_name": "FontAwesome name of the icon",
+;                     }
+;                 },
+;                 "link_type": "type of relation betwoon the song and the work",
+;                 "link_type_name": "long form of the type of relation",
+;                 "link_type_number": "number of the relation",
+;                 "episodes": "episodes where this song is used"
+;             }
+;         ],
+;         "file_path": "path to the song file",
+;     },
+;     "owner": {
+;         "id": "id of the user who asked this song",
+;         "username": "name of the user"
+;     },
+;     "date_created": "date when the playlist entry was created"
+; }
+
+; For further information about the Jinja2 template engine and its abilities,
+; please consult the documentation:
+; http://jinja.pocoo.org/docs/latest/
