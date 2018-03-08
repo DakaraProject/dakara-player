@@ -17,6 +17,9 @@ class DakaraManager(DaemonWorker):
         self.vlc_player.set_song_end_callback(self.handle_song_end)
         self.vlc_player.set_error_callback(self.handle_error)
 
+        # set timer
+        self.timer = self.create_timer(0, self.start)
+
     def start(self):
         # initialize first steps
         self.add_next_music()
@@ -85,5 +88,5 @@ class DakaraManager(DaemonWorker):
 
         # create timer calling poll_server
         if not self.stop.is_set():
-            self.thread = self.create_timer(1, self.poll_server)
-            self.thread.start()
+            self.timer = self.create_timer(1, self.poll_server)
+            self.timer.start()

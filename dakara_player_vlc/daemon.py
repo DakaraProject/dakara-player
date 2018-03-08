@@ -210,8 +210,16 @@ class Daemon:
         # notify the stop event
         self.stop.set()
 
+        logger.debug("Exiting daemon method ({})".format(
+            self.__class__.__name__
+            ))
+
         # custom exit action
         self.exit_daemon(type, value, traceback)
+
+        logger.debug("Exited daemon method ({})".format(
+            self.__class__.__name__
+            ))
 
     def exit_daemon(self, type, value, traceback):
         """ Stub for exiting the daemon context manager.
@@ -242,13 +250,12 @@ class DaemonWorker(Daemon):
         stop the program. It has also an errors queue to communicate errors to
         the main thread.
 
-        It contains a timer thread `timer` already connected to the method
-        `start` which has to be redefined.
+        It contains a timer thread `timer` connected to a dummy function which
+        must be redefined. New thread timer should be created with the
+        `create_timer` method.
 
         It behaves like a context manager that gives itself on enter. On exit,
         it cancels and ends its timer thread and also triggers the stop event.
-
-        New thread timer should be created with the `create_timer` method.
 
         Extra actions for context manager enter and exit should be put in the
         `enter_worker` and `exit_worker` methods.
@@ -260,7 +267,7 @@ class DaemonWorker(Daemon):
                 program when set.
             errors (queue.Queue): error queue to communicate the exception to
                 the main thread.
-            timer (threading.Timer): timer thread bound to the `start` method.
+            timer (ControlledTimer): timer thread that must be redefined.
     """
     def init_daemon(self, *args, **kwargs):
         """ Daemon initialization
@@ -272,18 +279,18 @@ class DaemonWorker(Daemon):
             timer after.
         """
         # create timer for itself
-        self.timer = self.create_timer(0, self.start)
+        def redefine_me():
+            raise UnredefinedTimerError(
+                    "You must redefine the timer of a DaemonWorker"
+                    )
+
+        self.timer = self.create_timer(0, redefine_me)
 
         # perform other custom actions
         self.init_worker(*args, **kwargs)
 
     def init_worker(self, *args, **kwargs):
         """ Stub for worker custom initialization
-        """
-        pass
-
-    def start(self):
-        """ Stub for the worker timer thread target
         """
         pass
 
@@ -302,12 +309,11 @@ class DaemonWorker(Daemon):
     def exit_daemon(self, type, value, traceback):
         """ Daemon context manager exit.
 
-            Triggers the stop event, then cancels and close its timer thread.
-            It calls the worker context manager method.
-        """
-        # notify the stop event
-        self.stop.set()
+            Cancels and close the timer thread. It calls the worker context
+            manager method.
 
+            The stop event has already been triggered.
+        """
         # exit now if the timer is not running
         if not self.timer.is_alive():
             return
@@ -326,6 +332,11 @@ class DaemonWorker(Daemon):
         # custom exit
         self.exit_worker(type, value, traceback)
 
+        logger.debug("Closed worker timer thread '{}' ({})".format(
+            self.timer.getName(),
+            self.__class__.__name__
+            ))
+
     def exit_worker(self, type, value, traceback):
         """ Stub for worker context manager exit.
         """
@@ -339,13 +350,12 @@ class DaemonMaster(Daemon):
         stop the program. It has also an errors queue to communicate errors to
         the main thread.
 
-        It contains a thread `thread` already connected to the method `run`
-        which has to be redefined.
+        It contains a thread `thread` connected to a dummy function which must
+        de redefined. New thread should be created with the `create_thread`
+        method.
 
         The instance is a context manager that gives itself on enter. On exit,
         it ends its own thread and also triggers the stop event.
-
-        New thread should be created with the `create_thread` method.
 
         Extra actions for context manager enter and exit should be put in the
         `enter_master` and `exit_master` methods.
@@ -368,18 +378,18 @@ class DaemonMaster(Daemon):
             method.
         """
         # create thread for itself
-        self.thread = self.create_thread(target=self.run)
+        def redefine_me():
+            raise UnredefinedThreadError(
+                    "You must redefine the thread of a DaemonMaster"
+                    )
+
+        self.thread = self.create_thread(target=redefine_me)
 
         # perform other custom actions
         self.init_master(*args, **kwargs)
 
     def init_master(self, *args, **kwargs):
         """ Stub for master custom initialization
-        """
-        pass
-
-    def run(self):
-        """ Stub for master thread target
         """
         pass
 
@@ -398,13 +408,10 @@ class DaemonMaster(Daemon):
     def exit_daemon(self, type, value, traceback):
         """ Daemon context manager exit
 
-            Triggers the stop event, then close its own thread. It calls the
-            worker context manager method.
+            Closes the thread. It calls the worker context manager method.
 
+            The stop event has already been triggered.
         """
-        # notify the stop event
-        self.stop.set()
-
         # exit now if the thread is not running
         if not self.thread.is_alive():
             return
@@ -420,7 +427,30 @@ class DaemonMaster(Daemon):
         # custom exit action
         self.exit_master(type, value, traceback)
 
+        logger.debug("Closed daemon thread '{}' ({})".format(
+            self.thread.getName(),
+            self.__class__.__name__
+            ))
+
     def exit_master(self, type, value, traceback):
         """ Stub for master context manager exit.
         """
         pass
+
+
+class UnredefinedTimerError(Exception):
+    """ Unredefined timer error
+
+        Error raised if the default timer of the DaemonWorker class has not
+        been redefined.
+    """
+    pass
+
+
+class UnredefinedThreadError(Exception):
+    """ Unredefined thread error
+
+        Error raised if the default thread of the DaemonMaster class has not
+        been redefined.
+    """
+    pass

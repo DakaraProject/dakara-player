@@ -107,13 +107,15 @@ class DakaraDaemon(DaemonMaster):
             Args:
                 config_path (str): path to the config file.
         """
-        logger.debug("Starting daemon")
-
         # load config
         self.config = self.load_config(config_path)
 
         # configure loader
         self.configure_logger()
+        logger.debug("Starting daemon")
+
+        # set thread
+        self.thread = self.create_thread(target=self.run)
 
     def run(self):
         """ Daemon main method
