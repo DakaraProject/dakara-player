@@ -9,7 +9,7 @@ import os
 
 from vlc import State
 
-from .vlc_player import (
+from dakara_player_vlc.vlc_player import (
         VlcPlayer,
         mrl_to_path,
         SHARE_DIR_ABSOLUTE,
@@ -20,7 +20,6 @@ from .vlc_player import (
 
 # shut down vlc_player logging
 logging.getLogger("vlc_player").setLevel(logging.CRITICAL)
-# logging.basicConfig(level=logging.DEBUG)
 
 
 class VlcPlayerTestCase(TestCase):
@@ -171,7 +170,7 @@ class VlcPlayerTestCase(TestCase):
         file_path = mrl_to_path(media.get_mrl())
         self.assertEqual(file_path, self.song_file_path)
 
-    @patch('.vlc_player.os.path.isfile')
+    @patch('dakara_player_vlc.vlc_player.os.path.isfile')
     def test_play_song_error_file(self, mock_isfile):
         """Test to play a file that does not exist
         """

@@ -4,7 +4,11 @@ import logging
 
 from requests.exceptions import RequestException
 
-from dakara_server import DakaraServer, NetworkError, AuthenticationError
+from dakara_player_vlc.dakara_server import (
+        DakaraServer,
+        NetworkError,
+        AuthenticationError,
+        )
 
 
 # shut down dakara_server logging
@@ -50,7 +54,7 @@ class DakaraServerTestCase(TestCase):
             'password': self.password,
             })
 
-    @patch('dakara_server.requests.post')
+    @patch('dakara_player_vlc.dakara_server.requests.post')
     def test_authenticate_successful(self, mock_post):
         """Test a successful authentication with the server
         """
@@ -77,7 +81,7 @@ class DakaraServerTestCase(TestCase):
         self.assertTrue(self.dakara_server.token)
         self.assertEqual(self.dakara_server.token, self.token)
 
-    @patch('dakara_server.requests.post')
+    @patch('dakara_player_vlc.dakara_server.requests.post')
     def test_authenticate_error_network(self, mock_post):
         """Test a network error when authenticating
         """
@@ -88,7 +92,7 @@ class DakaraServerTestCase(TestCase):
         with self.assertRaises(NetworkError):
             self.dakara_server.authenticate()
 
-    @patch('dakara_server.requests.post')
+    @patch('dakara_player_vlc.dakara_server.requests.post')
     def test_authenticate_error_authentication(self, mock_post):
         """Test an authentication error when authenticating
         """
@@ -100,7 +104,7 @@ class DakaraServerTestCase(TestCase):
         with self.assertRaises(AuthenticationError):
             self.dakara_server.authenticate()
 
-    @patch('dakara_server.requests.post')
+    @patch('dakara_player_vlc.dakara_server.requests.post')
     def test_authenticate_error_other(self, mock_post):
         """Test a server error when authenticating
         """
@@ -147,7 +151,7 @@ class DakaraServerTestCase(TestCase):
             'Authorization': 'Token ' + self.token
             })
 
-    @patch('dakara_server.requests.get')
+    @patch('dakara_player_vlc.dakara_server.requests.get')
     def test_get_next_song_successful(self, mock_get):
         """Test the request of a song from the server
         """
@@ -164,7 +168,7 @@ class DakaraServerTestCase(TestCase):
         # call assertions
         self.assertEqual(result, self.playlist_entry)
 
-    @patch('dakara_server.requests.get')
+    @patch('dakara_player_vlc.dakara_server.requests.get')
     def test_get_next_song_error_network(self, mock_get):
         """Test a connection error when requesting a song
         """
@@ -180,7 +184,7 @@ class DakaraServerTestCase(TestCase):
         # call assertions
         self.assertIs(result, None)
 
-    @patch('dakara_server.requests.get')
+    @patch('dakara_player_vlc.dakara_server.requests.get')
     def test_get_next_song_error_other(self, mock_get):
         """Test a server error when requesting a song
         """
@@ -198,7 +202,7 @@ class DakaraServerTestCase(TestCase):
         # call assertions
         self.assertIs(result, None)
 
-    @patch('dakara_server.requests.post')
+    @patch('dakara_player_vlc.dakara_server.requests.post')
     def test_send_error_successful(self, mock_post):
         """Test the sending of an error
         """
@@ -222,7 +226,7 @@ class DakaraServerTestCase(TestCase):
                     }
                 )
 
-    @patch('dakara_server.requests.post')
+    @patch('dakara_player_vlc.dakara_server.requests.post')
     def test_send_error_error_network(self, mock_post):
         """Test a network error when sending an error
         """
@@ -236,7 +240,7 @@ class DakaraServerTestCase(TestCase):
         self.dakara_server.send_error(self.playlist_entry_id,
                                       self.error_message)
 
-    @patch('dakara_server.requests.post')
+    @patch('dakara_player_vlc.dakara_server.requests.post')
     def test_send_error_error_other(self, mock_post):
         """Test a server error when sending an error
         """
@@ -250,7 +254,7 @@ class DakaraServerTestCase(TestCase):
         self.dakara_server.send_error(self.playlist_entry_id,
                                       self.error_message)
 
-    @patch('dakara_server.requests.put')
+    @patch('dakara_player_vlc.dakara_server.requests.put')
     def test_send_status_get_commands_successful(self, mock_put):
         """Test the sending of the status and retrieving of the commands
         """
@@ -280,7 +284,7 @@ class DakaraServerTestCase(TestCase):
                     }
                 )
 
-    @patch('dakara_server.requests.put')
+    @patch('dakara_player_vlc.dakara_server.requests.put')
     def test_send_status_get_commands_error_network(self, mock_put):
         """Test a network error when sending status and retrieving commands
         """
@@ -300,7 +304,7 @@ class DakaraServerTestCase(TestCase):
         # call assertions
         self.assertEqual(result, {'pause': True, 'skip': False})
 
-    @patch('dakara_server.requests.put')
+    @patch('dakara_player_vlc.dakara_server.requests.put')
     def test_send_status_get_commands_error_other(self, mock_put):
         """Test a server error when sending status and retrieving commands
         """

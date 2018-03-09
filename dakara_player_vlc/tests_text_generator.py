@@ -3,7 +3,7 @@ from unittest.mock import patch, mock_open
 import logging
 import os
 
-from text_generator import (
+from dakara_player_vlc.text_generator import (
         TextGenerator,
         IDLE_TEXT_NAME,
         TRANSITION_TEMPLATE_NAME,
@@ -75,7 +75,7 @@ class TextGeneratorTestCase(TestCase):
                 self.temdir
                 )
 
-    @patch('text_generator.open', new_callable=mock_open)
+    @patch('dakara_player_vlc.text_generator.open', new_callable=mock_open)
     def test_create_idle_text(self, mock_open):
         """Test the generation of an idle text
         """
@@ -95,7 +95,7 @@ class TextGeneratorTestCase(TestCase):
 
         self.assertEqual(result, self.idle_text_path)
 
-    @patch('text_generator.open', new_callable=mock_open)
+    @patch('dakara_player_vlc.text_generator.open', new_callable=mock_open)
     def test_create_transition_text(self, mock_open):
         """Test the generation of a transition text
         """

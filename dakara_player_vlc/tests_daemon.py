@@ -4,7 +4,7 @@ from queue import Queue
 from contextlib import contextmanager
 from time import sleep
 
-import daemon
+from dakara_player_vlc import daemon
 
 
 class TestError(Exception):

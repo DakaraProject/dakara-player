@@ -3,7 +3,7 @@ from unittest.mock import patch, call
 import logging
 import os
 
-from font_loader import (
+from dakara_player_vlc.font_loader import (
         FontLoaderLinux,
         FontLoaderWindows,
         get_font_loader_class,
@@ -23,17 +23,17 @@ class GetFontLoaderClassTestCase(TestCase):
         """Test to get the correct font loader class for the platform
         """
         # call for Linux
-        with patch('font_loader.sys.platform', "linux"):
+        with patch('dakara_player_vlc.font_loader.sys.platform', "linux"):
             FontLoaderClass = get_font_loader_class()
             self.assertEqual(FontLoaderClass, FontLoaderLinux)
 
         # call for Windows
-        with patch('font_loader.sys.platform', "win32"):
+        with patch('dakara_player_vlc.font_loader.sys.platform', "win32"):
             FontLoaderClass = get_font_loader_class()
             self.assertEqual(FontLoaderClass, FontLoaderWindows)
 
         # call for uniplemented OS
-        with patch('font_loader.sys.platform', "other"):
+        with patch('dakara_player_vlc.font_loader.sys.platform', "other"):
             with self.assertRaises(NotImplementedError):
                 get_font_loader_class()
 
@@ -54,7 +54,7 @@ class FontLoaderLinuxTestCase(TestCase):
         # create a font loader object
         self.font_loader = FontLoaderLinux()
 
-    @patch('font_loader.os.path.isfile')
+    @patch('dakara_player_vlc.font_loader.os.path.isfile')
     def test_load_from_list_installed_system(self, mock_isfile):
         """Test the detection of a font at system level
         """
@@ -70,7 +70,7 @@ class FontLoaderLinuxTestCase(TestCase):
                              self.font_name)
                 )
 
-    @patch('font_loader.os.path.isfile')
+    @patch('dakara_player_vlc.font_loader.os.path.isfile')
     def test_load_from_list_installed_user(self, mock_isfile):
         """Test the detection of a font at user level
         """
@@ -88,8 +88,8 @@ class FontLoaderLinuxTestCase(TestCase):
                                   self.font_name))
                 ))
 
-    @patch('font_loader.os.symlink')
-    @patch('font_loader.os.path.isfile')
+    @patch('dakara_player_vlc.font_loader.os.symlink')
+    @patch('dakara_player_vlc.font_loader.os.path.isfile')
     def test_load_from_list_uninstalled(self, mock_isfile, mock_symlink):
         """Test the installation of a font
         """
@@ -124,9 +124,9 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertEqual(self.font_loader.fonts_loaded,
                          [font_file_target_path])
 
-    @patch('font_loader.os.path.isfile')
-    @patch('font_loader.os.listdir')
-    @patch('font_loader.os.path.isdir')
+    @patch('dakara_player_vlc.font_loader.os.path.isfile')
+    @patch('dakara_player_vlc.font_loader.os.listdir')
+    @patch('dakara_player_vlc.font_loader.os.path.isdir')
     def test_load_from_directory(self, mock_isdir, mock_listdir,
                                  mock_isfile):
         """Test the loading of a font from the directory
@@ -152,10 +152,10 @@ class FontLoaderLinuxTestCase(TestCase):
         # post assertions
         self.assertFalse(self.font_loader.fonts_loaded)
 
-    @patch('font_loader.os.path.isfile')
-    @patch('font_loader.os.listdir')
-    @patch('font_loader.os.path.isdir')
-    @patch('font_loader.os.mkdir')
+    @patch('dakara_player_vlc.font_loader.os.path.isfile')
+    @patch('dakara_player_vlc.font_loader.os.listdir')
+    @patch('dakara_player_vlc.font_loader.os.path.isdir')
+    @patch('dakara_player_vlc.font_loader.os.mkdir')
     def test_load(self, mock_mkdir, mock_isdir, mock_listdir, mock_isfile):
         """Test the loading of a font
 
@@ -186,7 +186,7 @@ class FontLoaderLinuxTestCase(TestCase):
         # post assertions
         self.assertFalse(self.font_loader.fonts_loaded)
 
-    @patch('font_loader.os.unlink')
+    @patch('dakara_player_vlc.font_loader.os.unlink')
     def test_unload(self, mock_unlink):
         """Test to unload a font
         """
