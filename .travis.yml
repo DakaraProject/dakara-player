@@ -10,8 +10,8 @@ python:
 
 # command to install system dependencies
 before_install:
-  - apt-get -qq update
-  - apt-get install -y vlc
+  - sudo apt-get -qq update
+  - sudo apt-get install -y vlc
 
 # command to install python dependencies
 install:
