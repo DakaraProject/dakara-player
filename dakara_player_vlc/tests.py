@@ -40,4 +40,6 @@ class DakaraTestRunner:
         """Run the collected test(s)
         """
         runner = TextTestRunner()
-        runner.run(self.test_suite)
+        results = runner.run(self.test_suite)
+
+        return results.wasSuccessful()

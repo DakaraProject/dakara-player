@@ -73,7 +73,8 @@ def runplayer(args):
 
 def test(args):
     dakara_test_runner = DakaraTestRunner(args.target)
-    dakara_test_runner.run()
+    ok = dakara_test_runner.run()
+    exit(not ok)
 
 
 if __name__ == '__main__':
