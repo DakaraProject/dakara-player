@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import patch, call
+from unittest.mock import patch, call, ANY
 import logging
 import os
 
@@ -147,7 +147,7 @@ class FontLoaderLinuxTestCase(TestCase):
         # call assertions
         mock_isdir.assert_called_once_with(self.directory)
         mock_listdir.assert_called_once_with(self.directory)
-        mock_isfile.assert_called_once()
+        mock_isfile.assert_called_once_with(ANY)
 
         # post assertions
         self.assertFalse(self.font_loader.fonts_loaded)
@@ -181,7 +181,7 @@ class FontLoaderLinuxTestCase(TestCase):
         mock_mkdir.assert_called_once_with(FontLoaderLinux.FONT_DIRECTORY_USER)
         mock_isdir.assert_called_once_with(directory)
         mock_listdir.assert_called_once_with(directory)
-        mock_isfile.assert_called_once()
+        mock_isfile.assert_called_once_with(ANY)
 
         # post assertions
         self.assertFalse(self.font_loader.fonts_loaded)
