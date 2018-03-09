@@ -9,16 +9,19 @@ from .daemon import Daemon
 
 
 SHARE_DIR = 'share'
+SHARE_DIR_ABSOLUTE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  os.pardir,
+                                  SHARE_DIR)
 
 
 TRANSITION_DURATION = 2
 TRANSITION_BG_NAME = "transition.png"
-TRANSITION_BG_PATH = os.path.join(SHARE_DIR, TRANSITION_BG_NAME)
+TRANSITION_BG_PATH = os.path.join(SHARE_DIR_ABSOLUTE, TRANSITION_BG_NAME)
 
 
 IDLE_DURATION = 60
 IDLE_BG_NAME = "idle.png"
-IDLE_BG_PATH = os.path.join(SHARE_DIR, IDLE_BG_NAME)
+IDLE_BG_PATH = os.path.join(SHARE_DIR_ABSOLUTE, IDLE_BG_NAME)
 
 
 logger = logging.getLogger("vlc_player")
@@ -177,11 +180,7 @@ using default one".format(bg_path))
                     )
 
             # get file path
-            # the file path ist stored as MRL, we have to bring it back
-            # to a more classic looking path format
-            file_mrl = self.media_pending.get_mrl()
-            file_mrl_parsed = urllib.parse.urlparse(file_mrl)
-            file_path = urllib.parse.unquote(file_mrl_parsed.path)
+            file_path = mrl_to_path(self.media_pending.get_mrl())
             logger.info("Now playing \"{}\"".format(
                 file_path
                 ))
@@ -398,3 +397,13 @@ using default one".format(bg_path))
 
     def exit_daemon(self, type, value, traceback):
         self.stop_player()
+
+
+def mrl_to_path(file_mrl):
+    """Convert a MRL to a classic path
+
+    File path is stored as MRL inside a media object, we have to bring it back
+    to a more classic looking path format.
+    """
+    file_mrl_parsed = urllib.parse.urlparse(file_mrl)
+    return urllib.parse.unquote(file_mrl_parsed.path)
