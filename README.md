@@ -1,6 +1,8 @@
 # Dakara VLC player
 
-Interface between Dakara server and VLC, for the Dakara project.
+[![Build Status](https://travis-ci.org/DakaraProject/dakara-player-vlc.svg?branch=develop)](https://travis-ci.org/DakaraProject/dakara-player-vlc)
+
+Interface between the Dakara server and VLC, for the Dakara project.
 
 ### Installation
 
@@ -17,7 +19,7 @@ Installation guidelines are provided over here:
 
 #### Virtual environment
 
-It is strongly recommended to run Dakara player VLC on virtual environment.
+It is strongly recommended to run the Dakara player VLC within a virtual environment.
 
 #### Python dependencies
 
@@ -29,7 +31,7 @@ pip install -r requirements.txt
 
 #### Settings
 
-Copy the file `config.ini.example` to `config.py`, then uncomment and modify the different config values as you wish.
+Copy the file `config.ini.example` to `config.ini`, then uncomment and modify the different config values as you wish.
 Mandatory parameters are not commented. 
 
 ### Start the player
