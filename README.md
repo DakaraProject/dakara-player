@@ -19,7 +19,7 @@ Installation guidelines are provided over here:
 
 #### Virtual environment
 
-It is strongly recommended to run the Dakara player VLC within a virtual environment.
+It is strongly recommended to run the Dakara VLC player within a virtual environment.
 
 #### Python dependencies
 
