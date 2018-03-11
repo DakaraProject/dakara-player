@@ -3,11 +3,10 @@ from unittest.mock import Mock, patch
 from threading import Event
 from queue import Queue
 from configparser import ConfigParser
-from time import sleep
 import logging
 import os
 
-from vlc import State
+from vlc import State, EventType
 
 from dakara_player_vlc.vlc_player import (
         VlcPlayer,
@@ -90,11 +89,28 @@ class VlcPlayerTestCase(TestCase):
         self.vlc_player.set_song_end_callback(lambda self, event: None)
         self.vlc_player.set_error_callback(lambda self, event: None)
 
+    def get_event_and_callback(self):
+        """Get an event and a callback that sets this event
+        """
+        event = Event()
+
+        def callback(*args, **kwargs):
+            event.set()
+
+        return event, callback
+
     def test_play_idle_screen(self):
         """Test the display of the idle screen
         """
         # mock the text generator
         self.text_generator.create_idle_text.return_value = self.subtitle_path
+
+        # create an event for when the player starts to play
+        is_playing, callback_is_playing = self.get_event_and_callback()
+        self.vlc_player.event_manager.event_attach(
+                EventType.MediaPlayerPlaying,
+                callback_is_playing
+                )
 
         # pre assertions
         self.assertIsNone(self.vlc_player.player.get_media())
@@ -103,7 +119,9 @@ class VlcPlayerTestCase(TestCase):
 
         # call the method
         self.vlc_player.play_idle_screen()
-        sleep(0.5)
+
+        # wait for the player to start actually playing
+        is_playing.wait()
 
         # call assertions
         self.text_generator.create_idle_text.assert_called_once_with({
@@ -130,6 +148,13 @@ class VlcPlayerTestCase(TestCase):
         self.text_generator.create_transition_text.return_value = \
             self.subtitle_path
 
+        # create an event for when the player starts to play
+        is_playing, callback_is_playing = self.get_event_and_callback()
+        self.vlc_player.event_manager.event_attach(
+                EventType.MediaPlayerPlaying,
+                callback_is_playing
+                )
+
         # pre assertions
         self.assertIsNone(self.vlc_player.playing_id)
         self.assertFalse(self.vlc_player.in_transition)
@@ -139,7 +164,12 @@ class VlcPlayerTestCase(TestCase):
 
         # call the method
         self.vlc_player.play_song(self.playlist_entry)
-        sleep(0.5)
+
+        # wait for the player to start actually playing the transition
+        is_playing.wait()
+
+        # reset the event to catch when the player starts to play the song
+        is_playing.clear()
 
         # call assertions
         self.text_generator.create_transition_text.assert_called_once_with(
@@ -159,8 +189,10 @@ class VlcPlayerTestCase(TestCase):
         # TODO check which subtitle file is read
         # seems impossible to do for now
 
+        # wait for the player to start actually playing the song
+        is_playing.wait()
+
         # post assertions for song
-        sleep(self.transition_duration)
         self.assertFalse(self.vlc_player.in_transition)
         self.assertEqual(self.vlc_player.player.get_state(),
                          State.Playing)
@@ -185,7 +217,6 @@ class VlcPlayerTestCase(TestCase):
 
         # call the method
         self.vlc_player.play_song(self.playlist_entry)
-        sleep(0.5)
 
         # call assertions
         mock_isfile.assert_called_once_with(self.song_file_path)
