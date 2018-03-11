@@ -5,6 +5,7 @@ from pkg_resources import parse_version
 
 import vlc
 
+from .version import __version__
 from .daemon import Daemon
 
 
@@ -313,7 +314,10 @@ using default one".format(bg_path))
 
         # create the idle screen
         idle_text_path = self.text_generator.create_idle_text({
-            'vlc_version': self.vlc_version
+            'notes': [
+                "VLC " + self.vlc_version,
+                "Dakara player " + __version__
+                ]
             })
 
         media.add_options(
