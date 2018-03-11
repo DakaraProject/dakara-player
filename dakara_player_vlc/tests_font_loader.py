@@ -7,8 +7,8 @@ from dakara_player_vlc.font_loader import (
         FontLoaderLinux,
         FontLoaderWindows,
         get_font_loader_class,
-        SHARE_DIRECTORY_ABSOLUTE,
-        FONT_DIRECTORY,
+        SHARE_DIR_ABSOLUTE,
+        FONT_DIR,
         )
 
 
@@ -66,7 +66,7 @@ class FontLoaderLinuxTestCase(TestCase):
 
         # call assertions
         mock_isfile.assert_called_once_with(
-                os.path.join(FontLoaderLinux.FONT_DIRECTORY_SYSTEM,
+                os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
                              self.font_name)
                 )
 
@@ -82,9 +82,9 @@ class FontLoaderLinuxTestCase(TestCase):
 
         # call assertions
         mock_isfile.assert_has_calls((
-                call(os.path.join(FontLoaderLinux.FONT_DIRECTORY_SYSTEM,
+                call(os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
                                   self.font_name)),
-                call(os.path.join(FontLoaderLinux.FONT_DIRECTORY_USER,
+                call(os.path.join(FontLoaderLinux.FONT_DIR_USER,
                                   self.font_name))
                 ))
 
@@ -104,14 +104,14 @@ class FontLoaderLinuxTestCase(TestCase):
 
         # call assertions
         mock_isfile.assert_has_calls((
-                call(os.path.join(FontLoaderLinux.FONT_DIRECTORY_SYSTEM,
+                call(os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
                                   self.font_name)),
-                call(os.path.join(FontLoaderLinux.FONT_DIRECTORY_USER,
+                call(os.path.join(FontLoaderLinux.FONT_DIR_USER,
                                   self.font_name))
                 ))
 
         font_file_target_path = os.path.join(
-                FontLoaderLinux.FONT_DIRECTORY_USER,
+                FontLoaderLinux.FONT_DIR_USER,
                 self.font_name
                 )
 
@@ -162,8 +162,8 @@ class FontLoaderLinuxTestCase(TestCase):
         Let's assume the font is present in the system directories.
         """
         directory = os.path.join(
-                SHARE_DIRECTORY_ABSOLUTE,
-                FONT_DIRECTORY
+                SHARE_DIR_ABSOLUTE,
+                FONT_DIR
                 )
 
         # mock system calls
@@ -178,7 +178,7 @@ class FontLoaderLinuxTestCase(TestCase):
         self.font_loader.load()
 
         # call assertions
-        mock_mkdir.assert_called_once_with(FontLoaderLinux.FONT_DIRECTORY_USER)
+        mock_mkdir.assert_called_once_with(FontLoaderLinux.FONT_DIR_USER)
         mock_isdir.assert_called_once_with(directory)
         mock_listdir.assert_called_once_with(directory)
         mock_isfile.assert_called_once_with(ANY)
