@@ -8,6 +8,7 @@ import os
 
 from vlc import State, EventType
 
+from dakara_player_vlc.version import __version__ as dakara_player_vlc_version
 from dakara_player_vlc.vlc_player import (
         VlcPlayer,
         mrl_to_path,
@@ -125,7 +126,10 @@ class VlcPlayerTestCase(TestCase):
 
         # call assertions
         self.text_generator.create_idle_text.assert_called_once_with({
-            'vlc_version': self.vlc_player.vlc_version
+            'notes': [
+                "VLC " + self.vlc_player.vlc_version,
+                "Dakara player " + dakara_player_vlc_version
+                ]
             })
 
         # post assertions
