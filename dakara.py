@@ -17,7 +17,8 @@ def get_parser():
             description="Player for the Dakara project"
             )
 
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(title='command', dest='command')
+    subparsers.required = True
 
     parser_runplayer = subparsers.add_parser(
             "runplayer",
@@ -43,7 +44,7 @@ def get_parser():
 
     parser_test = subparsers.add_parser(
             "test",
-            help="test the player"
+            help="run the tests for the player"
             )
 
     parser_test.add_argument(
