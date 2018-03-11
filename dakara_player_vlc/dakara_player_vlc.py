@@ -8,6 +8,7 @@ from queue import Queue, Empty
 
 import coloredlogs
 
+from .version import __version__, __date__
 from .daemon import DaemonMaster
 from .text_generator import TextGenerator
 from .vlc_player import VlcPlayer
@@ -116,6 +117,11 @@ class DakaraDaemon(DaemonMaster):
 
         # set thread
         self.thread = self.create_thread(target=self.run)
+
+        logger.info("Dakara player {} ({})".format(
+            __version__,
+            __date__
+            ))
 
     def run(self):
         """ Daemon main method
