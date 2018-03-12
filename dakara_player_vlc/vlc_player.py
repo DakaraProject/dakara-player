@@ -1,6 +1,7 @@
 import os
 import logging
 import urllib
+from pkg_resources import parse_version
 
 import vlc
 
@@ -34,6 +35,7 @@ class VlcPlayer(Daemon):
         # parameters that will be used later on
         self.kara_folder_path = config.get('karaFolder', "")
         self.media_parameter = config.get('mediaParameter', "")
+        self.text_screen_media_parameters = []
 
         # parameters for transition screen
         self.transition_duration = config.getfloat(
@@ -66,9 +68,18 @@ class VlcPlayer(Daemon):
         self.player.set_fullscreen(fullscreen)
         self.event_manager = self.player.event_manager()
 
-        # display vlc version
+        # VLC version
         self.vlc_version = vlc.libvlc_get_version().decode()
         logger.info("VLC " + self.vlc_version)
+        version_str, _ = self.vlc_version.split()
+        version = parse_version(version_str)
+
+        # perform action according to VLC version
+        if version >= parse_version('3.0.0'):
+            # starting from version 3, VLC prioritizes subtitle files that are
+            # nearby the media played, not the ones explicitally added; this
+            # option forces VLC to use the explicitally added files only
+            self.text_screen_media_parameters.append("no-sub-autodetect-file")
 
     def load_transition_bg_path(self, bg_path):
         """ Load transition backgound file path
@@ -279,6 +290,7 @@ using default one".format(bg_path))
                 )
 
         media_transition.add_options(
+                *self.text_screen_media_parameters,
                 self.media_parameter,
                 "sub-file={}".format(transition_text_path),
                 "image-duration={}".format(self.transition_duration)
@@ -309,6 +321,8 @@ using default one".format(bg_path))
             })
 
         media.add_options(
+                *self.text_screen_media_parameters,
+                self.media_parameter,
                 "image-duration={}".format(IDLE_DURATION),
                 "sub-file={}".format(idle_text_path),
                 )
