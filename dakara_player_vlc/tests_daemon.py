@@ -1,8 +1,10 @@
 from unittest import TestCase
-from threading import Event, Timer
+from threading import Event, Timer, Thread
 from queue import Queue
 from contextlib import contextmanager
 from time import sleep
+import signal
+import os
 
 from dakara_player_vlc import daemon
 
@@ -375,3 +377,104 @@ class DaemonMasterTestCase(BaseTestCase):
         self.assertFalse(self.errors.empty())
         _, error, _ = self.errors.get()
         self.assertIsInstance(error, daemon.UnredefinedThreadError)
+
+
+class ErrorOrKeyboardInterruptTestCase(BaseTestCase):
+    """Test the use of a daemon
+
+    The class to test should leave because of a Ctrl+C, or because of an
+    internal eror.
+    """
+    class DaemonError(daemon.Daemon):
+        def test(self):
+            raise TestError('test error')
+
+    def get_daemon_ready(self):
+        """Get a daemon connected to an event
+
+        This will be used for tests that produce side effects.
+        """
+        ready = Event()
+
+        class DaemonReady(daemon.Daemon):
+            def test(self):
+                ready.set()
+                return
+
+        return ready, DaemonReady
+
+    class ClassToTest:
+        def __init__(self, stop, errors):
+            self.stop = stop
+            self.errors = errors
+
+        def run(self, Daemon):
+            try:
+                with Daemon(self.stop, self.errors) as daemon:
+                    daemon.thread = daemon.create_thread(
+                            target=daemon.test)
+
+                    daemon.thread.start()
+                    self.stop.wait()
+
+            except KeyboardInterrupt:
+                self.stop.set()
+
+    def setUp(self):
+        # create stop event
+        self.stop = Event()
+
+        # create errors queue
+        self.errors = Queue()
+
+        # create class to test
+        self.class_to_test = self.ClassToTest(self.stop, self.errors)
+
+    def test_run_interrupt(self):
+        """Test a run with an interruption by Ctrl+C
+
+        The run should end with a set stop event and an empty errors queue.
+        """
+        # pre assertions
+        self.assertFalse(self.stop.is_set())
+        self.assertTrue(self.errors.empty())
+
+        # get the class
+        ready, DaemonReady = self.get_daemon_ready()
+
+        # prepare the sending of SIGINT
+        def send_sigint():
+            pid = os.getpid()
+            ready.wait()
+            os.kill(pid, signal.SIGINT)
+
+        kill_thread = Thread(target=send_sigint)
+        kill_thread.start()
+
+        # call the method
+        with self.assertNotRaises(KeyboardInterrupt):
+            self.class_to_test.run(DaemonReady)
+
+        # post assertions
+        self.assertTrue(self.stop.is_set())
+        self.assertTrue(self.errors.empty())
+        self.assertFalse(kill_thread.is_alive())
+
+    def test_run_error(self):
+        """Test a run with an error
+
+        The run should end with a set stop event an a non-empty error queue.
+        """
+        # pre assertions
+        self.assertFalse(self.stop.is_set())
+        self.assertTrue(self.errors.empty())
+
+        # call the method
+        with self.assertNotRaises(TestError):
+            self.class_to_test.run(self.DaemonError)
+
+        # post assertions
+        self.assertTrue(self.stop.is_set())
+        self.assertFalse(self.errors.empty())
+        _, error, _ = self.errors.get()
+        self.assertIsInstance(error, TestError)
