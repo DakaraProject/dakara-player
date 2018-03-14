@@ -57,7 +57,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.start()
 
         # call assertions
-        self.dakara_server.get_next_song.assert_called()
+        self.dakara_server.get_next_song.assert_called_with()
         self.vlc_player.play_idle_screen.assert_called_once_with()
         self.dakara_server.send_status_get_commands.\
             assert_called_once_with(None)
