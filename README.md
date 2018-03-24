@@ -14,7 +14,7 @@ Installation guidelines are provided over here:
 
 #### System requirements
 
-* Python3, for the magic to take place;
+* Python3.5 or higher, for the magic to take place;
 * [VLC](https://www.videolan.org/vlc/), duh.
 
 #### Virtual environment

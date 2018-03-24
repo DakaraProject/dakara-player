@@ -83,11 +83,6 @@ class DakaraWorker(WorkerSafeThread):
             __date__
             ))
 
-        logger.info("Dakara player {} ({})".format(
-            __version__,
-            __date__
-            ))
-
     def run(self):
         """ Worker main method
 
@@ -95,8 +90,7 @@ class DakaraWorker(WorkerSafeThread):
             managers, which guarantee that their different clean methods will
             be called prorperly.
 
-            Then its starts the polling thread (unique member of the threads
-            pool) and wait for the end.
+            Then it starts the polling thread and waits for the end.
 
             When `run` is called, the end can come for several reasons:
                 * the main thread (who calls the worker thread) has caught a
