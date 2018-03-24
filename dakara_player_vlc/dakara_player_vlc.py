@@ -83,6 +83,11 @@ class DakaraWorker(WorkerSafeThread):
             __date__
             ))
 
+        logger.info("Dakara player {} ({})".format(
+            __version__,
+            __date__
+            ))
+
     def run(self):
         """ Worker main method
 
