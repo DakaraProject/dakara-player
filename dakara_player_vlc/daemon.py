@@ -28,7 +28,7 @@ as the stop event, as it can be used to stop the program.
 
 import sys
 from threading import Event, Timer, Thread
-from queue import Queue
+from queue import Queue, Empty
 import logging
 
 
@@ -436,6 +436,57 @@ class DaemonMaster(Daemon):
         """ Stub for master context manager exit.
         """
         pass
+
+
+class Runner:
+    def __init__(self, *args, **kwargs):
+        # create stop event
+        self.stop = Event()
+
+        # create errors queue
+        self.errors = Queue()
+
+        # extra actions
+        self.init_runner(*args, **kwargs)
+
+    def init_runner(self):
+        pass
+
+    def run_safe(self, Daemon, *args, **kwargs):
+        try:
+            # create daemon thread
+            with Daemon(
+                    self.stop,
+                    self.errors,
+                    *args,
+                    **kwargs
+                    ) as daemon:
+
+                logger.debug("Create daemon thread")
+                daemon.thread.start()
+
+                # wait for stop event
+                logger.debug("Waiting for stop event")
+                self.stop.wait()
+
+        # stop on Ctrl+C
+        except KeyboardInterrupt:
+            logger.debug("User stop caught")
+            self.stop.set()
+
+        # stop on error
+        else:
+            logger.debug("Internal error caught")
+
+            # get the error from the error queue and re-raise it
+            try:
+                _, error, traceback = self.errors.get(5)
+                error.with_traceback(traceback)
+                raise error
+
+            # if there is no error in the error queue, raise a general error
+            except Empty as empty_error:
+                raise RuntimeError("Unknown error happened") from empty_error
 
 
 class UnredefinedTimerError(Exception):

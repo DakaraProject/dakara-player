@@ -379,13 +379,16 @@ class DaemonMasterTestCase(BaseTestCase):
         self.assertIsInstance(error, daemon.UnredefinedThreadError)
 
 
-class ErrorOrKeyboardInterruptTestCase(BaseTestCase):
-    """Test the use of a daemon
+class RunnerTestCase(BaseTestCase):
+    """Test the Runner class
 
     The class to test should leave because of a Ctrl+C, or because of an
     internal eror.
     """
     class DaemonError(daemon.Daemon):
+        def init_daemon(self):
+            self.thread = self.create_thread(target=self.test)
+
         def test(self):
             raise TestError('test error')
 
@@ -397,38 +400,18 @@ class ErrorOrKeyboardInterruptTestCase(BaseTestCase):
         ready = Event()
 
         class DaemonReady(daemon.Daemon):
+            def init_daemon(self):
+                self.thread = self.create_thread(target=self.test)
+
             def test(self):
                 ready.set()
                 return
 
         return ready, DaemonReady
 
-    class ClassToTest:
-        def __init__(self, stop, errors):
-            self.stop = stop
-            self.errors = errors
-
-        def run(self, Daemon):
-            try:
-                with Daemon(self.stop, self.errors) as daemon:
-                    daemon.thread = daemon.create_thread(
-                            target=daemon.test)
-
-                    daemon.thread.start()
-                    self.stop.wait()
-
-            except KeyboardInterrupt:
-                self.stop.set()
-
     def setUp(self):
-        # create stop event
-        self.stop = Event()
-
-        # create errors queue
-        self.errors = Queue()
-
         # create class to test
-        self.class_to_test = self.ClassToTest(self.stop, self.errors)
+        self.runner = daemon.Runner()
 
     def test_run_interrupt(self):
         """Test a run with an interruption by Ctrl+C
@@ -436,13 +419,13 @@ class ErrorOrKeyboardInterruptTestCase(BaseTestCase):
         The run should end with a set stop event and an empty errors queue.
         """
         # pre assertions
-        self.assertFalse(self.stop.is_set())
-        self.assertTrue(self.errors.empty())
+        self.assertFalse(self.runner.stop.is_set())
+        self.assertTrue(self.runner.errors.empty())
 
         # get the class
         ready, DaemonReady = self.get_daemon_ready()
 
-        # prepare the sending of SIGINT
+        # prepare the sending of SIGINT to simulate a Ctrl+C
         def send_sigint():
             pid = os.getpid()
             ready.wait()
@@ -453,28 +436,27 @@ class ErrorOrKeyboardInterruptTestCase(BaseTestCase):
 
         # call the method
         with self.assertNotRaises(KeyboardInterrupt):
-            self.class_to_test.run(DaemonReady)
+            self.runner.run_safe(DaemonReady)
 
         # post assertions
-        self.assertTrue(self.stop.is_set())
-        self.assertTrue(self.errors.empty())
+        self.assertTrue(self.runner.stop.is_set())
+        self.assertTrue(self.runner.errors.empty())
         self.assertFalse(kill_thread.is_alive())
 
     def test_run_error(self):
         """Test a run with an error
 
-        The run should end with a set stop event an a non-empty error queue.
+        The run should raise a TestError, end with a set stop event and an
+        empty error queue.
         """
         # pre assertions
-        self.assertFalse(self.stop.is_set())
-        self.assertTrue(self.errors.empty())
+        self.assertFalse(self.runner.stop.is_set())
+        self.assertTrue(self.runner.errors.empty())
 
         # call the method
-        with self.assertNotRaises(TestError):
-            self.class_to_test.run(self.DaemonError)
+        with self.assertRaises(TestError):
+            self.runner.run_safe(self.DaemonError)
 
         # post assertions
-        self.assertTrue(self.stop.is_set())
-        self.assertFalse(self.errors.empty())
-        _, error, _ = self.errors.get()
-        self.assertIsInstance(error, TestError)
+        self.assertTrue(self.runner.stop.is_set())
+        self.assertTrue(self.runner.errors.empty())

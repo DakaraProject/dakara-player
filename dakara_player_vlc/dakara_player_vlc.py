@@ -1,15 +1,13 @@
 import os
 import logging
-from threading import Event
 from configparser import ConfigParser
 from tempfile import TemporaryDirectory
 from contextlib import ExitStack
-from queue import Queue, Empty
 
 import coloredlogs
 
 from .version import __version__, __date__
-from .daemon import DaemonMaster
+from .daemon import DaemonMaster, Runner
 from .text_generator import TextGenerator
 from .vlc_player import VlcPlayer
 from .dakara_server import DakaraServer
@@ -30,13 +28,13 @@ coloredlogs.install(
         )
 
 
-class DakaraPlayerVlc:
+class DakaraPlayerVlc(Runner):
     """ Class associated with the main thread
 
         It simply starts, launchs the daemon and waits for it to terminate or
         for a user Ctrl+C to be fired.
     """
-    def __init__(self, config_path):
+    def init_runner(self, config_path):
         """ Initialization
 
             Creates the daemon stop event
@@ -45,53 +43,15 @@ class DakaraPlayerVlc:
                 config_path (str): path to the config file. Will be passed to
                     the daemon, who uses it.
         """
-        logger.debug("Starting main")
-
-        # create stop event
-        self.stop = Event()
-
-        # create errors queue
-        self.errors = Queue()
-
         # store arguments
         self.config_path = config_path
+
+        logger.debug("Started main")
 
     def run(self):
         """ Launch the daemon and wait for the end
         """
-        try:
-            # create daemon thread
-            with DakaraDaemon(
-                    self.stop,
-                    self.errors,
-                    self.config_path
-                    ) as daemon:
-
-                logger.debug("Create daemon thread")
-                daemon.thread.start()
-
-                # wait for stop event
-                logger.debug("Waiting for stop event")
-                self.stop.wait()
-
-        # stop on Ctrl+C
-        except KeyboardInterrupt:
-            logger.debug("User stop caught")
-            self.stop.set()
-
-        # stop on error
-        else:
-            logger.debug("Internal error caught")
-
-            # get the error from the error queue and re-raise it
-            try:
-                _, error, traceback = self.errors.get(5)
-                error.with_traceback(traceback)
-                raise error
-
-            # if there is no error in the error queue, raise a general error
-            except Empty as empty_error:
-                raise RuntimeError("Unknown error happened") from empty_error
+        self.run_safe(DakaraDaemon, self.config_path)
 
 
 class DakaraDaemon(DaemonMaster):
