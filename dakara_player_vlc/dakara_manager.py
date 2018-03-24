@@ -1,12 +1,12 @@
 import logging
 
-from .daemon import DaemonWorker
+from .safe_workers import WorkerSafeTimer
 
 
 logger = logging.getLogger("dakara_manager")
 
 
-class DakaraManager(DaemonWorker):
+class DakaraManager(WorkerSafeTimer):
     def init_worker(self, font_loader, vlc_player, dakara_server):
         # set modules up
         self.font_loader = font_loader

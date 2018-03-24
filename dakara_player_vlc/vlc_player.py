@@ -6,7 +6,7 @@ from pkg_resources import parse_version
 import vlc
 
 from .version import __version__
-from .daemon import Daemon
+from .safe_workers import Worker
 
 
 SHARE_DIR = 'share'
@@ -28,8 +28,8 @@ IDLE_BG_PATH = os.path.join(SHARE_DIR_ABSOLUTE, IDLE_BG_NAME)
 logger = logging.getLogger("vlc_player")
 
 
-class VlcPlayer(Daemon):
-    def init_daemon(self, config, text_generator):
+class VlcPlayer(Worker):
+    def init_worker(self, config, text_generator):
         self.text_generator = text_generator
         # parameters for instanciations or saved objects
         instance_parameter = config.get('instanceParameter', "")
@@ -399,7 +399,7 @@ using default one".format(bg_path))
         self.player.stop()
         logger.debug("Stopped player")
 
-    def exit_daemon(self, type, value, traceback):
+    def exit_worker(self, type, value, traceback):
         self.stop_player()
 
 

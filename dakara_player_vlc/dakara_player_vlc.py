@@ -7,7 +7,7 @@ from contextlib import ExitStack
 import coloredlogs
 
 from .version import __version__, __date__
-from .daemon import DaemonMaster, Runner
+from .safe_workers import WorkerSafeThread, Runner
 from .text_generator import TextGenerator
 from .vlc_player import VlcPlayer
 from .dakara_server import DakaraServer
@@ -31,17 +31,17 @@ coloredlogs.install(
 class DakaraPlayerVlc(Runner):
     """ Class associated with the main thread
 
-        It simply starts, launchs the daemon and waits for it to terminate or
+        It simply starts, launchs the worker and waits for it to terminate or
         for a user Ctrl+C to be fired.
     """
     def init_runner(self, config_path):
         """ Initialization
 
-            Creates the daemon stop event
+            Creates the worker stop event
 
             Args:
                 config_path (str): path to the config file. Will be passed to
-                    the daemon, who uses it.
+                    the worker, who uses it.
         """
         # store arguments
         self.config_path = config_path
@@ -49,18 +49,18 @@ class DakaraPlayerVlc(Runner):
         logger.debug("Started main")
 
     def run(self):
-        """ Launch the daemon and wait for the end
+        """ Launch the worker and wait for the end
         """
-        self.run_safe(DakaraDaemon, self.config_path)
+        self.run_safe(DakaraWorker, self.config_path)
 
 
-class DakaraDaemon(DaemonMaster):
-    """ Class associated with the daemon thread
+class DakaraWorker(WorkerSafeThread):
+    """ Class associated with the worker thread
 
-        It simply starts, loads configuration, set the different worker
-        daemons, launches the main polling thread and waits for the end.
+        It simply starts, loads configuration, set the different worker,
+        launches the main polling thread and waits for the end.
     """
-    def init_master(self, config_path):
+    def init_worker(self, config_path):
         """ Initialization
 
             Load the config and set the logger loglevel.
@@ -73,7 +73,7 @@ class DakaraDaemon(DaemonMaster):
 
         # configure loader
         self.configure_logger()
-        logger.debug("Starting daemon")
+        logger.debug("Starting worker")
 
         # set thread
         self.thread = self.create_thread(target=self.run)
@@ -84,9 +84,9 @@ class DakaraDaemon(DaemonMaster):
             ))
 
     def run(self):
-        """ Daemon main method
+        """ Worker main method
 
-            It sets up the different worker daemons and uses them as context
+            It sets up the different workers and uses them as context
             managers, which guarantee that their different clean methods will
             be called prorperly.
 
@@ -94,15 +94,15 @@ class DakaraDaemon(DaemonMaster):
             pool) and wait for the end.
 
             When `run` is called, the end can come for several reasons:
-                * the main thread (who calls the daemon thread) has caught a
+                * the main thread (who calls the worker thread) has caught a
                   Ctrl+C from the user;
                 * an exception has been raised within the `run` method
-                  (directly in the daemon thread);
+                  (directly in the worker thread);
                 * an exception has been raised within the polling thread.
         """
-        # get the different daemon workers as context managers
+        # get the different workers as context managers
         # ExitStack makes the management of multiple context managers simpler
-        # This mechanism plus the use of Daemon classes allow to gracelly end
+        # This mechanism plus the use of Worker classes allow to gracelly end
         # the execution of any thread within the context manager. It guarantees
         # as well that on leaving this context manager, all cleanup tasks will
         # be executed.
