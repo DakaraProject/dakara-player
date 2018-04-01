@@ -114,7 +114,7 @@ Message: {message}""".format(
         logger.debug("Asking new song to server")
         try:
             response = requests.get(
-                    self.server_url + "player/status/",
+                    self.server_url + "playlist/device/status/",
                     headers=self._get_token_header()
                     )
 
@@ -155,7 +155,7 @@ Error: {error_message}""".format(
 
         try:
             response = requests.post(
-                    self.server_url + "player/error/",
+                    self.server_url + "playlist/device/error/",
                     headers=self._get_token_header(),
                     json=data
                     )
@@ -208,7 +208,7 @@ Paused: {paused}""".format(
 
         try:
             response = requests.put(
-                    self.server_url + "player/status/",
+                    self.server_url + "playlist/device/status/",
                     headers=self._get_token_header(),
                     json=data,
                     )
