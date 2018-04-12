@@ -221,7 +221,7 @@ class DakaraServerTestCase(TestCase):
 
         # call assertions
         mock_post.assert_called_with(
-                self.server_url + "/api/player/error/",
+                self.server_url + "/api/playlist/device/error/",
                 headers=ANY,
                 json={
                     'playlist_entry': self.playlist_entry_id,
@@ -278,7 +278,7 @@ class DakaraServerTestCase(TestCase):
         # call assertions
         self.assertEqual(result, self.commands)
         mock_put.assert_called_with(
-                self.server_url + "/api/player/status/",
+                self.server_url + "/api/playlist/device/status/",
                 headers=ANY,
                 json={
                     'playlist_entry_id': self.playlist_entry_id,
