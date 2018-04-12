@@ -230,3 +230,13 @@ class VlcPlayerTestCase(TestCase):
         self.assertIsNone(self.vlc_player.player.get_media())
         self.assertEqual(self.vlc_player.player.get_state(),
                          State.NothingSpecial)
+
+
+class MrlToPathTestCase(TestCase):
+    """Test the `mrl_to_path` function
+    """
+    def test(self):
+        """Test to call the function with various arguments
+        """
+        self.assertEqual(mrl_to_path('file:///a/b/c'), '/a/b/c')
+        self.assertEqual(mrl_to_path('file:///a/b%20b/c'), '/a/b b/c')
