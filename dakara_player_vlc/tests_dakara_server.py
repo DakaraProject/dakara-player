@@ -22,6 +22,9 @@ class DakaraServerTestCase(TestCase):
         # create a token
         self.token = "token value"
 
+        # create a server URL
+        self.server_url = "http://www.example.com"
+
         # create a login and password
         self.login = "test"
         self.password = "test"
@@ -49,7 +52,7 @@ class DakaraServerTestCase(TestCase):
 
         # create a DakaraServer instance
         self.dakara_server = DakaraServer({
-            'url': "http://www.example.com",
+            'url': self.server_url,
             'login': self.login,
             'password': self.password,
             })
@@ -70,7 +73,7 @@ class DakaraServerTestCase(TestCase):
 
         # call assertions
         mock_post.assert_called_with(
-                ANY,
+                self.server_url + "/api/token-auth/",
                 data={
                     'username': self.login,
                     'password': self.password,
@@ -218,7 +221,7 @@ class DakaraServerTestCase(TestCase):
 
         # call assertions
         mock_post.assert_called_with(
-                ANY,
+                self.server_url + "/api/player/error/",
                 headers=ANY,
                 json={
                     'playlist_entry': self.playlist_entry_id,
@@ -275,7 +278,7 @@ class DakaraServerTestCase(TestCase):
         # call assertions
         self.assertEqual(result, self.commands)
         mock_put.assert_called_with(
-                ANY,
+                self.server_url + "/api/player/status/",
                 headers=ANY,
                 json={
                     'playlist_entry_id': self.playlist_entry_id,
