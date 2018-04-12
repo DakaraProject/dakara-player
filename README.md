@@ -41,7 +41,7 @@ First, start the server.
 Activate the virtual environment, then start the player at the root level of the repo:
 
 ```sh
-./dakara.py runplayer
+./dakara.py
 ```
 
 ### Development
@@ -51,13 +51,13 @@ Activate the virtual environment, then start the player at the root level of the
 You can run the tests of the player. For that, activate the virtual environment, then type:
 
 ```sh
-./dakara.py test
+./tests.py
 ```
 
 You can execute a specific test by passing its name to the command (like `unittest`'s default command line argument):
 
 ```sh
-./dakara.py test test_module_name
+./tests.py test_module_name
 ```
 
 #### Hooks

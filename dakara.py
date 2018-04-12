@@ -3,7 +3,6 @@ import logging
 from argparse import ArgumentParser
 
 from dakara_player_vlc.dakara_player_vlc import DakaraPlayerVlc
-from dakara_player_vlc.tests import DakaraTestRunner
 
 
 logger = logging.getLogger('dakara')
@@ -17,22 +16,14 @@ def get_parser():
             description="Player for the Dakara project"
             )
 
-    subparsers = parser.add_subparsers(title='command', dest='command')
-    subparsers.required = True
-
-    parser_runplayer = subparsers.add_parser(
-            "runplayer",
-            help="run the player"
-            )
-
-    parser_runplayer.add_argument(
+    parser.add_argument(
             '-d',
             '--debug',
             action='store_true',
             help="enable debug output"
             )
 
-    parser_runplayer.add_argument(
+    parser.add_argument(
             '--config',
             help="path to the config file, default: '{}'".format(
                 CONFIG_FILE_PATH
@@ -40,21 +31,7 @@ def get_parser():
             default=CONFIG_FILE_PATH
             )
 
-    parser_runplayer.set_defaults(func=runplayer)
-
-    parser_test = subparsers.add_parser(
-            "test",
-            help="run the tests for the player"
-            )
-
-    parser_test.add_argument(
-            'target',
-            nargs='?',
-            help="select which test to run",
-            default=None
-            )
-
-    parser_test.set_defaults(func=test)
+    parser.set_defaults(func=runplayer)
 
     return parser
 
@@ -70,12 +47,6 @@ def runplayer(args):
 
         logger.critical(error)
         exit(1)
-
-
-def test(args):
-    dakara_test_runner = DakaraTestRunner(args.target)
-    ok = dakara_test_runner.run()
-    exit(not ok)
 
 
 if __name__ == '__main__':

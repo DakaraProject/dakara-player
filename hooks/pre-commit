@@ -1,8 +1,6 @@
 #!/bin/bash
 
-echo "Running Dakara player tests"
-
-python ./dakara.py test
+python ./tests.py
 returned_value=$?
 
 if [[ $returned_value -gt 0 ]]
