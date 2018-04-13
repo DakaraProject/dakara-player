@@ -2,6 +2,7 @@ import os
 import logging
 import urllib
 from pkg_resources import parse_version
+from threading import Timer
 
 import vlc
 
@@ -83,6 +84,9 @@ class VlcPlayer(Worker):
             # nearby the media played, not the ones explicitally added; this
             # option forces VLC to use the explicitally added files only
             self.text_screen_media_parameters.append("no-sub-autodetect-file")
+
+        # timer for VLC taking too long to stop
+        self.timer_stop_player_too_long = None
 
     def load_transition_bg_path(self, bg_path):
         """ Load transition backgound file path
@@ -396,11 +400,27 @@ using default one".format(bg_path))
         """ Stop playing music
         """
         logger.info("Stopping player")
+
+        # send a warning within 3 seconds if VLC has not stopped already
+        self.timer_stop_player_too_long = Timer(
+                3, self.warn_stop_player_too_long
+                )
+
+        self.timer_stop_player_too_long.start()
         self.player.stop()
         logger.debug("Stopped player")
 
+    def warn_stop_player_too_long(self):
+        """ Notify the user that VLC takes too long to stop
+        """
+        logger.warning("VLC takes too long to stop")
+
     def exit_worker(self, type, value, traceback):
         self.stop_player()
+
+        # clear the warning message if any
+        if self.timer_stop_player_too_long:
+            self.timer_stop_player_too_long.cancel()
 
 
 def mrl_to_path(file_mrl):
