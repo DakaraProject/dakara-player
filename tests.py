@@ -16,13 +16,20 @@ def get_parser():
             default=None
             )
 
+    parser.add_argument(
+            '-v',
+            '--verbose',
+            help="enable verbose output",
+            action="store_true"
+            )
+
     parser.set_defaults(func=test)
 
     return parser
 
 
 def test(args):
-    dakara_test_runner = DakaraTestRunner(args.target)
+    dakara_test_runner = DakaraTestRunner(args.target, args.verbose)
     print("Running tests for the Dakara player")
     ok = dakara_test_runner.run()
     exit(not ok)

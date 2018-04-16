@@ -13,7 +13,10 @@ class DakaraTestRunner:
         target (str): if provided, the corresponding test will be run,
             otherwise all test cases will be run.
     """
-    def __init__(self, target=None):
+    def __init__(self, target=None, verbose=False):
+        # set verbosity
+        self.verbosity = verbose + 1
+
         # create test suite
         self.test_suite = TestSuite()
 
@@ -39,7 +42,7 @@ class DakaraTestRunner:
     def run(self):
         """Run the collected test(s)
         """
-        runner = TextTestRunner()
+        runner = TextTestRunner(verbosity=self.verbosity)
         results = runner.run(self.test_suite)
 
         return results.wasSuccessful()
