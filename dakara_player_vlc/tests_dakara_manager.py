@@ -2,13 +2,8 @@ from unittest import TestCase
 from unittest.mock import Mock
 from threading import Event
 from queue import Queue
-import logging
 
 from dakara_player_vlc.dakara_manager import DakaraManager
-
-
-# shut down dakara manager logging
-logging.getLogger('dakara_manager').setLevel(logging.CRITICAL)
 
 
 class DakaraManagerTestCase(TestCase):

@@ -1,6 +1,7 @@
 from unittest import TestSuite, TextTestRunner, defaultTestLoader
 from glob import glob
 import os
+import logging
 
 
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
@@ -16,6 +17,16 @@ class DakaraTestRunner:
     def __init__(self, target=None, verbose=False):
         # set verbosity
         self.verbosity = verbose + 1
+
+        # shut down logging in non verbose mode
+        if verbose:
+            logging.basicConfig(
+                    format="[LOG:%(levelname)s %(message)s]",
+                    level=logging.DEBUG
+                    )
+
+        else:
+            logging.disable(logging.CRITICAL)
 
         # create test suite
         self.test_suite = TestSuite()
