@@ -46,7 +46,7 @@ class DakaraServer:
                     )
 
         except requests.exceptions.RequestException as error:
-            raise CommunicationError("Network error, unable to talk \
+            raise NetworkError("Network error, unable to talk \
 to the server for authentication") from error
 
         # manage sucessful connection response
@@ -235,7 +235,7 @@ class AuthenticationError(Exception):
     """
 
 
-class CommunicationError(Exception):
+class NetworkError(Exception):
     """ Error raised when the communication with the server failed during a
         critical task
     """

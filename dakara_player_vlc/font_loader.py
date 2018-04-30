@@ -3,14 +3,19 @@ import sys
 import logging
 
 
-SHARE_DIRECTORY = "share"
-FONT_DIRECTORY = "fonts"
+SHARE_DIR = "share"
+SHARE_DIR_ABSOLUTE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  os.pardir,
+                                  SHARE_DIR)
+FONT_DIR = "fonts"
 
 
 logger = logging.getLogger("font_loader")
 
 
 def get_font_loader_class():
+    """Get the font loader associated to the current platform
+    """
     if 'linux' in sys.platform:
         return FontLoaderLinux
 
@@ -44,8 +49,8 @@ class FontLoader:
 
 class FontLoaderLinux(FontLoader):
     GREETINGS = "Font loader for Linux selected"
-    FONT_DIRECTORY_SYSTEM = "/usr/share/fonts"
-    FONT_DIRECTORY_USER = os.path.join(os.environ['HOME'], ".fonts")
+    FONT_DIR_SYSTEM = "/usr/share/fonts"
+    FONT_DIR_USER = os.path.join(os.environ['HOME'], ".fonts")
 
     def __init__(self):
         # call parent constructor
@@ -57,14 +62,14 @@ class FontLoaderLinux(FontLoader):
     def load(self):
         # ensure that the user font directory exists
         try:
-            os.mkdir(self.FONT_DIRECTORY_USER)
+            os.mkdir(self.FONT_DIR_USER)
 
         except OSError:
             pass
 
         self.load_from_directory(os.path.join(
-            SHARE_DIRECTORY,
-            FONT_DIRECTORY
+            SHARE_DIR_ABSOLUTE,
+            FONT_DIR
             ))
 
     def load_from_directory(self, directory):
@@ -91,7 +96,7 @@ class FontLoaderLinux(FontLoader):
 
             # check if the font is installed at system level
             if os.path.isfile(os.path.join(
-                    self.FONT_DIRECTORY_SYSTEM,
+                    self.FONT_DIR_SYSTEM,
                     font_file_name
                     )):
 
@@ -105,7 +110,7 @@ class FontLoaderLinux(FontLoader):
 
             # check if the font is installed at user level
             if os.path.isfile(os.path.join(
-                    self.FONT_DIRECTORY_USER,
+                    self.FONT_DIR_USER,
                     font_file_name
                     )):
 
@@ -117,12 +122,12 @@ class FontLoaderLinux(FontLoader):
 
             # then, if the font is not installed, install it
             font_file_target_path = os.path.join(
-                    self.FONT_DIRECTORY_USER,
+                    self.FONT_DIR_USER,
                     font_file_name
                     )
 
             os.symlink(
-                    os.path.join(os.getcwd(), font_file_path),
+                    font_file_path,
                     font_file_target_path
                     )
 
@@ -155,8 +160,8 @@ class FontLoaderWindows(FontLoader):
 
     def load(self):
         font_path = os.path.join(
-            SHARE_DIRECTORY,
-            FONT_DIRECTORY
+            SHARE_DIR,
+            FONT_DIR
             )
 
         # since there seems to be no workable way to install fonts on Windows

@@ -2,31 +2,35 @@ import os
 import logging
 import urllib
 from pkg_resources import parse_version
+from threading import Timer
 
 import vlc
 
 from .version import __version__
-from .daemon import Daemon
+from .safe_workers import Worker
 
 
 SHARE_DIR = 'share'
+SHARE_DIR_ABSOLUTE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  os.pardir,
+                                  SHARE_DIR)
 
 
 TRANSITION_DURATION = 2
 TRANSITION_BG_NAME = "transition.png"
-TRANSITION_BG_PATH = os.path.join(SHARE_DIR, TRANSITION_BG_NAME)
+TRANSITION_BG_PATH = os.path.join(SHARE_DIR_ABSOLUTE, TRANSITION_BG_NAME)
 
 
 IDLE_DURATION = 60
 IDLE_BG_NAME = "idle.png"
-IDLE_BG_PATH = os.path.join(SHARE_DIR, IDLE_BG_NAME)
+IDLE_BG_PATH = os.path.join(SHARE_DIR_ABSOLUTE, IDLE_BG_NAME)
 
 
 logger = logging.getLogger("vlc_player")
 
 
-class VlcPlayer(Daemon):
-    def init_daemon(self, config, text_generator):
+class VlcPlayer(Worker):
+    def init_worker(self, config, text_generator):
         self.text_generator = text_generator
         # parameters for instanciations or saved objects
         instance_parameter = config.get('instanceParameter', "")
@@ -80,6 +84,9 @@ class VlcPlayer(Daemon):
             # nearby the media played, not the ones explicitally added; this
             # option forces VLC to use the explicitally added files only
             self.text_screen_media_parameters.append("no-sub-autodetect-file")
+
+        # timer for VLC taking too long to stop
+        self.timer_stop_player_too_long = None
 
     def load_transition_bg_path(self, bg_path):
         """ Load transition backgound file path
@@ -178,11 +185,7 @@ using default one".format(bg_path))
                     )
 
             # get file path
-            # the file path ist stored as MRL, we have to bring it back
-            # to a more classic looking path format
-            file_mrl = self.media_pending.get_mrl()
-            file_mrl_parsed = urllib.parse.urlparse(file_mrl)
-            file_path = urllib.parse.unquote(file_mrl_parsed.path)
+            file_path = mrl_to_path(self.media_pending.get_mrl())
             logger.info("Now playing \"{}\"".format(
                 file_path
                 ))
@@ -384,18 +387,47 @@ using default one".format(bg_path))
         """
         if not self.is_idle():
             if pause:
-                self.player.pause()
                 logger.info("Setting pause")
+                self.player.pause()
+                logger.debug("Set pause")
 
             else:
-                self.player.play()
                 logger.info("Resuming play")
+                self.player.play()
+                logger.debug("Resumed play")
 
     def stop_player(self):
         """ Stop playing music
         """
-        self.player.stop()
         logger.info("Stopping player")
 
-    def exit_daemon(self, type, value, traceback):
+        # send a warning within 3 seconds if VLC has not stopped already
+        self.timer_stop_player_too_long = Timer(
+                3, self.warn_stop_player_too_long
+                )
+
+        self.timer_stop_player_too_long.start()
+        self.player.stop()
+        logger.debug("Stopped player")
+
+    def warn_stop_player_too_long(self):
+        """ Notify the user that VLC takes too long to stop
+        """
+        logger.warning("VLC takes too long to stop")
+
+    def exit_worker(self, type, value, traceback):
         self.stop_player()
+
+        # clear the warning message if any
+        if self.timer_stop_player_too_long:
+            self.timer_stop_player_too_long.cancel()
+
+
+def mrl_to_path(file_mrl):
+    """Convert a MRL to a classic path
+
+    File path is stored as MRL inside a media object, we have to bring it back
+    to a more classic looking path format.
+    """
+    file_mrl_parsed = urllib.parse.urlparse(file_mrl)
+    return urllib.parse.unquote(file_mrl_parsed.path)

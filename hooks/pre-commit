@@ -1,0 +1,12 @@
+#!/bin/bash
+
+python ./tests.py
+returned_value=$?
+
+if [[ $returned_value -gt 0 ]]
+then
+    >&2 echo "Commit denied, there were test failures."
+    exit 1
+fi
+
+exit 0

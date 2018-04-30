@@ -1,6 +1,8 @@
 # Dakara VLC player
 
-Interface between Dakara server and VLC, for the Dakara project.
+[![Build Status](https://travis-ci.org/DakaraProject/dakara-player-vlc.svg?branch=develop)](https://travis-ci.org/DakaraProject/dakara-player-vlc)
+
+Interface between the Dakara server and VLC, for the Dakara project.
 
 ### Installation
 
@@ -12,12 +14,12 @@ Installation guidelines are provided over here:
 
 #### System requirements
 
-* Python3, for the magic to take place;
+* Python3.5 or higher, for the magic to take place;
 * [VLC](https://www.videolan.org/vlc/), duh.
 
 #### Virtual environment
 
-It is strongly recommended to run Dakara player VLC on virtual environment.
+It is strongly recommended to run the Dakara VLC player within a virtual environment.
 
 #### Python dependencies
 
@@ -29,7 +31,7 @@ pip install -r requirements.txt
 
 #### Settings
 
-Copy the file `config.ini.example` to `config.py`, then uncomment and modify the different config values as you wish.
+Copy the file `config.ini.example` to `config.ini`, then uncomment and modify the different config values as you wish.
 Mandatory parameters are not commented. 
 
 ### Start the player
@@ -40,4 +42,36 @@ Activate the virtual environment, then start the player at the root level of the
 
 ```sh
 ./dakara.py
+```
+
+### Development
+
+#### Run tests
+
+You can run the tests of the player. For that, activate the virtual environment, then type:
+
+```sh
+./tests.py
+```
+
+You can execute a specific test by passing its name to the command (like `unittest`'s default command line argument):
+
+```sh
+./tests.py test_module_name
+```
+
+#### Hooks
+
+Git hooks are included in the `hooks` directory.
+
+Use the following command to use this hook folder for the project:
+
+```
+git config core.hooksPath hooks
+```
+
+If you're using git < 2.9 you can make a symlink instead:
+
+```
+ln -s -f ../../hooks/pre-commit .git/hooks/pre-commit
 ```

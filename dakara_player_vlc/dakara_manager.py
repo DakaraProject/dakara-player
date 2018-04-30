@@ -1,12 +1,12 @@
 import logging
 
-from .daemon import DaemonWorker
+from .safe_workers import WorkerSafeTimer
 
 
 logger = logging.getLogger("dakara_manager")
 
 
-class DakaraManager(DaemonWorker):
+class DakaraManager(WorkerSafeTimer):
     def init_worker(self, font_loader, vlc_player, dakara_server):
         # set modules up
         self.font_loader = font_loader
@@ -16,6 +16,9 @@ class DakaraManager(DaemonWorker):
         # set player callbacks
         self.vlc_player.set_song_end_callback(self.handle_song_end)
         self.vlc_player.set_error_callback(self.handle_error)
+
+        # set timer
+        self.timer = self.create_timer(0, self.start)
 
     def start(self):
         # initialize first steps
@@ -85,5 +88,5 @@ class DakaraManager(DaemonWorker):
 
         # create timer calling poll_server
         if not self.stop.is_set():
-            self.thread = self.create_timer(1, self.poll_server)
-            self.thread.start()
+            self.timer = self.create_timer(1, self.poll_server)
+            self.timer.start()

@@ -20,29 +20,25 @@ def get_parser():
             '-d',
             '--debug',
             action='store_true',
-            help="Enable debug output."
+            help="enable debug output"
             )
 
     parser.add_argument(
             '--config',
-            help="Path to the config file. Default: '{}'".format(
+            help="path to the config file, default: '{}'".format(
                 CONFIG_FILE_PATH
                 ),
             default=CONFIG_FILE_PATH
             )
 
+    parser.set_defaults(func=runplayer)
+
     return parser
 
 
-if __name__ == '__main__':
-    parser = get_parser()
-    args = parser.parse_args()
-
+def runplayer(args):
     try:
-        dakara = DakaraPlayerVlc(
-                args.config
-                )
-
+        dakara = DakaraPlayerVlc(args.config)
         dakara.run()
 
     except Exception as error:
@@ -51,3 +47,10 @@ if __name__ == '__main__':
 
         logger.critical(error)
         exit(1)
+
+
+if __name__ == '__main__':
+    parser = get_parser()
+    args = parser.parse_args()
+
+    args.func(args)

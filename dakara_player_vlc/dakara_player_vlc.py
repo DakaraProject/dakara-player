@@ -1,15 +1,13 @@
 import os
 import logging
-from threading import Event
 from configparser import ConfigParser
 from tempfile import TemporaryDirectory
 from contextlib import ExitStack
-from queue import Queue, Empty
 
 import coloredlogs
 
 from .version import __version__, __date__
-from .daemon import DaemonMaster
+from .safe_workers import WorkerSafeThread, Runner
 from .text_generator import TextGenerator
 from .vlc_player import VlcPlayer
 from .dakara_server import DakaraServer
@@ -30,77 +28,39 @@ coloredlogs.install(
         )
 
 
-class DakaraPlayerVlc:
+class DakaraPlayerVlc(Runner):
     """ Class associated with the main thread
 
-        It simply starts, launchs the daemon and waits for it to terminate or
+        It simply starts, launchs the worker and waits for it to terminate or
         for a user Ctrl+C to be fired.
     """
-    def __init__(self, config_path):
+    def init_runner(self, config_path):
         """ Initialization
 
-            Creates the daemon stop event
+            Creates the worker stop event
 
             Args:
                 config_path (str): path to the config file. Will be passed to
-                    the daemon, who uses it.
+                    the worker, who uses it.
         """
-        logger.debug("Starting main")
-
-        # create stop event
-        self.stop = Event()
-
-        # create errors queue
-        self.errors = Queue()
-
         # store arguments
         self.config_path = config_path
 
+        logger.debug("Started main")
+
     def run(self):
-        """ Launch the daemon and wait for the end
+        """ Launch the worker and wait for the end
         """
-        try:
-            # create daemon thread
-            with DakaraDaemon(
-                    self.stop,
-                    self.errors,
-                    self.config_path
-                    ) as daemon:
-
-                logger.debug("Create daemon thread")
-                daemon.thread.start()
-
-                # wait for stop event
-                logger.debug("Waiting for stop event")
-                self.stop.wait()
-
-        # stop on Ctrl+C
-        except KeyboardInterrupt:
-            logger.debug("User stop caught")
-            self.stop.set()
-
-        # stop on error
-        else:
-            logger.debug("Internal error caught")
-
-            # get the error from the error queue and re-raise it
-            try:
-                _, error, traceback = self.errors.get(5)
-                error.with_traceback(traceback)
-                raise error
-
-            # if there is no error in the error queue, raise a general error
-            except Empty as empty_error:
-                raise RuntimeError("Unknown error happened") from empty_error
+        self.run_safe(DakaraWorker, self.config_path)
 
 
-class DakaraDaemon(DaemonMaster):
-    """ Class associated with the daemon thread
+class DakaraWorker(WorkerSafeThread):
+    """ Class associated with the worker thread
 
-        It simply starts, loads configuration, set the different worker
-        daemons, launches the main polling thread and waits for the end.
+        It simply starts, loads configuration, set the different worker,
+        launches the main polling thread and waits for the end.
     """
-    def init_master(self, config_path):
+    def init_worker(self, config_path):
         """ Initialization
 
             Load the config and set the logger loglevel.
@@ -108,13 +68,15 @@ class DakaraDaemon(DaemonMaster):
             Args:
                 config_path (str): path to the config file.
         """
-        logger.debug("Starting daemon")
-
         # load config
         self.config = self.load_config(config_path)
 
         # configure loader
         self.configure_logger()
+        logger.debug("Starting worker")
+
+        # set thread
+        self.thread = self.create_thread(target=self.run)
 
         logger.info("Dakara player {} ({})".format(
             __version__,
@@ -122,25 +84,24 @@ class DakaraDaemon(DaemonMaster):
             ))
 
     def run(self):
-        """ Daemon main method
+        """ Worker main method
 
-            It sets up the different worker daemons and uses them as context
+            It sets up the different workers and uses them as context
             managers, which guarantee that their different clean methods will
             be called prorperly.
 
-            Then its starts the polling thread (unique member of the threads
-            pool) and wait for the end.
+            Then it starts the polling thread and waits for the end.
 
             When `run` is called, the end can come for several reasons:
-                * the main thread (who calls the daemon thread) has caught a
+                * the main thread (who calls the worker thread) has caught a
                   Ctrl+C from the user;
                 * an exception has been raised within the `run` method
-                  (directly in the daemon thread);
+                  (directly in the worker thread);
                 * an exception has been raised within the polling thread.
         """
-        # get the different daemon workers as context managers
+        # get the different workers as context managers
         # ExitStack makes the management of multiple context managers simpler
-        # This mechanism plus the use of Daemon classes allow to gracelly end
+        # This mechanism plus the use of Worker classes allow to gracelly end
         # the execution of any thread within the context manager. It guarantees
         # as well that on leaving this context manager, all cleanup tasks will
         # be executed.
