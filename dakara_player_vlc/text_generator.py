@@ -23,6 +23,14 @@ IDLE_TEXT_NAME = "idle.ass"
 ICON_MAP_FILE = "font-awesome.ini"
 
 
+LINK_TYPE_NAMES = {
+    'OP': "Opening",
+    'ED': "Ending",
+    'IN': "Insert song",
+    'IS': "Image song"
+}
+
+
 logger = logging.getLogger("text_generator")
 
 
@@ -53,8 +61,12 @@ class TextGenerator:
                 )
 
         # add filter for converting font icon name to character
-        self.environment.filters['icon'] = lambda name: \
-            chr(int(self.icon_map.get(name, '0020'), 16))
+        self.environment.filters['icon'] = self.convert_icon
+
+        # add filter for work link type complete name
+        self.environment.filters['link_type_name'] = (
+            self.convert_link_type_name
+        )
 
         transition_template_path = config.get(
                 'transitionTemplateName',
@@ -66,6 +78,29 @@ class TextGenerator:
         # load templates
         self.load_transition_template(transition_template_path)
         self.load_idle_template(idle_template_path)
+
+    def convert_icon(self, name):
+        """Convert the name of an icon to its code
+
+        Args:
+            name (str): name of the icon.
+
+        Returns:
+            str: corresponding character.
+        """
+        return chr(int(self.icon_map.get(name, '0020'), 16))
+
+    @staticmethod
+    def convert_link_type_name(link_type):
+        """Convert the short name of a link type to its long name
+
+        Args:
+            link_type (str): short name of the link type.
+
+        Returns:
+            str: long name of the link type.
+        """
+        return LINK_TYPE_NAMES[link_type]
 
     def create_idle_text(self, info):
         """ Create custom idle text and save it
