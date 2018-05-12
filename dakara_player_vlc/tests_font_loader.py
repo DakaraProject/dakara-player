@@ -1,6 +1,5 @@
 from unittest import TestCase
 from unittest.mock import patch, call, ANY
-import logging
 import os
 
 from dakara_player_vlc.font_loader import (
@@ -10,10 +9,6 @@ from dakara_player_vlc.font_loader import (
         SHARE_DIR_ABSOLUTE,
         FONT_DIR,
         )
-
-
-# shut down font loader logging
-logging.getLogger('font_loader').setLevel(logging.CRITICAL)
 
 
 class GetFontLoaderClassTestCase(TestCase):

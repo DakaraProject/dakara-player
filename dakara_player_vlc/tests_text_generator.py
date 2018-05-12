@@ -1,6 +1,5 @@
 from unittest import TestCase
 from unittest.mock import patch, mock_open
-import logging
 import os
 
 from dakara_player_vlc.text_generator import (
@@ -9,10 +8,6 @@ from dakara_player_vlc.text_generator import (
         TRANSITION_TEMPLATE_NAME,
         SHARE_DIR_ABSOLUTE,
         )
-
-
-# shut down text_generator logging
-logging.getLogger("text_generator").setLevel(logging.DEBUG)
 
 
 class TextGeneratorTestCase(TestCase):

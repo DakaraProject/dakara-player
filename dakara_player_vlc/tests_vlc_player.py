@@ -3,7 +3,6 @@ from unittest.mock import Mock, patch
 from threading import Event
 from queue import Queue
 from configparser import ConfigParser
-import logging
 import os
 
 from vlc import State, EventType
@@ -16,10 +15,6 @@ from dakara_player_vlc.vlc_player import (
         IDLE_BG_PATH,
         TRANSITION_BG_PATH,
         )
-
-
-# shut down vlc_player logging
-logging.getLogger("vlc_player").setLevel(logging.CRITICAL)
 
 
 class VlcPlayerTestCase(TestCase):
