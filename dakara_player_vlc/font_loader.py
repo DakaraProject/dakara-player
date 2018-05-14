@@ -2,12 +2,7 @@ import os
 import sys
 import logging
 
-
-SHARE_DIR = "share"
-SHARE_DIR_ABSOLUTE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                  os.pardir,
-                                  SHARE_DIR)
-FONT_DIR = "fonts"
+from dakara_player_vlc.resources_manager import get_all_fonts, PATH_FONTS
 
 
 logger = logging.getLogger("font_loader")
@@ -67,24 +62,18 @@ class FontLoaderLinux(FontLoader):
         except OSError:
             pass
 
-        self.load_from_directory(os.path.join(
-            SHARE_DIR_ABSOLUTE,
-            FONT_DIR
-            ))
+        # load fonts
+        self.load_from_resources_directory()
 
-    def load_from_directory(self, directory):
-        # check the directory exists
-        if not os.path.isdir(directory):
-            raise IOError("Directory '{}' does not exist".format(directory))
+    def load_from_resources_directory(self):
+        logger.debug("Scanning font directory")
+        font_file_path_list = [filepath
+                               for filepath in get_all_fonts()
+                               if not os.path.basename(filepath).
+                               startswith('__')]
 
-        logger.debug("Scanning directory '{}' for fonts".format(directory))
-
-        # get the fonts
-        font_file_path_list = []
-        for font_file_name in os.listdir(directory):
-            font_file_path_list.append(os.path.join(directory,
-                                       font_file_name))
-
+        for font_file_path in font_file_path_list:
+            font_file_name = os.path.basename(font_file_path)
             logger.debug("Font '{}' found to install".format(font_file_name))
 
         self.load_from_list(font_file_path_list)
@@ -109,10 +98,11 @@ class FontLoaderLinux(FontLoader):
                 continue
 
             # check if the font is installed at user level
-            if os.path.isfile(os.path.join(
-                    self.FONT_DIR_USER,
-                    font_file_name
-                    )):
+            font_file_user_path = os.path.join(self.FONT_DIR_USER,
+                                               font_file_name)
+
+            if os.path.isfile(font_file_user_path) or \
+               os.path.islink(font_file_user_path):
 
                 logger.debug("Font '{}' found in user directory".format(
                     font_file_name
@@ -159,17 +149,16 @@ class FontLoaderWindows(FontLoader):
     GREETINGS = "Font loader for Windows selected"
 
     def load(self):
-        font_path = os.path.join(
-            SHARE_DIR,
-            FONT_DIR
-            )
+        logger.debug("Scanning font directory")
+        font_file_path_list = get_all_fonts()
 
         # since there seems to be no workable way to install fonts on Windows
         # through Python, we ask the user to do it by themselve
         print("Please install the following fonts located in the '{}' folder \
-and press Enter:".format(font_path))
+and press Enter:".format(PATH_FONTS))
 
-        for font_file in os.listdir(font_path):
-            print(font_file)
+        for font_file_path in font_file_path_list:
+            font_file_name = os.path.basename(font_file_path)
+            print(font_file_name)
 
         input()

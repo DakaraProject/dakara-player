@@ -3,13 +3,9 @@ import logging
 from codecs import open
 from configparser import ConfigParser
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, ChoiceLoader
 
-
-SHARE_DIR = 'share'
-SHARE_DIR_ABSOLUTE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                  os.pardir,
-                                  SHARE_DIR)
+from dakara_player_vlc.resources_manager import get_file, PATH_SUBFILES
 
 
 TRANSITION_TEMPLATE_NAME = "transition.ass"
@@ -49,23 +45,19 @@ class TextGenerator:
     def load_templates(self, config):
         # create Jinja2 environment
         self.environment = Environment(
-                loader=FileSystemLoader(SHARE_DIR_ABSOLUTE)
-                )
+            loader=ChoiceLoader([
+                FileSystemLoader(config.get('templateDirectory', '')),
+                FileSystemLoader(PATH_SUBFILES)
+            ])
+        )
 
         # add filter for converting font icon name to character
         self.environment.filters['icon'] = lambda name: \
             chr(int(self.icon_map.get(name, '0020'), 16))
 
-        transition_template_path = config.get(
-                'transitionTemplateName',
-                TRANSITION_TEMPLATE_NAME
-                )
-
-        idle_template_path = config.get('idleTemplateName', IDLE_TEMPLATE_NAME)
-
         # load templates
-        self.load_transition_template(transition_template_path)
-        self.load_idle_template(idle_template_path)
+        self.load_transition_template()
+        self.load_idle_template()
 
     def create_idle_text(self, info):
         """ Create custom idle text and save it
@@ -113,69 +105,47 @@ class TextGenerator:
     def load_icon_map(self):
         """ Load the icon map
         """
-        icon_map_path = os.path.join(SHARE_DIR_ABSOLUTE, ICON_MAP_FILE)
-
-        if not os.path.isfile(icon_map_path):
-            raise IOError("Icon font map file '{}' not found".format(
-                icon_map_path
-                ))
+        icon_map_path = get_file(ICON_MAP_FILE)
 
         icon_map = ConfigParser()
         icon_map.read(icon_map_path)
         self.icon_map = icon_map['map']
 
-    def load_transition_template(self, template_name):
+    def load_transition_template(self):
         """ Load transition screen text template file
 
             Load the default or customized ASS template for
             transition screen.
         """
-        template_path = os.path.join(SHARE_DIR_ABSOLUTE, template_name)
-        template_default_path = os.path.join(SHARE_DIR,
-                                             TRANSITION_TEMPLATE_NAME)
+        loader_custom, loader_default = self.environment.loader.loaders
 
-        if os.path.isfile(template_path):
-            pass
+        if TRANSITION_TEMPLATE_NAME in loader_custom.list_templates():
+            logger.debug("Loading custom transition template file")
 
-        elif os.path.isfile(template_default_path):
-            logger.warning("Transition template file not found \"{}\", \
-using default one".format(template_path))
-
-            template_name = TRANSITION_TEMPLATE_NAME
+        elif TRANSITION_TEMPLATE_NAME in loader_default.list_templates():
+            logger.debug("Loading default transition template file")
 
         else:
             raise IOError("No template file for transition screen found")
 
-        logger.debug("Loading transition template file \"{}\"".format(
-            template_path
-            ))
+        self.transition_template = self.environment.get_template(
+            TRANSITION_TEMPLATE_NAME)
 
-        self.transition_template = self.environment.get_template(template_name)
-
-    def load_idle_template(self, template_name):
+    def load_idle_template(self):
         """ Load idle screen text template file
 
             Load the default or customized ASS template for
             idle screen.
         """
-        template_path = os.path.join(SHARE_DIR_ABSOLUTE, template_name)
-        template_default_path = os.path.join(SHARE_DIR_ABSOLUTE,
-                                             IDLE_TEMPLATE_NAME)
+        loader_custom, loader_default = self.environment.loader.loaders
 
-        if os.path.isfile(template_path):
-            pass
+        if IDLE_TEMPLATE_NAME in loader_custom.list_templates():
+            logger.debug("Loading custom idle template file")
 
-        elif os.path.isfile(template_default_path):
-            logger.warning("Idle template file not found \"{}\", \
-using default one".format(template_path))
-
-            template_name = IDLE_TEMPLATE_NAME
+        elif IDLE_TEMPLATE_NAME in loader_default.list_templates():
+            logger.debug("Loading default idle template file")
 
         else:
             raise IOError("No template file for idle screen found")
 
-        logger.debug("Loading idle template file \"{}\"".format(
-            template_path
-            ))
-
-        self.idle_template = self.environment.get_template(template_name)
+        self.idle_template = self.environment.get_template(IDLE_TEMPLATE_NAME)

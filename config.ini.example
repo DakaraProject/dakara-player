@@ -78,6 +78,9 @@ fullscreen = False
 # Default is share/idle.ass
 #idleTemplatePath = path/to/idle/template.file
 
+#templatesDirectory = path/to/templates/directory
+#backgroundsDirectory = path/to/backgrounds/directory
+
 [Server]
 # Server URL
 url = http://127.0.0.1:8000/

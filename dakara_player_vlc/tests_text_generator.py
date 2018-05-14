@@ -5,29 +5,16 @@ import os
 from dakara_player_vlc.text_generator import (
         TextGenerator,
         IDLE_TEXT_NAME,
-        TRANSITION_TEMPLATE_NAME,
-        SHARE_DIR_ABSOLUTE,
+        TRANSITION_TEXT_NAME,
         )
+
+from dakara_player_vlc.resources_manager import PATH_TEST_FIXTURES
 
 
 class TextGeneratorTestCase(TestCase):
     """Test the text generator class
     """
     def setUp(self):
-        # set idle text template
-        self.idle_text_template_name = "tests_idle.txt"
-        self.idle_text_template = os.path.join(
-                SHARE_DIR_ABSOLUTE,
-                self.idle_text_template_name
-                )
-
-        # set transition text template
-        self.transition_text_template_name = "tests_transition.txt"
-        self.transition_text_template = os.path.join(
-                SHARE_DIR_ABSOLUTE,
-                self.transition_text_template_name
-                )
-
         # create temporary folder
         self.temdir = "nowhere"
 
@@ -36,7 +23,7 @@ class TextGeneratorTestCase(TestCase):
 
         # creat transition text file path
         self.transition_text_path = os.path.join(self.temdir,
-                                                 TRANSITION_TEMPLATE_NAME)
+                                                 TRANSITION_TEXT_NAME)
 
         # create info dictionary
         self.idle_info = {
@@ -63,10 +50,8 @@ class TextGeneratorTestCase(TestCase):
         # create text generator object
         self.text_generator = TextGenerator(
                 {
-                    'idleTemplateName': self.idle_text_template_name,
-                    'transitionTemplateName':
-                        self.transition_text_template_name,
-                    },
+                    'templateDirectory': PATH_TEST_FIXTURES,
+                },
                 self.temdir
                 )
 

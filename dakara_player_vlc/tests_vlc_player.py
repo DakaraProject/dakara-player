@@ -3,7 +3,6 @@ from unittest.mock import Mock, patch
 from threading import Event
 from queue import Queue
 from configparser import ConfigParser
-import os
 
 from vlc import State, EventType
 
@@ -11,10 +10,15 @@ from dakara_player_vlc.version import __version__ as dakara_player_vlc_version
 from dakara_player_vlc.vlc_player import (
         VlcPlayer,
         mrl_to_path,
-        SHARE_DIR_ABSOLUTE,
-        IDLE_BG_PATH,
-        TRANSITION_BG_PATH,
+        IDLE_BG_NAME,
+        TRANSITION_BG_NAME,
         )
+
+from dakara_player_vlc.resources_manager import (
+    get_test_fixture,
+    get_image,
+    PATH_TEST_FIXTURES
+)
 
 
 class VlcPlayerTestCase(TestCase):
@@ -28,37 +32,34 @@ class VlcPlayerTestCase(TestCase):
         self.fullscreen = "yes"
 
         # create kara folder
-        self.kara_folder = SHARE_DIR_ABSOLUTE
+        self.kara_folder = PATH_TEST_FIXTURES
 
         # create media parameter
         self.media_parameter = "no-video"
 
         # create idle background path
-        self.idle_background_path = IDLE_BG_PATH
+        self.idle_background_path = get_image(IDLE_BG_NAME)
 
         # create transition background path
-        self.transition_background_path = TRANSITION_BG_PATH
+        self.transition_background_path = get_image(TRANSITION_BG_NAME)
 
         # create transition duration
         self.transition_duration = 1
 
-        # create a subtitle
-        self.subtitle_path = os.path.join(
-                SHARE_DIR_ABSOLUTE,
-                "test_screen.ass"
-                )
-
         # create a mock text generator
         self.text_generator = Mock()
 
+        # create a subtitle
+        self.subtitle_path = get_test_fixture("song.ass")
+
         # create song path
-        self.song_file_path = IDLE_BG_PATH
+        self.song_file_path = get_test_fixture("song.png")
 
         # create playlist entry
         self.playlist_entry = {
                 'id': 0,
                 'song': {
-                    'file_path': os.path.basename(self.song_file_path),
+                    'file_path': "song.png",
                     }
                 }
 
@@ -68,8 +69,6 @@ class VlcPlayerTestCase(TestCase):
                 'instanceParameter': self.instance_parameter,
                 'karaFolder': self.kara_folder,
                 'mediaParameter': self.media_parameter,
-                'idleBgPath': self.idle_background_path,
-                'transitionBgPath': self.transition_background_path,
                 'transitionDuration': self.transition_duration,
                 'fullscreen': self.fullscreen,
                 }
