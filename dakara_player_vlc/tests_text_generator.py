@@ -131,8 +131,8 @@ class TextGeneratorCustomTestCase(TestCase):
             get_template(TRANSITION_TEMPLATE_NAME)
         )
 
-    def test_custom_template_directory_sucess(self):
-        """Test to instanciate with an existing template directory
+    def test_custom_template_directory_success(self):
+        """Test to instanciate with an existing templates directory
 
         In that case, the templates come from this directory.
         """
@@ -153,7 +153,7 @@ class TextGeneratorCustomTestCase(TestCase):
         )
 
     def test_custom_template_directory_fail(self):
-        """Test to instanciate with a template directory thad does not exist
+        """Test to instanciate with a templates directory thad does not exist
 
         In that case, the templates come from the fallback directory.
         """

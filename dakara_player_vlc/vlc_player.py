@@ -98,8 +98,10 @@ class VlcPlayer(Worker):
             Args:
                 bg_directory_path: path to the background directory.
         """
-        if bg_directory_path and \
-           transition_bg_name in os.listdir(bg_directory_path):
+        dir_exists = os.path.isdir(bg_directory_path)
+        dir_content = os.listdir(bg_directory_path) if dir_exists else []
+
+        if transition_bg_name in dir_content:
             bg_path = os.path.join(bg_directory_path, transition_bg_name)
             logger.debug(
                 "Loading custom transition background file '{}'".format(
@@ -108,8 +110,13 @@ class VlcPlayer(Worker):
             )
 
         else:
-            bg_path = get_background(TRANSITION_BG_NAME)
             logger.debug("Loading default transition background file")
+
+            if TRANSITION_BG_NAME in dir_content:
+                bg_path = os.path.join(bg_directory_path, TRANSITION_BG_NAME)
+
+            else:
+                bg_path = get_background(TRANSITION_BG_NAME)
 
         self.transition_bg_path = bg_path
 
@@ -125,8 +132,10 @@ class VlcPlayer(Worker):
             Args:
                 bg_directory_path: path to the background directory.
         """
-        if bg_directory_path and \
-           idle_bg_name in os.listdir(bg_directory_path):
+        dir_exists = os.path.isdir(bg_directory_path)
+        dir_content = os.listdir(bg_directory_path) if dir_exists else []
+
+        if idle_bg_name in dir_content:
             bg_path = os.path.join(bg_directory_path, idle_bg_name)
             logger.debug(
                 "Loading custom idle background file '{}'".format(
@@ -135,8 +144,13 @@ class VlcPlayer(Worker):
             )
 
         else:
-            bg_path = get_background(IDLE_BG_NAME)
             logger.debug("Loading default idle background file")
+
+            if IDLE_BG_NAME in dir_content:
+                bg_path = os.path.join(bg_directory_path, IDLE_BG_NAME)
+
+            else:
+                bg_path = get_background(IDLE_BG_NAME)
 
         self.idle_bg_path = bg_path
 
