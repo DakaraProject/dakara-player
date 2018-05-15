@@ -72,21 +72,17 @@ class VlcPlayerTestCase(TestCase):
                     }
                 }
 
-        # create config
-        self.config = ConfigParser()
-        self.config['vlc'] = {
-                'instanceParameter': self.instance_parameter,
-                'karaFolder': self.kara_folder,
-                'mediaParameter': self.media_parameter,
-                'transitionDuration': self.transition_duration,
-                'fullscreen': self.fullscreen,
-                }
-
         # create vlc player
         self.vlc_player = VlcPlayer(
                 Event(),
                 Queue(),
-                self.config['vlc'],
+                get_config({
+                    'instanceParameter': self.instance_parameter,
+                    'karaFolder': self.kara_folder,
+                    'mediaParameter': self.media_parameter,
+                    'transitionDuration': self.transition_duration,
+                    'fullscreen': self.fullscreen,
+                }),
                 self.text_generator
                 )
 
