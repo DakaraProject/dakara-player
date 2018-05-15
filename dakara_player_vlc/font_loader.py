@@ -67,10 +67,7 @@ class FontLoaderLinux(FontLoader):
 
     def load_from_resources_directory(self):
         logger.debug("Scanning font directory")
-        font_file_path_list = [filepath
-                               for filepath in get_all_fonts()
-                               if not os.path.basename(filepath).
-                               startswith('__')]
+        font_file_path_list = get_all_fonts()
 
         for font_file_path in font_file_path_list:
             font_file_name = os.path.basename(font_file_path)

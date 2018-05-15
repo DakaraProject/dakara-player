@@ -1,19 +1,31 @@
-from pkg_resources import resource_filename, resource_listdir, resource_exists
+from pkg_resources import (
+    resource_filename,
+    resource_listdir as resource_listdir_orig,
+    resource_exists,
+)
 
 RESOURCES = "dakara_player_vlc.resources"
 
-RESOURCES_IMAGES = "dakara_player_vlc.resources.images"
-RESOURCES_SUBFILES = "dakara_player_vlc.resources.subfiles"
+RESOURCES_BACKGROUNDS = "dakara_player_vlc.resources.backgrounds"
+RESOURCES_TEMPLATES = "dakara_player_vlc.resources.templates"
 RESOURCES_FONTS = "dakara_player_vlc.resources.fonts"
 RESOURCES_TEST_FIXTURES = "dakara_player_vlc.resources.tests"
 
-PATH_IMAGES = resource_filename(RESOURCES_IMAGES, '')
-PATH_SUBFILES = resource_filename(RESOURCES_SUBFILES, '')
+PATH_BACKGROUNDS = resource_filename(RESOURCES_BACKGROUNDS, '')
+PATH_TEMPLATES = resource_filename(RESOURCES_TEMPLATES, '')
 PATH_FONTS = resource_filename(RESOURCES_FONTS, '')
 PATH_TEST_FIXTURES = resource_filename(RESOURCES_TEST_FIXTURES, '')
 
-LIST_IMAGES = resource_listdir(RESOURCES_IMAGES, '')
-LIST_SUBFILES = resource_listdir(RESOURCES_SUBFILES, '')
+
+def resource_listdir(*args, **kwargs):
+    """List resources without special files
+    """
+    return [filename for filename in resource_listdir_orig(*args, **kwargs)
+            if not filename.startswith('__')]
+
+
+LIST_BACKGROUNDS = resource_listdir(RESOURCES_BACKGROUNDS, '')
+LIST_TEMPLATES = resource_listdir(RESOURCES_TEMPLATES, '')
 LIST_FONTS = resource_listdir(RESOURCES_FONTS, '')
 LIST_TEST_FIXTURES = resource_listdir(RESOURCES_TEST_FIXTURES, '')
 
@@ -33,8 +45,8 @@ def get_file(filename):
     return resource_filename(RESOURCES, filename)
 
 
-def get_image(filename):
-    """Get an image within the resource files
+def get_background(filename):
+    """Get a background within the resource files
 
     Args:
         filename (str): name of the file to get.
@@ -42,12 +54,12 @@ def get_image(filename):
     Returns:
         str: absolute path of the file.
     """
-    if filename not in LIST_IMAGES:
+    if filename not in LIST_BACKGROUNDS:
         raise IOError(
-            "Image file '{}' not found within resources".format(filename)
+            "Background file '{}' not found within resources".format(filename)
         )
 
-    return resource_filename(RESOURCES_IMAGES, filename)
+    return resource_filename(RESOURCES_BACKGROUNDS, filename)
 
 
 def get_all_fonts():

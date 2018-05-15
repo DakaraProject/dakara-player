@@ -5,7 +5,7 @@ from configparser import ConfigParser
 
 from jinja2 import Environment, FileSystemLoader, ChoiceLoader
 
-from dakara_player_vlc.resources_manager import get_file, PATH_SUBFILES
+from dakara_player_vlc.resources_manager import get_file, PATH_TEMPLATES
 
 
 TRANSITION_TEMPLATE_NAME = "transition.ass"
@@ -47,7 +47,7 @@ class TextGenerator:
         self.environment = Environment(
             loader=ChoiceLoader([
                 FileSystemLoader(config.get('templateDirectory', '')),
-                FileSystemLoader(PATH_SUBFILES)
+                FileSystemLoader(PATH_TEMPLATES)
             ])
         )
 
@@ -56,8 +56,11 @@ class TextGenerator:
             chr(int(self.icon_map.get(name, '0020'), 16))
 
         # load templates
-        self.load_transition_template()
-        self.load_idle_template()
+        self.load_transition_template(config.get('transitionTemplateName',
+                                                 TRANSITION_TEMPLATE_NAME))
+
+        self.load_idle_template(config.get('idleTemplateName',
+                                           IDLE_TEMPLATE_NAME))
 
     def create_idle_text(self, info):
         """ Create custom idle text and save it
@@ -111,7 +114,7 @@ class TextGenerator:
         icon_map.read(icon_map_path)
         self.icon_map = icon_map['map']
 
-    def load_transition_template(self):
+    def load_transition_template(self, transition_template_name):
         """ Load transition screen text template file
 
             Load the default or customized ASS template for
@@ -119,8 +122,12 @@ class TextGenerator:
         """
         loader_custom, loader_default = self.environment.loader.loaders
 
-        if TRANSITION_TEMPLATE_NAME in loader_custom.list_templates():
-            logger.debug("Loading custom transition template file")
+        if transition_template_name in loader_custom.list_templates():
+            logger.debug(
+                "Loading custom transition template file '{}'".format(
+                    transition_template_name
+                )
+            )
 
         elif TRANSITION_TEMPLATE_NAME in loader_default.list_templates():
             logger.debug("Loading default transition template file")
@@ -131,7 +138,7 @@ class TextGenerator:
         self.transition_template = self.environment.get_template(
             TRANSITION_TEMPLATE_NAME)
 
-    def load_idle_template(self):
+    def load_idle_template(self, idle_template_name):
         """ Load idle screen text template file
 
             Load the default or customized ASS template for
@@ -139,8 +146,12 @@ class TextGenerator:
         """
         loader_custom, loader_default = self.environment.loader.loaders
 
-        if IDLE_TEMPLATE_NAME in loader_custom.list_templates():
-            logger.debug("Loading custom idle template file")
+        if idle_template_name in loader_custom.list_templates():
+            logger.debug(
+                "Loading custom idle template file '{}'".format(
+                    idle_template_name
+                )
+            )
 
         elif IDLE_TEMPLATE_NAME in loader_default.list_templates():
             logger.debug("Loading default idle template file")

@@ -16,7 +16,7 @@ from dakara_player_vlc.vlc_player import (
 
 from dakara_player_vlc.resources_manager import (
     get_test_fixture,
-    get_image,
+    get_background,
     PATH_TEST_FIXTURES
 )
 
@@ -38,10 +38,10 @@ class VlcPlayerTestCase(TestCase):
         self.media_parameter = "no-video"
 
         # create idle background path
-        self.idle_background_path = get_image(IDLE_BG_NAME)
+        self.idle_background_path = get_background(IDLE_BG_NAME)
 
         # create transition background path
-        self.transition_background_path = get_image(TRANSITION_BG_NAME)
+        self.transition_background_path = get_background(TRANSITION_BG_NAME)
 
         # create transition duration
         self.transition_duration = 1

@@ -8,7 +8,7 @@ import vlc
 
 from dakara_player_vlc.version import __version__
 from dakara_player_vlc.safe_workers import Worker
-from dakara_player_vlc.resources_manager import get_image
+from dakara_player_vlc.resources_manager import get_background
 
 
 TRANSITION_DURATION = 2
@@ -45,8 +45,13 @@ class VlcPlayer(Worker):
         )
 
         # load backgrounds
-        self.load_transition_bg_path(custom_background_directory)
-        self.load_idle_bg_path(custom_background_directory)
+        self.load_transition_bg_path(custom_background_directory,
+                                     config.get('transitionBackgroundName',
+                                                TRANSITION_BG_NAME))
+
+        self.load_idle_bg_path(custom_background_directory,
+                               config.get('idleBackgroundName',
+                                          IDLE_BG_NAME))
 
         # playlist entry id of the current song
         # if no songs are playing, its value is None
@@ -81,7 +86,7 @@ class VlcPlayer(Worker):
         # timer for VLC taking too long to stop
         self.timer_stop_player_too_long = None
 
-    def load_transition_bg_path(self, bg_directory_path):
+    def load_transition_bg_path(self, bg_directory_path, transition_bg_name):
         """ Load transition backgound file path
 
             Load the customized background path or the
@@ -94,17 +99,21 @@ class VlcPlayer(Worker):
                 bg_directory_path: path to the background directory.
         """
         if bg_directory_path and \
-           TRANSITION_BG_NAME in os.listdir(bg_directory_path):
-            bg_path = os.path.join(bg_directory_path, TRANSITION_BG_NAME)
-            logger.debug("Loading custom transition background file")
+           transition_bg_name in os.listdir(bg_directory_path):
+            bg_path = os.path.join(bg_directory_path, transition_bg_name)
+            logger.debug(
+                "Loading custom transition background file '{}'".format(
+                    transition_bg_name
+                )
+            )
 
         else:
-            bg_path = get_image(TRANSITION_BG_NAME)
+            bg_path = get_background(TRANSITION_BG_NAME)
             logger.debug("Loading default transition background file")
 
         self.transition_bg_path = bg_path
 
-    def load_idle_bg_path(self, bg_directory_path):
+    def load_idle_bg_path(self, bg_directory_path, idle_bg_name):
         """ Load idle backgound file path
 
             Load the customized background path or the
@@ -117,12 +126,16 @@ class VlcPlayer(Worker):
                 bg_directory_path: path to the background directory.
         """
         if bg_directory_path and \
-           IDLE_BG_NAME in os.listdir(bg_directory_path):
-            bg_path = os.path.join(bg_directory_path, IDLE_BG_NAME)
-            logger.debug("Loading custom idle background file")
+           idle_bg_name in os.listdir(bg_directory_path):
+            bg_path = os.path.join(bg_directory_path, idle_bg_name)
+            logger.debug(
+                "Loading custom idle background file '{}'".format(
+                    idle_bg_name
+                )
+            )
 
         else:
-            bg_path = get_image(IDLE_BG_NAME)
+            bg_path = get_background(IDLE_BG_NAME)
             logger.debug("Loading default idle background file")
 
         self.idle_bg_path = bg_path
