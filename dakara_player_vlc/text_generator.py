@@ -129,14 +129,20 @@ class TextGenerator:
                 )
             )
 
-        elif TRANSITION_TEMPLATE_NAME in loader_default.list_templates():
+            self.transition_template = self.environment.get_template(
+                transition_template_name)
+
+            return
+
+        if TRANSITION_TEMPLATE_NAME in loader_default.list_templates():
             logger.debug("Loading default transition template file")
 
-        else:
-            raise IOError("No template file for transition screen found")
+            self.transition_template = self.environment.get_template(
+                TRANSITION_TEMPLATE_NAME)
 
-        self.transition_template = self.environment.get_template(
-            TRANSITION_TEMPLATE_NAME)
+            return
+
+        raise IOError("No template file for transition screen found")
 
     def load_idle_template(self, idle_template_name):
         """ Load idle screen text template file
@@ -153,10 +159,17 @@ class TextGenerator:
                 )
             )
 
-        elif IDLE_TEMPLATE_NAME in loader_default.list_templates():
+            self.idle_template = self.environment.get_template(
+                idle_template_name)
+
+            return
+
+        if IDLE_TEMPLATE_NAME in loader_default.list_templates():
             logger.debug("Loading default idle template file")
 
-        else:
-            raise IOError("No template file for idle screen found")
+            self.idle_template = self.environment.get_template(
+                IDLE_TEMPLATE_NAME)
 
-        self.idle_template = self.environment.get_template(IDLE_TEMPLATE_NAME)
+            return
+
+        raise IOError("No template file for idle screen found")

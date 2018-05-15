@@ -6,9 +6,15 @@ from dakara_player_vlc.text_generator import (
         TextGenerator,
         IDLE_TEXT_NAME,
         TRANSITION_TEXT_NAME,
+        IDLE_TEMPLATE_NAME,
+        TRANSITION_TEMPLATE_NAME,
         )
 
-from dakara_player_vlc.resources_manager import PATH_TEST_FIXTURES
+from dakara_player_vlc.resources_manager import (
+    PATH_TEST_FIXTURES,
+    get_test_fixture,
+    get_template,
+)
 
 
 class TextGeneratorTestCase(TestCase):
@@ -48,10 +54,9 @@ class TextGeneratorTestCase(TestCase):
                     )
 
         # create text generator object
+        # we use a custom template directory to use a simplified template
         self.text_generator = TextGenerator(
-                {
-                    'templateDirectory': PATH_TEST_FIXTURES,
-                },
+                {'templateDirectory': PATH_TEST_FIXTURES},
                 self.temdir
                 )
 
@@ -96,3 +101,126 @@ class TextGeneratorTestCase(TestCase):
                 )
 
         self.assertEqual(result, self.transition_text_path)
+
+
+class TextGeneratorCustomTestCase(TestCase):
+    """Test the text generator class with custom resources
+    """
+    def setUp(self):
+        # create temporary folder
+        self.tempdir = "nowhere"
+
+    def test_default(self):
+        """Test to instanciate with default parameters
+
+        In that case, the templates come from the fallback directory.
+        """
+        # create object
+        text_generator = TextGenerator(
+            {},
+            self.tempdir
+        )
+
+        # assert object
+        self.assertEqual(
+            text_generator.idle_template.filename,
+            get_template(IDLE_TEMPLATE_NAME)
+        )
+        self.assertEqual(
+            text_generator.transition_template.filename,
+            get_template(TRANSITION_TEMPLATE_NAME)
+        )
+
+    def test_custom_template_directory_sucess(self):
+        """Test to instanciate with an existing template directory
+
+        In that case, the templates come from this directory.
+        """
+        # create object
+        text_generator = TextGenerator(
+            {'templateDirectory': PATH_TEST_FIXTURES},
+            self.tempdir
+        )
+
+        # assert object
+        self.assertEqual(
+            text_generator.idle_template.filename,
+            get_test_fixture(IDLE_TEMPLATE_NAME)
+        )
+        self.assertEqual(
+            text_generator.transition_template.filename,
+            get_test_fixture(TRANSITION_TEMPLATE_NAME)
+        )
+
+    def test_custom_template_directory_fail(self):
+        """Test to instanciate with a template directory thad does not exist
+
+        In that case, the templates come from the fallback directory.
+        """
+        # create object
+        text_generator = TextGenerator(
+            {'templateDirectory': "nowhere"},
+            self.tempdir
+        )
+
+        # assert object
+        self.assertEqual(
+            text_generator.idle_template.filename,
+            get_template(IDLE_TEMPLATE_NAME)
+        )
+        self.assertEqual(
+            text_generator.transition_template.filename,
+            get_template(TRANSITION_TEMPLATE_NAME)
+        )
+
+    def test_custom_template_names_success(self):
+        """Test to instanciate with existing template names
+
+        In that case, the templates come from the custom directory and have the
+        correct name.
+        """
+        # create object
+        text_generator = TextGenerator(
+            {
+                'templateDirectory': PATH_TEST_FIXTURES,
+                'idleTemplateName': "song.ass",
+                'transitionTemplateName': "song.ass"
+            },
+            self.tempdir
+        )
+
+        # assert object
+        self.assertEqual(
+            text_generator.idle_template.filename,
+            get_test_fixture("song.ass")
+        )
+        self.assertEqual(
+            text_generator.transition_template.filename,
+            get_test_fixture("song.ass")
+        )
+
+    def test_custom_template_names_fail(self):
+        """Test to instanciate with template names that do not exist
+
+        In that case, the templates come from the custom directory and have
+        the default name.
+        """
+        # create object
+        text_generator = TextGenerator(
+            {
+                'templateDirectory': PATH_TEST_FIXTURES,
+                'idleTemplateName': "nothing",
+                'transitionTemplateName': "nothing"
+            },
+            self.tempdir
+        )
+
+        # assert object
+        self.assertEqual(
+            text_generator.idle_template.filename,
+            get_test_fixture(IDLE_TEMPLATE_NAME)
+        )
+        self.assertEqual(
+            text_generator.transition_template.filename,
+            get_test_fixture(TRANSITION_TEMPLATE_NAME)
+        )

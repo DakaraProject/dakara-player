@@ -62,6 +62,23 @@ def get_background(filename):
     return resource_filename(RESOURCES_BACKGROUNDS, filename)
 
 
+def get_template(filename):
+    """Get a template within the resource files
+
+    Args:
+        filename (str): name of the file to get.
+
+    Returns:
+        str: absolute path of the file.
+    """
+    if filename not in LIST_TEMPLATES:
+        raise IOError(
+            "Template file '{}' not found within resources".format(filename)
+        )
+
+    return resource_filename(RESOURCES_TEMPLATES, filename)
+
+
 def get_all_fonts():
     """Get all font resource files
 

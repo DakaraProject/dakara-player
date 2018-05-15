@@ -7,6 +7,7 @@ from dakara_player_vlc.resources_manager import (
     get_file,
     get_background,
     get_test_fixture,
+    get_template,
     get_all_fonts,
 )
 
@@ -193,6 +194,60 @@ class GetTestFixtureTestCase(TestCase):
         self.assertEqual(result, os.path.join(
             MODULE_PATH,
             "resources/tests/song.ass"
+        ))
+
+
+class GetTemplateTestCase(TestCase):
+    """Test the `get_template` function
+    """
+
+    @patch('dakara_player_vlc.resources_manager.resource_filename')
+    @patch('dakara_player_vlc.resources_manager.LIST_TEMPLATES')
+    def test_sucess(self, mock_list_template, mock_resource_filename):
+        """Test to get a template successfuly
+        """
+        # mock the call
+        mock_list_template.__contains__.return_value = True
+        mock_resource_filename.return_value = 'path to template'
+
+        # call the function
+        result = get_template('some template')
+
+        # assert the call
+        mock_list_template.__contains__.assert_called_once_with(
+            'some template')
+        mock_resource_filename.assert_called_once_with(ANY, 'some template')
+
+        # assert the result
+        self.assertEqual(result, 'path to template')
+
+    @patch('dakara_player_vlc.resources_manager.resource_filename')
+    @patch('dakara_player_vlc.resources_manager.LIST_TEMPLATES')
+    def test_fail(self, mock_list_template, mock_resource_filename):
+        """Test to get a template that does not exist
+        """
+        # mock the call
+        mock_list_template.__contains__.return_value = False
+
+        # call the function
+        with self.assertRaises(IOError):
+            get_template('some template')
+
+        # assert the call
+        mock_list_template.__contains__.assert_called_once_with(
+            'some template')
+        mock_resource_filename.assert_not_called()
+
+    def test_real(self):
+        """Test to access a real template
+        """
+        # call the function
+        result = get_template('idle.ass')
+
+        # assert the result
+        self.assertEqual(result, os.path.join(
+            MODULE_PATH,
+            "resources/templates/idle.ass"
         ))
 
 
