@@ -33,6 +33,7 @@
 ### Added
 
 - Tests can be executed with `./tests.py`.
+- Resources folder, with default/example templates and backgrounds, is moved: `share` > `dakara_player_vlc/resources`.
 
 ## 1.0.1 - 2017-10-22
 
