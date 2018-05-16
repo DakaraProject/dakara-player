@@ -67,16 +67,18 @@ fullscreen = False
 # This template displays information about the song to play (artist, details,
 # etc.).
 # Default is 'transition.ass'.
-# You have to set 'backgroundsDirectory' to set this parameter.
+# You have to set 'templatesDirectory' to set this parameter.
 #transitionTemplateName = transition_template.file
 #
 # Name of the template for the idle sceen text.
 # Default is 'idle.ass'.
+# You have to set 'templatesDirectory' to set this parameter.
 #idleTemplateName = idle_template.file
 
 # Backgrounds
 # Backgrounds are used during the idle or the transition screens. They can be a
-# steady picture or a video, anything VLC can read.
+# steady picture or a video, anything VLC can read. In case of pictures, they
+# will be displayed for a certain amount of time.
 #
 # Path to the directory of backgrounds.
 # Add a look up folder where you can put your custom background files.
