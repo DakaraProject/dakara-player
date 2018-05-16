@@ -45,38 +45,47 @@ def get_file(filename):
     return resource_filename(RESOURCES, filename)
 
 
-def get_background(filename):
-    """Get a background within the resource files
+def generate_get_resource(resource, resource_list, resource_name):
+    """Function factory for resource getter
 
     Args:
-        filename (str): name of the file to get.
+        resource (str): requirement.
+        resource_list (list of str): list of files within the requirement.
+        resource_name (str): human readable name of the resource.
 
     Returns:
-        str: absolute path of the file.
+        function: resource getter.
     """
-    if filename not in LIST_BACKGROUNDS:
-        raise IOError(
-            "Background file '{}' not found within resources".format(filename)
-        )
 
-    return resource_filename(RESOURCES_BACKGROUNDS, filename)
+    def get_resource(filename):
+        """Get a resource within the resource files
+
+        Args:
+            filename (str): name of the file to get.
+
+        Returns:
+            str: absolute path of the file.
+        """
+        if filename not in resource_list:
+            raise IOError(
+                "{} file '{}' not found within resources".format(
+                    resource_name.capitalize(),
+                    filename
+                )
+            )
+
+        return resource_filename(resource, filename)
+
+    return get_resource
 
 
-def get_template(filename):
-    """Get a template within the resource files
-
-    Args:
-        filename (str): name of the file to get.
-
-    Returns:
-        str: absolute path of the file.
-    """
-    if filename not in LIST_TEMPLATES:
-        raise IOError(
-            "Template file '{}' not found within resources".format(filename)
-        )
-
-    return resource_filename(RESOURCES_TEMPLATES, filename)
+get_background = generate_get_resource(RESOURCES_BACKGROUNDS, LIST_BACKGROUNDS,
+                                       'background')
+get_template = generate_get_resource(RESOURCES_TEMPLATES, LIST_TEMPLATES,
+                                     'template')
+get_test_fixture = generate_get_resource(RESOURCES_TEST_FIXTURES,
+                                         LIST_TEST_FIXTURES,
+                                         'test fixture')
 
 
 def get_all_fonts():
@@ -87,20 +96,3 @@ def get_all_fonts():
     """
     return [resource_filename(RESOURCES_FONTS, filename)
             for filename in LIST_FONTS]
-
-
-def get_test_fixture(filename):
-    """Get a test fixture within the resource files
-
-    Args:
-        filename (str): name of the file to get.
-
-    Returns:
-        str: absolute path of the file.
-    """
-    if filename not in LIST_TEST_FIXTURES:
-        raise IOError(
-            "Test fixture '{}' not found within resources".format(filename)
-        )
-
-    return resource_filename(RESOURCES_TEST_FIXTURES, filename)

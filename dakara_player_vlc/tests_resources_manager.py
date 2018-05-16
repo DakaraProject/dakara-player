@@ -9,6 +9,7 @@ from dakara_player_vlc.resources_manager import (
     get_test_fixture,
     get_template,
     get_all_fonts,
+    generate_get_resource,
 )
 
 
@@ -91,44 +92,70 @@ class GetFileTestCase(TestCase):
         ))
 
 
+class GenerateGetResourceTestCase(TestCase):
+    """Test the `generate_get_resource` function factory
+    """
+
+    def setUp(self):
+        # set up resource type
+        self.resource_type = "resource type"
+
+        # set up resource name
+        self.resource_name = "some resource"
+
+        # set up resource path
+        self.resource_path = "path to some resource"
+
+        # set up resource getter
+        self.get_resource = generate_get_resource(
+            "resources requirement",
+            [self.resource_name],
+            self.resource_type
+        )
+
+    def test_docstring(self):
+        """Test the docstring of the generated function exists
+        """
+        self.assertIsNotNone(self.get_resource.__doc__)
+
+    @patch('dakara_player_vlc.resources_manager.resource_filename')
+    def test_sucess(self, mock_resource_filename):
+        """Test to get a resource successfuly
+        """
+        # mock the call
+        mock_resource_filename.return_value = self.resource_path
+
+        # call the function
+        result = self.get_resource(self.resource_name)
+
+        # assert the call
+        mock_resource_filename.assert_called_once_with(ANY, self.resource_name)
+
+        # assert the result
+        self.assertEqual(result, self.resource_path)
+
+    @patch('dakara_player_vlc.resources_manager.resource_filename')
+    def test_fail(self, mock_resource_filename):
+        """Test to get a resource that does not exist
+        """
+        # call the function
+        with self.assertRaises(IOError) as error:
+            get_background("some non-existent resource")
+            self.assertEqual(
+                str(error),
+                "{} file '{}' not found within resources".format(
+                    self.resource_type,
+                    self.resource_name
+                )
+            )
+
+        # assert the call
+        mock_resource_filename.assert_not_called()
+
+
 class GetBacgkroundTestCase(TestCase):
     """Test the `get_background` function
     """
-
-    @patch('dakara_player_vlc.resources_manager.resource_filename')
-    @patch('dakara_player_vlc.resources_manager.LIST_BACKGROUNDS')
-    def test_sucess(self, mock_list_background, mock_resource_filename):
-        """Test to get a background successfuly
-        """
-        # mock the call
-        mock_list_background.__contains__.return_value = True
-        mock_resource_filename.return_value = 'path to bg'
-
-        # call the function
-        result = get_background('some bg')
-
-        # assert the call
-        mock_list_background.__contains__.assert_called_once_with('some bg')
-        mock_resource_filename.assert_called_once_with(ANY, 'some bg')
-
-        # assert the result
-        self.assertEqual(result, 'path to bg')
-
-    @patch('dakara_player_vlc.resources_manager.resource_filename')
-    @patch('dakara_player_vlc.resources_manager.LIST_BACKGROUNDS')
-    def test_fail(self, mock_list_background, mock_resource_filename):
-        """Test to get a background that does not exist
-        """
-        # mock the call
-        mock_list_background.__contains__.return_value = False
-
-        # call the function
-        with self.assertRaises(IOError):
-            get_background('some bg')
-
-        # assert the call
-        mock_list_background.__contains__.assert_called_once_with('some bg')
-        mock_resource_filename.assert_not_called()
 
     def test_real(self):
         """Test to access a real background
@@ -147,43 +174,6 @@ class GetTestFixtureTestCase(TestCase):
     """Test the `get_test_fixture` function
     """
 
-    @patch('dakara_player_vlc.resources_manager.resource_filename')
-    @patch('dakara_player_vlc.resources_manager.LIST_TEST_FIXTURES')
-    def test_sucess(self, mock_list_test_fixture, mock_resource_filename):
-        """Test to get a test fixture successfuly
-        """
-        # mock the call
-        mock_list_test_fixture.__contains__.return_value = True
-        mock_resource_filename.return_value = 'path to fixture'
-
-        # call the function
-        result = get_test_fixture('some fixture')
-
-        # assert the call
-        mock_list_test_fixture.__contains__.assert_called_once_with(
-            'some fixture')
-        mock_resource_filename.assert_called_once_with(ANY, 'some fixture')
-
-        # assert the result
-        self.assertEqual(result, 'path to fixture')
-
-    @patch('dakara_player_vlc.resources_manager.resource_filename')
-    @patch('dakara_player_vlc.resources_manager.LIST_TEST_FIXTURES')
-    def test_fail(self, mock_list_test_fixture, mock_resource_filename):
-        """Test to get a test fixture that does not exist
-        """
-        # mock the call
-        mock_list_test_fixture.__contains__.return_value = False
-
-        # call the function
-        with self.assertRaises(IOError):
-            get_test_fixture('some fixture')
-
-        # assert the call
-        mock_list_test_fixture.__contains__.assert_called_once_with(
-            'some fixture')
-        mock_resource_filename.assert_not_called()
-
     def test_real(self):
         """Test to access a real test fixture
         """
@@ -200,43 +190,6 @@ class GetTestFixtureTestCase(TestCase):
 class GetTemplateTestCase(TestCase):
     """Test the `get_template` function
     """
-
-    @patch('dakara_player_vlc.resources_manager.resource_filename')
-    @patch('dakara_player_vlc.resources_manager.LIST_TEMPLATES')
-    def test_sucess(self, mock_list_template, mock_resource_filename):
-        """Test to get a template successfuly
-        """
-        # mock the call
-        mock_list_template.__contains__.return_value = True
-        mock_resource_filename.return_value = 'path to template'
-
-        # call the function
-        result = get_template('some template')
-
-        # assert the call
-        mock_list_template.__contains__.assert_called_once_with(
-            'some template')
-        mock_resource_filename.assert_called_once_with(ANY, 'some template')
-
-        # assert the result
-        self.assertEqual(result, 'path to template')
-
-    @patch('dakara_player_vlc.resources_manager.resource_filename')
-    @patch('dakara_player_vlc.resources_manager.LIST_TEMPLATES')
-    def test_fail(self, mock_list_template, mock_resource_filename):
-        """Test to get a template that does not exist
-        """
-        # mock the call
-        mock_list_template.__contains__.return_value = False
-
-        # call the function
-        with self.assertRaises(IOError):
-            get_template('some template')
-
-        # assert the call
-        mock_list_template.__contains__.assert_called_once_with(
-            'some template')
-        mock_resource_filename.assert_not_called()
 
     def test_real(self):
         """Test to access a real template
