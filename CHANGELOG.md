@@ -33,6 +33,7 @@
 ### Added
 
 - Tests can be executed with `./tests.py`.
+- Work link long name can be obtained withe the `| link_type_name` filter.
 
 ## 1.0.1 - 2017-10-22
 
