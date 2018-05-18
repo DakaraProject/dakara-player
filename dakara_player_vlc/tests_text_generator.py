@@ -103,6 +103,25 @@ class TextGeneratorTestCase(TestCase):
         self.assertEqual(result, self.transition_text_path)
 
 
+    def test_convert_icon(self):
+        """Test the convertion of an icon name to its code
+        """
+        # test only the music icon
+        self.assertEqual(self.text_generator.convert_icon('music'), '\uf001')
+
+    def test_convert_link_type_name(self):
+        """Test the convertion of a link type to its long name
+        """
+        self.assertEqual(self.text_generator.convert_link_type_name('OP'),
+                         'Opening')
+        self.assertEqual(self.text_generator.convert_link_type_name('ED'),
+                         'Ending')
+        self.assertEqual(self.text_generator.convert_link_type_name('IN'),
+                         'Insert song')
+        self.assertEqual(self.text_generator.convert_link_type_name('IS'),
+                         'Image song')
+
+
 class TextGeneratorCustomTestCase(TestCase):
     """Test the text generator class with custom resources
     """
