@@ -11,8 +11,8 @@ from dakara_player_vlc.text_generator import (
         )
 
 from dakara_player_vlc.resources_manager import (
-    PATH_TEST_FIXTURES,
-    get_test_fixture,
+    PATH_TEST_MATERIALS,
+    get_test_material,
     get_template,
 )
 
@@ -56,7 +56,7 @@ class TextGeneratorTestCase(TestCase):
         # create text generator object
         # we use a custom template directory to use a simplified template
         self.text_generator = TextGenerator(
-                {'templateDirectory': PATH_TEST_FIXTURES},
+                {'templateDirectory': PATH_TEST_MATERIALS},
                 self.temdir
                 )
 
@@ -101,7 +101,6 @@ class TextGeneratorTestCase(TestCase):
                 )
 
         self.assertEqual(result, self.transition_text_path)
-
 
     def test_convert_icon(self):
         """Test the convertion of an icon name to its code
@@ -157,18 +156,18 @@ class TextGeneratorCustomTestCase(TestCase):
         """
         # create object
         text_generator = TextGenerator(
-            {'templateDirectory': PATH_TEST_FIXTURES},
+            {'templateDirectory': PATH_TEST_MATERIALS},
             self.tempdir
         )
 
         # assert object
         self.assertEqual(
             text_generator.idle_template.filename,
-            get_test_fixture(IDLE_TEMPLATE_NAME)
+            get_test_material(IDLE_TEMPLATE_NAME)
         )
         self.assertEqual(
             text_generator.transition_template.filename,
-            get_test_fixture(TRANSITION_TEMPLATE_NAME)
+            get_test_material(TRANSITION_TEMPLATE_NAME)
         )
 
     def test_custom_template_directory_fail(self):
@@ -201,7 +200,7 @@ class TextGeneratorCustomTestCase(TestCase):
         # create object
         text_generator = TextGenerator(
             {
-                'templateDirectory': PATH_TEST_FIXTURES,
+                'templateDirectory': PATH_TEST_MATERIALS,
                 'idleTemplateName': "song.ass",
                 'transitionTemplateName': "song.ass"
             },
@@ -211,11 +210,11 @@ class TextGeneratorCustomTestCase(TestCase):
         # assert object
         self.assertEqual(
             text_generator.idle_template.filename,
-            get_test_fixture("song.ass")
+            get_test_material("song.ass")
         )
         self.assertEqual(
             text_generator.transition_template.filename,
-            get_test_fixture("song.ass")
+            get_test_material("song.ass")
         )
 
     def test_custom_template_names_fail(self):
@@ -227,7 +226,7 @@ class TextGeneratorCustomTestCase(TestCase):
         # create object
         text_generator = TextGenerator(
             {
-                'templateDirectory': PATH_TEST_FIXTURES,
+                'templateDirectory': PATH_TEST_MATERIALS,
                 'idleTemplateName': "nothing",
                 'transitionTemplateName': "nothing"
             },
@@ -237,9 +236,9 @@ class TextGeneratorCustomTestCase(TestCase):
         # assert object
         self.assertEqual(
             text_generator.idle_template.filename,
-            get_test_fixture(IDLE_TEMPLATE_NAME)
+            get_test_material(IDLE_TEMPLATE_NAME)
         )
         self.assertEqual(
             text_generator.transition_template.filename,
-            get_test_fixture(TRANSITION_TEMPLATE_NAME)
+            get_test_material(TRANSITION_TEMPLATE_NAME)
         )

@@ -15,9 +15,9 @@ from dakara_player_vlc.vlc_player import (
         )
 
 from dakara_player_vlc.resources_manager import (
-    get_test_fixture,
+    get_test_material,
     get_background,
-    PATH_TEST_FIXTURES
+    PATH_TEST_MATERIALS
 )
 
 
@@ -41,7 +41,7 @@ class VlcPlayerTestCase(TestCase):
         self.fullscreen = "yes"
 
         # create kara folder
-        self.kara_folder = PATH_TEST_FIXTURES
+        self.kara_folder = PATH_TEST_MATERIALS
 
         # create media parameter
         self.media_parameter = "no-video"
@@ -59,10 +59,10 @@ class VlcPlayerTestCase(TestCase):
         self.text_generator = Mock()
 
         # create a subtitle
-        self.subtitle_path = get_test_fixture("song.ass")
+        self.subtitle_path = get_test_material("song.ass")
 
         # create song path
-        self.song_file_path = get_test_fixture("song.png")
+        self.song_file_path = get_test_material("song.png")
 
         # create playlist entry
         self.playlist_entry = {
@@ -277,18 +277,18 @@ class VlcPlayerCustomTestCase(TestCase):
         vlc_player = VlcPlayer(
             self.stop,
             self.errors,
-            get_config({'backgroundsDirectory': PATH_TEST_FIXTURES}),
+            get_config({'backgroundsDirectory': PATH_TEST_MATERIALS}),
             self.text_generator
         )
 
         # assert the object
         self.assertEqual(
             vlc_player.idle_bg_path,
-            get_test_fixture(IDLE_BG_NAME)
+            get_test_material(IDLE_BG_NAME)
         )
         self.assertEqual(
             vlc_player.transition_bg_path,
-            get_test_fixture(TRANSITION_BG_NAME)
+            get_test_material(TRANSITION_BG_NAME)
         )
 
     def test_custom_background_directory_fail(self):
@@ -325,7 +325,7 @@ class VlcPlayerCustomTestCase(TestCase):
             self.stop,
             self.errors,
             get_config({
-                'backgroundsDirectory': PATH_TEST_FIXTURES,
+                'backgroundsDirectory': PATH_TEST_MATERIALS,
                 'idleBackgroundName': "song.png",
                 'transitionBackgroundName': "song.png"
             }),
@@ -335,11 +335,11 @@ class VlcPlayerCustomTestCase(TestCase):
         # assert the object
         self.assertEqual(
             vlc_player.idle_bg_path,
-            get_test_fixture("song.png")
+            get_test_material("song.png")
         )
         self.assertEqual(
             vlc_player.transition_bg_path,
-            get_test_fixture("song.png")
+            get_test_material("song.png")
         )
 
     def test_custom_background_names_fail(self):
@@ -353,7 +353,7 @@ class VlcPlayerCustomTestCase(TestCase):
             self.stop,
             self.errors,
             get_config({
-                'backgroundsDirectory': PATH_TEST_FIXTURES,
+                'backgroundsDirectory': PATH_TEST_MATERIALS,
                 'idleBackgroundName': "nothing",
                 'transitionBackgroundName': "nothing"
             }),
@@ -363,11 +363,11 @@ class VlcPlayerCustomTestCase(TestCase):
         # assert the object
         self.assertEqual(
             vlc_player.idle_bg_path,
-            get_test_fixture(IDLE_BG_NAME)
+            get_test_material(IDLE_BG_NAME)
         )
         self.assertEqual(
             vlc_player.transition_bg_path,
-            get_test_fixture(TRANSITION_BG_NAME)
+            get_test_material(TRANSITION_BG_NAME)
         )
 
 

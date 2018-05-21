@@ -6,7 +6,7 @@ from dakara_player_vlc.resources_manager import (
     resource_listdir,
     get_file,
     get_background,
-    get_test_fixture,
+    get_test_material,
     get_template,
     get_all_fonts,
     generate_get_resource,
@@ -171,14 +171,14 @@ class GetBacgkroundTestCase(TestCase):
 
 
 class GetTestFixtureTestCase(TestCase):
-    """Test the `get_test_fixture` function
+    """Test the `get_test_material` function
     """
 
     def test_real(self):
-        """Test to access a real test fixture
+        """Test to access a real test material
         """
         # call the function
-        result = get_test_fixture('song.ass')
+        result = get_test_material('song.ass')
 
         # assert the result
         self.assertEqual(result, os.path.join(
