@@ -1,13 +1,11 @@
 from unittest import TestCase
-from unittest.mock import patch, call, ANY
+from unittest.mock import patch, call
 import os
 
 from dakara_player_vlc.font_loader import (
         FontLoaderLinux,
         FontLoaderWindows,
         get_font_loader_class,
-        SHARE_DIR_ABSOLUTE,
-        FONT_DIR,
         )
 
 
@@ -84,12 +82,15 @@ class FontLoaderLinuxTestCase(TestCase):
                 ))
 
     @patch('dakara_player_vlc.font_loader.os.symlink')
+    @patch('dakara_player_vlc.font_loader.os.path.islink')
     @patch('dakara_player_vlc.font_loader.os.path.isfile')
-    def test_load_from_list_uninstalled(self, mock_isfile, mock_symlink):
+    def test_load_from_list_uninstalled(self, mock_isfile,
+                                        mock_islink, mock_symlink):
         """Test the installation of a font
         """
         # mock the system call
         mock_isfile.side_effect = (False, False)
+        mock_islink.return_value = False
 
         # pre assertions
         self.assertFalse(self.font_loader.fonts_loaded)
@@ -120,50 +121,43 @@ class FontLoaderLinuxTestCase(TestCase):
                          [font_file_target_path])
 
     @patch('dakara_player_vlc.font_loader.os.path.isfile')
-    @patch('dakara_player_vlc.font_loader.os.listdir')
-    @patch('dakara_player_vlc.font_loader.os.path.isdir')
-    def test_load_from_directory(self, mock_isdir, mock_listdir,
-                                 mock_isfile):
+    @patch('dakara_player_vlc.font_loader.get_all_fonts')
+    def test_load_from_resources_directory(self, mock_get_all_fonts,
+                                           mock_isfile):
         """Test the loading of a font from the directory
 
         Let's assume the font is present in the system directories.
         """
         # mock system calls
-        mock_isdir.return_value = True
-        mock_listdir.return_value = self.font_name_list
+        mock_get_all_fonts.return_value = self.font_path_list
         mock_isfile.return_value = True
 
         # pre assertions
         self.assertFalse(self.font_loader.fonts_loaded)
 
         # call the method
-        self.font_loader.load_from_directory(self.directory)
+        self.font_loader.load_from_resources_directory()
 
         # call assertions
-        mock_isdir.assert_called_once_with(self.directory)
-        mock_listdir.assert_called_once_with(self.directory)
-        mock_isfile.assert_called_once_with(ANY)
+        mock_get_all_fonts.assert_called_once_with()
+        mock_isfile.assert_called_once_with(
+                os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
+                             self.font_name)
+                )
 
         # post assertions
         self.assertFalse(self.font_loader.fonts_loaded)
 
     @patch('dakara_player_vlc.font_loader.os.path.isfile')
-    @patch('dakara_player_vlc.font_loader.os.listdir')
-    @patch('dakara_player_vlc.font_loader.os.path.isdir')
+    @patch('dakara_player_vlc.font_loader.get_all_fonts')
     @patch('dakara_player_vlc.font_loader.os.mkdir')
-    def test_load(self, mock_mkdir, mock_isdir, mock_listdir, mock_isfile):
+    def test_load(self, mock_mkdir, mock_get_all_fonts, mock_isfile):
         """Test the loading of a font
 
         Let's assume the font is present in the system directories.
         """
-        directory = os.path.join(
-                SHARE_DIR_ABSOLUTE,
-                FONT_DIR
-                )
-
         # mock system calls
-        mock_isdir.return_value = True
-        mock_listdir.return_value = self.font_name_list
+        mock_get_all_fonts.return_value = self.font_name_list
         mock_isfile.return_value = True
 
         # pre assertions
@@ -174,9 +168,7 @@ class FontLoaderLinuxTestCase(TestCase):
 
         # call assertions
         mock_mkdir.assert_called_once_with(FontLoaderLinux.FONT_DIR_USER)
-        mock_isdir.assert_called_once_with(directory)
-        mock_listdir.assert_called_once_with(directory)
-        mock_isfile.assert_called_once_with(ANY)
+        mock_get_all_fonts.assert_called_once_with()
 
         # post assertions
         self.assertFalse(self.font_loader.fonts_loaded)

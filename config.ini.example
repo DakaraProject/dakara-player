@@ -50,33 +50,58 @@ fullscreen = False
 # Default is 2 seconds.
 #transitionDuration = 2
 
-# Path to the background file of the transition screen.
-# Can be a steady picture or a video, anything VLC
-# can read. In case of a picture, it will be displayed
-# during transitionDuration seconds.
-# Default is share/transition.png
-#transitionBgPath = /path/to/transition/bg.file
+# Templates
+# Templates are used to display some information on the idle or the transition
+# screens in the form of subtitles. They can be anything VLC can handle as
+# subtitle. You can consult the existing default files to create you own
+# templates.
+#
+# Path to the directory of templates.
+# Add a look up folder where you can put your custom template files.
+# The fallback directory is 'dakara_player_vlc/resources/templates'. To
+# customize your templates, you can copy this fallback directory to some places
+# and use the content as a starter.
+# You have to set this parameter in order to set 'transitionTemplateName' and
+# 'idleTemplateName'.
+#templatesDirectory = path/to/templates/directory
+#
+# Name of the template for the transition screen text.
+# This template displays information about the song to play (artist, details,
+# etc.).
+# Default is 'transition.ass'.
+# You have to set 'templatesDirectory' to set this parameter.
+#transitionTemplateName = transition_template.file
+#
+# Name of the template for the idle sceen text.
+# Default is 'idle.ass'.
+# You have to set 'templatesDirectory' to set this parameter.
+#idleTemplateName = idle_template.file
 
-# Path to the template text file for the transition screen.
-# The template will display information about the
-# song to play (artist, details, etc.) during the transition
-# screen by the mean of subtitle. Consult the default file
-# to create your own template. Anything VLC can handle as subtitle.
-# Default is share/transition.ass
-#transitionTemplatePath = path/to/transition/template.file
-
-# Path to the idle screen background file.
-# Can be a steady picture or a video, anything VLC can read.
-# It will be looped as long as there is no song to play.
-# Default is share/idle.png
-#idleBgPath = path/to/idle/bg.file
-
-# Path to the template text file for the idle screen.
-# The template will display some information during the idle
-# screen by the mean of subtitle. Consult the default file
-# to create your own template. Anything VLC can handle as subtitle.
-# Default is share/idle.ass
-#idleTemplatePath = path/to/idle/template.file
+# Backgrounds
+# Backgrounds are used during the idle or the transition screens. They can be a
+# steady picture or a video, anything VLC can read. In case of pictures, they
+# will be displayed for a certain amount of time.
+#
+# Path to the directory of backgrounds.
+# Add a look up folder where you can put your custom background files.
+# The fallback directory is 'dakara_player_vlc/resources/backgrounds'. To
+# customize your backgrounds, you can copy this fallback directory to some places
+# and use the content as a starter.
+# You have to set this parameter in order to set 'transitionBackgroundName' and
+# 'idleBackgroundName'.
+#backgroundsDirectory = path/to/backgrounds/directory
+#
+# Name of the background file of the transition screen.
+# In case of a picture, it will be displayed during 'transitionDuration'
+# seconds.
+# Default is 'transition.png'.
+# You have to set 'backgroundsDirectory' to set this parameter.
+#transitionBackgroundName = transition_background.file
+#
+# Name of the background file of the idle screen.
+# Default is 'idle.png'.
+# You have to set 'backgroundsDirectory' to set this parameter.
+#idleBackgroundName = idle_background.file
 
 [Server]
 # Server URL

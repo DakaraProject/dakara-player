@@ -3,7 +3,6 @@ from unittest.mock import Mock, patch
 from threading import Event
 from queue import Queue
 from configparser import ConfigParser
-import os
 
 from vlc import State, EventType
 
@@ -11,10 +10,24 @@ from dakara_player_vlc.version import __version__ as dakara_player_vlc_version
 from dakara_player_vlc.vlc_player import (
         VlcPlayer,
         mrl_to_path,
-        SHARE_DIR_ABSOLUTE,
-        IDLE_BG_PATH,
-        TRANSITION_BG_PATH,
+        IDLE_BG_NAME,
+        TRANSITION_BG_NAME,
         )
+
+from dakara_player_vlc.resources_manager import (
+    get_test_material,
+    get_background,
+    PATH_TEST_MATERIALS
+)
+
+
+def get_config(parameters):
+    """Create a config section and return it
+    """
+    config = ConfigParser()
+    config['vlc'] = parameters
+
+    return config['vlc']
 
 
 class VlcPlayerTestCase(TestCase):
@@ -28,57 +41,48 @@ class VlcPlayerTestCase(TestCase):
         self.fullscreen = "yes"
 
         # create kara folder
-        self.kara_folder = SHARE_DIR_ABSOLUTE
+        self.kara_folder = PATH_TEST_MATERIALS
 
         # create media parameter
         self.media_parameter = "no-video"
 
         # create idle background path
-        self.idle_background_path = IDLE_BG_PATH
+        self.idle_background_path = get_background(IDLE_BG_NAME)
 
         # create transition background path
-        self.transition_background_path = TRANSITION_BG_PATH
+        self.transition_background_path = get_background(TRANSITION_BG_NAME)
 
         # create transition duration
         self.transition_duration = 1
 
-        # create a subtitle
-        self.subtitle_path = os.path.join(
-                SHARE_DIR_ABSOLUTE,
-                "test_screen.ass"
-                )
-
         # create a mock text generator
         self.text_generator = Mock()
 
+        # create a subtitle
+        self.subtitle_path = get_test_material("song.ass")
+
         # create song path
-        self.song_file_path = IDLE_BG_PATH
+        self.song_file_path = get_test_material("song.png")
 
         # create playlist entry
         self.playlist_entry = {
                 'id': 0,
                 'song': {
-                    'file_path': os.path.basename(self.song_file_path),
+                    'file_path': "song.png",
                     }
-                }
-
-        # create config
-        self.config = ConfigParser()
-        self.config['vlc'] = {
-                'instanceParameter': self.instance_parameter,
-                'karaFolder': self.kara_folder,
-                'mediaParameter': self.media_parameter,
-                'idleBgPath': self.idle_background_path,
-                'transitionBgPath': self.transition_background_path,
-                'transitionDuration': self.transition_duration,
-                'fullscreen': self.fullscreen,
                 }
 
         # create vlc player
         self.vlc_player = VlcPlayer(
                 Event(),
                 Queue(),
-                self.config['vlc'],
+                get_config({
+                    'instanceParameter': self.instance_parameter,
+                    'karaFolder': self.kara_folder,
+                    'mediaParameter': self.media_parameter,
+                    'transitionDuration': self.transition_duration,
+                    'fullscreen': self.fullscreen,
+                }),
                 self.text_generator
                 )
 
@@ -225,6 +229,146 @@ class VlcPlayerTestCase(TestCase):
         self.assertIsNone(self.vlc_player.player.get_media())
         self.assertEqual(self.vlc_player.player.get_state(),
                          State.NothingSpecial)
+
+
+class VlcPlayerCustomTestCase(TestCase):
+    """Test the VLC player class with custom resources
+    """
+
+    def setUp(self):
+        # create a mock text generator
+        self.text_generator = Mock()
+
+        # create stop event
+        self.stop = Event()
+
+        # create errors queue
+        self.errors = Queue()
+
+    def test_default(self):
+        """Test to instanciate with default parameters
+
+        In that case, backgrounds come from the fallback directory.
+        """
+        # create object
+        vlc_player = VlcPlayer(
+            self.stop,
+            self.errors,
+            get_config({}),
+            self.text_generator
+        )
+
+        # assert the object
+        self.assertEqual(
+            vlc_player.idle_bg_path,
+            get_background(IDLE_BG_NAME)
+        )
+        self.assertEqual(
+            vlc_player.transition_bg_path,
+            get_background(TRANSITION_BG_NAME)
+        )
+
+    def test_custom_background_directory_success(self):
+        """Test to instanciate with an existing backgrounds directory
+
+        In that case, backgrounds come from this directory
+        """
+        # create object
+        vlc_player = VlcPlayer(
+            self.stop,
+            self.errors,
+            get_config({'backgroundsDirectory': PATH_TEST_MATERIALS}),
+            self.text_generator
+        )
+
+        # assert the object
+        self.assertEqual(
+            vlc_player.idle_bg_path,
+            get_test_material(IDLE_BG_NAME)
+        )
+        self.assertEqual(
+            vlc_player.transition_bg_path,
+            get_test_material(TRANSITION_BG_NAME)
+        )
+
+    def test_custom_background_directory_fail(self):
+        """Test to instanciate with an inexisting backgrounds directory
+
+        In that case, backgrounds come from the fallback directory
+        """
+        # create object
+        vlc_player = VlcPlayer(
+            self.stop,
+            self.errors,
+            get_config({'backgroundsDirectory': "nowhere"}),
+            self.text_generator
+        )
+
+        # assert the object
+        self.assertEqual(
+            vlc_player.idle_bg_path,
+            get_background(IDLE_BG_NAME)
+        )
+        self.assertEqual(
+            vlc_player.transition_bg_path,
+            get_background(TRANSITION_BG_NAME)
+        )
+
+    def test_custom_background_names_success(self):
+        """Test to instanciate with existing background names
+
+        In that case, backgrounds come from the custom directory and have the
+        correct name.
+        """
+        # create object
+        vlc_player = VlcPlayer(
+            self.stop,
+            self.errors,
+            get_config({
+                'backgroundsDirectory': PATH_TEST_MATERIALS,
+                'idleBackgroundName': "song.png",
+                'transitionBackgroundName': "song.png"
+            }),
+            self.text_generator
+        )
+
+        # assert the object
+        self.assertEqual(
+            vlc_player.idle_bg_path,
+            get_test_material("song.png")
+        )
+        self.assertEqual(
+            vlc_player.transition_bg_path,
+            get_test_material("song.png")
+        )
+
+    def test_custom_background_names_fail(self):
+        """Test to instanciate with background names that do not exist
+
+        In that case, backgrounds come from the custom directory and have the
+        default name.
+        """
+        # create object
+        vlc_player = VlcPlayer(
+            self.stop,
+            self.errors,
+            get_config({
+                'backgroundsDirectory': PATH_TEST_MATERIALS,
+                'idleBackgroundName': "nothing",
+                'transitionBackgroundName': "nothing"
+            }),
+            self.text_generator
+        )
+
+        # assert the object
+        self.assertEqual(
+            vlc_player.idle_bg_path,
+            get_test_material(IDLE_BG_NAME)
+        )
+        self.assertEqual(
+            vlc_player.transition_bg_path,
+            get_test_material(TRANSITION_BG_NAME)
+        )
 
 
 class MrlToPathTestCase(TestCase):
