@@ -34,7 +34,7 @@ class DakaraPlayerVlc(Runner):
         It simply starts, launchs the worker and waits for it to terminate or
         for a user Ctrl+C to be fired.
     """
-    def init_runner(self, config_path):
+    def init_runner(self, config_path, debug):
         """ Initialization
 
             Creates the worker stop event
@@ -42,16 +42,18 @@ class DakaraPlayerVlc(Runner):
             Args:
                 config_path (str): path to the config file. Will be passed to
                     the worker, who uses it.
+                debug (bool): run in debug mode.
         """
         # store arguments
         self.config_path = config_path
+        self.debug = debug
 
         logger.debug("Started main")
 
     def run(self):
         """ Launch the worker and wait for the end
         """
-        self.run_safe(DakaraWorker, self.config_path)
+        self.run_safe(DakaraWorker, self.config_path, self.debug)
 
 
 class DakaraWorker(WorkerSafeThread):
@@ -60,16 +62,17 @@ class DakaraWorker(WorkerSafeThread):
         It simply starts, loads configuration, set the different worker,
         launches the main polling thread and waits for the end.
     """
-    def init_worker(self, config_path):
+    def init_worker(self, config_path, debug):
         """ Initialization
 
             Load the config and set the logger loglevel.
 
             Args:
                 config_path (str): path to the config file.
+                debug (bool): run in debug mode.
         """
         # load config
-        self.config = self.load_config(config_path)
+        self.config = self.load_config(config_path, debug)
 
         # configure loader
         self.configure_logger()
@@ -152,11 +155,12 @@ class DakaraWorker(WorkerSafeThread):
             # stop the program
 
     @staticmethod
-    def load_config(config_path):
+    def load_config(config_path, debug):
         """ Load the config from config file
 
             Args:
                 config_path: path to the config file.
+                debug (bool): run in debug mode.
 
             Returns:
                 dictionary of the config.
@@ -181,6 +185,10 @@ class DakaraWorker(WorkerSafeThread):
                 raise ValueError(
                     "Invalid config file, missing '{}'".format(key)
                 )
+
+        # if debug is set as argument, override the config
+        if debug:
+            config['loglevel'] = 'DEBUG'
 
         return config
 
