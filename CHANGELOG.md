@@ -36,6 +36,11 @@
 - Resources folder, with default/example templates and backgrounds, is moved: `share` > `dakara_player_vlc/resources`.
 - Work link long name can be obtained withe the `| link_type_name` filter.
 
+### Changed
+
+- Config file uses the [Yaml](http://yaml.org/start.html) format and should be `config.yaml`, example file is `config.yaml.example`.
+- Calling `dakara.py -d` activates debug logging.
+
 ## 1.0.1 - 2017-10-22
 
 ### Added
