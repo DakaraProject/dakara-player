@@ -1,4 +1,5 @@
-python-vlc==1.1.2
-requests==2.9.1
 coloredlogs==5.2
 Jinja2==2.9.6
+pyaml==17.12.1
+python-vlc==1.1.2
+requests==2.9.1

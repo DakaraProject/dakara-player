@@ -8,7 +8,7 @@ from dakara_player_vlc.dakara_player_vlc import DakaraPlayerVlc
 logger = logging.getLogger('dakara')
 
 
-CONFIG_FILE_PATH = "config.ini"
+CONFIG_FILE_PATH = "config.yaml"
 
 
 def get_parser():

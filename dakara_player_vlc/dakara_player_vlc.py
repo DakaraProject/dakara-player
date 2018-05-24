@@ -1,10 +1,10 @@
 import os
 import logging
-from configparser import ConfigParser
 from tempfile import TemporaryDirectory
 from contextlib import ExitStack
 
 import coloredlogs
+import yaml
 
 from .version import __version__, __date__
 from .safe_workers import WorkerSafeThread, Runner
@@ -117,7 +117,7 @@ class DakaraWorker(WorkerSafeThread):
 
             # text screen generator
             text_generator = TextGenerator(
-                    self.config['Player'],
+                    self.config['player'].get('templates') or {},
                     tempdir
                     )
 
@@ -125,12 +125,12 @@ class DakaraWorker(WorkerSafeThread):
             vlc_player = stack.enter_context(VlcPlayer(
                     self.stop,
                     self.errors,
-                    self.config['Player'],
+                    self.config['player'],
                     text_generator
                     ))
 
             # communication with the dakara server
-            dakara_server = DakaraServer(self.config['Server'])
+            dakara_server = DakaraServer(self.config['server'])
             dakara_server.authenticate()
 
             # manager for the precedent workers
@@ -167,8 +167,20 @@ class DakaraWorker(WorkerSafeThread):
         if not os.path.isfile(config_path):
             raise IOError("No config file found")
 
-        config = ConfigParser()
-        config.read(config_path)
+        # load and parse the file
+        with open(config_path) as file:
+            try:
+                config = yaml.load(file)
+
+            except yaml.parser.ParserError as error:
+                raise IOError("Unable to read config file") from error
+
+        # check file content
+        for key in ('player', 'server'):
+            if key not in config:
+                raise ValueError(
+                    "Invalid config file, missing '{}'".format(key)
+                )
 
         return config
 
@@ -178,11 +190,11 @@ class DakaraWorker(WorkerSafeThread):
             Set a validated logging level from configuration.
         """
         # select logging level
-        loglevel = self.config['Global'].get('loglevel', LOGLEVEL)
+        loglevel = self.config.get('loglevel', LOGLEVEL)
         loglevel_numeric = getattr(logging, loglevel.upper(), None)
         if not isinstance(loglevel_numeric, int):
             raise ValueError(
-                    "Invalid loglevel in configuration: '{}'".format(loglevel)
+                    "Invalid loglevel in config file: '{}'".format(loglevel)
                     )
 
         coloredlogs.set_level(loglevel_numeric)

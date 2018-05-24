@@ -56,7 +56,7 @@ class TextGeneratorTestCase(TestCase):
         # create text generator object
         # we use a custom template directory to use a simplified template
         self.text_generator = TextGenerator(
-                {'templateDirectory': PATH_TEST_MATERIALS},
+                {'directory': PATH_TEST_MATERIALS},
                 self.temdir
                 )
 
@@ -156,7 +156,7 @@ class TextGeneratorCustomTestCase(TestCase):
         """
         # create object
         text_generator = TextGenerator(
-            {'templateDirectory': PATH_TEST_MATERIALS},
+            {'directory': PATH_TEST_MATERIALS},
             self.tempdir
         )
 
@@ -177,7 +177,7 @@ class TextGeneratorCustomTestCase(TestCase):
         """
         # create object
         text_generator = TextGenerator(
-            {'templateDirectory': "nowhere"},
+            {'directory': "nowhere"},
             self.tempdir
         )
 
@@ -200,9 +200,9 @@ class TextGeneratorCustomTestCase(TestCase):
         # create object
         text_generator = TextGenerator(
             {
-                'templateDirectory': PATH_TEST_MATERIALS,
-                'idleTemplateName': "song.ass",
-                'transitionTemplateName': "song.ass"
+                'directory': PATH_TEST_MATERIALS,
+                'idle_template_name': "song.ass",
+                'transition_template_name': "song.ass"
             },
             self.tempdir
         )
@@ -226,9 +226,9 @@ class TextGeneratorCustomTestCase(TestCase):
         # create object
         text_generator = TextGenerator(
             {
-                'templateDirectory': PATH_TEST_MATERIALS,
-                'idleTemplateName': "nothing",
-                'transitionTemplateName': "nothing"
+                'directory': PATH_TEST_MATERIALS,
+                'idle_template_name': "nothing",
+                'transition_template_name': "nothing"
             },
             self.tempdir
         )
