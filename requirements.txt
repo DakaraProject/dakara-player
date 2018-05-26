@@ -1,4 +1,5 @@
 coloredlogs==5.2
+flake8==3.5.0
 Jinja2==2.9.6
 pyaml==17.12.1
 python-vlc==1.1.2

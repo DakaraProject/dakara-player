@@ -6,24 +6,22 @@ from dakara_player_vlc.tests import DakaraTestRunner
 
 def get_parser():
     parser = ArgumentParser(
-            description="Interface to test the Dakara player"
-            )
+        description="Interface to test the Dakara player"
+    )
 
     parser.add_argument(
-            'target',
-            nargs='?',
-            help="select which test to run (by default, all tests are run)",
-            default=None
-            )
+        'target',
+        nargs='?',
+        help="select which test to run (by default, all tests are run)",
+        default=None
+    )
 
     parser.add_argument(
-            '-v',
-            '--verbose',
-            help="enable verbose output",
-            action="store_true"
-            )
-
-    parser.set_defaults(func=test)
+        '-v',
+        '--verbose',
+        help="enable verbose output",
+        action="store_true"
+    )
 
     return parser
 
@@ -39,4 +37,4 @@ if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
 
-    args.func(args)
+    test(args)

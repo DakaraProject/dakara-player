@@ -6,13 +6,13 @@ from contextlib import ExitStack
 import coloredlogs
 import yaml
 
-from .version import __version__, __date__
-from .safe_workers import WorkerSafeThread, Runner
-from .text_generator import TextGenerator
-from .vlc_player import VlcPlayer
-from .dakara_server import DakaraServer
-from .dakara_manager import DakaraManager
-from .font_loader import get_font_loader_class
+from dakara_player_vlc.version import __version__, __date__
+from dakara_player_vlc.safe_workers import WorkerSafeThread, Runner
+from dakara_player_vlc.text_generator import TextGenerator
+from dakara_player_vlc.vlc_player import VlcPlayer
+from dakara_player_vlc.dakara_server import DakaraServer
+from dakara_player_vlc.dakara_manager import DakaraManager
+from dakara_player_vlc.font_loader import get_font_loader_class
 FontLoader = get_font_loader_class()
 
 
@@ -23,9 +23,9 @@ logger = logging.getLogger("dakara_player_vlc")
 
 
 coloredlogs.install(
-        fmt='[%(asctime)s] %(name)s %(levelname)s %(message)s',
-        level=LOGLEVEL
-        )
+    fmt='[%(asctime)s] %(name)s %(levelname)s %(message)s',
+    level=LOGLEVEL
+)
 
 
 class DakaraPlayerVlc(Runner):
@@ -84,7 +84,7 @@ class DakaraWorker(WorkerSafeThread):
         logger.info("Dakara player {} ({})".format(
             __version__,
             __date__
-            ))
+        ))
 
     def run(self):
         """ Worker main method
@@ -111,8 +111,8 @@ class DakaraWorker(WorkerSafeThread):
         with ExitStack() as stack:
             # temporary directory
             tempdir = stack.enter_context(TemporaryDirectory(
-                    suffix='.dakara'
-                    ))
+                suffix='.dakara'
+            ))
 
             # font loader
             font_loader = stack.enter_context(FontLoader())
@@ -120,17 +120,17 @@ class DakaraWorker(WorkerSafeThread):
 
             # text screen generator
             text_generator = TextGenerator(
-                    self.config['player'].get('templates') or {},
-                    tempdir
-                    )
+                self.config['player'].get('templates') or {},
+                tempdir
+            )
 
             # vlc player
             vlc_player = stack.enter_context(VlcPlayer(
-                    self.stop,
-                    self.errors,
-                    self.config['player'],
-                    text_generator
-                    ))
+                self.stop,
+                self.errors,
+                self.config['player'],
+                text_generator
+            ))
 
             # communication with the dakara server
             dakara_server = DakaraServer(self.config['server'])
@@ -138,12 +138,12 @@ class DakaraWorker(WorkerSafeThread):
 
             # manager for the precedent workers
             dakara_manager = stack.enter_context(DakaraManager(
-                    self.stop,
-                    self.errors,
-                    font_loader,
-                    vlc_player,
-                    dakara_server
-                    ))
+                self.stop,
+                self.errors,
+                font_loader,
+                vlc_player,
+                dakara_server
+            ))
 
             # start the worker thread
             dakara_manager.timer.start()
@@ -202,7 +202,7 @@ class DakaraWorker(WorkerSafeThread):
         loglevel_numeric = getattr(logging, loglevel.upper(), None)
         if not isinstance(loglevel_numeric, int):
             raise ValueError(
-                    "Invalid loglevel in config file: '{}'".format(loglevel)
-                    )
+                "Invalid loglevel in config file: '{}'".format(loglevel)
+            )
 
         coloredlogs.set_level(loglevel_numeric)

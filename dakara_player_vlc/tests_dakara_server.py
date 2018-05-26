@@ -7,6 +7,7 @@ from dakara_player_vlc.dakara_server import (
         DakaraServer,
         NetworkError,
         AuthenticationError,
+        display_message
         )
 
 
@@ -323,3 +324,24 @@ class DakaraServerTestCase(TestCase):
 
         # call assertions
         self.assertEqual(result, {'pause': True, 'skip': False})
+
+
+class DisplayMessageTestCase(TestCase):
+    """Test the message display helper
+    """
+    def test_small_message(self):
+        """Test a small message is completelly displayed
+        """
+        message = "few characters"
+        message_displayed = display_message(message, limit=50)
+
+        self.assertEqual(message_displayed, message)
+
+    def test_long_message(self):
+        """Test a long message is cut
+        """
+        message = "few characters"
+        message_displayed = display_message(message, limit=5)
+
+        # new length = limit size + 3 dots
+        self.assertLessEqual(len(message_displayed), 8)

@@ -13,25 +13,21 @@ CONFIG_FILE_PATH = "config.yaml"
 
 def get_parser():
     parser = ArgumentParser(
-            description="Player for the Dakara project"
-            )
+        description="Player for the Dakara project"
+    )
 
     parser.add_argument(
-            '-d',
-            '--debug',
-            action='store_true',
-            help="enable debug output, increase verbosity"
-            )
+        '-d',
+        '--debug',
+        action='store_true',
+        help="enable debug output, increase verbosity"
+    )
 
     parser.add_argument(
-            '--config',
-            help="path to the config file, default: '{}'".format(
-                CONFIG_FILE_PATH
-                ),
-            default=CONFIG_FILE_PATH
-            )
-
-    parser.set_defaults(func=runplayer)
+        '--config',
+        help="path to the config file, default: '{}'".format(CONFIG_FILE_PATH),
+        default=CONFIG_FILE_PATH
+    )
 
     return parser
 
@@ -41,7 +37,7 @@ def runplayer(args):
         dakara = DakaraPlayerVlc(args.config, args.debug)
         dakara.run()
 
-    except Exception as error:
+    except BaseException as error:
         if args.debug:
             raise
 
@@ -53,4 +49,4 @@ if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
 
-    args.func(args)
+    runplayer(args)
