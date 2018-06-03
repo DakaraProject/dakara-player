@@ -1,0 +1,134 @@
+# DON'T TOUCH THIS FILE!
+# Your modification will be lost during the next update. Copy it to
+# `config.yaml`, remove this header, modify the content and let it roll!
+
+# Parameters for the player
+player:
+  # Path of the karaoke folder
+  kara_folder: /path/to/folder
+
+  # Enable or disable fullscreen mode
+  fullscreen: false
+
+  # Duration of the transition screen between two songs in seconds, won't work
+  # if the background file is a video.
+  # Default is 2 seconds.
+  # transition_duration: 2
+
+  # Parameters for VLC
+  # You can pass extra options to VLC through the media and/or instance
+  # parameters. Bellow are listed some common ones. For other options, consult
+  # VLC expanded help for a complete list of parameters:
+  #
+  # vlc --longhelp --full-help --advanced
+  #
+  # Not all parameters are allowed though. Some parameters only work on the
+  # instance, others only on the media.
+  vlc:
+    # Extra parameters passed to the media (for each file)
+    media_parameters:
+      # VLC hardware acceleration
+      # It is STRONGLY recommended to enable hardware acceleration if you run the
+      # server and the player on the same computer. You will experience unpleasant
+      # lags otherwise.
+      # You have to choose which hardware acceleration VLC will use, depending on your
+      # graphic card. Ensure that the corresponding drivers are installed on your
+      # system. Selecting the wrong hardware acceleration driver will result into
+      # laggy output or no output at all.
+      #
+      # For Linux:
+      # For Intel and ATI cards, use VA-API:
+      # - avcodec-hw=vaapi
+      # For Nvidia cards, use VDPAU which is chosen automatically by default. You can
+      # explicitely set it:
+      # - avcodec-hw=any
+      #
+      # For Windows:
+      # For any cards, use DirectX:
+      # - avcodec-hw=dxva2
+      #
+      # If for reasons you need to disable hardware acceleration completely:
+      # - avcodec-hw=none
+
+    # Extra parameters passed to the instance (at startup)
+    instance_parameters:
+      # Subtitle rendering
+      # You can force subtitle rendering to use screen resolution instead of video's.
+      # This will enhance subtitles quality on videos of small resolution, but may
+      # slow down the rendering if hardware decoding cannot be properly set.
+      #
+      # On Linux:
+      # - --vout x11
+      #
+      # On Windows:
+      # You should not have this problem.
+
+  # Parameters for templates
+  # Templates are used to display some information on the idle or the
+  # transition screens in the form of subtitles. They can be anything VLC can
+  # handle as subtitle. You can consult the existing default files to create
+  # your own templates.
+  templates:
+    # Path to the directory of templates.
+    # Add a look up folder where you can put your custom template files.
+    # The fallback directory is 'dakara_player_vlc/resources/templates'. To
+    # customize your templates, you can copy this fallback directory to some
+    # places and use the content as a starter.
+    # You have to set this parameter in order to set 'transition_template_name'
+    # and 'idle_template_name'.
+    # directory: path/to/templates/directory
+
+    # Name of the template for the transition screen text.
+    # This template displays information about the song to play (artist,
+    # details, etc.).
+    # Default is 'transition.ass'.
+    # You have to set 'templates_directory' to set this parameter.
+    # transition_template_name: transition_template.file
+
+    # Name of the template for the idle sceen text.
+    # Default is 'idle.ass'.
+    # You have to set 'templates_directory' to set this parameter.
+    # idle_template_name: idle_template.file
+
+  # Parameters for backgrounds
+  # Backgrounds are used during the idle or the transition screens. They can be
+  # a steady picture or a video, anything VLC can read. In case of pictures,
+  # they will be displayed for a certain amount of time.
+  backgrounds:
+    # Path to the directory of backgrounds.
+    # Add a look up folder where you can put your custom background files.
+    # The fallback directory is 'dakara_player_vlc/resources/backgrounds'. To
+    # customize your backgrounds, you can copy this fallback directory to some places
+    # and use the content as a starter.
+    # You have to set this parameter in order to set 'transitionBackgroundName' and
+    # 'idleBackgroundName'.
+    # directory: path/to/backgrounds/directory
+
+    # Name of the background file of the transition screen.
+    # In case of a picture, it will be displayed during 'transitionDuration'
+    # seconds.
+    # Default is 'transition.png'.
+    # You have to set 'backgrounds_directory' to set this parameter.
+    # transition_background_name: transition_background.file
+
+    # Name of the background file of the idle screen.
+    # Default is 'idle.png'.
+    # You have to set 'backgrounds_directory' to set this parameter.
+    # idle_background_name: idle_background.file
+
+# Parameters for the server
+server:
+  # Server URL
+  url: http://127.0.0.1:8000/
+
+  # Credentials for server authentication
+  login: login
+  password: pass
+
+# Other parameters
+
+# Minimal level of messages to log
+# For debug level, you can call `dakara.py` with the `−d` flag to show
+# traceback on exceptions.
+# Default is 'info'
+loglevel: info

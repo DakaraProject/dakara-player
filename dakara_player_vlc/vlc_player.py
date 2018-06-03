@@ -24,34 +24,40 @@ logger = logging.getLogger("vlc_player")
 
 class VlcPlayer(Worker):
     def init_worker(self, config, text_generator):
+        self.config = config
         self.text_generator = text_generator
-        # parameters for instanciations or saved objects
-        instance_parameter = config.get('instanceParameter', "")
-        fullscreen = config.getboolean('fullscreen', False)
+
+        config_vlc = config.get('vlc') or {}
+
+        # parameters used to create the player instance
+        fullscreen = config.get('fullscreen', False)
+        instance_parameters = config_vlc.get('instance_parameters') or []
 
         # parameters that will be used later on
-        self.kara_folder_path = config.get('karaFolder', "")
-        self.media_parameter = config.get('mediaParameter', "")
-        self.text_screen_media_parameters = []
+        self.kara_folder_path = config.get('kara_folder', "")
+        self.media_parameters = config_vlc.get('media_parameters') or []
+        self.media_parameters_text_screen = []
 
         # parameters for transition screen
-        self.transition_duration = config.getfloat(
-                'transitionDuration', TRANSITION_DURATION
+        self.transition_duration = config.get(
+                'transition_duration', TRANSITION_DURATION
                 )
 
-        # get custom background directory
-        custom_background_directory = config.get(
-            'backgroundsDirectory', ""
+        # load backgrounds
+        config_backgrounds = config.get('backgrounds') or {}
+        custom_background_directory = config_backgrounds.get('directory', "")
+
+        self.load_transition_bg_path(
+            custom_background_directory,
+            config_backgrounds.get('transition_background_name',
+                                   TRANSITION_BG_NAME)
         )
 
-        # load backgrounds
-        self.load_transition_bg_path(custom_background_directory,
-                                     config.get('transitionBackgroundName',
-                                                TRANSITION_BG_NAME))
-
-        self.load_idle_bg_path(custom_background_directory,
-                               config.get('idleBackgroundName',
-                                          IDLE_BG_NAME))
+        self.load_idle_bg_path(
+            custom_background_directory,
+            config_backgrounds.get('idle_background_name',
+                                   IDLE_BG_NAME)
+        )
 
         # playlist entry id of the current song
         # if no songs are playing, its value is None
@@ -65,7 +71,7 @@ class VlcPlayer(Worker):
         self.media_pending = None
 
         # VLC objects
-        self.instance = vlc.Instance(instance_parameter)
+        self.instance = vlc.Instance(instance_parameters)
         self.player = self.instance.media_player_new()
         self.player.set_fullscreen(fullscreen)
         self.event_manager = self.player.event_manager()
@@ -81,7 +87,7 @@ class VlcPlayer(Worker):
             # starting from version 3, VLC prioritizes subtitle files that are
             # nearby the media played, not the ones explicitally added; this
             # option forces VLC to use the explicitally added files only
-            self.text_screen_media_parameters.append("no-sub-autodetect-file")
+            self.media_parameters_text_screen.append("no-sub-autodetect-file")
 
         # timer for VLC taking too long to stop
         self.timer_stop_player_too_long = None
@@ -287,7 +293,7 @@ class VlcPlayer(Worker):
         # create the media
         self.playing_id = playlist_entry["id"]
         self.media_pending = self.instance.media_new_path(file_path)
-        self.media_pending.add_options(self.media_parameter)
+        self.media_pending.add_options(*self.media_parameters)
 
         # create the transition screen
         transition_text_path = self.text_generator.create_transition_text(
@@ -299,8 +305,8 @@ class VlcPlayer(Worker):
                 )
 
         media_transition.add_options(
-                *self.text_screen_media_parameters,
-                self.media_parameter,
+                *self.media_parameters_text_screen,
+                *self.media_parameters,
                 "sub-file={}".format(transition_text_path),
                 "image-duration={}".format(self.transition_duration)
                 )
@@ -330,8 +336,8 @@ class VlcPlayer(Worker):
             })
 
         media.add_options(
-                *self.text_screen_media_parameters,
-                self.media_parameter,
+                *self.media_parameters_text_screen,
+                *self.media_parameters,
                 "image-duration={}".format(IDLE_DURATION),
                 "sub-file={}".format(idle_text_path),
                 )

@@ -15,8 +15,7 @@ class DakaraServer:
     """ Object representing a connection with the Dakara server
 
         Args:
-            config (configparser.SectionProxy): dictionary-like set of data
-                regarding the connection.
+            config (dict): config of the server.
     """
     def __init__(self, config):
         # setting config

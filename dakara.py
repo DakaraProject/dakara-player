@@ -8,7 +8,7 @@ from dakara_player_vlc.dakara_player_vlc import DakaraPlayerVlc
 logger = logging.getLogger('dakara')
 
 
-CONFIG_FILE_PATH = "config.ini"
+CONFIG_FILE_PATH = "config.yaml"
 
 
 def get_parser():
@@ -20,7 +20,7 @@ def get_parser():
             '-d',
             '--debug',
             action='store_true',
-            help="enable debug output"
+            help="enable debug output, increase verbosity"
             )
 
     parser.add_argument(
@@ -38,7 +38,7 @@ def get_parser():
 
 def runplayer(args):
     try:
-        dakara = DakaraPlayerVlc(args.config)
+        dakara = DakaraPlayerVlc(args.config, args.debug)
         dakara.run()
 
     except Exception as error:

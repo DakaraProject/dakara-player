@@ -65,4 +65,4 @@ target/
 *.lvimrc
 
 # local config
-config.ini
+config.yaml

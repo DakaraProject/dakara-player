@@ -2,7 +2,6 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 from threading import Event
 from queue import Queue
-from configparser import ConfigParser
 
 from vlc import State, EventType
 
@@ -21,30 +20,21 @@ from dakara_player_vlc.resources_manager import (
 )
 
 
-def get_config(parameters):
-    """Create a config section and return it
-    """
-    config = ConfigParser()
-    config['vlc'] = parameters
-
-    return config['vlc']
-
-
 class VlcPlayerTestCase(TestCase):
     """Test the VLC player module
     """
     def setUp(self):
         # create instance parameter
-        self.instance_parameter = ""
+        self.instance_parameters = []
 
         # create fullscreen flag
-        self.fullscreen = "yes"
+        self.fullscreen = True
 
         # create kara folder
         self.kara_folder = PATH_TEST_MATERIALS
 
         # create media parameter
-        self.media_parameter = "no-video"
+        self.media_parameters = ["no-video"]
 
         # create idle background path
         self.idle_background_path = get_background(IDLE_BG_NAME)
@@ -76,13 +66,15 @@ class VlcPlayerTestCase(TestCase):
         self.vlc_player = VlcPlayer(
                 Event(),
                 Queue(),
-                get_config({
-                    'instanceParameter': self.instance_parameter,
-                    'karaFolder': self.kara_folder,
-                    'mediaParameter': self.media_parameter,
-                    'transitionDuration': self.transition_duration,
+                {
+                    'kara_folder': self.kara_folder,
                     'fullscreen': self.fullscreen,
-                }),
+                    'transition_duration': self.transition_duration,
+                    'vlc': {
+                        'instance_parameters': self.instance_parameters,
+                        'media_parameters': self.media_parameters,
+                    },
+                },
                 self.text_generator
                 )
 
@@ -254,7 +246,7 @@ class VlcPlayerCustomTestCase(TestCase):
         vlc_player = VlcPlayer(
             self.stop,
             self.errors,
-            get_config({}),
+            {},
             self.text_generator
         )
 
@@ -277,7 +269,11 @@ class VlcPlayerCustomTestCase(TestCase):
         vlc_player = VlcPlayer(
             self.stop,
             self.errors,
-            get_config({'backgroundsDirectory': PATH_TEST_MATERIALS}),
+            {
+                'backgrounds': {
+                    'directory': PATH_TEST_MATERIALS
+                }
+            },
             self.text_generator
         )
 
@@ -300,7 +296,11 @@ class VlcPlayerCustomTestCase(TestCase):
         vlc_player = VlcPlayer(
             self.stop,
             self.errors,
-            get_config({'backgroundsDirectory': "nowhere"}),
+            {
+                'backgrounds': {
+                    'directory': "nowhere"
+                }
+            },
             self.text_generator
         )
 
@@ -324,11 +324,13 @@ class VlcPlayerCustomTestCase(TestCase):
         vlc_player = VlcPlayer(
             self.stop,
             self.errors,
-            get_config({
-                'backgroundsDirectory': PATH_TEST_MATERIALS,
-                'idleBackgroundName': "song.png",
-                'transitionBackgroundName': "song.png"
-            }),
+            {
+                'backgrounds': {
+                    'directory': PATH_TEST_MATERIALS,
+                    'idle_background_name': "song.png",
+                    'transition_background_name': "song.png"
+                }
+            },
             self.text_generator
         )
 
@@ -352,11 +354,13 @@ class VlcPlayerCustomTestCase(TestCase):
         vlc_player = VlcPlayer(
             self.stop,
             self.errors,
-            get_config({
-                'backgroundsDirectory': PATH_TEST_MATERIALS,
-                'idleBackgroundName': "nothing",
-                'transitionBackgroundName': "nothing"
-            }),
+            {
+                'backgrounds': {
+                    'directory': PATH_TEST_MATERIALS,
+                    'idle_background_name': "nothing",
+                    'transition_background_name': "nothing"
+                }
+            },
             self.text_generator
         )
 

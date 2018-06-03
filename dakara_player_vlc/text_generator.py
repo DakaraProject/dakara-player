@@ -32,12 +32,14 @@ logger = logging.getLogger("text_generator")
 
 class TextGenerator:
     def __init__(self, config, tempdir):
+        self.config = config
         self.tempdir = tempdir
+
         # load icon mapping
         self.load_icon_map()
 
         # load templates
-        self.load_templates(config)
+        self.load_templates()
 
         # set text paths
         self.transition_text_path = os.path.join(
@@ -50,11 +52,11 @@ class TextGenerator:
                 IDLE_TEXT_NAME
                 )
 
-    def load_templates(self, config):
+    def load_templates(self):
         # create Jinja2 environment
         self.environment = Environment(
             loader=ChoiceLoader([
-                FileSystemLoader(config.get('templateDirectory', '')),
+                FileSystemLoader(self.config.get('directory', '')),
                 FileSystemLoader(PATH_TEMPLATES)
             ])
         )
@@ -68,11 +70,15 @@ class TextGenerator:
         )
 
         # load templates
-        self.load_transition_template(config.get('transitionTemplateName',
-                                                 TRANSITION_TEMPLATE_NAME))
+        self.load_transition_template(
+            self.config.get('transition_template_name',
+                            TRANSITION_TEMPLATE_NAME)
+        )
 
-        self.load_idle_template(config.get('idleTemplateName',
-                                           IDLE_TEMPLATE_NAME))
+        self.load_idle_template(
+            self.config.get('idle_template_name',
+                            IDLE_TEMPLATE_NAME)
+        )
 
     def convert_icon(self, name):
         """Convert the name of an icon to its code
