@@ -31,7 +31,7 @@ pip install -r requirements.txt
 
 #### Settings
 
-Copy the file `config.ini.example` to `config.ini`, then uncomment and modify the different config values as you wish.
+Copy the file `config.yaml.example` to `config.yaml`, then uncomment and modify the different config values as you wish.
 Mandatory parameters are not commented. 
 
 ### Start the player
