@@ -30,6 +30,8 @@
 
 ## Unreleased
 
+## 1.2.0 - 2018-06-03
+
 ### Added
 
 - Tests can be executed with `./tests.py`.
