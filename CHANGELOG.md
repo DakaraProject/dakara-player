@@ -32,6 +32,10 @@
 
 ## 1.2.1 - 2018-06-04
 
+### Fixed
+
+- Fix documentation inconsistency.
+
 ## 1.2.0 - 2018-06-03
 
 ### Added
