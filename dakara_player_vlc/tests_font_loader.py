@@ -3,10 +3,10 @@ from unittest.mock import patch, call
 import os
 
 from dakara_player_vlc.font_loader import (
-        FontLoaderLinux,
-        FontLoaderWindows,
-        get_font_loader_class,
-        )
+    FontLoaderLinux,
+    FontLoaderWindows,
+    get_font_loader_class,
+)
 
 
 class GetFontLoaderClassTestCase(TestCase):
@@ -59,9 +59,9 @@ class FontLoaderLinuxTestCase(TestCase):
 
         # call assertions
         mock_isfile.assert_called_once_with(
-                os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
-                             self.font_name)
-                )
+            os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
+                         self.font_name)
+        )
 
     @patch('dakara_player_vlc.font_loader.os.path.isfile')
     def test_load_from_list_installed_user(self, mock_isfile):
@@ -75,11 +75,11 @@ class FontLoaderLinuxTestCase(TestCase):
 
         # call assertions
         mock_isfile.assert_has_calls((
-                call(os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
-                                  self.font_name)),
-                call(os.path.join(FontLoaderLinux.FONT_DIR_USER,
-                                  self.font_name))
-                ))
+            call(os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
+                              self.font_name)),
+            call(os.path.join(FontLoaderLinux.FONT_DIR_USER,
+                              self.font_name))
+        ))
 
     @patch('dakara_player_vlc.font_loader.os.symlink')
     @patch('dakara_player_vlc.font_loader.os.path.islink')
@@ -100,21 +100,21 @@ class FontLoaderLinuxTestCase(TestCase):
 
         # call assertions
         mock_isfile.assert_has_calls((
-                call(os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
-                                  self.font_name)),
-                call(os.path.join(FontLoaderLinux.FONT_DIR_USER,
-                                  self.font_name))
-                ))
+            call(os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
+                              self.font_name)),
+            call(os.path.join(FontLoaderLinux.FONT_DIR_USER,
+                              self.font_name))
+        ))
 
         font_file_target_path = os.path.join(
-                FontLoaderLinux.FONT_DIR_USER,
-                self.font_name
-                )
+            FontLoaderLinux.FONT_DIR_USER,
+            self.font_name
+        )
 
         mock_symlink.assert_called_once_with(
-                self.font_path,
-                font_file_target_path
-                )
+            self.font_path,
+            font_file_target_path
+        )
 
         # post assertions
         self.assertEqual(self.font_loader.fonts_loaded,
@@ -141,9 +141,9 @@ class FontLoaderLinuxTestCase(TestCase):
         # call assertions
         mock_get_all_fonts.assert_called_once_with()
         mock_isfile.assert_called_once_with(
-                os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
-                             self.font_name)
-                )
+            os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
+                         self.font_name)
+        )
 
         # post assertions
         self.assertFalse(self.font_loader.fonts_loaded)

@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 import re
 import os
-import sys
 from configparser import ConfigParser
 from argparse import ArgumentParser
 
+
 CSS_ICON_NAME_PARSER = r"""\.fa-([^:]*?):(?=[^}]*?content:\s*['"](.*?)['"])"""
 
+
 def generate(css_file, ini_file):
+    """Generate a file that contains code for character names
+    """
     # check css_file exists
     if not os.path.isfile(css_file):
         raise IOError("File '{}' not found".format(
             css_file
-            ))
+        ))
 
     # load css file
     with open(css_file, 'r') as file:
@@ -23,10 +26,10 @@ def generate(css_file, ini_file):
 
     # parse css file
     css_matcher = re.findall(
-            CSS_ICON_NAME_PARSER,
-            css_content,
-            re.S,
-            )
+        CSS_ICON_NAME_PARSER,
+        css_content,
+        re.S,
+    )
 
     # feed ini file
     ini_dict = {}
@@ -47,19 +50,22 @@ def generate(css_file, ini_file):
 
 
 def get_arg_parser():
+    """Create the parser
+    """
     parser = ArgumentParser()
 
     parser.add_argument(
-            'css_file',
-            help="File with CSS rules mapping icons name and character."
-            )
+        'css_file',
+        help="File with CSS rules mapping icons name and character."
+    )
 
     parser.add_argument(
-            'ini_file',
-            help="Output file with hexadecimal code for icons."
-            )
+        'ini_file',
+        help="Output file with hexadecimal code for icons."
+    )
 
     return parser
+
 
 if __name__ == '__main__':
     parser = get_arg_parser()
@@ -67,9 +73,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     generate(
-            args.css_file,
-            args.ini_file
-            )
+        args.css_file,
+        args.ini_file
+    )
 
-    sys.stdout.write("INI file saved in '{}'\n".format(args.ini_file))
-
+    print("INI file saved in '{}'".format(args.ini_file))

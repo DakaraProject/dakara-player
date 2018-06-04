@@ -31,6 +31,11 @@ logger = logging.getLogger("text_generator")
 
 
 class TextGenerator:
+    """Text generator
+
+    This class creates custom ASS files that are used for idle or transition
+    screens. It uses Jinja to populate ASS templates with various informations.
+    """
     def __init__(self, config, tempdir):
         self.config = config
         self.tempdir = tempdir
@@ -43,16 +48,18 @@ class TextGenerator:
 
         # set text paths
         self.transition_text_path = os.path.join(
-                self.tempdir,
-                TRANSITION_TEXT_NAME
-                )
+            self.tempdir,
+            TRANSITION_TEXT_NAME
+        )
 
         self.idle_text_path = os.path.join(
-                self.tempdir,
-                IDLE_TEXT_NAME
-                )
+            self.tempdir,
+            IDLE_TEXT_NAME
+        )
 
     def load_templates(self):
+        """Set up Jinja environment
+        """
         # create Jinja2 environment
         self.environment = Environment(
             loader=ChoiceLoader([
@@ -113,15 +120,13 @@ class TextGenerator:
                 path of the text containing the idle screen content.
         """
         # using the template
-        idle_text = self.idle_template.render(
-                **info
-                )
+        idle_text = self.idle_template.render(**info)
 
         with open(self.idle_text_path, 'w', encoding='utf8') as file:
             file.write(idle_text)
 
-        logger.debug("Create idle screen text file in \
-\"{}\"".format(self.idle_text_path))
+        logger.debug("Create idle screen text file in '{}'".
+                     format(self.idle_text_path))
 
         return self.idle_text_path
 
@@ -141,8 +146,8 @@ class TextGenerator:
         with open(self.transition_text_path, 'w', encoding='utf8') as file:
             file.write(transition_text)
 
-        logger.debug("Create transition screen text file in \
-\"{}\"".format(self.transition_text_path))
+        logger.debug("Create transition screen text file in '{}'".
+                     format(self.transition_text_path))
 
         return self.transition_text_path
 

@@ -7,11 +7,11 @@ from vlc import State, EventType
 
 from dakara_player_vlc.version import __version__ as dakara_player_vlc_version
 from dakara_player_vlc.vlc_player import (
-        VlcPlayer,
-        mrl_to_path,
-        IDLE_BG_NAME,
-        TRANSITION_BG_NAME,
-        )
+    VlcPlayer,
+    mrl_to_path,
+    IDLE_BG_NAME,
+    TRANSITION_BG_NAME,
+)
 
 from dakara_player_vlc.resources_manager import (
     get_test_material,
@@ -56,37 +56,40 @@ class VlcPlayerTestCase(TestCase):
 
         # create playlist entry
         self.playlist_entry = {
-                'id': 0,
-                'song': {
-                    'file_path': "song.png",
-                    }
+            'id': 0,
+            'song': {
+                'file_path': "song.png",
                 }
+        }
 
         # create vlc player
         self.vlc_player = VlcPlayer(
-                Event(),
-                Queue(),
-                {
-                    'kara_folder': self.kara_folder,
-                    'fullscreen': self.fullscreen,
-                    'transition_duration': self.transition_duration,
-                    'vlc': {
-                        'instance_parameters': self.instance_parameters,
-                        'media_parameters': self.media_parameters,
-                    },
+            Event(),
+            Queue(),
+            {
+                'kara_folder': self.kara_folder,
+                'fullscreen': self.fullscreen,
+                'transition_duration': self.transition_duration,
+                'vlc': {
+                    'instance_parameters': self.instance_parameters,
+                    'media_parameters': self.media_parameters,
                 },
-                self.text_generator
-                )
+            },
+            self.text_generator
+        )
 
         self.vlc_player.set_song_end_callback(lambda self, event: None)
         self.vlc_player.set_error_callback(lambda self, event: None)
 
-    def get_event_and_callback(self):
+    @staticmethod
+    def get_event_and_callback():
         """Get an event and a callback that sets this event
         """
         event = Event()
 
         def callback(*args, **kwargs):
+            """Callback that sets the joined event
+            """
             event.set()
 
         return event, callback
@@ -100,9 +103,9 @@ class VlcPlayerTestCase(TestCase):
         # create an event for when the player starts to play
         is_playing, callback_is_playing = self.get_event_and_callback()
         self.vlc_player.event_manager.event_attach(
-                EventType.MediaPlayerPlaying,
-                callback_is_playing
-                )
+            EventType.MediaPlayerPlaying,
+            callback_is_playing
+        )
 
         # pre assertions
         self.assertIsNone(self.vlc_player.player.get_media())
@@ -146,9 +149,9 @@ class VlcPlayerTestCase(TestCase):
         # create an event for when the player starts to play
         is_playing, callback_is_playing = self.get_event_and_callback()
         self.vlc_player.event_manager.event_attach(
-                EventType.MediaPlayerPlaying,
-                callback_is_playing
-                )
+            EventType.MediaPlayerPlaying,
+            callback_is_playing
+        )
 
         # pre assertions
         self.assertIsNone(self.vlc_player.playing_id)
@@ -168,8 +171,8 @@ class VlcPlayerTestCase(TestCase):
 
         # call assertions
         self.text_generator.create_transition_text.assert_called_once_with(
-                self.playlist_entry
-                )
+            self.playlist_entry
+        )
 
         # post assertions for transition screen
         self.assertIsNotNone(self.vlc_player.playing_id)

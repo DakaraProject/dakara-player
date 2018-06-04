@@ -3,12 +3,12 @@ from unittest.mock import patch, mock_open
 import os
 
 from dakara_player_vlc.text_generator import (
-        TextGenerator,
-        IDLE_TEXT_NAME,
-        TRANSITION_TEXT_NAME,
-        IDLE_TEMPLATE_NAME,
-        TRANSITION_TEMPLATE_NAME,
-        )
+    TextGenerator,
+    IDLE_TEXT_NAME,
+    TRANSITION_TEXT_NAME,
+    IDLE_TEMPLATE_NAME,
+    TRANSITION_TEMPLATE_NAME,
+)
 
 from dakara_player_vlc.resources_manager import (
     PATH_TEST_MATERIALS,
@@ -33,16 +33,16 @@ class TextGeneratorTestCase(TestCase):
 
         # create info dictionary
         self.idle_info = {
-                'vlc_version': "0.0.0",
-                }
+            'vlc_version': "0.0.0",
+        }
 
         # create playlist entry
         self.playlist_entry = {
-                'title': 'title',
-                'artists':  ['someone'],
-                'works': ['something'],
-                'owner': 'me',
-                }
+            'title': 'title',
+            'artists':  ['someone'],
+            'works': ['something'],
+            'owner': 'me',
+        }
 
         # create idle text content
         self.idle_text_content = self.idle_info['vlc_version']
@@ -50,15 +50,15 @@ class TextGeneratorTestCase(TestCase):
         # create transition text content
         self.transition_text_content = \
             "{title}\n{artists}\n{works}\n{owner}".format(
-                    **self.playlist_entry
-                    )
+                **self.playlist_entry
+            )
 
         # create text generator object
         # we use a custom template directory to use a simplified template
         self.text_generator = TextGenerator(
-                {'directory': PATH_TEST_MATERIALS},
-                self.temdir
-                )
+            {'directory': PATH_TEST_MATERIALS},
+            self.temdir
+        )
 
     @patch('dakara_player_vlc.text_generator.open', new_callable=mock_open)
     def test_create_idle_text(self, mock_open):
@@ -69,14 +69,14 @@ class TextGeneratorTestCase(TestCase):
 
         # call assertions
         mock_open.assert_called_once_with(
-                self.idle_text_path,
-                'w',
-                encoding='utf8'
-                )
+            self.idle_text_path,
+            'w',
+            encoding='utf8'
+        )
 
         mock_open.return_value.write.assert_called_once_with(
-                self.idle_text_content
-                )
+            self.idle_text_content
+        )
 
         self.assertEqual(result, self.idle_text_path)
 
@@ -86,19 +86,19 @@ class TextGeneratorTestCase(TestCase):
         """
         # call method
         result = self.text_generator.create_transition_text(
-                self.playlist_entry
-                )
+            self.playlist_entry
+        )
 
         # call assertions
         mock_open.assert_called_once_with(
-                self.transition_text_path,
-                'w',
-                encoding='utf8'
-                )
+            self.transition_text_path,
+            'w',
+            encoding='utf8'
+        )
 
         mock_open.return_value.write.assert_called_once_with(
-                self.transition_text_content
-                )
+            self.transition_text_content
+        )
 
         self.assertEqual(result, self.transition_text_path)
 

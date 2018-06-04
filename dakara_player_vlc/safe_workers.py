@@ -83,7 +83,7 @@ class BaseSafeThread:
 
         # if an error occurs, put it in the error queue and notify the stop
         # event
-        except:
+        except BaseException:
             self.errors.put_nowait(sys.exc_info())
             self.stop.set()
 
@@ -152,7 +152,7 @@ class BaseWorker:
             errors (queue.Queue): error queue to communicate the exception to
                 the main thread.
     """
-    def __init__(self, stop, errors, *args, **kwargs):
+    def __init__(self, stop, errors):
         """ Initialization
 
             Assign the mandatory stop event and errors queue to the instance.
@@ -319,9 +319,11 @@ class WorkerSafeTimer(BaseWorker):
 
         # create timer for itself
         def redefine_me():
+            """Dummy function that should not be used
+            """
             raise UnredefinedTimerError(
-                    "You must redefine the timer of a WorkerSafeTimer"
-                    )
+                "You must redefine the timer of a WorkerSafeTimer"
+            )
 
         self.timer = self.create_timer(0, redefine_me)
 
@@ -345,7 +347,7 @@ class WorkerSafeTimer(BaseWorker):
         logger.debug("Closing worker safe timer thread '{}' ({})".format(
             self.timer.getName(),
             self.__class__.__name__
-            ))
+        ))
 
         # cancel the timer, if the timer was waiting
         self.timer.cancel()
@@ -359,7 +361,7 @@ class WorkerSafeTimer(BaseWorker):
         logger.debug("Closed worker safe timer thread '{}' ({})".format(
             self.timer.getName(),
             self.__class__.__name__
-            ))
+        ))
 
 
 class WorkerSafeThread(BaseWorker):
@@ -398,9 +400,11 @@ class WorkerSafeThread(BaseWorker):
 
         # create thread for itself
         def redefine_me():
+            """Dummy function that should not be used
+            """
             raise UnredefinedThreadError(
-                    "You must redefine the thread of a WorkerSafeThread"
-                    )
+                "You must redefine the thread of a WorkerSafeThread"
+            )
 
         self.thread = self.create_thread(target=redefine_me)
 
@@ -423,7 +427,7 @@ class WorkerSafeThread(BaseWorker):
         logger.debug("Closing worker safe thread '{}' ({})".format(
             self.thread.getName(),
             self.__class__.__name__
-            ))
+        ))
 
         # wait for termination
         self.thread.join()
@@ -434,7 +438,7 @@ class WorkerSafeThread(BaseWorker):
         logger.debug("Closed worker safe thread '{}' ({})".format(
             self.thread.getName(),
             self.__class__.__name__
-            ))
+        ))
 
 
 class Runner:
@@ -470,26 +474,22 @@ class Runner:
         """
         pass
 
-    def run_safe(self, Worker, *args, **kwargs):
+    def run_safe(self, WorkerClass, *args, **kwargs):
         """ Execute a WorkerSafeThread instance thread
 
             The thread is executed and the method waits for the stop event to
             be set or a user interruption to be triggered (Ctrl+C).
 
             Args:
-                Worker (WorkerSafeThread): worker class with safe thread. Note
-                    you have to pass a custom class based on
+                WorkerClass (WorkerSafeThread): worker class with safe thread.
+                    Note you have to pass a custom class based on
                     `WorkerSafeThread`.
-                args, kwargs: arguments to pass to the thread of Worker.
+                args, kwargs: arguments to pass to the thread of WorkerClass.
         """
         try:
             # create worker thread
-            with Worker(
-                    self.stop,
-                    self.errors,
-                    *args,
-                    **kwargs
-                    ) as worker:
+            with WorkerClass(self.stop, self.errors,
+                             *args, **kwargs) as worker:
 
                 logger.debug("Create worker thread")
                 worker.thread.start()

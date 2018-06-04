@@ -1,8 +1,8 @@
 import os
 import logging
 import urllib
-from pkg_resources import parse_version
 from threading import Timer
+from pkg_resources import parse_version
 
 import vlc
 
@@ -23,7 +23,18 @@ logger = logging.getLogger("vlc_player")
 
 
 class VlcPlayer(Worker):
+    """Interface for the Python VLC wrapper
+
+    This class allows to manipulate VLC for complex tasks. It manages the
+    display of idle/transition screens when playing, manages the VLC callbacks
+    and provides some accessors and mutators to get/set the status of the
+    player.
+
+    The playlist is virtually handled using song-end callbacks.
+    """
     def init_worker(self, config, text_generator):
+        """Init the worker
+        """
         self.config = config
         self.text_generator = text_generator
 
@@ -40,8 +51,8 @@ class VlcPlayer(Worker):
 
         # parameters for transition screen
         self.transition_duration = config.get(
-                'transition_duration', TRANSITION_DURATION
-                )
+            'transition_duration', TRANSITION_DURATION
+        )
 
         # load backgrounds
         config_backgrounds = config.get('backgrounds') or {}
@@ -78,7 +89,7 @@ class VlcPlayer(Worker):
 
         # VLC version
         self.vlc_version = vlc.libvlc_get_version().decode()
-        logger.info("VLC " + self.vlc_version)
+        logger.info("VLC %s", self.vlc_version)
         version_str, _ = self.vlc_version.split()
         version = parse_version(version_str)
 
@@ -167,9 +178,9 @@ class VlcPlayer(Worker):
                 callback: function to assign.
         """
         self.event_manager.event_attach(
-                vlc.EventType.MediaPlayerEndReached,
-                self.song_end_callback
-                )
+            vlc.EventType.MediaPlayerEndReached,
+            self.song_end_callback
+        )
 
         self.song_end_external_callback = callback
 
@@ -192,15 +203,15 @@ class VlcPlayer(Worker):
             # request to play the song itself
             self.in_transition = False
             thread = self.create_thread(
-                    target=self.play_media,
-                    args=(self.media_pending, )
-                    )
+                target=self.play_media,
+                args=(self.media_pending, )
+            )
 
             # get file path
             file_path = mrl_to_path(self.media_pending.get_mrl())
             logger.info("Now playing \"{}\"".format(
                 file_path
-                ))
+            ))
 
         else:
             # otherwise, the song has finished,
@@ -216,9 +227,9 @@ class VlcPlayer(Worker):
                 callback: function to assign.
         """
         self.event_manager.event_attach(
-                vlc.EventType.MediaPlayerEncounteredError,
-                self.error_callback
-                )
+            vlc.EventType.MediaPlayerEncounteredError,
+            self.error_callback
+        )
 
         self.error_external_callback = callback
 
@@ -239,16 +250,16 @@ class VlcPlayer(Worker):
         error_message = vlc.libvlc_errmsg() or \
             "No details, consult player logs"
 
-        if type(error_message) is bytes:
+        if isinstance(error_message, bytes):
             error_message = error_message.decode()
 
         thread = self.create_thread(
-                target=self.error_external_callback,
-                args=(
-                    self.playing_id,
-                    error_message
-                    )
-                )
+            target=self.error_external_callback,
+            args=(
+                self.playing_id,
+                error_message
+            )
+        )
 
         self.playing_id = None
         self.in_transition = False
@@ -278,16 +289,16 @@ class VlcPlayer(Worker):
         """
         # file location
         file_path = os.path.join(
-                self.kara_folder_path,
-                playlist_entry["song"]["file_path"]
-                )
+            self.kara_folder_path,
+            playlist_entry["song"]["file_path"]
+        )
 
         # Check file exists
         if not os.path.isfile(file_path):
             self.error_external_callback(
-                    playlist_entry['id'],
-                    "File not found \"{}\"".format(file_path)
-                    )
+                playlist_entry['id'],
+                "File not found \"{}\"".format(file_path)
+            )
             return
 
         # create the media
@@ -297,19 +308,19 @@ class VlcPlayer(Worker):
 
         # create the transition screen
         transition_text_path = self.text_generator.create_transition_text(
-                playlist_entry
-                )
+            playlist_entry
+        )
 
         media_transition = self.instance.media_new_path(
-                self.transition_bg_path
-                )
+            self.transition_bg_path
+        )
 
         media_transition.add_options(
-                *self.media_parameters_text_screen,
-                *self.media_parameters,
-                "sub-file={}".format(transition_text_path),
-                "image-duration={}".format(self.transition_duration)
-                )
+            *self.media_parameters_text_screen,
+            *self.media_parameters,
+            "sub-file={}".format(transition_text_path),
+            "image-duration={}".format(self.transition_duration)
+        )
         self.in_transition = True
 
         self.play_media(media_transition)
@@ -324,8 +335,8 @@ class VlcPlayer(Worker):
 
         # create idle screen media
         media = self.instance.media_new_path(
-                self.idle_bg_path
-                )
+            self.idle_bg_path
+        )
 
         # create the idle screen
         idle_text_path = self.text_generator.create_idle_text({
@@ -336,11 +347,11 @@ class VlcPlayer(Worker):
             })
 
         media.add_options(
-                *self.media_parameters_text_screen,
-                *self.media_parameters,
-                "image-duration={}".format(IDLE_DURATION),
-                "sub-file={}".format(idle_text_path),
-                )
+            *self.media_parameters_text_screen,
+            *self.media_parameters,
+            "image-duration={}".format(IDLE_DURATION),
+            "sub-file={}".format(idle_text_path),
+        )
 
         self.play_media(media)
         logger.debug("Playing idle screen")
@@ -415,19 +426,22 @@ class VlcPlayer(Worker):
 
         # send a warning within 3 seconds if VLC has not stopped already
         self.timer_stop_player_too_long = Timer(
-                3, self.warn_stop_player_too_long
-                )
+            3, self.warn_stop_player_too_long
+        )
 
         self.timer_stop_player_too_long.start()
         self.player.stop()
         logger.debug("Stopped player")
 
-    def warn_stop_player_too_long(self):
+    @staticmethod
+    def warn_stop_player_too_long():
         """ Notify the user that VLC takes too long to stop
         """
         logger.warning("VLC takes too long to stop")
 
-    def exit_worker(self, type, value, traceback):
+    def exit_worker(self, exception_type, exception_value, traceback):
+        """Exit the worker
+        """
         self.stop_player()
 
         # clear the warning message if any
