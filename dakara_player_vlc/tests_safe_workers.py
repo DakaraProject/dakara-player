@@ -27,7 +27,7 @@ class TestError(Exception):
 class BaseTestCase(TestCase):
     """Generic test case
 
-    It includes some dummy functions a new assertion method
+    It includes some dummy functions a new assertion method.
     """
     def setUp(self):
         # create stop event and errors queue

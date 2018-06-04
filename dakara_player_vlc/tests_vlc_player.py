@@ -123,8 +123,8 @@ class VlcPlayerTestCase(TestCase):
             'notes': [
                 "VLC " + self.vlc_player.vlc_version,
                 "Dakara player " + dakara_player_vlc_version
-                ]
-            })
+            ]
+        })
 
         # post assertions
         self.assertEqual(self.vlc_player.player.get_state(),
@@ -266,7 +266,7 @@ class VlcPlayerCustomTestCase(TestCase):
     def test_custom_background_directory_success(self):
         """Test to instanciate with an existing backgrounds directory
 
-        In that case, backgrounds come from this directory
+        In that case, backgrounds come from this directory.
         """
         # create object
         vlc_player = VlcPlayer(
@@ -293,7 +293,7 @@ class VlcPlayerCustomTestCase(TestCase):
     def test_custom_background_directory_fail(self):
         """Test to instanciate with an inexisting backgrounds directory
 
-        In that case, backgrounds come from the fallback directory
+        In that case, backgrounds come from the fallback directory.
         """
         # create object
         vlc_player = VlcPlayer(

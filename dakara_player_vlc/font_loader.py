@@ -11,6 +11,9 @@ logger = logging.getLogger("font_loader")
 
 def get_font_loader_class():
     """Get the font loader associated to the current platform
+
+    Returns:
+        FontLoader: specialized version of the font loader class.
     """
     if 'linux' in sys.platform:
         return FontLoaderLinux

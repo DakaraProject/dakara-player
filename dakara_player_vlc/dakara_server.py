@@ -12,14 +12,15 @@ logger = logging.getLogger("dakara_server")
 
 
 def authenticated(fun):
-    """ Decorator that ensures the token is set when the given function is
-        called
+    """Decorator that ensures the token is set
 
-        Args:
-            fun (function): function to decorate.
+    It makes sure that the given function is callel once authenticated.
 
-        Returns:
-            function: decorated function.
+    Args:
+        fun (function): function to decorate.
+
+    Returns:
+        function: decorated function.
     """
     def call(self, *args, **kwargs):
         if self.token is None:
@@ -31,10 +32,10 @@ def authenticated(fun):
 
 
 class DakaraServer:
-    """ Object representing a connection with the Dakara server
+    """Object representing a connection with the Dakara server
 
-        Args:
-            config (dict): config of the server.
+    Args:
+        config (dict): config of the server.
     """
     def __init__(self, config):
         # setting config
@@ -46,10 +47,10 @@ class DakaraServer:
         self.password = config['password']
 
     def authenticate(self):
-        """ Connect to the server
+        """Connect to the server
 
-            The authentication process relies on login/password which gives an
-            authentication token. This token is stored in the instance.
+        The authentication process relies on login/password which gives an
+        authentication token. This token is stored in the instance.
         """
         data = {
             'username': self.login,
@@ -92,12 +93,12 @@ class DakaraServer:
 
     @authenticated
     def _get_token_header(self):
-        """ Get the connection token as it should appear in the header
+        """Get the connection token as it should appear in the header
 
-            Can be called only once login has been sucessful.
+        Can be called only once login has been sucessful.
 
-            Returns:
-                dict: formatted token.
+        Returns:
+            dict: formatted token.
         """
         return {
             'Authorization': 'Token ' + self.token
@@ -105,11 +106,11 @@ class DakaraServer:
 
     @authenticated
     def get_next_song(self):
-        """ Request next song from the server
+        """Request next song from the server
 
-            Returns:
-                dict: next playlist entry or `None` if there is no more song
-                in the playlist.
+        Returns:
+            dict: next playlist entry or `None` if there is no more song
+            in the playlist.
         """
         logger.debug("Asking new song to server")
         try:
@@ -136,11 +137,11 @@ class DakaraServer:
 
     @authenticated
     def send_error(self, playing_id, error_message):
-        """ Send provided error message to the server
+        """Send provided error message to the server
 
-            Args:
-                playing_id (int): ID of the playlist entry that failed.
-                error_message (str): message explaining the error.
+        Args:
+            playing_id (int): ID of the playlist entry that failed.
+            error_message (str): message explaining the error.
         """
         logger.debug(("Sending error to server: playing ID {playing_id}, "
                       "{message}").format(
@@ -173,22 +174,21 @@ class DakaraServer:
 
     @authenticated
     def send_status_get_commands(self, playing_id, timing=0, paused=False):
-        """ Send current status to the server
+        """Send current status to the server
 
-            If the connexion with the server cannot be established
-            or if the status recieved is not consistent, pause
-            the player.
+        If the connexion with the server cannot be established or if the status
+        recieved is not consistent, pause the player.
 
-            Args:
-                playing_id (int): ID of the playlist entry that is currently
-                    playing. If `None`, the player tells it is not playing
-                    anything.
-                timing (int): amount of milliseconds that has been spent since
-                    the media started to play.
-                paused (bool): flag wether the player is paused or not.
+        Args:
+            playing_id (int): ID of the playlist entry that is currently
+                playing. If `None`, the player tells it is not playing
+                anything.
+            timing (int): amount of milliseconds that has been spent since the
+                media started to play.
+            paused (bool): flag wether the player is paused or not.
 
-            Returns:
-                requested status from the server.
+        Returns:
+            dict: requested status from the server.
         """
         logger.debug(("Sending status to server: playing ID {playing_id}, at "
                       "{timing} s, {paused}").format(
@@ -236,11 +236,10 @@ def display_message(message, limit=100):
 
 
 class AuthenticationError(Exception):
-    """ Error raised when authentication fails
+    """Error raised when authentication fails
     """
 
 
 class NetworkError(Exception):
-    """ Error raised when the communication with the server failed during a
-        critical task
+    """Error raised when the communication fails during a critical task
     """

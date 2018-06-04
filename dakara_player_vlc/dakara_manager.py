@@ -44,23 +44,23 @@ class DakaraManager(WorkerSafeTimer):
         self.poll_server()
 
     def handle_error(self, playing_id, message):
-        """ Callback when a VLC error occurs
+        """Callback when a VLC error occurs
 
-            Args:
-                playing_id: playlist entry ID.
-                message: text describing the error.
+        Args:
+            playing_id (int): playlist entry ID.
+            message (str): text describing the error.
         """
         logger.error(message)
         self.dakara_server.send_error(playing_id, message)
         self.add_next_music()
 
     def handle_song_end(self):
-        """ Callback when a song ends
+        """Callback when a song ends
         """
         self.add_next_music()
 
     def add_next_music(self):
-        """ Ask for new song to play, otherwise plays the idle screen
+        """Ask for new song to play, otherwise plays the idle screen
         """
         next_song = self.dakara_server.get_next_song()
         if next_song:
@@ -71,12 +71,11 @@ class DakaraManager(WorkerSafeTimer):
             self.dakara_server.send_status_get_commands(None)
 
     def poll_server(self):
-        """ Manage communication with the server
+        """Manage communication with the server
 
-            Query server for a next song if idle,
-            send status to server otherwise.
+        Query server for a next song if idle, send status to server otherwise.
 
-            The method calls itself every second.
+        The method calls itself every second.
         """
         if self.vlc_player.is_idle():
             # idle : check if there is a song to play

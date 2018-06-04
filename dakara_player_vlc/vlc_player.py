@@ -104,16 +104,15 @@ class VlcPlayer(Worker):
         self.timer_stop_player_too_long = None
 
     def load_transition_bg_path(self, bg_directory_path, transition_bg_name):
-        """ Load transition backgound file path
+        """Load transition backgound file path
 
-            Load the customized background path or the
-            default background path for the transition
-            screen.
+        Load the customized background path or the default background path for
+        the transition screen.
 
-            Called once by the constructor.
+        Called once by the constructor.
 
-            Args:
-                bg_directory_path: path to the background directory.
+        Args:
+            bg_directory_path (str): path to the background directory.
         """
         dir_exists = os.path.isdir(bg_directory_path)
         dir_content = os.listdir(bg_directory_path) if dir_exists else []
@@ -138,16 +137,15 @@ class VlcPlayer(Worker):
         self.transition_bg_path = bg_path
 
     def load_idle_bg_path(self, bg_directory_path, idle_bg_name):
-        """ Load idle backgound file path
+        """Load idle backgound file path
 
-            Load the customized background path or the
-            default background path for the idle
-            screen.
+        Load the customized background path or the default background path for
+        the idle screen.
 
-            Called once by the constructor.
+        Called once by the constructor.
 
-            Args:
-                bg_directory_path: path to the background directory.
+        Args:
+            bg_directory_path (str): path to the background directory.
         """
         dir_exists = os.path.isdir(bg_directory_path)
         dir_content = os.listdir(bg_directory_path) if dir_exists else []
@@ -172,10 +170,10 @@ class VlcPlayer(Worker):
         self.idle_bg_path = bg_path
 
     def set_song_end_callback(self, callback):
-        """ Assign callback for when player reachs the end of current song
+        """Assign callback for when player reachs the end of current song
 
-            Args:
-                callback: function to assign.
+        Args:
+            callback (function): function to assign.
         """
         self.event_manager.event_attach(
             vlc.EventType.MediaPlayerEndReached,
@@ -185,16 +183,15 @@ class VlcPlayer(Worker):
         self.song_end_external_callback = callback
 
     def song_end_callback(self, event):
-        """ Callback called when song end reached occurs
+        """Callback called when song end reached occurs
 
-            This can happen when a transition screen ends,
-            leading to playing the actual song file,
-            or when the song file ends, leading
-            to calling the callback set by `set_song_end_callback`.
-            A new thread created in any case.
+        This can happen when a transition screen ends, leading to playing the
+        actual song file, or when the song file ends, leading to calling the
+        callback set by `set_song_end_callback`. A new thread created in any
+        case.
 
-            Args:
-                event: VLC event object.
+        Args:
+            event (vlc.EventType): VLC event object.
         """
         logger.debug("Song end callback called")
 
@@ -221,10 +218,10 @@ class VlcPlayer(Worker):
         thread.start()
 
     def set_error_callback(self, callback):
-        """ Assign callback for when error occured
+        """Assign callback for when error occured
 
-            Args:
-                callback: function to assign.
+        Args:
+            callback (function): function to assign.
         """
         self.event_manager.event_attach(
             vlc.EventType.MediaPlayerEncounteredError,
@@ -234,13 +231,13 @@ class VlcPlayer(Worker):
         self.error_external_callback = callback
 
     def error_callback(self, event):
-        """ Callback called when error occurs
+        """Callback called when error occurs
 
-            Try to get error message and then
-            call the callback set by `set_error_callback`.
+        Try to get error message and then call the callback set by
+        `set_error_callback`.
 
-            Args:
-                event: VLC event object.
+        Args:
+            event (vlc.EventType): VLC event object.
         """
         logger.debug("Error callback called")
 
@@ -266,26 +263,25 @@ class VlcPlayer(Worker):
         thread.start()
 
     def play_media(self, media):
-        """ Play the given media
+        """Play the given media
 
-            Args:
-                media: VLC media object.
+        Args:
+            media (vlc.Media): VLC media object.
         """
         self.player.set_media(media)
         self.player.play()
 
     def play_song(self, playlist_entry):
-        """ Play music specified
+        """Play music specified
 
-            Prepare the media containing the music to play
-            and store it. Add a transition screen and play it
-            first. When the transition screen ends, the media
-            will be played.
+        Prepare the media containing the music to play and store it. Add a
+        transition screen and play it first. When the transition screen ends,
+        the media will be played.
 
-            Args:
-                playlist_entry: dictionnary containing at least `id` and `song`
-                    attributes. `song` is a dictionary containing at least
-                    the key `file_path`.
+        Args:
+            playlist_entry (dict): dictionnary containing at least `id` and
+                `song` attributes. `song` is a dictionary containing at least
+                the key `file_path`.
         """
         # file location
         file_path = os.path.join(
@@ -327,7 +323,7 @@ class VlcPlayer(Worker):
         logger.info("Playing transition for \"{}\"".format(file_path))
 
     def play_idle_screen(self):
-        """ Play idle screen
+        """Play idle screen
         """
         # set idle status
         self.playing_id = None
@@ -357,30 +353,28 @@ class VlcPlayer(Worker):
         logger.debug("Playing idle screen")
 
     def is_idle(self):
-        """ Get player idling status
+        """Get player idling status
 
-            Returns:
-                False when playing a song
-                or a transition screen,
-                True when playing idle screen.
+        Returns:
+            bool: False when playing a song or a transition screen, True when
+                playing idle screen.
         """
         return self.playing_id is None
 
     def get_playing_id(self):
-        """ Playlist entry ID getter
+        """Playlist entry ID getter
 
-            Returns:
-                Current playing ID or None when
-                no song is playing.
+        Returns:
+            int: current playing ID or None when no song is playing.
         """
         return self.playing_id
 
     def get_timing(self):
-        """ Player timing getter
+        """Player timing getter
 
-            Returns:
-                Current song timing if a song is playing
-                or 0 when idle or during transition screen.
+        Returns:
+            int: current song timing if a song is playing or 0 when idle or
+                during transition screen.
         """
         if self.is_idle() or self.in_transition:
             return 0
@@ -394,19 +388,20 @@ class VlcPlayer(Worker):
         return timing
 
     def is_paused(self):
-        """ Player pause status getter
+        """Player pause status getter
 
-            Returns:
-                True when playing song is paused.
+        Returns:
+            bool: True when playing song is paused.
         """
         return self.player.get_state() == vlc.State.Paused
 
     def set_pause(self, pause):
-        """ Pause playing song when True
-            unpause when False
+        """Pause or unpause the player
 
-            Args:
-                pause: flag for pause state requested.
+        Pause playing song when True unpause when False.
+
+        Args:
+            pause (bool): flag for pause state requested.
         """
         if not self.is_idle():
             if pause:
@@ -420,7 +415,7 @@ class VlcPlayer(Worker):
                 logger.debug("Resumed play")
 
     def stop_player(self):
-        """ Stop playing music
+        """Stop playing music
         """
         logger.info("Stopping player")
 
@@ -435,7 +430,7 @@ class VlcPlayer(Worker):
 
     @staticmethod
     def warn_stop_player_too_long():
-        """ Notify the user that VLC takes too long to stop
+        """Notify the user that VLC takes too long to stop
         """
         logger.warning("VLC takes too long to stop")
 
@@ -454,6 +449,9 @@ def mrl_to_path(file_mrl):
 
     File path is stored as MRL inside a media object, we have to bring it back
     to a more classic looking path format.
+
+    Args:
+        file_mrl (str): path to the resource with MRL format.
     """
     file_mrl_parsed = urllib.parse.urlparse(file_mrl)
     return urllib.parse.unquote(file_mrl_parsed.path)
