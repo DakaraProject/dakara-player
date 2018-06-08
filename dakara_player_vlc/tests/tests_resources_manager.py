@@ -13,7 +13,10 @@ from dakara_player_vlc.resources_manager import (
 )
 
 
-MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
+MODULE_PATH = os.path.realpath(os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    os.pardir
+))
 
 
 class ResourceListdirTestCase(TestCase):

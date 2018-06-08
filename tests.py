@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser
 
-from dakara_player_vlc.tests import DakaraTestRunner
+from dakara_player_vlc.tests.tests import DakaraTestRunner
 
 
 def get_parser():

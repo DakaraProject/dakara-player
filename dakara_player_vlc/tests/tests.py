@@ -45,7 +45,7 @@ class DakaraTestRunner:
         # add this name to the targets
 
         for target in targets:
-            target_name = 'dakara_player_vlc.' + target
+            target_name = 'dakara_player_vlc.tests.' + target
             self.test_suite.addTests(
                     defaultTestLoader.loadTestsFromName(target_name)
                     )
