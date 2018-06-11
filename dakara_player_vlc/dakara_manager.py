@@ -1,13 +1,27 @@
 import logging
 
-from .safe_workers import WorkerSafeTimer
+from dakara_player_vlc.safe_workers import WorkerSafeTimer
 
 
 logger = logging.getLogger("dakara_manager")
 
 
 class DakaraManager(WorkerSafeTimer):
+    """Manager for the Dakara player
+
+    This worker is a high-level manager for the Dakara player. It controls the
+    different elements of the project with simple commands.
+
+    Args:
+        font_loader (font_loader.FontLoader): object for font
+            installation/deinstallation.
+        vlc_player (vlc_player.VlcPlayer): interface to VLC.
+        dakara_server (dakara_server.DakaraServer): interface to the Dakara
+            server.
+    """
     def init_worker(self, font_loader, vlc_player, dakara_server):
+        """Initialization of the worker
+        """
         # set modules up
         self.font_loader = font_loader
         self.vlc_player = vlc_player
@@ -21,6 +35,8 @@ class DakaraManager(WorkerSafeTimer):
         self.timer = self.create_timer(0, self.start)
 
     def start(self):
+        """First timer thread to be launched
+        """
         # initialize first steps
         self.add_next_music()
 
@@ -28,23 +44,23 @@ class DakaraManager(WorkerSafeTimer):
         self.poll_server()
 
     def handle_error(self, playing_id, message):
-        """ Callback when a VLC error occurs
+        """Callback when a VLC error occurs
 
-            Args:
-                playing_id: playlist entry ID.
-                message: text describing the error.
+        Args:
+            playing_id (int): playlist entry ID.
+            message (str): text describing the error.
         """
         logger.error(message)
         self.dakara_server.send_error(playing_id, message)
         self.add_next_music()
 
     def handle_song_end(self):
-        """ Callback when a song ends
+        """Callback when a song ends
         """
         self.add_next_music()
 
     def add_next_music(self):
-        """ Ask for new song to play, otherwise plays the idle screen
+        """Ask for new song to play, otherwise plays the idle screen
         """
         next_song = self.dakara_server.get_next_song()
         if next_song:
@@ -55,12 +71,11 @@ class DakaraManager(WorkerSafeTimer):
             self.dakara_server.send_status_get_commands(None)
 
     def poll_server(self):
-        """ Manage communication with the server
+        """Manage communication with the server
 
-            Query server for a next song if idle,
-            send status to server otherwise.
+        Query server for a next song if idle, send status to server otherwise.
 
-            The method calls itself every second.
+        The method calls itself every second.
         """
         if self.vlc_player.is_idle():
             # idle : check if there is a song to play
@@ -75,10 +90,10 @@ class DakaraManager(WorkerSafeTimer):
             timing = self.vlc_player.get_timing()
             paused = self.vlc_player.is_paused()
             commands = self.dakara_server.send_status_get_commands(
-                    playing_id,
-                    timing,
-                    paused
-                    )
+                playing_id,
+                timing,
+                paused
+            )
 
             if commands['pause'] is not paused:
                 self.vlc_player.set_pause(commands['pause'])

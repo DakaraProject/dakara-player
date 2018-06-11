@@ -4,10 +4,11 @@ from unittest.mock import patch, ANY
 from requests.exceptions import RequestException
 
 from dakara_player_vlc.dakara_server import (
-        DakaraServer,
-        NetworkError,
-        AuthenticationError,
-        )
+    DakaraServer,
+    NetworkError,
+    AuthenticationError,
+    display_message
+)
 
 
 class DakaraServerTestCase(TestCase):
@@ -27,17 +28,17 @@ class DakaraServerTestCase(TestCase):
         # create a playlist entry
         self.playlist_entry_id = 0
         self.playlist_entry = {
-                'id': self.playlist_entry_id,
-                }
+            'id': self.playlist_entry_id,
+        }
 
         # create an error
         self.error_message = 'error'
 
         # create commands
         self.commands = {
-                'pause': False,
-                'skip': False,
-                }
+            'pause': False,
+            'skip': False,
+        }
 
         # create pause
         self.paused = False
@@ -50,7 +51,7 @@ class DakaraServerTestCase(TestCase):
             'url': self.server_url,
             'login': self.login,
             'password': self.password,
-            })
+        })
 
     @patch('dakara_player_vlc.dakara_server.requests.post')
     def test_authenticate_successful(self, mock_post):
@@ -68,12 +69,12 @@ class DakaraServerTestCase(TestCase):
 
         # call assertions
         mock_post.assert_called_with(
-                self.server_url + "/api/token-auth/",
-                data={
-                    'username': self.login,
-                    'password': self.password,
-                    }
-                )
+            self.server_url + "/api/token-auth/",
+            data={
+                'username': self.login,
+                'password': self.password,
+            }
+        )
 
         # post assertions
         self.assertTrue(self.dakara_server.token)
@@ -147,7 +148,7 @@ class DakaraServerTestCase(TestCase):
         # call assertions
         self.assertEqual(result, {
             'Authorization': 'Token ' + self.token
-            })
+        })
 
     @patch('dakara_player_vlc.dakara_server.requests.get')
     def test_get_next_song_successful(self, mock_get):
@@ -216,13 +217,13 @@ class DakaraServerTestCase(TestCase):
 
         # call assertions
         mock_post.assert_called_with(
-                self.server_url + "/api/playlist/device/error/",
-                headers=ANY,
-                json={
-                    'playlist_entry': self.playlist_entry_id,
-                    'error_message': self.error_message
-                    }
-                )
+            self.server_url + "/api/playlist/device/error/",
+            headers=ANY,
+            json={
+                'playlist_entry': self.playlist_entry_id,
+                'error_message': self.error_message
+            }
+        )
 
     @patch('dakara_player_vlc.dakara_server.requests.post')
     def test_send_error_error_network(self, mock_post):
@@ -265,22 +266,22 @@ class DakaraServerTestCase(TestCase):
 
         # call the method
         result = self.dakara_server.send_status_get_commands(
-                self.playlist_entry_id,
-                self.timing,
-                self.paused,
-                )
+            self.playlist_entry_id,
+            self.timing,
+            self.paused,
+        )
 
         # call assertions
         self.assertEqual(result, self.commands)
         mock_put.assert_called_with(
-                self.server_url + "/api/playlist/device/status/",
-                headers=ANY,
-                json={
-                    'playlist_entry_id': self.playlist_entry_id,
-                    'timing': self.timing / 1000.,
-                    'paused': self.paused,
-                    }
-                )
+            self.server_url + "/api/playlist/device/status/",
+            headers=ANY,
+            json={
+                'playlist_entry_id': self.playlist_entry_id,
+                'timing': self.timing / 1000.,
+                'paused': self.paused,
+            }
+        )
 
     @patch('dakara_player_vlc.dakara_server.requests.put')
     def test_send_status_get_commands_error_network(self, mock_put):
@@ -294,10 +295,10 @@ class DakaraServerTestCase(TestCase):
 
         # call the method
         result = self.dakara_server.send_status_get_commands(
-                self.playlist_entry_id,
-                self.timing,
-                self.paused,
-                )
+            self.playlist_entry_id,
+            self.timing,
+            self.paused,
+        )
 
         # call assertions
         self.assertEqual(result, {'pause': True, 'skip': False})
@@ -316,10 +317,31 @@ class DakaraServerTestCase(TestCase):
 
         # call the method
         result = self.dakara_server.send_status_get_commands(
-                self.playlist_entry_id,
-                self.timing,
-                self.paused,
-                )
+            self.playlist_entry_id,
+            self.timing,
+            self.paused,
+        )
 
         # call assertions
         self.assertEqual(result, {'pause': True, 'skip': False})
+
+
+class DisplayMessageTestCase(TestCase):
+    """Test the message display helper
+    """
+    def test_small_message(self):
+        """Test a small message is completelly displayed
+        """
+        message = "few characters"
+        message_displayed = display_message(message, limit=50)
+
+        self.assertEqual(message_displayed, message)
+
+    def test_long_message(self):
+        """Test a long message is cut
+        """
+        message = "few characters"
+        message_displayed = display_message(message, limit=5)
+
+        # new length = limit size + 3 dots
+        self.assertLessEqual(len(message_displayed), 8)

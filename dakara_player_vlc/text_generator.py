@@ -31,6 +31,11 @@ logger = logging.getLogger("text_generator")
 
 
 class TextGenerator:
+    """Text generator
+
+    This class creates custom ASS files that are used for idle or transition
+    screens. It uses Jinja to populate ASS templates with various informations.
+    """
     def __init__(self, config, tempdir):
         self.config = config
         self.tempdir = tempdir
@@ -43,16 +48,18 @@ class TextGenerator:
 
         # set text paths
         self.transition_text_path = os.path.join(
-                self.tempdir,
-                TRANSITION_TEXT_NAME
-                )
+            self.tempdir,
+            TRANSITION_TEXT_NAME
+        )
 
         self.idle_text_path = os.path.join(
-                self.tempdir,
-                IDLE_TEXT_NAME
-                )
+            self.tempdir,
+            IDLE_TEXT_NAME
+        )
 
     def load_templates(self):
+        """Set up Jinja environment
+        """
         # create Jinja2 environment
         self.environment = Environment(
             loader=ChoiceLoader([
@@ -104,50 +111,47 @@ class TextGenerator:
         return LINK_TYPE_NAMES[link_type]
 
     def create_idle_text(self, info):
-        """ Create custom idle text and save it
+        """Create custom idle text and save it
 
-            Args:
-                info: dictionnary of additionnal information.
+        Args:
+            info: dictionnary of additionnal information.
 
-            Returns:
-                path of the text containing the idle screen content.
+        Returns:
+            path of the text containing the idle screen content.
         """
         # using the template
-        idle_text = self.idle_template.render(
-                **info
-                )
+        idle_text = self.idle_template.render(**info)
 
         with open(self.idle_text_path, 'w', encoding='utf8') as file:
             file.write(idle_text)
 
-        logger.debug("Create idle screen text file in \
-\"{}\"".format(self.idle_text_path))
+        logger.debug("Create idle screen text file in '{}'".
+                     format(self.idle_text_path))
 
         return self.idle_text_path
 
     def create_transition_text(self, playlist_entry):
-        """ Create custom transition text and save it
+        """Create custom transition text and save it
 
-            Args:
-                playlist_entry: dictionary containing keys for the playlist
-                    entry.
+        Args:
+            playlist_entry: dictionary containing keys for the playlist
+                entry.
 
-            Returns:
-                path of the text containing the transition screen
-                content.
+        Returns:
+            path of the text containing the transition screen content.
         """
         transition_text = self.transition_template.render(playlist_entry)
 
         with open(self.transition_text_path, 'w', encoding='utf8') as file:
             file.write(transition_text)
 
-        logger.debug("Create transition screen text file in \
-\"{}\"".format(self.transition_text_path))
+        logger.debug("Create transition screen text file in '{}'".
+                     format(self.transition_text_path))
 
         return self.transition_text_path
 
     def load_icon_map(self):
-        """ Load the icon map
+        """Load the icon map
         """
         icon_map_path = get_file(ICON_MAP_FILE)
 
@@ -156,10 +160,9 @@ class TextGenerator:
         self.icon_map = icon_map['map']
 
     def load_transition_template(self, transition_template_name):
-        """ Load transition screen text template file
+        """Load transition screen text template file
 
-            Load the default or customized ASS template for
-            transition screen.
+        Load the default or customized ASS template for transition screen.
         """
         loader_custom, loader_default = self.environment.loader.loaders
 
@@ -186,10 +189,9 @@ class TextGenerator:
         raise IOError("No template file for transition screen found")
 
     def load_idle_template(self, idle_template_name):
-        """ Load idle screen text template file
+        """Load idle screen text template file
 
-            Load the default or customized ASS template for
-            idle screen.
+        Load the default or customized ASS template for idle screen.
         """
         loader_custom, loader_default = self.environment.loader.loaders
 

@@ -25,12 +25,12 @@ class DakaraManagerTestCase(TestCase):
 
         # create a Dakara manager
         self.dakara_manager = DakaraManager(
-                self.stop,
-                self.errors,
-                self.font_loader,
-                self.vlc_player,
-                self.dakara_server
-                )
+            self.stop,
+            self.errors,
+            self.font_loader,
+            self.vlc_player,
+            self.dakara_server
+        )
 
     def test_start_idle(self):
         """Test to launch the dakara manager when there is nothing to play
@@ -78,9 +78,9 @@ class DakaraManagerTestCase(TestCase):
         self.vlc_player.get_timing.return_value = 0
         self.vlc_player.is_paused.return_value = False
         self.dakara_server.send_status_get_commands.return_value = {
-                'pause': False,
-                'skip': False,
-                }
+            'pause': False,
+            'skip': False,
+        }
 
         # pre assertions
         self.assertFalse(self.stop.is_set())
@@ -97,8 +97,8 @@ class DakaraManagerTestCase(TestCase):
         self.vlc_player.get_timing.assert_called_once_with()
         self.vlc_player.play_idle_screen.assert_not_called()
         self.dakara_server.send_status_get_commands.assert_called_once_with(
-                playlist_entry['id'], 0, False
-                )
+            playlist_entry['id'], 0, False
+        )
 
         # post assertions
         self.assertTrue(self.stop.is_set())
