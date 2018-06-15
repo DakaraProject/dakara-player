@@ -397,7 +397,7 @@ class WorkerSafeThread(BaseWorker):
             main thread.
     """
     def __init__(self, stop, errors, *args, **kwargs):
-        super().__init__(stop, errors, *args, **kwargs)
+        super().__init__(stop, errors)
 
         # create thread for itself
         def redefine_me():
