@@ -15,7 +15,7 @@ TRANSITION_DURATION = 2
 TRANSITION_BG_NAME = "transition.png"
 
 
-IDLE_DURATION = 60
+IDLE_DURATION = 300
 IDLE_BG_NAME = "idle.png"
 
 
@@ -103,6 +103,10 @@ class VlcPlayer(Worker):
         # timer for VLC taking too long to stop
         self.timer_stop_player_too_long = None
 
+        # set default callbacks
+        self.song_end_external_callback = lambda entry_id: None
+        self.error_external_callback = lambda entry_id, message: None
+
     def load_transition_bg_path(self, bg_directory_path, transition_bg_name):
         """Load transition backgound file path
 
@@ -186,9 +190,9 @@ class VlcPlayer(Worker):
         """Callback called when song end reached occurs
 
         This can happen when a transition screen ends, leading to playing the
-        actual song file, or when the song file ends, leading to calling the
-        callback set by `set_song_end_callback`. A new thread created in any
-        case.
+        actual song file, when the song file ends, leading to calling the
+        callback set by `set_song_end_callback`, or when the idle screen ends,
+        leading to reloop it. A new thread is created in any case.
 
         Args:
             event (vlc.EventType): VLC event object.
@@ -201,19 +205,28 @@ class VlcPlayer(Worker):
             self.in_transition = False
             thread = self.create_thread(
                 target=self.play_media,
-                args=(self.media_pending, )
+                args=(self.media_pending,)
             )
 
             # get file path
             file_path = mrl_to_path(self.media_pending.get_mrl())
-            logger.info("Now playing \"{}\"".format(
+            logger.info("Now playing '{}'".format(
                 file_path
             ))
+
+        elif self.is_idle():
+            # if the idle screen has finished, restart it
+            thread = self.create_thread(
+                target=self.play_idle_screen
+            )
 
         else:
             # otherwise, the song has finished,
             # so do what should be done
-            thread = self.create_thread(target=self.song_end_external_callback)
+            thread = self.create_thread(
+                target=self.song_end_external_callback,
+                args=(self.playing_id,)
+            )
 
         thread.start()
 
@@ -320,7 +333,7 @@ class VlcPlayer(Worker):
         self.in_transition = True
 
         self.play_media(media_transition)
-        logger.info("Playing transition for \"{}\"".format(file_path))
+        logger.info("Playing transition for '{}'".format(file_path))
 
     def play_idle_screen(self):
         """Play idle screen

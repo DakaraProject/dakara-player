@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, NonCallableMagicMock, patch
 from threading import Event
 from queue import Queue
 
@@ -46,7 +46,7 @@ class VlcPlayerTestCase(TestCase):
         self.transition_duration = 1
 
         # create a mock text generator
-        self.text_generator = Mock()
+        self.text_generator = MagicMock()
 
         # create a subtitle
         self.subtitle_path = get_test_material("song.ass")
@@ -225,6 +225,97 @@ class VlcPlayerTestCase(TestCase):
         self.assertEqual(self.vlc_player.player.get_state(),
                          State.NothingSpecial)
 
+    def test_song_end_callback_transition(self):
+        """Test song end callback for after a transition screen
+        """
+        # mock the call
+        self.vlc_player.in_transition = NonCallableMagicMock()
+        in_transition = self.vlc_player.in_transition
+        self.vlc_player.create_thread = MagicMock()
+        self.vlc_player.media_pending = MagicMock()
+        self.vlc_player.media_pending.get_mrl.return_value = 'file:///test.mkv'
+
+        # call the method
+        self.vlc_player.song_end_callback('event')
+
+        # assert the call
+        in_transition.__bool__.assert_called_with()
+        self.assertFalse(self.vlc_player.in_transition)
+        self.vlc_player.create_thread.assert_called_with(
+            target=self.vlc_player.play_media,
+            args=(self.vlc_player.media_pending,)
+        )
+        self.vlc_player.media_pending.get_mrl.assert_called_with()
+        self.vlc_player.create_thread.return_value.start.assert_called_with()
+
+    def test_song_end_callback_idle(self):
+        """Test song end callback for after an idle screen
+        """
+        # mock the call
+        self.vlc_player.in_transition = NonCallableMagicMock()
+        in_transition = self.vlc_player.in_transition
+        in_transition.__bool__.return_value = False
+        self.vlc_player.is_idle = MagicMock()
+        self.vlc_player.is_idle.return_value = True
+        self.vlc_player.create_thread = MagicMock()
+
+        # call the method
+        self.vlc_player.song_end_callback('event')
+
+        # assert the call
+        in_transition.__bool__.assert_called_with()
+        self.vlc_player.is_idle.assert_called_with()
+        self.vlc_player.create_thread.assert_called_with(
+            target=self.vlc_player.play_idle_screen)
+        self.vlc_player.create_thread.return_value.start.assert_called_with()
+
+    def test_song_end_callback_finished(self):
+        """Test song end callback for after an actual song
+        """
+        # mock the call
+        self.vlc_player.in_transition = NonCallableMagicMock()
+        in_transition = self.vlc_player.in_transition
+        in_transition.__bool__.return_value = False
+        self.vlc_player.is_idle = MagicMock()
+        self.vlc_player.is_idle.return_value = False
+        self.vlc_player.playing_id = MagicMock()
+        self.vlc_player.create_thread = MagicMock()
+
+        # call the method
+        self.vlc_player.song_end_callback('event')
+
+        # assert the call
+        in_transition.__bool__.assert_called_with()
+        self.vlc_player.is_idle.assert_called_with()
+        self.vlc_player.create_thread.assert_called_with(
+            target=self.vlc_player.song_end_external_callback,
+            args=(self.vlc_player.playing_id,)
+        )
+        self.vlc_player.create_thread.return_value.start.assert_called_with()
+
+    @patch('dakara_player_vlc.vlc_player.vlc.libvlc_errmsg')
+    def test_error_callback(self, mock_libvcl_errmsg):
+        """Test error callback
+        """
+        # mock the call
+        mock_libvcl_errmsg.return_value = b"error"
+        self.vlc_player.create_thread = MagicMock()
+        self.vlc_player.playing_id = NonCallableMagicMock()
+        playing_id = self.vlc_player.playing_id
+
+        # call the method
+        self.vlc_player.error_callback('event')
+
+        # assert the call
+        mock_libvcl_errmsg.assert_called_with()
+        self.vlc_player.create_thread.assert_called_with(
+            target=self.vlc_player.error_external_callback,
+            args=(playing_id, 'error')
+        )
+        self.assertIsNone(self.vlc_player.playing_id)
+        self.assertFalse(self.vlc_player.in_transition)
+        self.vlc_player.create_thread.return_value.start.assert_called_with()
+
 
 class VlcPlayerCustomTestCase(TestCase):
     """Test the VLC player class with custom resources
@@ -232,7 +323,7 @@ class VlcPlayerCustomTestCase(TestCase):
 
     def setUp(self):
         # create a mock text generator
-        self.text_generator = Mock()
+        self.text_generator = MagicMock()
 
         # create stop event
         self.stop = Event()

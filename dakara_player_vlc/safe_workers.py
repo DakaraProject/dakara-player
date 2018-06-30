@@ -348,14 +348,14 @@ class WorkerSafeTimer(BaseWorker):
             self.__class__.__name__
         ))
 
+        # custom exit
+        self.exit_worker(*args, **kwargs)
+
         # cancel the timer, if the timer was waiting
         self.timer.cancel()
 
         # wait for termination, if the timer was running
         self.timer.join()
-
-        # custom exit
-        self.exit_worker(*args, **kwargs)
 
         logger.debug("Closed worker safe timer thread '{}' ({})".format(
             self.timer.getName(),
@@ -430,11 +430,11 @@ class WorkerSafeThread(BaseWorker):
             self.__class__.__name__
         ))
 
-        # wait for termination
-        self.thread.join()
-
         # custom exit action
         self.exit_worker(*args, **kwargs)
+
+        # wait for termination
+        self.thread.join()
 
         logger.debug("Closed worker safe thread '{}' ({})".format(
             self.thread.getName(),

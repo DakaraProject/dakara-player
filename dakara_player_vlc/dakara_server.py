@@ -1,8 +1,13 @@
 import logging
 import urllib.parse
+import json
 
 import requests
+from websocket import (WebSocket, create_connection,
+                       WebSocketConnectionClosedException,
+                       WebSocketBadStatusException)
 
+from dakara_player_vlc.safe_workers import WorkerSafeThread
 
 # enforce loglevel warning for requests log messages
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -31,20 +36,30 @@ def authenticated(fun):
     return call
 
 
-class DakaraServer:
-    """Object representing a connection with the Dakara server
+class DakaraServerHTTPConnection:
+    """Object representing a HTTP connection with the Dakara server
 
     Args:
         config (dict): config of the server.
     """
     def __init__(self, config):
-        # setting config
-        self.server_url = urllib.parse.urljoin(config['url'], 'api/')
+        try:
+            # setting config
+            self.server_url = urllib.parse.urlunparse((
+                'https' if config.get('ssl') else 'http',
+                config['address'],
+                '/api/',
+                '', '', ''
+            ))
 
-        # authentication
-        self.token = None
-        self.login = config['login']
-        self.password = config['password']
+            # authentication
+            self.token = None
+            self.login = config['login']
+            self.password = config['password']
+
+        except KeyError as error:
+            raise ValueError("Missing parameter in server config: {}"
+                             .format(error)) from error
 
     def authenticate(self):
         """Connect to the server
@@ -92,7 +107,7 @@ class DakaraServer:
         )
 
     @authenticated
-    def _get_token_header(self):
+    def get_token_header(self):
         """Get the connection token as it should appear in the header
 
         Can be called only once login has been sucessful.
@@ -104,126 +119,297 @@ class DakaraServer:
             'Authorization': 'Token ' + self.token
         }
 
-    @authenticated
-    def get_next_song(self):
-        """Request next song from the server
 
-        Returns:
-            dict: next playlist entry or `None` if there is no more song
-            in the playlist.
-        """
-        logger.debug("Asking new song to server")
+class JsonWebSocket(WebSocket):
+    """Helper class which auto-decode end encode JSON data
+    """
+    def recv(self):
+        event = super().recv()
         try:
-            response = requests.get(
-                self.server_url + "playlist/device/status/",
-                headers=self._get_token_header()
-            )
+            self.recv_json(json.loads(event))
 
-        except requests.exceptions.RequestException:
-            logger.error("Network error")
-            return None
+        # if the response is not in JSON format, assume this is an error
+        except json.JSONDecodeError:
+            self.recv_error(event)
 
-        if response.ok:
-            json = response.json()
-            return json or None
+        return event
 
-        logger.error("Unable to get new song response from server")
-        logger.debug("Error {code}: {message}".format(
-            code=response.status_code,
-            message=display_message(response.text)
+    def recv_json(self, content):
+        """Receive data as a dictionary
+
+        Args:
+            content (dict): dictionary representation of the event.
+        """
+        pass
+
+    def recv_error(self, message):
+        """Receive data as an error
+
+        The error is displayed truncated.
+
+        Args:
+            message (str): error message from the server
+        """
+        logger.error("Error from the server: '{}'".format(
+            display_message(message)))
+
+    def send_json(self, content, *args, **kwargs):
+        """Send data as dictionary
+
+        Convert it to JSON string before send.
+
+        Args:
+            content (dict): dictionary of the event.
+        """
+        return self.send(json.dumps(content), *args, **kwargs)
+
+
+def connected(fun):
+    """Decorator that ensures the websocket is set
+
+    It makes sure that the given function is callel once connected.
+
+    Args:
+        fun (function): function to decorate.
+
+    Returns:
+        function: decorated function.
+    """
+    def call(self, *args, **kwargs):
+        if self.websocket is None:
+            raise ConnectionError("No connection established")
+
+        return fun(self, *args, **kwargs)
+
+    return call
+
+
+class DakaraServerWebSocketConnection(WorkerSafeThread):
+    """Object representing the WebSocket connection with the Dakara server
+
+    Args:
+        config (dict): configuration for the server, the same as
+            DakaraServerHTTPConnection.
+        header (dict): header containing the authentication token.
+    """
+    def init_worker(self, config, header):
+        self.server_url = urllib.parse.urlunparse((
+            'wss' if config.get('ssl') else 'ws',
+            config['address'],
+            '/ws/playlist/device/',
+            '', '', ''
         ))
 
-        return None
+        self.header = header
+        self.websocket = None
 
-    @authenticated
-    def send_error(self, playing_id, error_message):
-        """Send provided error message to the server
+        self.thread = self.create_thread(target=self.run)
 
-        Args:
-            playing_id (int): ID of the playlist entry that failed.
-            error_message (str): message explaining the error.
+    def create_connection(self):
+        """Create the WebSocket connection with the server
+
+        Raises:
+            AuthenticationError: if the user account used does not have enough
+                rights.
+            NetworkError: if the server is unreachable.
         """
-        logger.debug(("Sending error to server: playing ID {playing_id}, "
-                      "{message}").format(
-                          playing_id=playing_id,
-                          message=error_message
-                      ))
-
-        data = {
-            "playlist_entry": playing_id,
-            "error_message": error_message,
-        }
-
+        logger.debug("Creating websocket connection")
         try:
-            response = requests.post(
-                self.server_url + "playlist/device/error/",
-                headers=self._get_token_header(),
-                json=data
-            )
+            self.websocket = create_connection(self.server_url,
+                                               class_=DakaraServerWebSocket,
+                                               header=self.header)
 
-        except requests.exceptions.RequestException:
-            logger.error("Network error")
-            return
+        except WebSocketBadStatusException as error:
+            raise AuthenticationError("Unable to connect to server with this "
+                                      "login") from error
 
-        if not response.ok:
-            logger.error("Unable to send error message to server")
-            logger.debug("Error {code}: {message}".format(
-                code=response.status_code,
-                message=display_message(response.text)
-            ))
+        except ConnectionRefusedError as error:
+            raise NetworkError("Network error, unable to talk to the server "
+                               "for WebSocket connection") from error
 
-    @authenticated
-    def send_status_get_commands(self, playing_id, timing=0, paused=False):
-        """Send current status to the server
+    @connected
+    def run(self):
+        """Event loop
 
-        If the connexion with the server cannot be established or if the status
-        recieved is not consistent, pause the player.
+        Read new messages from the server. The wait is cancelled by the
+        `websocket.abort` method.
+        """
+        try:
+            # one event is read at each loop
+            # the loop is blocking
+            while not self.stop.is_set():
+                self.websocket.next()
+
+        except WebSocketConnectionClosedException:
+            pass
+
+    def exit_worker(self, *args, **kwargs):
+        logger.debug("Aborting websocket connection")
+        self.websocket.abort()
+
+
+class DakaraServerWebSocket(JsonWebSocket):
+    """Object representing the WebSocket communications with the Dakara server
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # initialize the callbacks
+        self.idle_callback = lambda: None
+        self.new_entry_callback = lambda entry: None
+        self.command_callback = lambda command: None
+        self.status_request_callback = lambda: None
+
+    def set_idle_callback(self, callback):
+        """Assign callback when idle is requested
 
         Args:
-            playing_id (int): ID of the playlist entry that is currently
-                playing. If `None`, the player tells it is not playing
-                anything.
-            timing (int): amount of milliseconds that has been spent since the
-                media started to play.
-            paused (bool): flag wether the player is paused or not.
-
-        Returns:
-            dict: requested status from the server.
+            callback (function): function to assign.
         """
-        logger.debug(("Sending status to server: playing ID {playing_id}, at "
-                      "{timing} s, {paused}").format(
-                          playing_id=playing_id,
-                          timing=timing,
-                          paused="in pause" if paused else "playing"
-                      ))
+        self.idle_callback = callback
 
-        data = {
-            "playlist_entry_id": playing_id,
-            "timing": timing/1000.,
-            "paused": paused
+    def set_new_entry_callback(self, callback):
+        """Assign callback when a new entry is submitted
+
+        Args:
+            callback (function): function to assign.
+        """
+        self.new_entry_callback = callback
+
+    def set_command_callback(self, callback):
+        """Assign callback when a command is received
+
+        Args:
+            callback (function): function to assign.
+        """
+        self.command_callback = callback
+
+    def set_status_request_callback(self, callback):
+        """Assign callback when the status is requested
+
+        Args:
+            callback (function): function to assign.
+        """
+        self.status_request_callback = callback
+
+    def recv_json(self, content):
+        """Receive all incoming events
+
+        Args:
+            content (dict): dictionary of the event
+
+        Raises:
+            ValueError: if the event type is not associated with any method of
+                the class.
+        """
+        method_name = "recv_{}".format(content['type'])
+        if not hasattr(self, method_name):
+            raise ValueError("Event of unknown type received '{}'"
+                             .format(content['type']))
+
+        getattr(self, method_name)(content.get('data'))
+
+    def recv_idle(self, content):
+        """Receive idle order
+
+        Args:
+            content (dict): dictionary of the event
+        """
+        logger.debug("Received idle order")
+        self.idle_callback()
+
+    def recv_new_entry(self, content):
+        """Receive new entry
+
+        Args:
+            content (dict): dictionary of the event
+        """
+        logger.debug("Received new entry {} order".format(content['id']))
+        self.new_entry_callback(content)
+
+    def recv_status_request(self, content):
+        """Receive status request
+
+        Args:
+            content (dict): dictionary of the event
+        """
+        logger.debug("Received status request")
+        self.status_request_callback()
+
+    def recv_command(self, content):
+        """Receive a command
+
+        Args:
+            content (dict): dictionary of the event
+        """
+        command = content['command']
+        logger.debug("Received command: '{}'".format(command))
+        self.command_callback(command)
+
+    def send_entry_error(self, entry_id, message):
+        """Tell the server that the current entry cannot be played
+
+        Args:
+            entry_id (int): ID of the playlist entry. Must not be `None`.
+            message (str): error message.
+
+        Raises:
+            RuntimeError: if `entry_id` is `None`.
+        """
+        if entry_id is None:
+            raise RuntimeError("Entry with ID None cannot make error")
+
+        logger.debug("Telling the server that entry {} cannot be played"
+                     .format(entry_id))
+        self.send_json({
+            'type': 'entry_error',
+            'data': {
+                'entry_id': entry_id,
+                'error_message': display_message(message, 255)
             }
+        })
 
-        try:
-            response = requests.put(
-                self.server_url + "playlist/device/status/",
-                headers=self._get_token_header(),
-                json=data,
-            )
+    def send_entry_finished(self, entry_id):
+        """Tell the server that the current entry is finished
 
-        except requests.exceptions.RequestException:
-            logger.error("Network error")
-            return {'pause': True, 'skip': False}
+        Args:
+            entry_id (int): ID of the playlist entry. Must not be `None`.
 
-        if response.ok:
-            return response.json()
+        Raises:
+            RuntimeError: if `entry_id` is `None`.
+        """
+        if entry_id is None:
+            raise RuntimeError("Entry with ID None cannot be finished")
 
-        logger.error("Unable to send status to server")
-        logger.debug("Error {code}: {message}".format(
-            code=response.status_code,
-            message=display_message(response.text)
-        ))
+        logger.debug("Telling the server that entry {} is finished"
+                     .format(entry_id))
+        self.send_json({
+            'type': 'entry_finished',
+            'data': {
+                'entry_id': entry_id,
+            }
+        })
 
-        return {'pause': True, 'skip': False}
+        self.entry_id = None
+
+    def send_status(self, entry_id, timing=0, paused=False):
+        """Send the player status
+
+        Args:
+            entry_id (int): ID of the playlist entry currently played. Can be
+                `None` if the player is idle.
+            timing (int): position of the player (in ms).
+            paused (bool): true if the player is paused.
+        """
+        logger.debug("Sending status")
+        self.send_json({
+            'type': 'status',
+            'data': {
+                'entry_id': entry_id,
+                'timing': timing / 1000,
+                'paused': paused,
+            }
+        })
 
 
 def display_message(message, limit=100):
@@ -232,7 +418,7 @@ def display_message(message, limit=100):
     if len(message) <= limit:
         return message
 
-    return message[:limit].strip() + "..."
+    return message[:limit - 3].strip() + "..."
 
 
 class AuthenticationError(Exception):

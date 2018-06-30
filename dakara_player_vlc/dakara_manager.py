@@ -1,25 +1,23 @@
 import logging
 
-from dakara_player_vlc.safe_workers import WorkerSafeTimer
-
 
 logger = logging.getLogger("dakara_manager")
 
 
-class DakaraManager(WorkerSafeTimer):
+class DakaraManager:
     """Manager for the Dakara player
 
-    This worker is a high-level manager for the Dakara player. It controls the
+    This object is a high-level manager for the Dakara player. It controls the
     different elements of the project with simple commands.
 
     Args:
         font_loader (font_loader.FontLoader): object for font
             installation/deinstallation.
         vlc_player (vlc_player.VlcPlayer): interface to VLC.
-        dakara_server (dakara_server.DakaraServer): interface to the Dakara
-            server.
+        dakara_server (dakara_server.DakaraServerWebSocketConnection):
+            interface to the Dakara server.
     """
-    def init_worker(self, font_loader, vlc_player, dakara_server):
+    def __init__(self, font_loader, vlc_player, dakara_server):
         """Initialization of the worker
         """
         # set modules up
@@ -31,77 +29,71 @@ class DakaraManager(WorkerSafeTimer):
         self.vlc_player.set_song_end_callback(self.handle_song_end)
         self.vlc_player.set_error_callback(self.handle_error)
 
-        # set timer
-        self.timer = self.create_timer(0, self.start)
+        # set dakara server websocket callbacks
+        self.dakara_server.websocket.set_idle_callback(self.be_idle)
+        self.dakara_server.websocket.set_new_entry_callback(self.play_entry)
+        self.dakara_server.websocket.set_command_callback(self.do_command)
+        self.dakara_server.websocket.set_status_request_callback(
+            self.get_status)
 
-    def start(self):
-        """First timer thread to be launched
-        """
-        # initialize first steps
-        self.add_next_music()
-
-        # start polling
-        self.poll_server()
-
-    def handle_error(self, playing_id, message):
+    def handle_error(self, entry_id, message):
         """Callback when a VLC error occurs
 
         Args:
-            playing_id (int): playlist entry ID.
+            entry_id (int): playlist entry ID.
             message (str): text describing the error.
         """
         logger.error(message)
-        self.dakara_server.send_error(playing_id, message)
-        self.add_next_music()
+        self.dakara_server.websocket.send_entry_error(entry_id, message)
 
-    def handle_song_end(self):
+    def handle_song_end(self, entry_id):
         """Callback when a song ends
+
+        Args:
+            entry_id (int): playlist entry ID.
         """
-        self.add_next_music()
+        self.dakara_server.websocket.send_entry_finished(entry_id)
 
-    def add_next_music(self):
-        """Ask for new song to play, otherwise plays the idle screen
+    def play_entry(self, entry):
+        """Play the requested entry
+
+        Args:
+            entry (dict): dictionary of the playlist entry.
         """
-        next_song = self.dakara_server.get_next_song()
-        if next_song:
-            self.vlc_player.play_song(next_song)
+        self.vlc_player.play_song(entry)
 
-        else:
-            self.vlc_player.play_idle_screen()
-            self.dakara_server.send_status_get_commands(None)
-
-    def poll_server(self):
-        """Manage communication with the server
-
-        Query server for a next song if idle, send status to server otherwise.
-
-        The method calls itself every second.
+    def be_idle(self):
+        """Play the idle screen
         """
-        if self.vlc_player.is_idle():
-            # idle : check if there is a song to play
-            next_song = self.dakara_server.get_next_song()
-            if next_song:
-                self.vlc_player.play_song(next_song)
+        self.vlc_player.play_idle_screen()
 
-        else:
-            # send status to server,
-            # and manage pause/skip events
-            playing_id = self.vlc_player.get_playing_id()
-            timing = self.vlc_player.get_timing()
-            paused = self.vlc_player.is_paused()
-            commands = self.dakara_server.send_status_get_commands(
-                playing_id,
-                timing,
-                paused
-            )
+    def do_command(self, command):
+        """Execute a player command
 
-            if commands['pause'] is not paused:
-                self.vlc_player.set_pause(commands['pause'])
+        Args:
+            command (str): name of the command to execute. Must be amont
+                'pause' and 'play'.
 
-            if commands['skip']:
-                self.add_next_music()
+        Raises:
+            ValueError: if the command is not known.
+        """
+        if command not in ('pause', 'play'):
+            raise ValueError("Unknown command requested: '{}'".format(command))
 
-        # create timer calling poll_server
-        if not self.stop.is_set():
-            self.timer = self.create_timer(1, self.poll_server)
-            self.timer.start()
+        if command == "pause":
+            self.vlc_player.set_pause(True)
+
+        elif command == "play":
+            self.vlc_player.set_pause(False)
+
+    def get_status(self):
+        """Send status to the server
+        """
+        playing_id = self.vlc_player.get_playing_id()
+        timing = self.vlc_player.get_timing()
+        paused = self.vlc_player.is_paused()
+        self.dakara_server.websocket.send_status(
+            playing_id,
+            timing,
+            paused
+        )

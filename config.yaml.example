@@ -118,8 +118,11 @@ player:
 
 # Parameters for the server
 server:
-  # Server URL
-  url: http://127.0.0.1:8000/
+  # Server address
+  address: 127.0.0.1:8000
+
+  # Secured connection
+  ssl: false
 
   # Credentials for server authentication
   login: login

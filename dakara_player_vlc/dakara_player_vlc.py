@@ -10,7 +10,9 @@ from dakara_player_vlc.version import __version__, __date__
 from dakara_player_vlc.safe_workers import WorkerSafeThread, Runner
 from dakara_player_vlc.text_generator import TextGenerator
 from dakara_player_vlc.vlc_player import VlcPlayer
-from dakara_player_vlc.dakara_server import DakaraServer
+from dakara_player_vlc.dakara_server import (DakaraServerHTTPConnection,
+                                             DakaraServerWebSocketConnection)
+
 from dakara_player_vlc.dakara_manager import DakaraManager
 from dakara_player_vlc.font_loader import get_font_loader_class
 FontLoader = get_font_loader_class()
@@ -132,21 +134,30 @@ class DakaraWorker(WorkerSafeThread):
                 text_generator
             ))
 
-            # communication with the dakara server
-            dakara_server = DakaraServer(self.config['server'])
-            dakara_server.authenticate()
+            # communication with the dakara HTTP server
+            dakara_server_http = DakaraServerHTTPConnection(
+                self.config['server'])
+            dakara_server_http.authenticate()
+            token_header = dakara_server_http.get_token_header()
+
+            # communication with the dakara WebSocket server
+            dakara_server_websocket = stack.enter_context(
+                DakaraServerWebSocketConnection(self.stop,
+                                                self.errors,
+                                                self.config['server'],
+                                                token_header)
+            )
+            dakara_server_websocket.create_connection()
 
             # manager for the precedent workers
-            dakara_manager = stack.enter_context(DakaraManager(
-                self.stop,
-                self.errors,
+            dakara_manager = DakaraManager(  # noqa F841
                 font_loader,
                 vlc_player,
-                dakara_server
-            ))
+                dakara_server_websocket
+            )
 
-            # start the worker thread
-            dakara_manager.timer.start()
+            # start the worker threads
+            dakara_server_websocket.thread.start()
 
             # wait for stop event
             self.stop.wait()
