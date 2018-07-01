@@ -17,9 +17,9 @@ Style: detail,Roboto Light,50,&H00333333,&H00191919,&H00333333,&H00000000,0,0,0,
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:00.00,0:01:00.00,title,,0,0,0,,Dakara
+Dialogue: 0,0:00:00.00,0:10:00.00,title,,0,0,0,,Dakara
 {% for note in notes %}
-Dialogue: 0,0:00:00.00,0:01:00.00,detail,,0,0,0,,{{ note }}
+Dialogue: 0,0:00:00.00,0:10:00.00,detail,,0,0,0,,{{ note }}
 {% endfor %}
 
 ; DON'T TOUCH THIS FILE!
