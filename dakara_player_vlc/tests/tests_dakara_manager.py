@@ -53,7 +53,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_error(999, 'message')
 
         # call assertions
-        self.dakara_server.websocket.send_entry_error.assert_called_once_with(
+        self.dakara_server.send_entry_error.assert_called_once_with(
             999, 'message')
 
     def test_handle_song_end(self):

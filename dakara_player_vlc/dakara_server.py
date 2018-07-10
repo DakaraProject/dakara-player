@@ -1,13 +1,11 @@
+import json
 import logging
 import urllib.parse
-import json
 
 import requests
-from websocket import (WebSocket, create_connection,
-                       WebSocketConnectionClosedException,
-                       WebSocketBadStatusException)
+from websocket import WebSocketApp
 
-from dakara_player_vlc.safe_workers import WorkerSafeThread
+from dakara_player_vlc.safe_workers import WorkerSafeTimer
 
 # enforce loglevel warning for requests log messages
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -100,7 +98,7 @@ class DakaraServerHTTPConnection:
 
         # manage any other error
         raise AuthenticationError(
-            "Unable to send status to server, error {code}: {message}".format(
+            "Unable to connect to server, error {code}: {message}".format(
                 code=response.status_code,
                 message=display_message(response.text)
             )
@@ -118,50 +116,6 @@ class DakaraServerHTTPConnection:
         return {
             'Authorization': 'Token ' + self.token
         }
-
-
-class JsonWebSocket(WebSocket):
-    """Helper class which auto-decode end encode JSON data
-    """
-    def recv(self):
-        event = super().recv()
-        try:
-            self.recv_json(json.loads(event))
-
-        # if the response is not in JSON format, assume this is an error
-        except json.JSONDecodeError:
-            self.recv_error(event)
-
-        return event
-
-    def recv_json(self, content):
-        """Receive data as a dictionary
-
-        Args:
-            content (dict): dictionary representation of the event.
-        """
-        pass
-
-    def recv_error(self, message):
-        """Receive data as an error
-
-        The error is displayed truncated.
-
-        Args:
-            message (str): error message from the server
-        """
-        logger.error("Error from the server: '{}'".format(
-            display_message(message)))
-
-    def send_json(self, content, *args, **kwargs):
-        """Send data as dictionary
-
-        Convert it to JSON string before send.
-
-        Args:
-            content (dict): dictionary of the event.
-        """
-        return self.send(json.dumps(content), *args, **kwargs)
 
 
 def connected(fun):
@@ -184,7 +138,7 @@ def connected(fun):
     return call
 
 
-class DakaraServerWebSocketConnection(WorkerSafeThread):
+class DakaraServerWebSocketConnection(WorkerSafeTimer):
     """Object representing the WebSocket connection with the Dakara server
 
     Args:
@@ -203,62 +157,18 @@ class DakaraServerWebSocketConnection(WorkerSafeThread):
         self.header = header
         self.websocket = None
 
-        self.thread = self.create_thread(target=self.run)
-
-    def create_connection(self):
-        """Create the WebSocket connection with the server
-
-        Raises:
-            AuthenticationError: if the user account used does not have enough
-                rights.
-            NetworkError: if the server is unreachable.
-        """
-        logger.debug("Creating websocket connection")
-        try:
-            self.websocket = create_connection(self.server_url,
-                                               class_=DakaraServerWebSocket,
-                                               header=self.header)
-
-        except WebSocketBadStatusException as error:
-            raise AuthenticationError("Unable to connect to server with this "
-                                      "login") from error
-
-        except ConnectionRefusedError as error:
-            raise NetworkError("Network error, unable to talk to the server "
-                               "for WebSocket connection") from error
-
-    @connected
-    def run(self):
-        """Event loop
-
-        Read new messages from the server. The wait is cancelled by the
-        `websocket.abort` method.
-        """
-        try:
-            # one event is read at each loop
-            # the loop is blocking
-            while not self.stop.is_set():
-                self.websocket.next()
-
-        except WebSocketConnectionClosedException:
-            pass
-
-    def exit_worker(self, *args, **kwargs):
-        logger.debug("Aborting websocket connection")
-        self.websocket.abort()
-
-
-class DakaraServerWebSocket(JsonWebSocket):
-    """Object representing the WebSocket communications with the Dakara server
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self.timer = self.create_timer(0, self.run)
 
         # initialize the callbacks
         self.idle_callback = lambda: None
         self.new_entry_callback = lambda entry: None
         self.command_callback = lambda command: None
         self.status_request_callback = lambda: None
+        self.connection_lost_callback = lambda: None
+
+    def exit_worker(self, *args, **kwargs):
+        logger.debug("Aborting websocket connection")
+        self.abort()
 
     def set_idle_callback(self, callback):
         """Assign callback when idle is requested
@@ -292,24 +202,110 @@ class DakaraServerWebSocket(JsonWebSocket):
         """
         self.status_request_callback = callback
 
-    def recv_json(self, content):
-        """Receive all incoming events
+    def set_connection_lost_callback(self, callback):
+        """Assign callback when the connection is lost
 
         Args:
-            content (dict): dictionary of the event
-
-        Raises:
-            ValueError: if the event type is not associated with any method of
-                the class.
+            callback (function): function to assign.
         """
-        method_name = "recv_{}".format(content['type'])
+        self.connection_lost_callback = callback
+
+    def on_open(self):
+        """Callback when the connection is open
+        """
+        logger.info("Connected to websocket")
+
+    def on_close(self, code, reason):
+        """Callback when the connection is closed
+
+        If the disconnection is not due to the end of the program, consider the
+        connection has been lost. In that case, a reconnection will be
+        attempted within several seconds.
+
+        Args:
+            code (int): error code (often None).
+            reason (str): reason of the closed connection (often None).
+        """
+        if code or reason:
+            logger.debug("Code {}: {}".format(code, reason))
+
+        if self.stop.is_set():
+            logger.info("Disconnected from websocket")
+            return
+
+        logger.error("Websocket connection lost, reconnecting in 5 s")
+
+        # call the callback
+        self.connection_lost_callback()
+
+        # attempt to reconnect
+        self.timer = self.create_timer(5, self.run)
+        self.timer.start()
+
+    def on_message(self, message):
+        """Callback when a message is received
+        """
+        # convert the message to an event object
+        try:
+            event = json.loads(message)
+
+        # if the message is not in JSON format, assume this is an error
+        except json.JSONDecodeError:
+            logger.error("Unexpected message from the server: '{}'".format(
+                display_message(message)))
+            return
+
+        # attempt to call the corresponding method
+        method_name = "receive_{}".format(event['type'])
         if not hasattr(self, method_name):
-            raise ValueError("Event of unknown type received '{}'"
-                             .format(content['type']))
+            logger.error("Event of unknown type received '{}'"
+                         .format(event['type']))
+            return
 
-        getattr(self, method_name)(content.get('data'))
+        getattr(self, method_name)(event.get('data'))
 
-    def recv_idle(self, content):
+    def on_error(self, error):
+        """Callback when an error occurs
+
+        It does not provide any useful information when the connection is
+        closed.
+        """
+        logger.debug("Error caught: {}".format(error))
+
+    def send(self, content, *args, **kwargs):
+        """Send data from a dictionary
+
+        Convert it to JSON string before send.
+
+        Args:
+            content (dict): dictionary of the event.
+        """
+        return self.websocket.send(json.dumps(content), *args, **kwargs)
+
+    def abort(self):
+        # if the connection is lost, the `sock` object may not have the `abort`
+        # method
+        if hasattr(self.websocket.sock, 'abort'):
+            self.websocket.sock.abort()
+
+    def run(self):
+        """Event loop
+
+        Create the websocket connection and wait events from it. The method can
+        be interrupted with the `abort` method.
+        """
+        logger.debug("Preparing websocket connection")
+        self.websocket = WebSocketApp(
+            self.server_url,
+            header=self.header,
+            on_open=lambda ws: self.on_open(),
+            on_close=lambda ws, code, reason: self.on_close(code, reason),
+            on_message=lambda ws, message: self.on_message(message),
+            on_error=lambda ws, error: self.on_error(error)
+        )
+        self.websocket.run_forever()
+
+    def receive_idle(self, content):
         """Receive idle order
 
         Args:
@@ -318,7 +314,7 @@ class DakaraServerWebSocket(JsonWebSocket):
         logger.debug("Received idle order")
         self.idle_callback()
 
-    def recv_new_entry(self, content):
+    def receive_new_entry(self, content):
         """Receive new entry
 
         Args:
@@ -327,7 +323,7 @@ class DakaraServerWebSocket(JsonWebSocket):
         logger.debug("Received new entry {} order".format(content['id']))
         self.new_entry_callback(content)
 
-    def recv_status_request(self, content):
+    def receive_status_request(self, content):
         """Receive status request
 
         Args:
@@ -336,7 +332,7 @@ class DakaraServerWebSocket(JsonWebSocket):
         logger.debug("Received status request")
         self.status_request_callback()
 
-    def recv_command(self, content):
+    def receive_command(self, content):
         """Receive a command
 
         Args:
@@ -346,6 +342,7 @@ class DakaraServerWebSocket(JsonWebSocket):
         logger.debug("Received command: '{}'".format(command))
         self.command_callback(command)
 
+    @connected
     def send_entry_error(self, entry_id, message):
         """Tell the server that the current entry cannot be played
 
@@ -361,7 +358,7 @@ class DakaraServerWebSocket(JsonWebSocket):
 
         logger.debug("Telling the server that entry {} cannot be played"
                      .format(entry_id))
-        self.send_json({
+        self.send({
             'type': 'entry_error',
             'data': {
                 'entry_id': entry_id,
@@ -369,6 +366,7 @@ class DakaraServerWebSocket(JsonWebSocket):
             }
         })
 
+    @connected
     def send_entry_finished(self, entry_id):
         """Tell the server that the current entry is finished
 
@@ -383,7 +381,7 @@ class DakaraServerWebSocket(JsonWebSocket):
 
         logger.debug("Telling the server that entry {} is finished"
                      .format(entry_id))
-        self.send_json({
+        self.send({
             'type': 'entry_finished',
             'data': {
                 'entry_id': entry_id,
@@ -392,6 +390,7 @@ class DakaraServerWebSocket(JsonWebSocket):
 
         self.entry_id = None
 
+    @connected
     def send_status(self, entry_id, timing=0, paused=False):
         """Send the player status
 
@@ -401,8 +400,17 @@ class DakaraServerWebSocket(JsonWebSocket):
             timing (int): position of the player (in ms).
             paused (bool): true if the player is paused.
         """
-        logger.debug("Sending status")
-        self.send_json({
+        if entry_id is not None:
+            logger.debug("Sending status: in {} for entry {} at {} s".format(
+                'pause' if paused else 'play',
+                entry_id,
+                timing / 1000
+            ))
+
+        else:
+            logger.debug("Sending status: player is idle")
+
+        self.send({
             'type': 'status',
             'data': {
                 'entry_id': entry_id,

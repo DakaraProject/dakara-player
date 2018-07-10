@@ -30,11 +30,12 @@ class DakaraManager:
         self.vlc_player.set_error_callback(self.handle_error)
 
         # set dakara server websocket callbacks
-        self.dakara_server.websocket.set_idle_callback(self.be_idle)
-        self.dakara_server.websocket.set_new_entry_callback(self.play_entry)
-        self.dakara_server.websocket.set_command_callback(self.do_command)
-        self.dakara_server.websocket.set_status_request_callback(
+        self.dakara_server.set_idle_callback(self.be_idle)
+        self.dakara_server.set_new_entry_callback(self.play_entry)
+        self.dakara_server.set_command_callback(self.do_command)
+        self.dakara_server.set_status_request_callback(
             self.get_status)
+        self.dakara_server.set_connection_lost_callback(self.be_idle)
 
     def handle_error(self, entry_id, message):
         """Callback when a VLC error occurs
@@ -44,7 +45,7 @@ class DakaraManager:
             message (str): text describing the error.
         """
         logger.error(message)
-        self.dakara_server.websocket.send_entry_error(entry_id, message)
+        self.dakara_server.send_entry_error(entry_id, message)
 
     def handle_song_end(self, entry_id):
         """Callback when a song ends
@@ -52,7 +53,7 @@ class DakaraManager:
         Args:
             entry_id (int): playlist entry ID.
         """
-        self.dakara_server.websocket.send_entry_finished(entry_id)
+        self.dakara_server.send_entry_finished(entry_id)
 
     def play_entry(self, entry):
         """Play the requested entry
@@ -92,7 +93,7 @@ class DakaraManager:
         playing_id = self.vlc_player.get_playing_id()
         timing = self.vlc_player.get_timing()
         paused = self.vlc_player.is_paused()
-        self.dakara_server.websocket.send_status(
+        self.dakara_server.send_status(
             playing_id,
             timing,
             paused

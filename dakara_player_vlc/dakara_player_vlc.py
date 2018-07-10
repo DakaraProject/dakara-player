@@ -147,7 +147,6 @@ class DakaraWorker(WorkerSafeThread):
                                                 self.config['server'],
                                                 token_header)
             )
-            dakara_server_websocket.create_connection()
 
             # manager for the precedent workers
             dakara_manager = DakaraManager(  # noqa F841
@@ -156,8 +155,8 @@ class DakaraWorker(WorkerSafeThread):
                 dakara_server_websocket
             )
 
-            # start the worker threads
-            dakara_server_websocket.thread.start()
+            # start the worker timer
+            dakara_server_websocket.timer.start()
 
             # wait for stop event
             self.stop.wait()
