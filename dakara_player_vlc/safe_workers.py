@@ -36,6 +36,35 @@ import logging
 logger = logging.getLogger("safe_workers")
 
 
+def safe(fun):
+    """Decorator to make the function safe
+
+    Any exception is caught and put in the error queue. This sets the stop
+    event as well.
+
+    The decorated function must be a method of a BaseSafeThread or a BaseWorker
+    class (or inherited).
+    """
+    def call(self, *args, **kwargs):
+        # check the target's class is a safe thread or a safe worker
+        if not isinstance(self, (BaseSafeThread, BaseWorker)):
+            raise ValueError(("The class '{}' of method '{}' is not a "
+                              "BaseSafeThread or a BaseWorker")
+                             .format(self.__class__.__name__, fun.__name__))
+
+        # try to run the target
+        try:
+            return fun(self, *args, **kwargs)
+
+        # if an error occurs, put it in the error queue and notify the stop
+        # event
+        except BaseException:
+            self.errors.put_nowait(sys.exc_info())
+            self.stop.set()
+
+    return call
+
+
 class BaseSafeThread:
     """Base class for thread executed within a Worker
 
@@ -71,21 +100,11 @@ class BaseSafeThread:
         # specific initialization
         super().__init__(*args, **kwargs)
 
+    @safe
     def run(self):
-        """Method to run as a thread.
-
-        Any exception is caught and put in the error queue. This sets the stop
-        event as well.
+        """Method to run as a thread safely
         """
-        # try to run the target
-        try:
-            return super().run()
-
-        # if an error occurs, put it in the error queue and notify the stop
-        # event
-        except BaseException:
-            self.errors.put_nowait(sys.exc_info())
-            self.stop.set()
+        return super().run()
 
 
 class SafeThread(BaseSafeThread, Thread):

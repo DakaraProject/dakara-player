@@ -3,9 +3,11 @@ import logging
 import urllib.parse
 
 import requests
-from websocket import WebSocketApp
+from websocket import (WebSocketApp,
+                       WebSocketBadStatusException,
+                       WebSocketConnectionClosedException)
 
-from dakara_player_vlc.safe_workers import WorkerSafeTimer
+from dakara_player_vlc.safe_workers import WorkerSafeTimer, safe
 
 # enforce loglevel warning for requests log messages
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -156,6 +158,7 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
 
         self.header = header
         self.websocket = None
+        self.retry = False
 
         self.timer = self.create_timer(0, self.run)
 
@@ -210,11 +213,14 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         """
         self.connection_lost_callback = callback
 
+    @safe
     def on_open(self):
         """Callback when the connection is open
         """
         logger.info("Connected to websocket")
+        self.retry = False
 
+    @safe
     def on_close(self, code, reason):
         """Callback when the connection is closed
 
@@ -229,19 +235,19 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         if code or reason:
             logger.debug("Code {}: {}".format(code, reason))
 
-        if self.stop.is_set():
-            logger.info("Disconnected from websocket")
+        # destroy websocket object
+        self.websocket = None
+
+        if not self.retry:
+            logger.info("Websocket disconnected from server")
             return
 
-        logger.error("Websocket connection lost, reconnecting in 5 s")
-
-        # call the callback
-        self.connection_lost_callback()
-
         # attempt to reconnect
+        logger.warning("Trying to reconnect in 5 s")
         self.timer = self.create_timer(5, self.run)
         self.timer.start()
 
+    @safe
     def on_message(self, message):
         """Callback when a message is received
         """
@@ -264,14 +270,41 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
 
         getattr(self, method_name)(event.get('data'))
 
+    @safe
     def on_error(self, error):
         """Callback when an error occurs
-
-        It does not provide any useful information when the connection is
-        closed.
         """
+        # do not analyze error on program exit, as it will take the
+        # WebSocketConnectionClosedException raised by invoking `abort` to a
+        # server connection closed error
+        if self.stop.is_set():
+            return
+
         logger.debug("Error caught: {}".format(error))
 
+        if isinstance(error, WebSocketBadStatusException):
+            raise AuthenticationError(
+                "Unable to connect to server with this user") from error
+
+        if isinstance(error, ConnectionRefusedError):
+            if self.retry:
+                logger.warning("Unable to talk to the server")
+                return
+
+            raise NetworkError(
+                "Network error, unable to talk to the server") from error
+
+        if isinstance(error, ConnectionResetError):
+            raise ValueError(
+                "Invalid route to the server") from error
+
+        if isinstance(error, WebSocketConnectionClosedException) \
+           and not self.retry:
+            self.retry = True
+            logger.error("Websocket connection lost")
+            self.connection_lost_callback()
+
+    @connected
     def send(self, content, *args, **kwargs):
         """Send data from a dictionary
 
@@ -283,9 +316,12 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         return self.websocket.send(json.dumps(content), *args, **kwargs)
 
     def abort(self):
+        self.retry = False
+
         # if the connection is lost, the `sock` object may not have the `abort`
         # method
-        if hasattr(self.websocket.sock, 'abort'):
+        if self.websocket is not None \
+           and hasattr(self.websocket.sock, 'abort'):
             self.websocket.sock.abort()
 
     def run(self):
@@ -293,6 +329,11 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
 
         Create the websocket connection and wait events from it. The method can
         be interrupted with the `abort` method.
+
+        The WebSocketApp class is a genki: it will never complaint of anything.
+        Wether it is unable to create a connection or its connection is lost,
+        the `run_forever` method ends without any exception or non-None return
+        value. Exceptions are handled by the yandere `on_error` callback.
         """
         logger.debug("Preparing websocket connection")
         self.websocket = WebSocketApp(
@@ -342,7 +383,6 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         logger.debug("Received command: '{}'".format(command))
         self.command_callback(command)
 
-    @connected
     def send_entry_error(self, entry_id, message):
         """Tell the server that the current entry cannot be played
 
@@ -351,10 +391,10 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
             message (str): error message.
 
         Raises:
-            RuntimeError: if `entry_id` is `None`.
+            ValueError: if `entry_id` is `None`.
         """
         if entry_id is None:
-            raise RuntimeError("Entry with ID None cannot make error")
+            raise ValueError("Entry with ID None cannot make error")
 
         logger.debug("Telling the server that entry {} cannot be played"
                      .format(entry_id))
@@ -366,7 +406,6 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
             }
         })
 
-    @connected
     def send_entry_finished(self, entry_id):
         """Tell the server that the current entry is finished
 
@@ -374,10 +413,10 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
             entry_id (int): ID of the playlist entry. Must not be `None`.
 
         Raises:
-            RuntimeError: if `entry_id` is `None`.
+            ValueError: if `entry_id` is `None`.
         """
         if entry_id is None:
-            raise RuntimeError("Entry with ID None cannot be finished")
+            raise ValueError("Entry with ID None cannot be finished")
 
         logger.debug("Telling the server that entry {} is finished"
                      .format(entry_id))
@@ -390,7 +429,6 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
 
         self.entry_id = None
 
-    @connected
     def send_status(self, entry_id, timing=0, paused=False):
         """Send the player status
 
@@ -414,7 +452,7 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
             'type': 'status',
             'data': {
                 'entry_id': entry_id,
-                'timing': timing / 1000,
+                'timing': int(timing / 1000),
                 'paused': paused,
             }
         })

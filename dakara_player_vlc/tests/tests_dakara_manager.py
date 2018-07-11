@@ -63,7 +63,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_song_end(999)
 
         # call assertions
-        self.dakara_server.websocket.send_entry_finished\
+        self.dakara_server.send_entry_finished\
             .assert_called_once_with(999)
 
     def test_do_command_successful(self):
@@ -105,5 +105,5 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.vlc_player.get_playing_id.assert_called_with()
         self.dakara_manager.vlc_player.get_timing.assert_called_with()
         self.dakara_manager.vlc_player.is_paused.assert_called_with()
-        self.dakara_manager.dakara_server.websocket.send_status\
+        self.dakara_manager.dakara_server.send_status\
             .assert_called_with(999, 10000, True)

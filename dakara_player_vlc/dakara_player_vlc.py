@@ -162,7 +162,7 @@ class DakaraWorker(WorkerSafeThread):
             self.stop.wait()
 
             # leaving this method means leaving all the context managers and
-            # stop the program
+            # stopping the program
 
     @staticmethod
     def load_config(config_path, debug):

@@ -148,10 +148,9 @@ class DakaraWorkerTestCase(TestCase):
         mock_dakara_server_http.get_token_header.assert_called_with()
         mock_dakara_server_websocket_class.assert_called_with(
             self.stop, self.errors, self.config['server'], 'token')
-        mock_dakara_server_websocket.create_connection.assert_called_with()
         mock_dakara_manager_class.assert_called_with(
             mock_font_loader, mock_vlc_player, mock_dakara_server_websocket)
-        mock_dakara_server_websocket.thread.start.assert_called_with()
+        mock_dakara_server_websocket.timer.start.assert_called_with()
 
 
 class DakaraPlayerVlcTestCase(TestCase):
