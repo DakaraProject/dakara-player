@@ -169,18 +169,14 @@ class BaseWorker:
             program when set.
         errors (queue.Queue): error queue to communicate the exception to the
             main thread.
+
+    Args:
+        stop (threading.Event): stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): error queue to communicate the exception to the
+            main thread.
     """
     def __init__(self, stop, errors):
-        """Initialization
-
-        Assign the mandatory stop event and errors queue to the instance.
-
-        Args:
-            stop (threading.Event): stop event that notify to stop the entire
-                program when set.
-            errors (queue.Queue): error queue to communicate the exception to
-                the main thread.
-        """
         # associate the stop event
         assert isinstance(stop, Event), \
             "Stop attribute must be of type Event"
