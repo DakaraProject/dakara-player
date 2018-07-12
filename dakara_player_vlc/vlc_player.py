@@ -104,6 +104,7 @@ class VlcPlayer(Worker):
         self.timer_stop_player_too_long = None
 
         # set default callbacks
+        self.song_start_callback = lambda entry_id: None
         self.song_end_external_callback = lambda entry_id: None
         self.error_external_callback = lambda entry_id, message: None
 
@@ -173,6 +174,14 @@ class VlcPlayer(Worker):
 
         self.idle_bg_path = bg_path
 
+    def set_song_start_callback(self, callback):
+        """Assign callback for when the player starts to play a song
+
+        Args:
+            callback (function): function to assign.
+        """
+        self.song_start_callback = callback
+
     def set_song_end_callback(self, callback):
         """Assign callback for when player reachs the end of current song
 
@@ -213,6 +222,9 @@ class VlcPlayer(Worker):
             logger.info("Now playing '{}'".format(
                 file_path
             ))
+
+            # call the callback for when a song starts
+            self.song_start_callback(self.playing_id)
 
         elif self.is_idle():
             # if the idle screen has finished, restart it

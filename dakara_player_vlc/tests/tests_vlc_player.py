@@ -94,6 +94,39 @@ class VlcPlayerTestCase(TestCase):
 
         return event, callback
 
+    def test_set_callbacks(self):
+        """Test the assignation of callbacks
+        """
+        kinds = {
+            'normal': {
+                'names': ("song_start",),
+                'callback_pattern': '{}_callback',
+            },
+            'external': {
+                'names': ("song_end", "error"),
+                'callback_pattern': '{}_external_callback',
+            }
+        }
+
+        for kind in kinds.values():
+            for name in kind['names']:
+                method_name = "set_{}_callback".format(name)
+                callback_name = kind['callback_pattern'].format(name)
+
+                method = getattr(self.vlc_player, method_name)
+                callback = MagicMock()
+
+                # pre assert
+                self.assertIsNot(getattr(self.vlc_player, callback_name),
+                                 callback)
+
+                # call the method
+                method(callback)
+
+                # post assert
+                self.assertIs(getattr(self.vlc_player, callback_name),
+                              callback)
+
     def test_play_idle_screen(self):
         """Test the display of the idle screen
         """
@@ -234,6 +267,8 @@ class VlcPlayerTestCase(TestCase):
         self.vlc_player.create_thread = MagicMock()
         self.vlc_player.media_pending = MagicMock()
         self.vlc_player.media_pending.get_mrl.return_value = 'file:///test.mkv'
+        self.vlc_player.song_start_callback = MagicMock()
+        self.vlc_player.playing_id = 999
 
         # call the method
         self.vlc_player.song_end_callback('event')
@@ -247,6 +282,7 @@ class VlcPlayerTestCase(TestCase):
         )
         self.vlc_player.media_pending.get_mrl.assert_called_with()
         self.vlc_player.create_thread.return_value.start.assert_called_with()
+        self.vlc_player.song_start_callback.assert_called_with(999)
 
     def test_song_end_callback_idle(self):
         """Test song end callback for after an idle screen

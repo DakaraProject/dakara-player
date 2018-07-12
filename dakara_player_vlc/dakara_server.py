@@ -429,7 +429,29 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
 
         self.entry_id = None
 
-    def send_status(self, entry_id, timing=0, paused=False):
+    def send_entry_started(self, entry_id):
+        """Tell the server that the current entry has started
+
+        Args:
+            entry_id (int): ID of the playlist entry. Must not be `None`.
+
+        Raises:
+            ValueError: if `entry_id` is `None`.
+        """
+        if entry_id is None:
+            raise ValueError("Entry with ID None cannot be started")
+
+        logger.debug("Telling the server that entry {} has started"
+                     .format(entry_id))
+        self.send({
+            'type': 'entry_started',
+            'data': {
+                'entry_id': entry_id,
+            }
+        })
+
+    def send_status(self, entry_id, timing=0,
+                    paused=False, in_transition=False):
         """Send the player status
 
         Args:
@@ -439,11 +461,14 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
             paused (bool): true if the player is paused.
         """
         if entry_id is not None:
-            logger.debug("Sending status: in {} for entry {} at {} s".format(
-                'pause' if paused else 'play',
-                entry_id,
-                timing / 1000
-            ))
+            logger.debug(
+                "Sending status: in {} for entry {} at {} s {}".format(
+                    'pause' if paused else 'play',
+                    entry_id,
+                    timing / 1000,
+                    '(in transition)' if in_transition else ''
+                )
+            )
 
         else:
             logger.debug("Sending status: player is idle")
@@ -454,6 +479,7 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
                 'entry_id': entry_id,
                 'timing': int(timing / 1000),
                 'paused': paused,
+                'in_transition': in_transition
             }
         })
 

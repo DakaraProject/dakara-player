@@ -671,6 +671,33 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         with self.assertRaises(ValueError):
             self.dakara_server.send_entry_finished(None)
 
+    def test_send_entry_started_successful(self):
+        """Test to send an entry started event sucessfuly
+        """
+        # mock the websocket
+        self.dakara_server.websocket = MagicMock()
+
+        # call the method
+        self.dakara_server.send_entry_started(0)
+
+        # assert the call
+        self.dakara_server.websocket.send.assert_called_with(json.dumps({
+            'type': 'entry_started',
+            'data': {
+                'entry_id': 0,
+            }
+        }))
+
+    def test_send_entry_started_fail(self):
+        """Test to send an invalid entry started
+        """
+        # mock the websocket
+        self.dakara_server.websocket = MagicMock()
+
+        # call the method
+        with self.assertRaises(ValueError):
+            self.dakara_server.send_entry_started(None)
+
     def test_send_status(self):
         """Test to send the player status
         """
@@ -678,7 +705,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.dakara_server.websocket = MagicMock()
 
         # call the method
-        self.dakara_server.send_status(0, 10000, True)
+        self.dakara_server.send_status(0, 10000, True, False)
 
         # assert the call
         self.dakara_server.websocket.send.assert_called_with(json.dumps({
@@ -686,7 +713,8 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
             'data': {
                 'entry_id': 0,
                 'timing': 10,
-                'paused': True
+                'paused': True,
+                'in_transition': False,
             }
         }))
 

@@ -27,6 +27,7 @@ class DakaraManager:
 
         # set player callbacks
         self.vlc_player.set_song_end_callback(self.handle_song_end)
+        self.vlc_player.set_song_start_callback(self.handle_song_start)
         self.vlc_player.set_error_callback(self.handle_error)
 
         # set dakara server websocket callbacks
@@ -54,6 +55,14 @@ class DakaraManager:
             entry_id (int): playlist entry ID.
         """
         self.dakara_server.send_entry_finished(entry_id)
+
+    def handle_song_start(self, entry_id):
+        """Callback when a song starts
+
+        Args:
+            entry_id (int): playlist entry ID.
+        """
+        self.dakara_server.send_entry_started(entry_id)
 
     def play_entry(self, entry):
         """Play the requested entry
@@ -93,8 +102,10 @@ class DakaraManager:
         playing_id = self.vlc_player.get_playing_id()
         timing = self.vlc_player.get_timing()
         paused = self.vlc_player.is_paused()
+        in_transition = self.vlc_player.in_transition
         self.dakara_server.send_status(
             playing_id,
             timing,
-            paused
+            paused,
+            in_transition
         )
