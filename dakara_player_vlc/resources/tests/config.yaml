@@ -7,7 +7,9 @@ player:
   templates:
   backgrounds:
 server:
-  url: http://www.example.com
-  login: test
-  password: test
+  address: www.example.com
+  login: player_login
+  password: player_password
+  ssl: true
+  reconnect_interval: 10
 loglevel: info

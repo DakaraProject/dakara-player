@@ -2,6 +2,7 @@ from unittest import TestCase
 from unittest.mock import patch, MagicMock, ANY
 from threading import Event
 from queue import Queue
+import yaml
 
 from requests.exceptions import RequestException
 from websocket import (WebSocketBadStatusException,
@@ -16,6 +17,7 @@ from dakara_player_vlc.dakara_server import (
     authenticated,
     connected,
 )
+from dakara_player_vlc.resources_manager import get_test_material
 
 
 class DakaraServerHTTPConnectionTestCase(TestCase):
@@ -28,12 +30,12 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         # create a server address
         self.address = "www.example.com"
 
+        # create a server URL
+        self.url = "http://www.example.com/api/"
+
         # create a login and password
         self.login = "test"
         self.password = "test"
-
-        # create an error
-        self.error_message = 'error'
 
         # create a DakaraServerHTTPConnection instance
         self.dakara_server = DakaraServerHTTPConnection({
@@ -41,6 +43,32 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
             'login': self.login,
             'password': self.password,
         })
+
+    def test_init(self):
+        """Test the created object
+        """
+        self.assertEqual(self.dakara_server.server_url, self.url)
+        self.assertEqual(self.dakara_server.login, self.login)
+        self.assertEqual(self.dakara_server.password, self.password)
+        self.assertIsNone(self.dakara_server.token)
+
+    def test_init_from_config(self):
+        """Test to create the object from a config file
+        """
+        # open the config
+        config_path = get_test_material("config.yaml")
+        with open(config_path) as file:
+            config = yaml.load(file)
+            config = config['server']
+
+        # create an object
+        dakara_server = DakaraServerHTTPConnection(config)
+
+        # test the created object
+        self.assertEqual(dakara_server.server_url,
+                         "https://www.example.com/api/")
+        self.assertEqual(dakara_server.login, "player_login")
+        self.assertEqual(dakara_server.password, "player_password")
 
     @patch('dakara_player_vlc.dakara_server.requests.post')
     def test_authenticate_successful(self, mock_post):
@@ -58,7 +86,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
         # call assertions
         mock_post.assert_called_with(
-            "http://{}/api/token-auth/".format(self.address),
+            self.url + "token-auth/",
             data={
                 'username': self.login,
                 'password': self.password,
@@ -223,13 +251,31 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         )
 
     def test_init_worker(self):
-        """Test to create the object
+        """Test the created object
         """
         self.assertEqual(self.dakara_server.server_url, self.url)
         self.assertEqual(self.dakara_server.header, self.header)
         self.assertEqual(self.dakara_server.reconnect_interval,
                          self.reconnect_interval)
         self.assertIsNone(self.dakara_server.websocket)
+
+    def test_init_worker_from_config(self):
+        """Test to create the object from a config file
+        """
+        # open the config
+        config_path = get_test_material("config.yaml")
+        with open(config_path) as file:
+            config = yaml.load(file)
+            config = config['server']
+
+        # create an object
+        dakara_server = DakaraServerWebSocketConnection(self.stop, self.errors,
+                                                        config, self.header)
+
+        # test the created object
+        self.assertEqual(dakara_server.server_url,
+                         "wss://www.example.com/ws/playlist/device/")
+        self.assertEqual(dakara_server.reconnect_interval, 10)
 
     def test_exit_worker(self):
         """Test to exit the worker
