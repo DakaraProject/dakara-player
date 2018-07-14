@@ -16,6 +16,9 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 logger = logging.getLogger("dakara_server")
 
 
+RECONNECT_INTERVAL = 5
+
+
 def authenticated(fun):
     """Decorator that ensures the token is set
 
@@ -159,6 +162,8 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         self.header = header
         self.websocket = None
         self.retry = False
+        self.reconnect_interval = config.get("reconnect_interval",
+                                             RECONNECT_INTERVAL)
 
         self.timer = self.create_timer(0, self.run)
 
@@ -243,8 +248,9 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
             return
 
         # attempt to reconnect
-        logger.warning("Trying to reconnect in 5 s")
-        self.timer = self.create_timer(5, self.run)
+        logger.warning("Trying to reconnect in {} s"
+                       .format(self.reconnect_interval))
+        self.timer = self.create_timer(self.reconnect_interval, self.run)
         self.timer.start()
 
     @safe

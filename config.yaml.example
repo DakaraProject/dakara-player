@@ -121,12 +121,15 @@ server:
   # Server address
   address: 127.0.0.1:8000
 
-  # Secured connection
-  ssl: false
-
   # Credentials for server authentication
   login: login
   password: pass
+
+  # Use a secured connection
+  # ssl: false
+
+  # Interval to reconnect to the server if connection lost (in seconds)
+  # reconnect_interval: 5
 
 # Other parameters
 

@@ -204,6 +204,9 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         # create token header
         self.header = {'token': 'token'}
 
+        # create a reconnect interval
+        self.reconnect_interval = 1
+
         # create stop event and errors queue
         self.stop = Event()
         self.errors = Queue()
@@ -212,7 +215,10 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.dakara_server = DakaraServerWebSocketConnection(
             self.stop,
             self.errors,
-            {'address': self.address},
+            {
+                'address': self.address,
+                'reconnect_interval': self.reconnect_interval
+            },
             self.header,
         )
 
@@ -221,6 +227,8 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         """
         self.assertEqual(self.dakara_server.server_url, self.url)
         self.assertEqual(self.dakara_server.header, self.header)
+        self.assertEqual(self.dakara_server.reconnect_interval,
+                         self.reconnect_interval)
         self.assertIsNone(self.dakara_server.websocket)
 
     def test_exit_worker(self):
@@ -276,7 +284,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
 
         # assert the different calls
         self.dakara_server.create_timer.assert_called_with(
-            5, self.dakara_server.run
+            self.reconnect_interval, self.dakara_server.run
         )
         self.dakara_server.timer.start.assert_called_with()
 
