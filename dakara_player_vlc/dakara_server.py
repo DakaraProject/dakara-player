@@ -250,6 +250,12 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
     @safe
     def on_message(self, message):
         """Callback when a message is received
+
+        It will call the method which name corresponds to the event type, if
+        possible.
+
+        Args:
+            message (str): a JSON text of the event.
         """
         # convert the message to an event object
         try:
@@ -273,19 +279,23 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
     @safe
     def on_error(self, error):
         """Callback when an error occurs
+
+        Args:
+            error (BaseException): class of the error.
         """
-        # do not analyze error on program exit, as it will take the
-        # WebSocketConnectionClosedException raised by invoking `abort` to a
+        # do not analyze error on program exit, as it will mistake the
+        # WebSocketConnectionClosedException raised by invoking `abort` for a
         # server connection closed error
         if self.stop.is_set():
+            logger.debug("Normal deconnection")
             return
 
-        logger.debug("Error caught: {}".format(error))
-
+        # the connection was refused
         if isinstance(error, WebSocketBadStatusException):
             raise AuthenticationError(
                 "Unable to connect to server with this user") from error
 
+        # the server is unreachable
         if isinstance(error, ConnectionRefusedError):
             if self.retry:
                 logger.warning("Unable to talk to the server")
@@ -294,15 +304,20 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
             raise NetworkError(
                 "Network error, unable to talk to the server") from error
 
+        # the requested endpoint does not exist
         if isinstance(error, ConnectionResetError):
             raise ValueError(
-                "Invalid route to the server") from error
+                "Invalid endpoint to the server") from error
 
-        if isinstance(error, WebSocketConnectionClosedException) \
-           and not self.retry:
-            self.retry = True
+        # connection closed by the server (see beginning of the method)
+        if isinstance(error, WebSocketConnectionClosedException):
             logger.error("Websocket connection lost")
+            self.retry = True
             self.connection_lost_callback()
+            return
+
+        # other unlisted reason
+        logger.error("Websocket: {}".format(error))
 
     @connected
     def send(self, content, *args, **kwargs):
@@ -316,6 +331,12 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         return self.websocket.send(json.dumps(content), *args, **kwargs)
 
     def abort(self):
+        """Request to interrupt the connection
+
+        Can be called from anywhere. It will raise an
+        `WebSocketConnectionClosedException` which will be passed to
+        `on_error`.
+        """
         self.retry = False
 
         # if the connection is lost, the `sock` object may not have the `abort`
