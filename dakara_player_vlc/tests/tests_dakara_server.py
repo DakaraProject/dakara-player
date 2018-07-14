@@ -2,7 +2,6 @@ from unittest import TestCase
 from unittest.mock import patch, MagicMock, ANY
 from threading import Event
 from queue import Queue
-import json
 
 from requests.exceptions import RequestException
 from websocket import (WebSocketBadStatusException,
@@ -518,6 +517,10 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.dakara_server.websocket.run_forever.assert_called_with()
 
         # assert that the callback are correctly set
+        # since the callback methods are adapted, we cannot check directy if
+        # the given method reference is the same as the corresponding instance
+        # method
+        # so, we check that calling the given method calls the instance method
         websocket = MagicMock()
         _, kwargs = mock_websocket_app_class.call_args
 
@@ -534,10 +537,11 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.dakara_server.on_error.assert_called_with('error')
 
         # post assert
-        # in real world, this test is inpossible, since the websocket object
-        # has been destroyed
-        # we use the fact the `on_close` method is not called to check if the
-        # object has been created
+        # in real world, this test is impossible, since the websocket object
+        # has been destroyed by `on_close`
+        # we use the fact this callback is not called to check if the
+        # object has been created as expected
+        # maybe there is a better scenario to test this
         self.assertIsNotNone(self.dakara_server.websocket)
 
     def test_set_callbacks(self):
@@ -619,20 +623,20 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
     def test_send_entry_error_successful(self):
         """Test to send an entry error event sucessfuly
         """
-        # mock the websocket
-        self.dakara_server.websocket = MagicMock()
+        # mock the send method
+        self.dakara_server.send = MagicMock()
 
         # call the method
         self.dakara_server.send_entry_error(0, 'message')
 
         # assert the call
-        self.dakara_server.websocket.send.assert_called_with(json.dumps({
+        self.dakara_server.send.assert_called_with({
             'type': 'entry_error',
             'data': {
                 'entry_id': 0,
                 'error_message': 'message'
             }
-        }))
+        })
 
     def test_send_entry_error_fail(self):
         """Test to send an invalid entry error
@@ -647,19 +651,19 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
     def test_send_entry_finished_successful(self):
         """Test to send an entry finished event sucessfuly
         """
-        # mock the websocket
-        self.dakara_server.websocket = MagicMock()
+        # mock the send method
+        self.dakara_server.send = MagicMock()
 
         # call the method
         self.dakara_server.send_entry_finished(0)
 
         # assert the call
-        self.dakara_server.websocket.send.assert_called_with(json.dumps({
+        self.dakara_server.send.assert_called_with({
             'type': 'entry_finished',
             'data': {
                 'entry_id': 0,
             }
-        }))
+        })
 
     def test_send_entry_finished_fail(self):
         """Test to send an invalid entry finished
@@ -674,19 +678,19 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
     def test_send_entry_started_successful(self):
         """Test to send an entry started event sucessfuly
         """
-        # mock the websocket
-        self.dakara_server.websocket = MagicMock()
+        # mock the send method
+        self.dakara_server.send = MagicMock()
 
         # call the method
         self.dakara_server.send_entry_started(0)
 
         # assert the call
-        self.dakara_server.websocket.send.assert_called_with(json.dumps({
+        self.dakara_server.send.assert_called_with({
             'type': 'entry_started',
             'data': {
                 'entry_id': 0,
             }
-        }))
+        })
 
     def test_send_entry_started_fail(self):
         """Test to send an invalid entry started
@@ -701,14 +705,14 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
     def test_send_status(self):
         """Test to send the player status
         """
-        # mock the websocket
-        self.dakara_server.websocket = MagicMock()
+        # mock the send method
+        self.dakara_server.send = MagicMock()
 
         # call the method
         self.dakara_server.send_status(0, 10000, True, False)
 
         # assert the call
-        self.dakara_server.websocket.send.assert_called_with(json.dumps({
+        self.dakara_server.send.assert_called_with({
             'type': 'status',
             'data': {
                 'entry_id': 0,
@@ -716,7 +720,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
                 'paused': True,
                 'in_transition': False,
             }
-        }))
+        })
 
 
 class DisplayMessageTestCase(TestCase):
