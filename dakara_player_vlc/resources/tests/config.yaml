@@ -1,0 +1,13 @@
+player:
+  kara_folder: /some/path
+  fullscreen: true
+  vlc:
+    media_parameters:
+    instance_parameters:
+  templates:
+  backgrounds:
+server:
+  url: http://www.example.com
+  login: test
+  password: test
+loglevel: info
