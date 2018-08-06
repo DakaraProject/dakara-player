@@ -307,6 +307,9 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         # mock the create timer helper that should not be called
         self.dakara_server.create_timer = MagicMock()
 
+        # set the program is closing
+        self.stop.set()
+
         # call the method
         self.dakara_server.on_close(None, None)
 
@@ -414,8 +417,9 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.assertTrue(self.errors.empty())
 
         # call the method
-        self.dakara_server.on_error(WebSocketBadStatusException("error %s",
-                                                                0))
+        self.dakara_server.on_error(
+            WebSocketBadStatusException("error %s", 0))
+
         # assert the call
         self.assertFalse(self.errors.empty())
         _, error, _ = self.errors.get()
@@ -479,9 +483,10 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         # mock the callback for connection lost
         self.dakara_server.connection_lost_callback = MagicMock()
 
-        # call the method
+        # call the methods
         self.dakara_server.on_error(
             WebSocketConnectionClosedException("error"))
+        self.dakara_server.on_close(None, None)
 
         # assert the call
         self.assertTrue(self.dakara_server.retry)

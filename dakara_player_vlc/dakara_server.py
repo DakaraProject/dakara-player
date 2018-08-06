@@ -222,7 +222,7 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
     def on_open(self):
         """Callback when the connection is open
         """
-        logger.info("Connected to websocket")
+        logger.info("Websocket connected to server")
         self.retry = False
 
     @safe
@@ -243,9 +243,13 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         # destroy websocket object
         self.websocket = None
 
-        if not self.retry:
+        if self.stop.is_set():
             logger.info("Websocket disconnected from server")
             return
+
+        logger.error("Websocket connection lost")
+        self.retry = True
+        self.connection_lost_callback()
 
         # attempt to reconnect
         logger.warning("Trying to reconnect in {} s"
@@ -293,7 +297,6 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         # WebSocketConnectionClosedException raised by invoking `abort` for a
         # server connection closed error
         if self.stop.is_set():
-            logger.debug("Normal deconnection")
             return
 
         # the connection was refused
@@ -317,9 +320,7 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
 
         # connection closed by the server (see beginning of the method)
         if isinstance(error, WebSocketConnectionClosedException):
-            logger.error("Websocket connection lost")
-            self.retry = True
-            self.connection_lost_callback()
+            # this case is handled by the on_close method
             return
 
         # other unlisted reason
