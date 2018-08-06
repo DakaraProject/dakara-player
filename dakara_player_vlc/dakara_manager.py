@@ -32,45 +32,47 @@ class DakaraManager:
 
         # set dakara server websocket callbacks
         self.dakara_server.set_idle_callback(self.be_idle)
-        self.dakara_server.set_new_entry_callback(self.play_entry)
+        self.dakara_server.set_playlist_entry_callback(
+            self.play_playlist_entry)
         self.dakara_server.set_command_callback(self.do_command)
         self.dakara_server.set_status_request_callback(
             self.get_status)
         self.dakara_server.set_connection_lost_callback(self.be_idle)
 
-    def handle_error(self, entry_id, message):
+    def handle_error(self, playlist_entry_id, message):
         """Callback when a VLC error occurs
 
         Args:
-            entry_id (int): playlist entry ID.
+            playlist_entry_id (int): playlist entry ID.
             message (str): text describing the error.
         """
         logger.error(message)
-        self.dakara_server.send_entry_error(entry_id, message)
+        self.dakara_server.send_playlist_entry_error(playlist_entry_id,
+                                                     message)
 
-    def handle_song_end(self, entry_id):
+    def handle_song_end(self, playlist_entry_id):
         """Callback when a song ends
 
         Args:
-            entry_id (int): playlist entry ID.
+            playlist_entry_id (int): playlist entry ID.
         """
-        self.dakara_server.send_entry_finished(entry_id)
+        self.dakara_server.send_playlist_entry_finished(playlist_entry_id)
 
-    def handle_song_start(self, entry_id):
+    def handle_song_start(self, playlist_entry_id):
         """Callback when a song starts
 
         Args:
-            entry_id (int): playlist entry ID.
+            playlist_entry_id (int): playlist entry ID.
         """
-        self.dakara_server.send_entry_started(entry_id)
+        self.dakara_server.send_playlist_entry_started(playlist_entry_id)
 
-    def play_entry(self, entry):
-        """Play the requested entry
+    def play_playlist_entry(self, playlist_entry):
+        """Play the requested playlist entry
 
         Args:
-            entry (dict): dictionary of the playlist entry.
+            playlist_entry (dict): dictionary of the playlist entry.
         """
-        self.vlc_player.play_song(entry)
+        self.vlc_player.play_song(playlist_entry)
 
     def be_idle(self):
         """Play the idle screen

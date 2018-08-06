@@ -609,7 +609,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         def dummy_function():
             pass
 
-        for name in ('idle', 'new_entry', 'command', 'status_request',
+        for name in ('idle', 'playlist_entry', 'command', 'status_request',
                      'connection_lost'):
             method = getattr(self.dakara_server, "{}_callback"
                              .format(name))
@@ -639,19 +639,19 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         # assert the call
         self.dakara_server.idle_callback.assert_called_with()
 
-    def test_receive_new_entry(self):
-        """Test the receive new entry event method
+    def test_receive_playlist_entry(self):
+        """Test the receive new playlist entry event method
         """
         content = {'id': 0, 'song': None}
 
         # mock the call
-        self.dakara_server.new_entry_callback = MagicMock()
+        self.dakara_server.playlist_entry_callback = MagicMock()
 
         # call the method
-        self.dakara_server.receive_new_entry(content)
+        self.dakara_server.receive_playlist_entry(content)
 
         # assert the call
-        self.dakara_server.new_entry_callback.assert_called_with(content)
+        self.dakara_server.playlist_entry_callback.assert_called_with(content)
 
     def test_receive_status_request(self):
         """Test the receive status request event method
@@ -679,87 +679,87 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         # assert the call
         self.dakara_server.command_callback.assert_called_with('command_value')
 
-    def test_send_entry_error_successful(self):
-        """Test to send an entry error event sucessfuly
+    def test_send_playlist_entry_error_successful(self):
+        """Test to send an playlist entry error event sucessfuly
         """
         # mock the send method
         self.dakara_server.send = MagicMock()
 
         # call the method
-        self.dakara_server.send_entry_error(0, 'message')
+        self.dakara_server.send_playlist_entry_error(0, 'message')
 
         # assert the call
         self.dakara_server.send.assert_called_with({
-            'type': 'entry_error',
+            'type': 'playlist_entry_error',
             'data': {
-                'entry_id': 0,
+                'playlist_entry_id': 0,
                 'error_message': 'message'
             }
         })
 
-    def test_send_entry_error_fail(self):
-        """Test to send an invalid entry error
+    def test_send_playlist_entry_error_fail(self):
+        """Test to send an invalid playlist entry error
         """
         # mock the websocket
         self.dakara_server.websocket = MagicMock()
 
         # call the method
         with self.assertRaises(ValueError):
-            self.dakara_server.send_entry_error(None, 'message')
+            self.dakara_server.send_playlist_entry_error(None, 'message')
 
-    def test_send_entry_finished_successful(self):
-        """Test to send an entry finished event sucessfuly
+    def test_send_playlist_entry_finished_successful(self):
+        """Test to send an playlist entry finished event sucessfuly
         """
         # mock the send method
         self.dakara_server.send = MagicMock()
 
         # call the method
-        self.dakara_server.send_entry_finished(0)
+        self.dakara_server.send_playlist_entry_finished(0)
 
         # assert the call
         self.dakara_server.send.assert_called_with({
-            'type': 'entry_finished',
+            'type': 'playlist_entry_finished',
             'data': {
-                'entry_id': 0,
+                'playlist_entry_id': 0,
             }
         })
 
-    def test_send_entry_finished_fail(self):
-        """Test to send an invalid entry finished
+    def test_send_playlist_entry_finished_fail(self):
+        """Test to send an invalid playlist entry finished
         """
         # mock the websocket
         self.dakara_server.websocket = MagicMock()
 
         # call the method
         with self.assertRaises(ValueError):
-            self.dakara_server.send_entry_finished(None)
+            self.dakara_server.send_playlist_entry_finished(None)
 
-    def test_send_entry_started_successful(self):
-        """Test to send an entry started event sucessfuly
+    def test_send_playlist_entry_started_successful(self):
+        """Test to send an playlist entry started event sucessfuly
         """
         # mock the send method
         self.dakara_server.send = MagicMock()
 
         # call the method
-        self.dakara_server.send_entry_started(0)
+        self.dakara_server.send_playlist_entry_started(0)
 
         # assert the call
         self.dakara_server.send.assert_called_with({
-            'type': 'entry_started',
+            'type': 'playlist_entry_started',
             'data': {
-                'entry_id': 0,
+                'playlist_entry_id': 0,
             }
         })
 
-    def test_send_entry_started_fail(self):
-        """Test to send an invalid entry started
+    def test_send_playlist_entry_started_fail(self):
+        """Test to send an invalid playlist entry started
         """
         # mock the websocket
         self.dakara_server.websocket = MagicMock()
 
         # call the method
         with self.assertRaises(ValueError):
-            self.dakara_server.send_entry_started(None)
+            self.dakara_server.send_playlist_entry_started(None)
 
     def test_send_status(self):
         """Test to send the player status
@@ -774,7 +774,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.dakara_server.send.assert_called_with({
             'type': 'status',
             'data': {
-                'entry_id': 0,
+                'playlist_entry_id': 0,
                 'timing': 10,
                 'paused': True,
                 'in_transition': False,

@@ -34,17 +34,17 @@ class DakaraManagerTestCase(TestCase):
         self.vlc_player.play_idle_screen.assert_called_once_with()
         self.vlc_player.play_song.assert_not_called()
 
-    def test_start_play_entry(self):
+    def test_start_play_playlist_entry(self):
         """Test to launch the dakara manager when there is something to play
         """
-        entry = {'id': 0}
+        playlist_entry = {'id': 0}
 
         # call the methods and prevent to run as thread
-        self.dakara_manager.play_entry(entry)
+        self.dakara_manager.play_playlist_entry(playlist_entry)
 
         # call assertions
         self.vlc_player.play_idle_screen.assert_not_called()
-        self.vlc_player.play_song.assert_called_once_with(entry)
+        self.vlc_player.play_song.assert_called_once_with(playlist_entry)
 
     def test_handle_error(self):
         """Test the callback called on error
@@ -53,7 +53,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_error(999, 'message')
 
         # call assertions
-        self.dakara_server.send_entry_error.assert_called_once_with(
+        self.dakara_server.send_playlist_entry_error.assert_called_once_with(
             999, 'message')
 
     def test_handle_song_end(self):
@@ -63,7 +63,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_song_end(999)
 
         # call assertions
-        self.dakara_server.send_entry_finished\
+        self.dakara_server.send_playlist_entry_finished\
             .assert_called_once_with(999)
 
     def test_handle_song_start(self):
@@ -73,7 +73,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_song_start(999)
 
         # call assertions
-        self.dakara_server.send_entry_started\
+        self.dakara_server.send_playlist_entry_started\
             .assert_called_once_with(999)
 
     def test_do_command_successful(self):

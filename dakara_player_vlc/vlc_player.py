@@ -104,9 +104,9 @@ class VlcPlayer(Worker):
         self.timer_stop_player_too_long = None
 
         # set default callbacks
-        self.song_start_callback = lambda entry_id: None
-        self.song_end_external_callback = lambda entry_id: None
-        self.error_external_callback = lambda entry_id, message: None
+        self.song_start_callback = lambda playlist_entry_id: None
+        self.song_end_external_callback = lambda playlist_entry_id: None
+        self.error_external_callback = lambda playlist_entry_id, message: None
 
     def load_transition_bg_path(self, bg_directory_path, transition_bg_name):
         """Load transition backgound file path

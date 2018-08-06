@@ -169,7 +169,7 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
 
         # initialize the callbacks
         self.idle_callback = lambda: None
-        self.new_entry_callback = lambda entry: None
+        self.playlist_entry_callback = lambda playlist_entry: None
         self.command_callback = lambda command: None
         self.status_request_callback = lambda: None
         self.connection_lost_callback = lambda: None
@@ -186,13 +186,13 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         """
         self.idle_callback = callback
 
-    def set_new_entry_callback(self, callback):
-        """Assign callback when a new entry is submitted
+    def set_playlist_entry_callback(self, callback):
+        """Assign callback when a new playlist entry is submitted
 
         Args:
             callback (function): function to assign.
         """
-        self.new_entry_callback = callback
+        self.playlist_entry_callback = callback
 
     def set_command_callback(self, callback):
         """Assign callback when a command is received
@@ -383,14 +383,15 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         logger.debug("Received idle order")
         self.idle_callback()
 
-    def receive_new_entry(self, content):
-        """Receive new entry
+    def receive_playlist_entry(self, content):
+        """Receive new playlist entry
 
         Args:
             content (dict): dictionary of the event
         """
-        logger.debug("Received new entry {} order".format(content['id']))
-        self.new_entry_callback(content)
+        logger.debug("Received new playlist entry {} order"
+                     .format(content['id']))
+        self.playlist_entry_callback(content)
 
     def receive_status_request(self, content):
         """Receive status request
@@ -411,88 +412,93 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         logger.debug("Received command: '{}'".format(command))
         self.command_callback(command)
 
-    def send_entry_error(self, entry_id, message):
-        """Tell the server that the current entry cannot be played
+    def send_playlist_entry_error(self, playlist_entry_id, message):
+        """Tell the server that the current playlist entry cannot be played
 
         Args:
-            entry_id (int): ID of the playlist entry. Must not be `None`.
+            playlist_entry_id (int): ID of the playlist entry. Must not be
+                `None`.
             message (str): error message.
 
         Raises:
-            ValueError: if `entry_id` is `None`.
+            ValueError: if `playlist_entry_id` is `None`.
         """
-        if entry_id is None:
+        if playlist_entry_id is None:
             raise ValueError("Entry with ID None cannot make error")
 
-        logger.debug("Telling the server that entry {} cannot be played"
-                     .format(entry_id))
+        logger.debug("Telling the server that playlist entry {} "
+                     "cannot be played"
+                     .format(playlist_entry_id))
         self.send({
-            'type': 'entry_error',
+            'type': 'playlist_entry_error',
             'data': {
-                'entry_id': entry_id,
+                'playlist_entry_id': playlist_entry_id,
                 'error_message': display_message(message, 255)
             }
         })
 
-    def send_entry_finished(self, entry_id):
-        """Tell the server that the current entry is finished
+    def send_playlist_entry_finished(self, playlist_entry_id):
+        """Tell the server that the current playlist entry is finished
 
         Args:
-            entry_id (int): ID of the playlist entry. Must not be `None`.
+            playlist_entry_id (int): ID of the playlist entry. Must not be
+                `None`.
 
         Raises:
-            ValueError: if `entry_id` is `None`.
+            ValueError: if `playlist_entry_id` is `None`.
         """
-        if entry_id is None:
+        if playlist_entry_id is None:
             raise ValueError("Entry with ID None cannot be finished")
 
-        logger.debug("Telling the server that entry {} is finished"
-                     .format(entry_id))
+        logger.debug("Telling the server that playlist entry {} is finished"
+                     .format(playlist_entry_id))
         self.send({
-            'type': 'entry_finished',
+            'type': 'playlist_entry_finished',
             'data': {
-                'entry_id': entry_id,
+                'playlist_entry_id': playlist_entry_id,
             }
         })
 
-        self.entry_id = None
+        self.playlist_entry_id = None
 
-    def send_entry_started(self, entry_id):
-        """Tell the server that the current entry has started
+    def send_playlist_entry_started(self, playlist_entry_id):
+        """Tell the server that the current playlist entry has started
 
         Args:
-            entry_id (int): ID of the playlist entry. Must not be `None`.
+            playlist_entry_id (int): ID of the playlist entry. Must not be
+                `None`.
 
         Raises:
-            ValueError: if `entry_id` is `None`.
+            ValueError: if `playlist_entry_id` is `None`.
         """
-        if entry_id is None:
+        if playlist_entry_id is None:
             raise ValueError("Entry with ID None cannot be started")
 
-        logger.debug("Telling the server that entry {} has started"
-                     .format(entry_id))
+        logger.debug("Telling the server that playlist entry {} has started"
+                     .format(playlist_entry_id))
         self.send({
-            'type': 'entry_started',
+            'type': 'playlist_entry_started',
             'data': {
-                'entry_id': entry_id,
+                'playlist_entry_id': playlist_entry_id,
             }
         })
 
-    def send_status(self, entry_id, timing=0,
+    def send_status(self, playlist_entry_id, timing=0,
                     paused=False, in_transition=False):
         """Send the player status
 
         Args:
-            entry_id (int): ID of the playlist entry currently played. Can be
-                `None` if the player is idle.
+            playlist_entry_id (int): ID of the playlist entry currently played.
+                Can be `None` if the player is idle.
             timing (int): position of the player (in ms).
             paused (bool): true if the player is paused.
         """
-        if entry_id is not None:
+        if playlist_entry_id is not None:
             logger.debug(
-                "Sending status: in {} for entry {} at {} s {}".format(
+                "Sending status: in {} for playlist entry {} at {} s {}"
+                .format(
                     'pause' if paused else 'play',
-                    entry_id,
+                    playlist_entry_id,
                     timing / 1000,
                     '(in transition)' if in_transition else ''
                 )
@@ -504,7 +510,7 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         self.send({
             'type': 'status',
             'data': {
-                'entry_id': entry_id,
+                'playlist_entry_id': playlist_entry_id,
                 'timing': int(timing / 1000),
                 'paused': paused,
                 'in_transition': in_transition
