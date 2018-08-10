@@ -152,6 +152,7 @@ class DakaraWorker(WorkerSafeThread):
             dakara_manager = DakaraManager(  # noqa F841
                 font_loader,
                 vlc_player,
+                dakara_server_http,
                 dakara_server_websocket
             )
 

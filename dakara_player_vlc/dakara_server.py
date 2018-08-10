@@ -122,6 +122,174 @@ class DakaraServerHTTPConnection:
             'Authorization': 'Token ' + self.token
         }
 
+    @authenticated
+    def create_player_error(self, playlist_entry_id, message):
+        """Report an error to the server
+
+        Args:
+            playlist_entry_id (int): ID of the playlist entry. Must not be
+                `None`.
+            message (str): error message.
+
+        Raises:
+            ValueError: if `playlist_entry_id` is `None`.
+        """
+        if playlist_entry_id is None:
+            raise ValueError("Entry with ID None cannot make error")
+
+        logger.debug("Telling the server that playlist entry {} "
+                     "cannot be played"
+                     .format(playlist_entry_id))
+
+        try:
+            response = requests.post(
+                self.server_url + "playlist/player/errors/",
+                headers=self.get_token_header(),
+                data={
+                    'playlist_entry_id': playlist_entry_id,
+                    'error_message': display_message(message, 255)
+                }
+            )
+
+        except requests.exceptions.RequestException as error:
+            logger.error("Network error")
+
+        if response.ok:
+            return
+
+        logger.error("Unable to send player error to server")
+        logger.debug("Error {code}: {message}".format(
+            code=response.status_code,
+            message=display_message(response.text)
+        ))
+
+    @authenticated
+    def update_playlist_entry_finished(self, playlist_entry_id):
+        """Report that a playlist entry has finished
+
+        Args:
+            playlist_entry_id (int): ID of the playlist entry. Must not be
+                `None`.
+
+        Raises:
+            ValueError: if `playlist_entry_id` is `None`.
+        """
+        if playlist_entry_id is None:
+            raise ValueError("Entry with ID None cannot be finished")
+
+        logger.debug("Telling the server that playlist entry {} is finished"
+                     .format(playlist_entry_id))
+
+        try:
+            response = requests.patch(
+                self.server_url + "playlist/player/status/",
+                headers=self.get_token_header(),
+                data={
+                    'playlist_entry_id': playlist_entry_id,
+                    'finished': True,
+                }
+            )
+
+        except requests.exceptions.RequestException as error:
+            logger.error("Network error")
+
+        if response.ok:
+            return
+
+        logger.error("Unable to report that a playlist entry has finished")
+        logger.debug("Error {code}: {message}".format(
+            code=response.status_code,
+            message=display_message(response.text)
+        ))
+
+    @authenticated
+    def update_playlist_entry_started(self, playlist_entry_id):
+        """Report that a playlist entry has started
+
+        Args:
+            playlist_entry_id (int): ID of the playlist entry. Must not be
+                `None`.
+
+        Raises:
+            ValueError: if `playlist_entry_id` is `None`.
+        """
+        if playlist_entry_id is None:
+            raise ValueError("Entry with ID None cannot be started")
+
+        logger.debug("Telling the server that playlist entry {} has started"
+                     .format(playlist_entry_id))
+
+        try:
+            response = requests.patch(
+                self.server_url + "playlist/player/status/",
+                headers=self.get_token_header(),
+                data={
+                    'playlist_entry_id': playlist_entry_id,
+                    'in_transition': False,
+                }
+            )
+
+        except requests.exceptions.RequestException as error:
+            logger.error("Network error")
+
+        if response.ok:
+            return
+
+        logger.error("Unable to report that a playlist entry has started")
+        logger.debug("Error {code}: {message}".format(
+            code=response.status_code,
+            message=display_message(response.text)
+        ))
+
+    @authenticated
+    def update_status(self, playlist_entry_id, timing=0,
+                      paused=False, in_transition=False):
+        """Report the current player status
+
+        Args:
+            playlist_entry_id (int): ID of the playlist entry currently played.
+                Can be `None` if the player is idle.
+            timing (int): position of the player (in ms).
+            paused (bool): true if the player is paused.
+        """
+        if playlist_entry_id is not None:
+            logger.debug(
+                "Sending status: in {} for playlist entry {} at {} s {}"
+                .format(
+                    'pause' if paused else 'play',
+                    playlist_entry_id,
+                    timing / 1000,
+                    '(in transition)' if in_transition else ''
+                )
+            )
+
+        else:
+            logger.debug("Sending status: idle")
+
+        try:
+            response = requests.put(
+                self.server_url + "playlist/player/status/",
+                headers=self.get_token_header(),
+                data={
+                    'playlist_entry_id': playlist_entry_id,
+                    'timing': int(timing / 1000),
+                    'paused': paused,
+                    'in_transition': in_transition
+                }
+            )
+
+        except requests.exceptions.RequestException as error:
+            logger.error("Network error")
+
+        if response.ok:
+            return
+
+        logger.error("Unable to report player status")
+        logger.debug("Error {code}: {message}".format(
+            code=response.status_code,
+            message=display_message(response.text)
+        ))
+
 
 def connected(fun):
     """Decorator that ensures the websocket is set
@@ -224,6 +392,7 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         """
         logger.info("Websocket connected to server")
         self.retry = False
+        self.send_ready()
 
     @safe
     def on_close(self, code, reason):
@@ -247,7 +416,9 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
             logger.info("Websocket disconnected from server")
             return
 
-        logger.error("Websocket connection lost")
+        if not self.retry:
+            logger.error("Websocket connection lost")
+
         self.retry = True
         self.connection_lost_callback()
 
@@ -412,109 +583,12 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         logger.debug("Received command: '{}'".format(command))
         self.command_callback(command)
 
-    def send_playlist_entry_error(self, playlist_entry_id, message):
-        """Tell the server that the current playlist entry cannot be played
-
-        Args:
-            playlist_entry_id (int): ID of the playlist entry. Must not be
-                `None`.
-            message (str): error message.
-
-        Raises:
-            ValueError: if `playlist_entry_id` is `None`.
+    def send_ready(self):
+        """Tell the server that the player is ready
         """
-        if playlist_entry_id is None:
-            raise ValueError("Entry with ID None cannot make error")
-
-        logger.debug("Telling the server that playlist entry {} "
-                     "cannot be played"
-                     .format(playlist_entry_id))
+        logger.debug("Telling the server that the player is ready")
         self.send({
-            'type': 'playlist_entry_error',
-            'data': {
-                'playlist_entry_id': playlist_entry_id,
-                'error_message': display_message(message, 255)
-            }
-        })
-
-    def send_playlist_entry_finished(self, playlist_entry_id):
-        """Tell the server that the current playlist entry is finished
-
-        Args:
-            playlist_entry_id (int): ID of the playlist entry. Must not be
-                `None`.
-
-        Raises:
-            ValueError: if `playlist_entry_id` is `None`.
-        """
-        if playlist_entry_id is None:
-            raise ValueError("Entry with ID None cannot be finished")
-
-        logger.debug("Telling the server that playlist entry {} is finished"
-                     .format(playlist_entry_id))
-        self.send({
-            'type': 'playlist_entry_finished',
-            'data': {
-                'playlist_entry_id': playlist_entry_id,
-            }
-        })
-
-        self.playlist_entry_id = None
-
-    def send_playlist_entry_started(self, playlist_entry_id):
-        """Tell the server that the current playlist entry has started
-
-        Args:
-            playlist_entry_id (int): ID of the playlist entry. Must not be
-                `None`.
-
-        Raises:
-            ValueError: if `playlist_entry_id` is `None`.
-        """
-        if playlist_entry_id is None:
-            raise ValueError("Entry with ID None cannot be started")
-
-        logger.debug("Telling the server that playlist entry {} has started"
-                     .format(playlist_entry_id))
-        self.send({
-            'type': 'playlist_entry_started',
-            'data': {
-                'playlist_entry_id': playlist_entry_id,
-            }
-        })
-
-    def send_status(self, playlist_entry_id, timing=0,
-                    paused=False, in_transition=False):
-        """Send the player status
-
-        Args:
-            playlist_entry_id (int): ID of the playlist entry currently played.
-                Can be `None` if the player is idle.
-            timing (int): position of the player (in ms).
-            paused (bool): true if the player is paused.
-        """
-        if playlist_entry_id is not None:
-            logger.debug(
-                "Sending status: in {} for playlist entry {} at {} s {}"
-                .format(
-                    'pause' if paused else 'play',
-                    playlist_entry_id,
-                    timing / 1000,
-                    '(in transition)' if in_transition else ''
-                )
-            )
-
-        else:
-            logger.debug("Sending status: player is idle")
-
-        self.send({
-            'type': 'status',
-            'data': {
-                'playlist_entry_id': playlist_entry_id,
-                'timing': int(timing / 1000),
-                'paused': paused,
-                'in_transition': in_transition
-            }
+            'type': 'ready'
         })
 
 

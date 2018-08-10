@@ -14,16 +14,19 @@ class DakaraManager:
         font_loader (font_loader.FontLoader): object for font
             installation/deinstallation.
         vlc_player (vlc_player.VlcPlayer): interface to VLC.
-        dakara_server (dakara_server.DakaraServerWebSocketConnection):
-            interface to the Dakara server.
+        dakara_server_http (dakara_server.DakaraServerHTTPConnection):
+            interface to the Dakara server for the HTTP protocol.
+        dakara_server_websocket
+            (dakara_server.DakaraServerWebSocketConnection): interface to the
+            Dakara server for the Websocket protocol.
     """
-    def __init__(self, font_loader, vlc_player, dakara_server):
-        """Initialization of the worker
-        """
+    def __init__(self, font_loader, vlc_player,
+                 dakara_server_http, dakara_server_websocket):
         # set modules up
         self.font_loader = font_loader
         self.vlc_player = vlc_player
-        self.dakara_server = dakara_server
+        self.dakara_server_http = dakara_server_http
+        self.dakara_server_websocket = dakara_server_websocket
 
         # set player callbacks
         self.vlc_player.set_song_end_callback(self.handle_song_end)
@@ -31,13 +34,13 @@ class DakaraManager:
         self.vlc_player.set_error_callback(self.handle_error)
 
         # set dakara server websocket callbacks
-        self.dakara_server.set_idle_callback(self.be_idle)
-        self.dakara_server.set_playlist_entry_callback(
+        self.dakara_server_websocket.set_idle_callback(self.be_idle)
+        self.dakara_server_websocket.set_playlist_entry_callback(
             self.play_playlist_entry)
-        self.dakara_server.set_command_callback(self.do_command)
-        self.dakara_server.set_status_request_callback(
+        self.dakara_server_websocket.set_command_callback(self.do_command)
+        self.dakara_server_websocket.set_status_request_callback(
             self.get_status)
-        self.dakara_server.set_connection_lost_callback(self.be_idle)
+        self.dakara_server_websocket.set_connection_lost_callback(self.be_idle)
 
     def handle_error(self, playlist_entry_id, message):
         """Callback when a VLC error occurs
@@ -47,8 +50,7 @@ class DakaraManager:
             message (str): text describing the error.
         """
         logger.error(message)
-        self.dakara_server.send_playlist_entry_error(playlist_entry_id,
-                                                     message)
+        self.dakara_server_http.create_player_error(playlist_entry_id, message)
 
     def handle_song_end(self, playlist_entry_id):
         """Callback when a song ends
@@ -56,7 +58,8 @@ class DakaraManager:
         Args:
             playlist_entry_id (int): playlist entry ID.
         """
-        self.dakara_server.send_playlist_entry_finished(playlist_entry_id)
+        self.dakara_server_http.update_playlist_entry_finished(
+            playlist_entry_id)
 
     def handle_song_start(self, playlist_entry_id):
         """Callback when a song starts
@@ -64,7 +67,8 @@ class DakaraManager:
         Args:
             playlist_entry_id (int): playlist entry ID.
         """
-        self.dakara_server.send_playlist_entry_started(playlist_entry_id)
+        self.dakara_server_http.update_playlist_entry_started(
+            playlist_entry_id)
 
     def play_playlist_entry(self, playlist_entry):
         """Play the requested playlist entry
@@ -105,7 +109,7 @@ class DakaraManager:
         timing = self.vlc_player.get_timing()
         paused = self.vlc_player.is_paused()
         in_transition = self.vlc_player.in_transition
-        self.dakara_server.send_status(
+        self.dakara_server_http.update_status(
             playing_id,
             timing,
             paused,
