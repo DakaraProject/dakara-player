@@ -64,6 +64,68 @@ class DakaraServerHTTPConnection:
             raise ValueError("Missing parameter in server config: {}"
                              .format(error)) from error
 
+    @authenticated
+    def send_request(self, method, *args, message_on_error="", **kwargs):
+        """Generic method to send requests to the server
+
+        It adds token header for authentication and takes care of errors.
+
+        Args:
+            method (str): name of the HTTP method to use.
+            message_on_error (str): message to display in logs in case of
+                error. It should describe what the request was about.
+
+        Raises:
+            ValueError: if the method is not supported.
+        """
+        # handle method function
+        if not hasattr(requests, method):
+            raise ValueError("Method {} not supported".format(method))
+
+        send_method = getattr(requests, method)
+
+        # handle message on error
+        if not message_on_error:
+            message_on_error = "Unable to request the server"
+
+        try:
+            response = send_method(*args,
+                                   headers=self.get_token_header(),
+                                   **kwargs)
+
+        except requests.exceptions.RequestException as error:
+            logger.error("{}, network error".format(message_on_error))
+            return
+
+        if response.ok:
+            return
+
+        logger.error(message_on_error)
+        logger.debug("Error {code}: {message}".format(
+            code=response.status_code,
+            message=display_message(response.text)
+        ))
+
+    def get(self, *args, **kwargs):
+        """Generic method to get data on server
+        """
+        self.send_request('get', *args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        """Generic method to post data on server
+        """
+        self.send_request('post', *args, **kwargs)
+
+    def put(self, *args, **kwargs):
+        """Generic method to put data on server
+        """
+        self.send_request('put', *args, **kwargs)
+
+    def patch(self, *args, **kwargs):
+        """Generic method to patch data on server
+        """
+        self.send_request('patch', *args, **kwargs)
+
     def authenticate(self):
         """Connect to the server
 
@@ -141,27 +203,14 @@ class DakaraServerHTTPConnection:
                      "cannot be played"
                      .format(playlist_entry_id))
 
-        try:
-            response = requests.post(
-                self.server_url + "playlist/player/errors/",
-                headers=self.get_token_header(),
-                data={
-                    'playlist_entry_id': playlist_entry_id,
-                    'error_message': display_message(message, 255)
-                }
-            )
-
-        except requests.exceptions.RequestException as error:
-            logger.error("Network error")
-
-        if response.ok:
-            return
-
-        logger.error("Unable to send player error to server")
-        logger.debug("Error {code}: {message}".format(
-            code=response.status_code,
-            message=display_message(response.text)
-        ))
+        self.post(
+            self.server_url + "playlist/player/errors/",
+            data={
+                'playlist_entry_id': playlist_entry_id,
+                'error_message': display_message(message, 255)
+            },
+            message_on_error="Unable to send player error to server"
+        )
 
     @authenticated
     def update_playlist_entry_finished(self, playlist_entry_id):
@@ -180,27 +229,15 @@ class DakaraServerHTTPConnection:
         logger.debug("Telling the server that playlist entry {} is finished"
                      .format(playlist_entry_id))
 
-        try:
-            response = requests.patch(
-                self.server_url + "playlist/player/status/",
-                headers=self.get_token_header(),
-                data={
-                    'playlist_entry_id': playlist_entry_id,
-                    'finished': True,
-                }
-            )
-
-        except requests.exceptions.RequestException as error:
-            logger.error("Network error")
-
-        if response.ok:
-            return
-
-        logger.error("Unable to report that a playlist entry has finished")
-        logger.debug("Error {code}: {message}".format(
-            code=response.status_code,
-            message=display_message(response.text)
-        ))
+        self.patch(
+            self.server_url + "playlist/player/status/",
+            data={
+                'playlist_entry_id': playlist_entry_id,
+                'finished': True,
+            },
+            message_on_error=("Unable to report that a playlist "
+                              "entry has finished")
+        )
 
     @authenticated
     def update_playlist_entry_started(self, playlist_entry_id):
@@ -219,27 +256,15 @@ class DakaraServerHTTPConnection:
         logger.debug("Telling the server that playlist entry {} has started"
                      .format(playlist_entry_id))
 
-        try:
-            response = requests.patch(
-                self.server_url + "playlist/player/status/",
-                headers=self.get_token_header(),
-                data={
-                    'playlist_entry_id': playlist_entry_id,
-                    'in_transition': False,
-                }
-            )
-
-        except requests.exceptions.RequestException as error:
-            logger.error("Network error")
-
-        if response.ok:
-            return
-
-        logger.error("Unable to report that a playlist entry has started")
-        logger.debug("Error {code}: {message}".format(
-            code=response.status_code,
-            message=display_message(response.text)
-        ))
+        self.patch(
+            self.server_url + "playlist/player/status/",
+            data={
+                'playlist_entry_id': playlist_entry_id,
+                'in_transition': False,
+            },
+            message_on_error=("Unable to report that a playlist "
+                              "entry has started")
+        )
 
     @authenticated
     def update_status(self, playlist_entry_id, timing=0,
@@ -266,29 +291,16 @@ class DakaraServerHTTPConnection:
         else:
             logger.debug("Sending status: idle")
 
-        try:
-            response = requests.put(
-                self.server_url + "playlist/player/status/",
-                headers=self.get_token_header(),
-                data={
-                    'playlist_entry_id': playlist_entry_id,
-                    'timing': int(timing / 1000),
-                    'paused': paused,
-                    'in_transition': in_transition
-                }
-            )
-
-        except requests.exceptions.RequestException as error:
-            logger.error("Network error")
-
-        if response.ok:
-            return
-
-        logger.error("Unable to report player status")
-        logger.debug("Error {code}: {message}".format(
-            code=response.status_code,
-            message=display_message(response.text)
-        ))
+        self.put(
+            self.server_url + "playlist/player/status/",
+            data={
+                'playlist_entry_id': playlist_entry_id,
+                'timing': int(timing / 1000),
+                'paused': paused,
+                'in_transition': in_transition
+            },
+            message_on_error="Unable to report player status"
+        )
 
 
 def connected(fun):

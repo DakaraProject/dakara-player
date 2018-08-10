@@ -71,6 +71,139 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         self.assertEqual(dakara_server.password, "player_password")
 
     @patch('dakara_player_vlc.dakara_server.requests.post')
+    def test_send_request_successful(self, mock_post):
+        """Test to send a request with the generic method
+        """
+        # set the token
+        self.dakara_server.token = self.token
+
+        # call the method
+        self.dakara_server.send_request(
+            'post',
+            self.url,
+            data={'content': 'test'},
+            message_on_error='error message'
+        )
+
+        # assert the call
+        mock_post.assert_called_with(
+            self.url,
+            headers={'Authorization': 'Token token value'},
+            data={'content': 'test'}
+        )
+
+    def test_send_request_error_method(self):
+        """Test that a wrong method name fails for a generic request
+        """
+        # set the token
+        self.dakara_server.token = self.token
+
+        # call the method
+        with self.assertRaises(ValueError):
+            self.dakara_server.send_request(
+                'invalid',
+                self.url,
+                data={'content': 'test'},
+                message_on_error='error message'
+            )
+
+    @patch('dakara_player_vlc.dakara_server.requests.post')
+    def test_send_request_error_network(self, mock_post):
+        """Test to send a request when there is a network error
+        """
+        # set the token
+        self.dakara_server.token = self.token
+
+        # mock the response of the server
+        mock_post.side_effect = RequestException()
+
+        # call the method
+        self.dakara_server.send_request(
+            'post',
+            self.url,
+            data={'content': 'test'},
+            message_on_error='error message'
+        )
+
+    @patch('dakara_player_vlc.dakara_server.requests.get')
+    def test_get(self, mock_get):
+        """Test the get method
+        """
+        # set the token
+        self.dakara_server.token = self.token
+
+        # call the method
+        self.dakara_server.get(
+            self.url,
+        )
+
+        # assert the call
+        mock_get.assert_called_with(
+            self.url,
+            headers=ANY,
+        )
+
+    @patch('dakara_player_vlc.dakara_server.requests.post')
+    def test_post(self, mock_post):
+        """Test the post method
+        """
+        # set the token
+        self.dakara_server.token = self.token
+
+        # call the method
+        self.dakara_server.post(
+            self.url,
+            data={'content': 'content'}
+        )
+
+        # assert the call
+        mock_post.assert_called_with(
+            self.url,
+            headers=ANY,
+            data={'content': 'content'}
+        )
+
+    @patch('dakara_player_vlc.dakara_server.requests.patch')
+    def test_patch(self, mock_patch):
+        """Test the patch method
+        """
+        # set the token
+        self.dakara_server.token = self.token
+
+        # call the method
+        self.dakara_server.patch(
+            self.url,
+            data={'content': 'content'}
+        )
+
+        # assert the call
+        mock_patch.assert_called_with(
+            self.url,
+            headers=ANY,
+            data={'content': 'content'}
+        )
+
+    @patch('dakara_player_vlc.dakara_server.requests.put')
+    def test_put(self, mock_put):
+        """Test the put method
+        """
+        # set the token
+        self.dakara_server.token = self.token
+
+        # call the method
+        self.dakara_server.put(
+            self.url,
+            data={'content': 'content'}
+        )
+
+        # assert the call
+        mock_put.assert_called_with(
+            self.url,
+            headers=ANY,
+            data={'content': 'content'}
+        )
+
+    @patch('dakara_player_vlc.dakara_server.requests.post')
     def test_authenticate_successful(self, mock_post):
         """Test a successful authentication with the server
         """
