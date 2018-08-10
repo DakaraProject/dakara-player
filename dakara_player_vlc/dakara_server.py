@@ -95,10 +95,10 @@ class DakaraServerHTTPConnection:
 
         except requests.exceptions.RequestException as error:
             logger.error("{}, network error".format(message_on_error))
-            return
+            return None
 
         if response.ok:
-            return
+            return response
 
         logger.error(message_on_error)
         logger.debug("Error {code}: {message}".format(
@@ -106,25 +106,27 @@ class DakaraServerHTTPConnection:
             message=display_message(response.text)
         ))
 
+        return None
+
     def get(self, *args, **kwargs):
         """Generic method to get data on server
         """
-        self.send_request('get', *args, **kwargs)
+        return self.send_request('get', *args, **kwargs)
 
     def post(self, *args, **kwargs):
         """Generic method to post data on server
         """
-        self.send_request('post', *args, **kwargs)
+        return self.send_request('post', *args, **kwargs)
 
     def put(self, *args, **kwargs):
         """Generic method to put data on server
         """
-        self.send_request('put', *args, **kwargs)
+        return self.send_request('put', *args, **kwargs)
 
     def patch(self, *args, **kwargs):
         """Generic method to patch data on server
         """
-        self.send_request('patch', *args, **kwargs)
+        return self.send_request('patch', *args, **kwargs)
 
     def authenticate(self):
         """Connect to the server

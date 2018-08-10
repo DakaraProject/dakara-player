@@ -132,8 +132,13 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         # set the token
         self.dakara_server.token = self.token
 
+        # mock the response
+        response = MagicMock()
+        response.data = "data"
+        mock_get.return_value = response
+
         # call the method
-        self.dakara_server.get(
+        response_obtained = self.dakara_server.get(
             self.url,
         )
 
@@ -142,6 +147,9 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
             self.url,
             headers=ANY,
         )
+
+        # assert the result
+        self.assertEqual(response_obtained.data, 'data')
 
     @patch('dakara_player_vlc.dakara_server.requests.post')
     def test_post(self, mock_post):
