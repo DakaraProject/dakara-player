@@ -77,8 +77,10 @@ class FontLoaderLinuxTestCase(TestCase):
         mock_isfile.assert_has_calls((
             call(os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
                               self.font_name)),
-            call(os.path.join(FontLoaderLinux.FONT_DIR_USER,
-                              self.font_name))
+            call(os.path.join(
+                os.path.expanduser(FontLoaderLinux.FONT_DIR_USER),
+                self.font_name)
+            )
         ))
 
     @patch('dakara_player_vlc.font_loader.os.symlink')
@@ -102,12 +104,14 @@ class FontLoaderLinuxTestCase(TestCase):
         mock_isfile.assert_has_calls((
             call(os.path.join(FontLoaderLinux.FONT_DIR_SYSTEM,
                               self.font_name)),
-            call(os.path.join(FontLoaderLinux.FONT_DIR_USER,
-                              self.font_name))
+            call(os.path.join(
+                os.path.expanduser(FontLoaderLinux.FONT_DIR_USER),
+                self.font_name)
+            )
         ))
 
         font_file_target_path = os.path.join(
-            FontLoaderLinux.FONT_DIR_USER,
+            os.path.expanduser(FontLoaderLinux.FONT_DIR_USER),
             self.font_name
         )
 
@@ -167,7 +171,8 @@ class FontLoaderLinuxTestCase(TestCase):
         self.font_loader.load()
 
         # call assertions
-        mock_mkdir.assert_called_once_with(FontLoaderLinux.FONT_DIR_USER)
+        mock_mkdir.assert_called_once_with(os.path.expanduser(
+            FontLoaderLinux.FONT_DIR_USER))
         mock_get_all_fonts.assert_called_once_with()
 
         # post assertions

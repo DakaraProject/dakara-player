@@ -62,7 +62,7 @@ class FontLoaderLinux(FontLoader):
     """
     GREETINGS = "Font loader for Linux selected"
     FONT_DIR_SYSTEM = "/usr/share/fonts"
-    FONT_DIR_USER = os.path.join(os.environ.get('HOME') or '', ".fonts")
+    FONT_DIR_USER = "~/.fonts"
 
     def __init__(self):
         # call parent constructor
@@ -76,7 +76,7 @@ class FontLoaderLinux(FontLoader):
         """
         # ensure that the user font directory exists
         try:
-            os.mkdir(self.FONT_DIR_USER)
+            os.mkdir(os.path.expanduser(self.FONT_DIR_USER))
 
         except OSError:
             pass
@@ -120,7 +120,8 @@ class FontLoaderLinux(FontLoader):
                 continue
 
             # check if the font is installed at user level
-            font_file_user_path = os.path.join(self.FONT_DIR_USER,
+            font_dir_user = os.path.expanduser(self.FONT_DIR_USER)
+            font_file_user_path = os.path.join(font_dir_user,
                                                font_file_name)
 
             if os.path.isfile(font_file_user_path) or \
@@ -134,7 +135,7 @@ class FontLoaderLinux(FontLoader):
 
             # then, if the font is not installed, install it
             font_file_target_path = os.path.join(
-                self.FONT_DIR_USER,
+                font_dir_user,
                 font_file_name
             )
 
