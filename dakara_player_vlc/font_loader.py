@@ -62,11 +62,12 @@ class FontLoaderLinux(FontLoader):
     """
     GREETINGS = "Font loader for Linux selected"
     FONT_DIR_SYSTEM = "/usr/share/fonts"
-    FONT_DIR_USER = os.path.join(os.environ['HOME'], ".fonts")
 
     def __init__(self):
         # call parent constructor
         super().__init__()
+
+        self.FONT_DIR_USER = os.path.join(os.environ['HOME'], ".fonts")
 
         # create list of fonts
         self.fonts_loaded = []
