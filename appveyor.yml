@@ -11,7 +11,7 @@ init:
 
 install:
   - "curl.exe -fsS -o vlc.msi http://download.videolan.org/pub/videolan/vlc/last/win64/vlc-3.0.3-win64.msi"
-  - "./vlc.msi"
+  - "msiexec.exe /i vlc.msi /quiet"
   - "%PYTHON%/Scripts/pip.exe install -r requirements.txt"
 
 test_script:
