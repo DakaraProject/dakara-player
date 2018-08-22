@@ -15,4 +15,4 @@ install:
 
 test_script:
   - "%PYTHON%/python.exe ./tests.py -v"
-  - "flake8.exe"
+  - "%PYTHON%/Scripts/flake8.exe"
