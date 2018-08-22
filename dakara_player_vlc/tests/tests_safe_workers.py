@@ -1,4 +1,4 @@
-from unittest import TestCase, skipIf
+from unittest import TestCase
 from threading import Event, Timer, Thread
 from queue import Queue
 from contextlib import contextmanager
@@ -463,7 +463,6 @@ class RunnerTestCase(BaseTestCase):
         # create class to test
         self.runner = Runner()
 
-    @skipIf(sys.platform.startswith("win"), "Skipped on Windows for now")
     def test_run_interrupt(self):
         """Test a run with an interruption by Ctrl+C
 
@@ -477,14 +476,20 @@ class RunnerTestCase(BaseTestCase):
         ready, WorkerReady = self.get_worker_ready()
 
         # prepare the sending of SIGINT to simulate a Ctrl+C
-        def send_sigint():
-            """Simulate the Ctrl+C (SIGINT signal)
+        def send_ctrl_c():
+            """Simulate the Ctrl+C
+
+            The signal is SIGINT on *NIX and  CTRL_C_EVENT on Windows.
             """
             pid = os.getpid()
             ready.wait()
-            os.kill(pid, signal.SIGINT)
+            if sys.platform.startswith('win'):
+                os.kill(pid, signal.CTRL_C_EVENT)
 
-        kill_thread = Thread(target=send_sigint)
+            else:
+                os.kill(pid, signal.SIGINT)
+
+        kill_thread = Thread(target=send_ctrl_c)
         kill_thread.start()
 
         # call the method
