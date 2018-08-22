@@ -1,10 +1,11 @@
-from unittest import TestCase
+from unittest import TestCase, skipIf
 from threading import Event, Timer, Thread
 from queue import Queue
 from contextlib import contextmanager
 from time import sleep
 import signal
 import os
+import sys
 
 from dakara_player_vlc.safe_workers import (
     SafeThread,
@@ -462,6 +463,7 @@ class RunnerTestCase(BaseTestCase):
         # create class to test
         self.runner = Runner()
 
+    @skipIf(sys.platform.startswith("win"))
     def test_run_interrupt(self):
         """Test a run with an interruption by Ctrl+C
 
