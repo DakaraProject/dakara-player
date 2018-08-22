@@ -10,6 +10,8 @@ init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
 
 install:
+  - "curl.exe -fsS -o vlc.msi http://download.videolan.org/pub/videolan/vlc/last/win64/vlc-3.0.3-win64.msi"
+  - "./vlc.msi"
   - "%PYTHON%/Scripts/pip.exe install -r requirements.txt"
 
 test_script:
