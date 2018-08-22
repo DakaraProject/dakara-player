@@ -5,6 +5,7 @@ from threading import Timer
 from pkg_resources import parse_version
 
 import vlc
+from path import Path
 
 from dakara_player_vlc.version import __version__
 from dakara_player_vlc.safe_workers import Worker
@@ -454,4 +455,4 @@ def mrl_to_path(file_mrl):
         file_mrl (str): path to the resource with MRL format.
     """
     file_mrl_parsed = urllib.parse.urlparse(file_mrl)
-    return urllib.parse.unquote(file_mrl_parsed.path)
+    return Path(urllib.parse.unquote(file_mrl_parsed.path))
