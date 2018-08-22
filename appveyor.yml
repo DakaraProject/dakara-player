@@ -10,7 +10,10 @@ init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
 
 install:
-  - sh: "curl -fsS -o vlc.msi http://download.videolan.org/pub/videolan/vlc/last/win64/$(curl -fsS http://download.videolan.org/videolan/vlc/last/win64/ | grep -o -m 1 'vlc-[0-9]*.[0-9]*.[0-9]*-win64.msi' | uniq)"
+  - sh: >-
+      vlc_version=$(curl -fsS http://download.videolan.org/videolan/vlc/last/win64/ | grep -o -m 1 'vlc-[0-9]*.[0-9]*.[0-9]*-win64.msi' | uniq)
+
+      curl -fsS -o vlc.msi http://download.videolan.org/pub/videolan/vlc/last/win64/$vlc_version
   - "msiexec.exe /i vlc.msi /quiet"
   - "%PYTHON%/Scripts/pip.exe install -r requirements.txt"
 
