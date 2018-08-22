@@ -7,10 +7,10 @@ environment:
       PYTHON_ARCH: "64"
 
 init:
-  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+  - "echo %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
 
 install:
-  - cinst vlc
+  - "cinst vlc"
   - "%PYTHON%/Scripts/pip.exe install -r requirements.txt"
 
 test_script:
