@@ -463,7 +463,7 @@ class RunnerTestCase(BaseTestCase):
         # create class to test
         self.runner = Runner()
 
-    @skipIf(sys.platform.startswith("win"))
+    @skipIf(sys.platform.startswith("win"), "Skipped on Windows for now")
     def test_run_interrupt(self):
         """Test a run with an interruption by Ctrl+C
 
