@@ -89,7 +89,7 @@ class GetFileTestCase(TestCase):
         # assert the result
         self.assertEqual(
             result,
-            MODULE_PATH / Path("resources/font-awesome.ini")
+            MODULE_PATH / Path("resources/font-awesome.ini").normpath()
         )
 
 
@@ -167,7 +167,7 @@ class GetBackgroundTestCase(TestCase):
         # assert the result
         self.assertEqual(
             result,
-            MODULE_PATH / Path("resources/backgrounds/idle.png")
+            MODULE_PATH / Path("resources/backgrounds/idle.png").normpath()
         )
 
 
@@ -184,7 +184,7 @@ class GetTestFixtureTestCase(TestCase):
         # assert the result
         self.assertEqual(
             result,
-            MODULE_PATH / Path("resources/tests/song.ass")
+            MODULE_PATH / Path("resources/tests/song.ass").normpath()
         )
 
 
@@ -201,7 +201,7 @@ class GetTemplateTestCase(TestCase):
         # assert the result
         self.assertEqual(
             result,
-            MODULE_PATH / Path("resources/templates/idle.ass")
+            MODULE_PATH / Path("resources/templates/idle.ass").normpath()
         )
 
 
@@ -239,6 +239,7 @@ class GetAllFontsTestCase(TestCase):
 
         # assert the result
         self.assertIn(
-            MODULE_PATH / Path("resources/fonts/fontawesome-webfont.ttf"),
+            MODULE_PATH / Path(
+                "resources/fonts/fontawesome-webfont.ttf").normpath(),
             result
         )

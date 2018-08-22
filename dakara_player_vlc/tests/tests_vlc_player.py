@@ -385,5 +385,9 @@ class MrlToPathTestCase(TestCase):
     def test(self):
         """Test to call the function with various arguments
         """
-        self.assertEqual(mrl_to_path('file:///a/b/c'), Path('/a/b/c'))
-        self.assertEqual(mrl_to_path('file:///a/b%20b/c'), Path('/a/b b/c'))
+        self.assertEqual(mrl_to_path('file:///a/b/c'),
+                         Path('/a/b/c').normpath())
+        self.assertEqual(mrl_to_path('file:///a/b%20b/c'),
+                         Path('/a/b b/c').normpath())
+        self.assertEqual(mrl_to_path('file:///C:/a/b'),
+                         Path('C:/a/b').normpath())
