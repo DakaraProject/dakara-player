@@ -15,5 +15,5 @@ install:
 
 test_script:
   - ps: |
-        &$env:PYTHON\python.exe .\tests.py -v
+        & $env:PYTHON/python.exe ./tests.py -v
   - "%PYTHON%/Scripts/flake8.exe"
