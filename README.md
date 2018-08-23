@@ -18,6 +18,9 @@ Installation guidelines are provided over here:
 * Python3.5 or higher, for the magic to take place;
 * [VLC](https://www.videolan.org/vlc/), duh.
 
+For 64 bits operating systems, you must install the equivalent version of the requirements.
+Linux and Windows are supported.
+
 #### Virtual environment
 
 It is strongly recommended to run the Dakara VLC player within a virtual environment.
@@ -81,5 +84,5 @@ ln -s -f ../../hooks/pre-commit .git/hooks/pre-commit
 
 The code follows the [PEP8](https://www.python.org/dev/peps/pep-0008/) style guide.
 Quality of code is checked with [Flake8](https://pypi.org/project/flake8/).
-Additionnal checking can be manually performed with [Pylint](https://www.pylint.org/).
+Additional checking can be manually performed with [Pylint](https://www.pylint.org/).
 You can use [Autopep8](https://pypi.org/project/autopep8/) to automatically format the code according to the style guidelines.
