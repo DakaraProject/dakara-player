@@ -1,4 +1,4 @@
-coloredlogs==5.2
+coloredlogs==10.0
 flake8==3.5.0
 Jinja2==2.9.6
 path.py==11.0.1
