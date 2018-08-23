@@ -14,5 +14,5 @@ install:
   - "%PYTHON%/Scripts/pip.exe install -r requirements.txt"
 
 test_script:
-  - "%PYTHON/python.exe ./tests.py"
+  - "%PYTHON%/python.exe ./tests.py -v"
   - "%PYTHON%/Scripts/flake8.exe"
