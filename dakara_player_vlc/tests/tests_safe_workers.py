@@ -1,4 +1,4 @@
-from unittest import TestCase
+from unittest import TestCase, skipIf
 from threading import Event, Timer, Thread
 from queue import Queue
 from contextlib import contextmanager
@@ -463,6 +463,7 @@ class RunnerTestCase(BaseTestCase):
         # create class to test
         self.runner = Runner()
 
+    @skipIf(sys.platform.startswith('win'), "Disabled for Windows")
     def test_run_interrupt(self):
         """Test a run with an interruption by Ctrl+C
 
