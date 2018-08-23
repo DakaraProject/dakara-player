@@ -28,7 +28,7 @@ sed -i "/^## Unreleased$/a \\
 appveyor_file=appveyor.yml
 sed -i "s/^version: .*-{build}$/version: $version_number-{build}/" $appveyor_file
 
-git add $version_file $changelog_file
+git add $version_file $changelog_file $appveyor_file
 git commit -m "Version $version_number" --no-verify
 git tag $version_number
 
