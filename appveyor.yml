@@ -1,6 +1,7 @@
 build: false
 
 environment:
+    APPVEYOR_CI_ENV: 1
     matrix:
     - PYTHON: "C:\\Python35-x64"
       PYTHON_VERSION: "3.5.3"
@@ -14,6 +15,5 @@ install:
   - "%PYTHON%/Scripts/pip.exe install -r requirements.txt"
 
 test_script:
-  - ps: |
-        C:/Python35-x64/python.exe ./tests.py -v
+  - "%PYTHON%/python.exe ./tests.py -v"
   - "%PYTHON%/Scripts/flake8.exe"
