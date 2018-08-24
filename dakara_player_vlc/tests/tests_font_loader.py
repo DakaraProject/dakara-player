@@ -1,6 +1,7 @@
-from unittest import TestCase
+from unittest import TestCase, skipUnless
 from unittest.mock import patch, call
 import os
+import sys
 
 from dakara_player_vlc.font_loader import (
     FontLoaderLinux,
@@ -31,6 +32,7 @@ class GetFontLoaderClassTestCase(TestCase):
                 get_font_loader_class()
 
 
+@skipUnless(sys.platform.startswith('linux'), "Can be tested on Linux only")
 class FontLoaderLinuxTestCase(TestCase):
     """Test the Linux font loader
     """
