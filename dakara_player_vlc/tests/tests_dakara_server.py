@@ -309,7 +309,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         )
 
     @patch('dakara_player_vlc.dakara_server.requests.post')
-    def test_create_player_error_fail(self, mock_post):
+    def test_create_player_error_failed(self, mock_post):
         """Test to report an invalid error
         """
         # simulate authentication
@@ -322,28 +322,28 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         # assert the call
         mock_post.assert_not_called()
 
-    @patch('dakara_player_vlc.dakara_server.requests.patch')
-    def test_update_playlist_entry_finished_successful(self, mock_patch):
-        """Test to report that a playlist entry finished sucessfuly
+    @patch('dakara_player_vlc.dakara_server.requests.put')
+    def test_update_finished_successful(self, mock_put):
+        """Test to report that a playlist entry finished
         """
         # simulate authentication
         self.dakara_server.token = "Token"
 
         # call the method
-        self.dakara_server.update_playlist_entry_finished(42)
+        self.dakara_server.update_finished(42)
 
         # assert the call
-        mock_patch.assert_called_with(
+        mock_put.assert_called_with(
             'http://www.example.com/api/playlist/player/status/',
             headers=ANY,
             data={
+                'event': 'finished',
                 'playlist_entry_id': 42,
-                'finished': True,
             }
         )
 
-    @patch('dakara_player_vlc.dakara_server.requests.patch')
-    def test_send_playlist_entry_finished_fail(self, mock_patch):
+    @patch('dakara_player_vlc.dakara_server.requests.put')
+    def test_send_playlist_entry_finished_failed(self, mock_put):
         """Test to report that an invalid playlist entry finished
         """
         # simulate authentication
@@ -351,66 +351,182 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
         # call the method
         with self.assertRaises(ValueError):
-            self.dakara_server.update_playlist_entry_finished(None)
+            self.dakara_server.update_finished(None)
 
         # assert the call
-        mock_patch.assert_not_called()
-
-    @patch('dakara_player_vlc.dakara_server.requests.patch')
-    def test_update_playlist_entry_started_successful(self, mock_patch):
-        """Test to report that a playlist entry started sucessfuly
-        """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
-        # call the method
-        self.dakara_server.update_playlist_entry_started(42)
-
-        # assert the call
-        mock_patch.assert_called_with(
-            'http://www.example.com/api/playlist/player/status/',
-            headers=ANY,
-            data={
-                'playlist_entry_id': 42,
-                'in_transition': False,
-            }
-        )
-
-    @patch('dakara_player_vlc.dakara_server.requests.patch')
-    def test_update_playlist_entry_started_fail(self, mock_patch):
-        """Test to report that an invalid playlist entry started
-        """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
-        # call the method
-        with self.assertRaises(ValueError):
-            self.dakara_server.update_playlist_entry_started(None)
-
-        # assert the call
-        mock_patch.assert_not_called()
+        mock_put.assert_not_called()
 
     @patch('dakara_player_vlc.dakara_server.requests.put')
-    def test_update_status(self, mock_put):
-        """Test to report the current player status
+    def test_update_started_transition_successful(self, mock_put):
+        """Test to report that a playlist entry transition started
         """
         # simulate authentication
         self.dakara_server.token = "Token"
 
         # call the method
-        self.dakara_server.update_status(42, 10000, True, False)
+        self.dakara_server.update_started_transition(42)
 
         # assert the call
         mock_put.assert_called_with(
             'http://www.example.com/api/playlist/player/status/',
             headers=ANY,
             data={
+                'event': 'started_transition',
                 'playlist_entry_id': 42,
-                'timing': 10,
-                'paused': True,
-                'in_transition': False,
             }
         )
+
+    @patch('dakara_player_vlc.dakara_server.requests.put')
+    def test_update_playlist_entry_started_failed(self, mock_put):
+        """Test to report that an invalid playlist entry transition started
+        """
+        # simulate authentication
+        self.dakara_server.token = "Token"
+
+        # call the method
+        with self.assertRaises(ValueError):
+            self.dakara_server.update_started_transition(None)
+
+        # assert the call
+        mock_put.assert_not_called()
+
+    @patch('dakara_player_vlc.dakara_server.requests.put')
+    def test_update_started_song_successful(self, mock_put):
+        """Test to report that a playlist entry song started
+        """
+        # simulate authentication
+        self.dakara_server.token = "Token"
+
+        # call the method
+        self.dakara_server.update_started_song(42)
+
+        # assert the call
+        mock_put.assert_called_with(
+            'http://www.example.com/api/playlist/player/status/',
+            headers=ANY,
+            data={
+                'event': 'started_song',
+                'playlist_entry_id': 42,
+            }
+        )
+
+    @patch('dakara_player_vlc.dakara_server.requests.put')
+    def test_update_started_song_failed(self, mock_put):
+        """Test to report that an invalid playlist entry song started
+        """
+        # simulate authentication
+        self.dakara_server.token = "Token"
+
+        # call the method
+        with self.assertRaises(ValueError):
+            self.dakara_server.update_started_song(None)
+
+        # assert the call
+        mock_put.assert_not_called()
+
+    @patch('dakara_player_vlc.dakara_server.requests.put')
+    def test_update_could_not_play_successful(self, mock_put):
+        """Test to report that a playlist entry could not be played
+        """
+        # simulate authentication
+        self.dakara_server.token = "Token"
+
+        # call the method
+        self.dakara_server.update_could_not_play(42)
+
+        # assert the call
+        mock_put.assert_called_with(
+            'http://www.example.com/api/playlist/player/status/',
+            headers=ANY,
+            data={
+                'event': 'could_not_play',
+                'playlist_entry_id': 42,
+            }
+        )
+
+    @patch('dakara_player_vlc.dakara_server.requests.put')
+    def test_update_could_not_play_failed(self, mock_put):
+        """Test to report that an invalid playlist entry could not be played
+        """
+        # simulate authentication
+        self.dakara_server.token = "Token"
+
+        # call the method
+        with self.assertRaises(ValueError):
+            self.dakara_server.update_could_not_play(None)
+
+        # assert the call
+        mock_put.assert_not_called()
+
+    @patch('dakara_player_vlc.dakara_server.requests.put')
+    def test_update_paused_successful(self, mock_put):
+        """Test to report that the player paused
+        """
+        # simulate authentication
+        self.dakara_server.token = "Token"
+
+        # call the method
+        self.dakara_server.update_paused(42, 424242)
+
+        # assert the call
+        mock_put.assert_called_with(
+            'http://www.example.com/api/playlist/player/status/',
+            headers=ANY,
+            data={
+                'event': 'paused',
+                'playlist_entry_id': 42,
+                'timing': 424242,
+            }
+        )
+
+    @patch('dakara_player_vlc.dakara_server.requests.put')
+    def test_update_paused_failed(self, mock_put):
+        """Test to report that the player paused with incorrect entry
+        """
+        # simulate authentication
+        self.dakara_server.token = "Token"
+
+        # call the method
+        with self.assertRaises(ValueError):
+            self.dakara_server.update_paused(None, 424242)
+
+        # assert the call
+        mock_put.assert_not_called()
+
+    @patch('dakara_player_vlc.dakara_server.requests.put')
+    def test_update_resumed_successful(self, mock_put):
+        """Test to report that the player resumed playing
+        """
+        # simulate authentication
+        self.dakara_server.token = "Token"
+
+        # call the method
+        self.dakara_server.update_resumed(42, 424242)
+
+        # assert the call
+        mock_put.assert_called_with(
+            'http://www.example.com/api/playlist/player/status/',
+            headers=ANY,
+            data={
+                'event': 'resumed',
+                'playlist_entry_id': 42,
+                'timing': 424242,
+            }
+        )
+
+    @patch('dakara_player_vlc.dakara_server.requests.put')
+    def test_update_resumed_failed(self, mock_put):
+        """Test to report that the player resumed playing with incorrect entry
+        """
+        # simulate authentication
+        self.dakara_server.token = "Token"
+
+        # call the method
+        with self.assertRaises(ValueError):
+            self.dakara_server.update_resumed(None, 424242)
+
+        # assert the call
+        mock_put.assert_not_called()
 
 
 class AuthenticatedTestCase(TestCase):
@@ -874,8 +990,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         def dummy_function():
             pass
 
-        for name in ('idle', 'playlist_entry', 'command', 'status_request',
-                     'connection_lost'):
+        for name in ('idle', 'playlist_entry', 'command', 'connection_lost'):
             method = getattr(self.dakara_server, "{}_callback"
                              .format(name))
             set_method = getattr(self.dakara_server, "set_{}_callback"
@@ -917,18 +1032,6 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
 
         # assert the call
         self.dakara_server.playlist_entry_callback.assert_called_with(content)
-
-    def test_receive_status_request(self):
-        """Test the receive status request event method
-        """
-        # mock the call
-        self.dakara_server.status_request_callback = MagicMock()
-
-        # call the method
-        self.dakara_server.receive_status_request({})
-
-        # assert the call
-        self.dakara_server.status_request_callback.assert_called_with()
 
     def test_receive_command(self):
         """Test the receive command event method

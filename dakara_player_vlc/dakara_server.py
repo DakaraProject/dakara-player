@@ -199,7 +199,7 @@ class DakaraServerHTTPConnection:
             ValueError: if `playlist_entry_id` is `None`.
         """
         if playlist_entry_id is None:
-            raise ValueError("Entry with ID None cannot make error")
+            raise ValueError("Entry with ID None is invalid")
 
         logger.debug("Telling the server that playlist entry {} "
                      "cannot be played"
@@ -215,7 +215,7 @@ class DakaraServerHTTPConnection:
         )
 
     @authenticated
-    def update_playlist_entry_finished(self, playlist_entry_id):
+    def update_finished(self, playlist_entry_id):
         """Report that a playlist entry has finished
 
         Args:
@@ -226,24 +226,24 @@ class DakaraServerHTTPConnection:
             ValueError: if `playlist_entry_id` is `None`.
         """
         if playlist_entry_id is None:
-            raise ValueError("Entry with ID None cannot be finished")
+            raise ValueError("Entry with ID None is invalid")
 
         logger.debug("Telling the server that playlist entry {} is finished"
                      .format(playlist_entry_id))
 
-        self.patch(
+        self.put(
             self.server_url + "playlist/player/status/",
             data={
+                'event': 'finished',
                 'playlist_entry_id': playlist_entry_id,
-                'finished': True,
             },
             message_on_error=("Unable to report that a playlist "
                               "entry has finished")
         )
 
     @authenticated
-    def update_playlist_entry_started(self, playlist_entry_id):
-        """Report that a playlist entry has started
+    def update_started_transition(self, playlist_entry_id):
+        """Report that the transition of a playlist entry has started
 
         Args:
             playlist_entry_id (int): ID of the playlist entry. Must not be
@@ -253,55 +253,131 @@ class DakaraServerHTTPConnection:
             ValueError: if `playlist_entry_id` is `None`.
         """
         if playlist_entry_id is None:
-            raise ValueError("Entry with ID None cannot be started")
+            raise ValueError("Entry with ID None is invalid")
 
-        logger.debug("Telling the server that playlist entry {} has started"
+        logger.debug("Telling the server that the transition of playlist "
+                     "entry {} has started"
                      .format(playlist_entry_id))
-
-        self.patch(
-            self.server_url + "playlist/player/status/",
-            data={
-                'playlist_entry_id': playlist_entry_id,
-                'in_transition': False,
-            },
-            message_on_error=("Unable to report that a playlist "
-                              "entry has started")
-        )
-
-    @authenticated
-    def update_status(self, playlist_entry_id, timing=0,
-                      paused=False, in_transition=False):
-        """Report the current player status
-
-        Args:
-            playlist_entry_id (int): ID of the playlist entry currently played.
-                Can be `None` if the player is idle.
-            timing (int): position of the player (in ms).
-            paused (bool): true if the player is paused.
-        """
-        if playlist_entry_id is not None:
-            logger.debug(
-                "Sending status: in {} for playlist entry {} at {} s {}"
-                .format(
-                    'pause' if paused else 'play',
-                    playlist_entry_id,
-                    timing / 1000,
-                    '(in transition)' if in_transition else ''
-                )
-            )
-
-        else:
-            logger.debug("Sending status: idle")
 
         self.put(
             self.server_url + "playlist/player/status/",
             data={
+                'event': 'started_transition',
                 'playlist_entry_id': playlist_entry_id,
-                'timing': int(timing / 1000),
-                'paused': paused,
-                'in_transition': in_transition
             },
-            message_on_error="Unable to report player status"
+            message_on_error=("Unable to report that the transition of "
+                              "a playlist entry has started")
+        )
+
+    @authenticated
+    def update_started_song(self, playlist_entry_id):
+        """Report that the song of a playlist entry has started
+
+        Args:
+            playlist_entry_id (int): ID of the playlist entry. Must not be
+                `None`.
+
+        Raises:
+            ValueError: if `playlist_entry_id` is `None`.
+        """
+        if playlist_entry_id is None:
+            raise ValueError("Entry with ID None is invalid")
+
+        logger.debug("Telling the server that the song of playlist "
+                     "entry {} has started"
+                     .format(playlist_entry_id))
+
+        self.put(
+            self.server_url + "playlist/player/status/",
+            data={
+                'event': 'started_song',
+                'playlist_entry_id': playlist_entry_id,
+            },
+            message_on_error=("Unable to report that the song of "
+                              "a playlist entry has started")
+        )
+
+    @authenticated
+    def update_could_not_play(self, playlist_entry_id):
+        """Report that a playlist entry could not play
+
+        Args:
+            playlist_entry_id (int): ID of the playlist entry. Must not be
+                `None`.
+
+        Raises:
+            ValueError: if `playlist_entry_id` is `None`.
+        """
+        if playlist_entry_id is None:
+            raise ValueError("Entry with ID None is invalid")
+
+        logger.debug("Telling the server that the playlist entry {}"
+                     "could not play"
+                     .format(playlist_entry_id))
+
+        self.put(
+            self.server_url + "playlist/player/status/",
+            data={
+                'event': 'could_not_play',
+                'playlist_entry_id': playlist_entry_id,
+            },
+            message_on_error=("Unable to report that playlist entry could "
+                              "not play")
+        )
+
+    @authenticated
+    def update_paused(self, playlist_entry_id, timing):
+        """Report that the player is paused
+
+        Args:
+            playlist_entry_id (int): ID of the playlist entry. Must not be
+                `None`.
+            timing (int): progress of the player in seconds.
+
+        Raises:
+            ValueError: if `playlist_entry_id` is `None`.
+        """
+        if playlist_entry_id is None:
+            raise ValueError("Entry with ID None is invalid")
+
+        logger.debug("Telling the server that the player is paused")
+
+        self.put(
+            self.server_url + "playlist/player/status/",
+            data={
+                'event': 'paused',
+                'playlist_entry_id': playlist_entry_id,
+                'timing': timing,
+            },
+            message_on_error=("Unable to report that the player is paused")
+        )
+
+    @authenticated
+    def update_resumed(self, playlist_entry_id, timing):
+        """Report that the player resumed playing
+
+        Args:
+            playlist_entry_id (int): ID of the playlist entry. Must not be
+                `None`.
+            timing (int): progress of the player in seconds.
+
+        Raises:
+            ValueError: if `playlist_entry_id` is `None`.
+        """
+        if playlist_entry_id is None:
+            raise ValueError("Entry with ID None is invalid")
+
+        logger.debug("Telling the server that the player resumed playing")
+
+        self.put(
+            self.server_url + "playlist/player/status/",
+            data={
+                'event': 'resumed',
+                'playlist_entry_id': playlist_entry_id,
+                'timing': timing,
+            },
+            message_on_error=("Unable to report that the player resumed "
+                              "playing")
         )
 
 
@@ -353,7 +429,6 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         self.idle_callback = lambda: None
         self.playlist_entry_callback = lambda playlist_entry: None
         self.command_callback = lambda command: None
-        self.status_request_callback = lambda: None
         self.connection_lost_callback = lambda: None
 
     def exit_worker(self, *args, **kwargs):
@@ -383,14 +458,6 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
             callback (function): function to assign.
         """
         self.command_callback = callback
-
-    def set_status_request_callback(self, callback):
-        """Assign callback when the status is requested
-
-        Args:
-            callback (function): function to assign.
-        """
-        self.status_request_callback = callback
 
     def set_connection_lost_callback(self, callback):
         """Assign callback when the connection is lost
@@ -577,15 +644,6 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         logger.debug("Received new playlist entry {} order"
                      .format(content['id']))
         self.playlist_entry_callback(content)
-
-    def receive_status_request(self, content):
-        """Receive status request
-
-        Args:
-            content (dict): dictionary of the event
-        """
-        logger.debug("Received status request")
-        self.status_request_callback()
 
     def receive_command(self, content):
         """Receive a command
