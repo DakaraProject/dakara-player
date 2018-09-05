@@ -453,11 +453,15 @@ class Runner:
     the custom init method.
 
     Attributes:
+        POLLING_INTERVAL (float): for Windows only, interval between two
+            attempts to wait for the stop event.
         stop (threading.Event): stop event that notify to stop the execution of
             the thread.
         errors (queue.Queue): error queue to communicate the exception of the
             thread.
     """
+    POLLING_INTERVAL = 0.5
+
     def __init__(self, *args, **kwargs):
         # create stop event
         self.stop = Event()
@@ -495,7 +499,23 @@ class Runner:
 
                 # wait for stop event
                 logger.debug("Waiting for stop event")
-                self.stop.wait()
+
+                # We have to use a different code for Windows because the
+                # Ctrl+C event will not be handled during `self.stop.wait()`.
+                # This method is blocking for Windows, not for Linux, which is
+                # due to the way Ctrl+C is differently handled by the two OSs.
+                # For Windows, a quick and dirty solution consists in polling
+                # the `self.stop.wait()` with a timeout argument, so the call
+                # is non-permanently blocking.
+                # More resources on this:
+                # https://mail.python.org/pipermail/python-dev/2017-August/148800.html
+                # https://stackoverflow.com/a/51954792/4584444
+                if sys.platform.startswith("win"):
+                    while not self.stop.is_set():
+                        self.stop.wait(self.POLLING_INTERVAL)
+
+                else:
+                    self.stop.wait()
 
         # stop on Ctrl+C
         except KeyboardInterrupt:

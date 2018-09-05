@@ -4,6 +4,7 @@ from threading import Event
 from queue import Queue
 
 from vlc import State, EventType
+from path import Path
 
 from dakara_player_vlc.version import __version__ as dakara_player_vlc_version
 from dakara_player_vlc.vlc_player import (
@@ -384,5 +385,9 @@ class MrlToPathTestCase(TestCase):
     def test(self):
         """Test to call the function with various arguments
         """
-        self.assertEqual(mrl_to_path('file:///a/b/c'), '/a/b/c')
-        self.assertEqual(mrl_to_path('file:///a/b%20b/c'), '/a/b b/c')
+        self.assertEqual(mrl_to_path('file:///a/b/c'),
+                         Path('/a/b/c').normpath())
+        self.assertEqual(mrl_to_path('file:///a/b%20b/c'),
+                         Path('/a/b b/c').normpath())
+        self.assertEqual(mrl_to_path('file:///C:/a/b'),
+                         Path('C:/a/b').normpath())

@@ -1,6 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch, ANY, call
-import os
+
+from path import Path
 
 from dakara_player_vlc.resources_manager import (
     resource_listdir,
@@ -13,10 +14,7 @@ from dakara_player_vlc.resources_manager import (
 )
 
 
-MODULE_PATH = os.path.realpath(os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    os.pardir
-))
+MODULE_PATH = Path(__file__).abspath().parent.parent
 
 
 class ResourceListdirTestCase(TestCase):
@@ -89,10 +87,10 @@ class GetFileTestCase(TestCase):
         result = get_file('font-awesome.ini')
 
         # assert the result
-        self.assertEqual(result, os.path.join(
-            MODULE_PATH,
-            "resources/font-awesome.ini"
-        ))
+        self.assertEqual(
+            result,
+            MODULE_PATH / Path("resources/font-awesome.ini").normpath()
+        )
 
 
 class GenerateGetResourceTestCase(TestCase):
@@ -156,7 +154,7 @@ class GenerateGetResourceTestCase(TestCase):
         mock_resource_filename.assert_not_called()
 
 
-class GetBacgkroundTestCase(TestCase):
+class GetBackgroundTestCase(TestCase):
     """Test the `get_background` function
     """
 
@@ -167,10 +165,10 @@ class GetBacgkroundTestCase(TestCase):
         result = get_background('idle.png')
 
         # assert the result
-        self.assertEqual(result, os.path.join(
-            MODULE_PATH,
-            "resources/backgrounds/idle.png"
-        ))
+        self.assertEqual(
+            result,
+            MODULE_PATH / Path("resources/backgrounds/idle.png").normpath()
+        )
 
 
 class GetTestFixtureTestCase(TestCase):
@@ -184,10 +182,10 @@ class GetTestFixtureTestCase(TestCase):
         result = get_test_material('song.ass')
 
         # assert the result
-        self.assertEqual(result, os.path.join(
-            MODULE_PATH,
-            "resources/tests/song.ass"
-        ))
+        self.assertEqual(
+            result,
+            MODULE_PATH / Path("resources/tests/song.ass").normpath()
+        )
 
 
 class GetTemplateTestCase(TestCase):
@@ -201,10 +199,10 @@ class GetTemplateTestCase(TestCase):
         result = get_template('idle.ass')
 
         # assert the result
-        self.assertEqual(result, os.path.join(
-            MODULE_PATH,
-            "resources/templates/idle.ass"
-        ))
+        self.assertEqual(
+            result,
+            MODULE_PATH / Path("resources/templates/idle.ass").normpath()
+        )
 
 
 class GetAllFontsTestCase(TestCase):
@@ -241,7 +239,7 @@ class GetAllFontsTestCase(TestCase):
 
         # assert the result
         self.assertIn(
-            os.path.join(MODULE_PATH,
-                         "resources/fonts/fontawesome-webfont.ttf"),
+            MODULE_PATH / Path(
+                "resources/fonts/fontawesome-webfont.ttf").normpath(),
             result
         )

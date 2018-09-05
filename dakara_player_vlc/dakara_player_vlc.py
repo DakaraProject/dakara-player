@@ -16,16 +16,7 @@ from dakara_player_vlc.font_loader import get_font_loader_class
 FontLoader = get_font_loader_class()
 
 
-LOGLEVEL = 'INFO'
-
-
 logger = logging.getLogger("dakara_player_vlc")
-
-
-coloredlogs.install(
-    fmt='[%(asctime)s] %(name)s %(levelname)s %(message)s',
-    level=LOGLEVEL
-)
 
 
 class DakaraPlayerVlc(Runner):
@@ -197,8 +188,13 @@ class DakaraWorker(WorkerSafeThread):
 
         Set a validated logging level from configuration.
         """
-        # select logging level
-        loglevel = self.config.get('loglevel', LOGLEVEL)
+        loglevel = self.config.get('loglevel')
+
+        # if no loglevel is provided, keep the default one (info)
+        if loglevel is None:
+            return
+
+        # otherwise check if it is valid and apply it
         loglevel_numeric = getattr(logging, loglevel.upper(), None)
         if not isinstance(loglevel_numeric, int):
             raise ValueError(
