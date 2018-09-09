@@ -5,6 +5,7 @@ from threading import Timer
 from pkg_resources import parse_version
 
 import vlc
+from path import Path
 
 from dakara_player_vlc.version import __version__
 from dakara_player_vlc.safe_workers import Worker
@@ -514,5 +515,9 @@ def mrl_to_path(file_mrl):
     Args:
         file_mrl (str): path to the resource with MRL format.
     """
-    file_mrl_parsed = urllib.parse.urlparse(file_mrl)
-    return urllib.parse.unquote(file_mrl_parsed.path)
+    path = urllib.parse.urlparse(file_mrl).path
+    # remove first '/' if a colon character is found like in '/C:/a/b'
+    if path[0] == '/' and path[2] == ':':
+        path = path[1:]
+
+    return Path(urllib.parse.unquote(path)).normpath()

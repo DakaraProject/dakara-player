@@ -1,10 +1,11 @@
-from unittest import TestCase
+from unittest import TestCase, skipIf
 from threading import Event, Timer, Thread
 from queue import Queue
 from contextlib import contextmanager
 from time import sleep
 import signal
 import os
+import sys
 
 from dakara_player_vlc.safe_workers import (
     safe,
@@ -580,6 +581,8 @@ class RunnerTestCase(BaseTestCase):
         # create class to test
         self.runner = Runner()
 
+    @skipIf(os.environ.get("APPVEYOR_CI_ENV", False),
+            "Disabled for Appveyor CI")
     def test_run_interrupt(self):
         """Test a run with an interruption by Ctrl+C
 
@@ -593,14 +596,20 @@ class RunnerTestCase(BaseTestCase):
         ready, WorkerReady = self.get_worker_ready()
 
         # prepare the sending of SIGINT to simulate a Ctrl+C
-        def send_sigint():
-            """Simulate the Ctrl+C (SIGINT signal)
+        def send_ctrl_c():
+            """Simulate the Ctrl+C
+
+            The signal is SIGINT on *NIX and  CTRL_C_EVENT on Windows.
             """
             pid = os.getpid()
             ready.wait()
-            os.kill(pid, signal.SIGINT)
+            if sys.platform.startswith('win'):
+                os.kill(pid, signal.CTRL_C_EVENT)
 
-        kill_thread = Thread(target=send_sigint)
+            else:
+                os.kill(pid, signal.SIGINT)
+
+        kill_thread = Thread(target=send_ctrl_c)
         kill_thread.start()
 
         # call the method
