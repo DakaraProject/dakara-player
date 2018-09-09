@@ -433,8 +433,8 @@ class VlcPlayer(Worker):
         """Player timing getter
 
         Returns:
-            int: current song timing if a song is playing or 0 when idle or
-                during transition screen.
+            int: current song timing in seconds if a song is playing or 0 when
+                idle or during transition screen.
         """
         if self.is_idle() or self.in_transition:
             return 0
@@ -445,7 +445,7 @@ class VlcPlayer(Worker):
         if timing == -1:
             timing = 0
 
-        return timing
+        return timing // 1000
 
     def is_paused(self):
         """Player pause status getter
