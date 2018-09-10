@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import MagicMock, NonCallableMagicMock, patch
+from unittest.mock import MagicMock, NonCallableMagicMock, patch, ANY
 from threading import Event
 from queue import Queue
 
@@ -424,6 +424,91 @@ class VlcPlayerTestCase(TestCase):
             self.playlist_entry['id'],
             timing  # on a slow computer, the timing may be inaccurate
         )
+
+        # close the player
+        self.vlc_player.stop_player()
+
+    def test_set_double_pause(self):
+        """Test that double pause and double resume have no effects
+        """
+        # mock the text generator
+        self.text_generator.create_transition_text.return_value = \
+            self.subtitle_path
+
+        # mock the callbacks
+        self.vlc_player.paused_callback = MagicMock()
+        self.vlc_player.resumed_callback = MagicMock()
+
+        # create an event for when the player starts to play
+        is_playing, callback_is_playing = self.get_event_and_callback()
+        self.vlc_player.event_manager.event_attach(
+            EventType.MediaPlayerPlaying,
+            callback_is_playing
+        )
+
+        # start the playlist entry
+        self.vlc_player.play_playlist_entry(self.playlist_entry)
+
+        # wait for the player to start actually playing the song
+        is_playing.wait()
+        is_playing.clear()
+        is_playing.wait()
+
+        # pre asserts
+        self.assertFalse(self.vlc_player.is_paused())
+        self.assertFalse(self.vlc_player.is_idle())
+
+        # call the method to pause the player
+        self.vlc_player.set_pause(True)
+
+        # assert the call
+        self.assertTrue(self.vlc_player.is_paused())
+
+        # assert the callback
+        self.vlc_player.paused_callback.assert_called_with(ANY, ANY)
+        self.vlc_player.resumed_callback.assert_not_called()
+
+        # reset the mocks
+        self.vlc_player.paused_callback.reset_mock()
+        self.vlc_player.resumed_callback.reset_mock()
+
+        # re-call the method to pause the player
+        self.vlc_player.set_pause(True)
+
+        # assert the call
+        self.assertTrue(self.vlc_player.is_paused())
+
+        # assert the callback
+        self.vlc_player.paused_callback.assert_not_called()
+        self.vlc_player.resumed_callback.assert_not_called()
+
+        # reset the mocks
+        self.vlc_player.paused_callback.reset_mock()
+        self.vlc_player.resumed_callback.reset_mock()
+
+        # call the method to resume the player
+        self.vlc_player.set_pause(False)
+
+        # assert the call
+        self.assertFalse(self.vlc_player.is_paused())
+
+        # assert the callback
+        self.vlc_player.paused_callback.assert_not_called()
+        self.vlc_player.resumed_callback.assert_called_with(ANY, ANY)
+
+        # reset the mocks
+        self.vlc_player.paused_callback.reset_mock()
+        self.vlc_player.resumed_callback.reset_mock()
+
+        # re-call the method to resume the player
+        self.vlc_player.set_pause(False)
+
+        # assert the call
+        self.assertFalse(self.vlc_player.is_paused())
+
+        # assert the callback
+        self.vlc_player.paused_callback.assert_not_called()
+        self.vlc_player.resumed_callback.assert_not_called()
 
         # close the player
         self.vlc_player.stop_player()

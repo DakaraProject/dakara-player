@@ -465,12 +465,20 @@ class VlcPlayer(Worker):
         """
         if not self.is_idle():
             if pause:
+                if self.is_paused():
+                    logger.debug("Player already in pause")
+                    return
+
                 logger.info("Setting pause")
                 self.player.pause()
                 logger.debug("Set pause")
                 self.paused_callback(self.playing_id, self.get_timing())
 
             else:
+                if not self.is_paused():
+                    logger.debug("Player already playing")
+                    return
+
                 logger.info("Resuming play")
                 self.player.play()
                 logger.debug("Resumed play")
