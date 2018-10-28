@@ -108,6 +108,12 @@ class TextGeneratorTestCase(TestCase):
         # test only the music icon
         self.assertEqual(self.text_generator.convert_icon('music'), '\uf001')
 
+    def test_convert_icon_none(self):
+        """Test the convertion of a null icon name is handled
+        """
+        # test only the music icon
+        self.assertEqual(self.text_generator.convert_icon(None), '')
+
     def test_convert_link_type_name(self):
         """Test the convertion of a link type to its long name
         """
