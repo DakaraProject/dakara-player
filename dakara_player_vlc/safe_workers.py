@@ -36,6 +36,35 @@ import logging
 logger = logging.getLogger("safe_workers")
 
 
+def safe(fun):
+    """Decorator to make the function safe
+
+    Any exception is caught and put in the error queue. This sets the stop
+    event as well.
+
+    The decorated function must be a method of a BaseSafeThread or a BaseWorker
+    class (or inherited).
+    """
+    def call(self, *args, **kwargs):
+        # check the target's class is a safe thread or a safe worker
+        if not isinstance(self, (BaseSafeThread, BaseWorker)):
+            raise ValueError(("The class '{}' of method '{}' is not a "
+                              "BaseSafeThread or a BaseWorker")
+                             .format(self.__class__.__name__, fun.__name__))
+
+        # try to run the target
+        try:
+            return fun(self, *args, **kwargs)
+
+        # if an error occurs, put it in the error queue and notify the stop
+        # event
+        except BaseException:
+            self.errors.put_nowait(sys.exc_info())
+            self.stop.set()
+
+    return call
+
+
 class BaseSafeThread:
     """Base class for thread executed within a Worker
 
@@ -71,21 +100,11 @@ class BaseSafeThread:
         # specific initialization
         super().__init__(*args, **kwargs)
 
+    @safe
     def run(self):
-        """Method to run as a thread.
-
-        Any exception is caught and put in the error queue. This sets the stop
-        event as well.
+        """Method to run as a thread safely
         """
-        # try to run the target
-        try:
-            return super().run()
-
-        # if an error occurs, put it in the error queue and notify the stop
-        # event
-        except BaseException:
-            self.errors.put_nowait(sys.exc_info())
-            self.stop.set()
+        return super().run()
 
 
 class SafeThread(BaseSafeThread, Thread):
@@ -150,18 +169,14 @@ class BaseWorker:
             program when set.
         errors (queue.Queue): error queue to communicate the exception to the
             main thread.
+
+    Args:
+        stop (threading.Event): stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): error queue to communicate the exception to the
+            main thread.
     """
     def __init__(self, stop, errors):
-        """Initialization
-
-        Assign the mandatory stop event and errors queue to the instance.
-
-        Args:
-            stop (threading.Event): stop event that notify to stop the entire
-                program when set.
-            errors (queue.Queue): error queue to communicate the exception to
-                the main thread.
-        """
         # associate the stop event
         assert isinstance(stop, Event), \
             "Stop attribute must be of type Event"
@@ -348,14 +363,14 @@ class WorkerSafeTimer(BaseWorker):
             self.__class__.__name__
         ))
 
+        # custom exit
+        self.exit_worker(*args, **kwargs)
+
         # cancel the timer, if the timer was waiting
         self.timer.cancel()
 
         # wait for termination, if the timer was running
         self.timer.join()
-
-        # custom exit
-        self.exit_worker(*args, **kwargs)
 
         logger.debug("Closed worker safe timer thread '{}' ({})".format(
             self.timer.getName(),
@@ -430,11 +445,11 @@ class WorkerSafeThread(BaseWorker):
             self.__class__.__name__
         ))
 
-        # wait for termination
-        self.thread.join()
-
         # custom exit action
         self.exit_worker(*args, **kwargs)
+
+        # wait for termination
+        self.thread.join()
 
         logger.debug("Closed worker safe thread '{}' ({})".format(
             self.thread.getName(),

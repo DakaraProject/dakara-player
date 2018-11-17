@@ -96,6 +96,9 @@ class TextGenerator:
         Returns:
             str: corresponding character.
         """
+        if name is None:
+            return ''
+
         return chr(int(self.icon_map.get(name, '0020'), 16))
 
     @staticmethod

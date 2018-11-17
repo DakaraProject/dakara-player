@@ -16,7 +16,7 @@ TRANSITION_DURATION = 2
 TRANSITION_BG_NAME = "transition.png"
 
 
-IDLE_DURATION = 60
+IDLE_DURATION = 300
 IDLE_BG_NAME = "idle.png"
 
 
@@ -101,8 +101,14 @@ class VlcPlayer(Worker):
             # option forces VLC to use the explicitally added files only
             self.media_parameters_text_screen.append("no-sub-autodetect-file")
 
-        # timer for VLC taking too long to stop
-        self.timer_stop_player_too_long = None
+        # set default callbacks
+        self.started_transition_callback = lambda playlist_entry_id: None
+        self.started_song_callback = lambda playlist_entry_id: None
+        self.could_not_play_callback = lambda playlist_entry_id: None
+        self.finished_callback = lambda playlist_entry_id: None
+        self.paused_callback = lambda playlist_entry_id, timing: None
+        self.resumed_callback = lambda playlist_entry_id, timing: None
+        self.error_callback = lambda playlist_entry_id, message: None
 
     def load_transition_bg_path(self, bg_directory_path, transition_bg_name):
         """Load transition backgound file path
@@ -170,26 +176,53 @@ class VlcPlayer(Worker):
 
         self.idle_bg_path = bg_path
 
-    def set_song_end_callback(self, callback):
-        """Assign callback for when player reachs the end of current song
+    def set_could_not_play_callback(self, callback):
+        """Assign callback for when a playlist entry could not play
+
+        Args:
+            callback (function): function to assign.
+        """
+        self.could_not_play_callback = callback
+
+    def set_started_transition_callback(self, callback):
+        """Assign callback for when a transition media starts
+
+        Args:
+            callback (function): function to assign.
+        """
+        self.started_transition_callback = callback
+
+    def set_started_song_callback(self, callback):
+        """Assign callback for when a song media starts
+
+        Args:
+            callback (function): function to assign.
+        """
+        self.started_song_callback = callback
+
+    def set_finished_callback(self, callback):
+        """Assign callback for when a playlist entry finishes
 
         Args:
             callback (function): function to assign.
         """
         self.event_manager.event_attach(
             vlc.EventType.MediaPlayerEndReached,
-            self.song_end_callback
+            self.end_reached_callback
         )
 
-        self.song_end_external_callback = callback
+        self.finished_callback = callback
 
-    def song_end_callback(self, event):
-        """Callback called when song end reached occurs
+    def end_reached_callback(self, event):
+        """Callback called when a media ends
 
-        This can happen when a transition screen ends, leading to playing the
-        actual song file, or when the song file ends, leading to calling the
-        callback set by `set_song_end_callback`. A new thread created in any
-        case.
+        This happens when:
+            - A transition screen ends, leading to playing the actual song;
+            - A song ends, leading to calling the callback set by
+                `set_finished_callback`;
+            - An idle screen ends, leading to reloop it.
+
+        A new thread is created in any case.
 
         Args:
             event (vlc.EventType): VLC event object.
@@ -202,36 +235,49 @@ class VlcPlayer(Worker):
             self.in_transition = False
             thread = self.create_thread(
                 target=self.play_media,
-                args=(self.media_pending, )
+                args=(self.media_pending,)
             )
+
+            thread.start()
 
             # get file path
             file_path = mrl_to_path(self.media_pending.get_mrl())
-            logger.info("Now playing \"{}\"".format(
+            logger.info("Now playing '{}'".format(
                 file_path
             ))
 
-        else:
-            # otherwise, the song has finished,
-            # so do what should be done
-            thread = self.create_thread(target=self.song_end_external_callback)
+            # call the callback for when a song starts
+            self.started_song_callback(self.playing_id)
 
-        thread.start()
+            return
+
+        if self.is_idle():
+            # if the idle screen has finished, restart it
+            thread = self.create_thread(
+                target=self.play_idle_screen
+            )
+
+            thread.start()
+            return
+
+        # otherwise, the song has finished,
+        # so call the right callback
+        self.finished_callback(self.playing_id)
 
     def set_error_callback(self, callback):
-        """Assign callback for when error occured
+        """Assign callback for when error occurs
 
         Args:
             callback (function): function to assign.
         """
         self.event_manager.event_attach(
             vlc.EventType.MediaPlayerEncounteredError,
-            self.error_callback
+            self.encountered_error_callback
         )
 
-        self.error_external_callback = callback
+        self.error_callback = callback
 
-    def error_callback(self, event):
+    def encountered_error_callback(self, event):
         """Callback called when error occurs
 
         Try to get error message and then call the callback set by
@@ -245,23 +291,34 @@ class VlcPlayer(Worker):
         # according to this post in the VLC forum
         # (https://forum.videolan.org/viewtopic.php?t=90720), it is very
         # unlikely that any error message will be caught this way
-        error_message = vlc.libvlc_errmsg() or \
-            "No details, consult player logs"
+        message = vlc.libvlc_errmsg() or "No details, consult player logs"
 
-        if isinstance(error_message, bytes):
-            error_message = error_message.decode()
+        if isinstance(message, bytes):
+            message = message.decode()
 
-        thread = self.create_thread(
-            target=self.error_external_callback,
-            args=(
-                self.playing_id,
-                error_message
-            )
-        )
+        logger.error(message)
+        self.finished_callback(self.playing_id)
+        self.error_callback(self.playing_id, message)
 
+        # reset current state
         self.playing_id = None
         self.in_transition = False
-        thread.start()
+
+    def set_paused_callback(self, callback):
+        """Assign callback for when the player is paused
+
+        Args:
+            callback (function): function to assign.
+        """
+        self.paused_callback = callback
+
+    def set_resumed_callback(self, callback):
+        """Assign callback for when the player is resumed
+
+        Args:
+            callback (function): function to assign.
+        """
+        self.resumed_callback = callback
 
     def play_media(self, media):
         """Play the given media
@@ -272,12 +329,12 @@ class VlcPlayer(Worker):
         self.player.set_media(media)
         self.player.play()
 
-    def play_song(self, playlist_entry):
-        """Play music specified
+    def play_playlist_entry(self, playlist_entry):
+        """Play the specified playlist entry
 
-        Prepare the media containing the music to play and store it. Add a
-        transition screen and play it first. When the transition screen ends,
-        the media will be played.
+        Prepare the media containing the song to play and store it. Add a
+        transition screen and play it first. When the transition ends, the song
+        will be played.
 
         Args:
             playlist_entry (dict): dictionnary containing at least `id` and
@@ -292,10 +349,11 @@ class VlcPlayer(Worker):
 
         # Check file exists
         if not os.path.isfile(file_path):
-            self.error_external_callback(
-                playlist_entry['id'],
-                "File not found \"{}\"".format(file_path)
-            )
+            message = "File not found '{}'".format(file_path)
+            logger.error(message)
+            self.could_not_play_callback(playlist_entry['id'])
+            self.error_callback(playlist_entry['id'], message)
+
             return
 
         # create the media
@@ -321,12 +379,13 @@ class VlcPlayer(Worker):
         self.in_transition = True
 
         self.play_media(media_transition)
-        logger.info("Playing transition for \"{}\"".format(file_path))
+        logger.info("Playing transition for '{}'".format(file_path))
+        self.started_transition_callback(playlist_entry['id'])
 
     def play_idle_screen(self):
         """Play idle screen
         """
-        # set idle status
+        # set idle state
         self.playing_id = None
         self.in_transition = False
 
@@ -374,8 +433,8 @@ class VlcPlayer(Worker):
         """Player timing getter
 
         Returns:
-            int: current song timing if a song is playing or 0 when idle or
-                during transition screen.
+            int: current song timing in seconds if a song is playing or 0 when
+                idle or during transition screen.
         """
         if self.is_idle() or self.in_transition:
             return 0
@@ -386,7 +445,7 @@ class VlcPlayer(Worker):
         if timing == -1:
             timing = 0
 
-        return timing
+        return timing // 1000
 
     def is_paused(self):
         """Player pause status getter
@@ -406,14 +465,24 @@ class VlcPlayer(Worker):
         """
         if not self.is_idle():
             if pause:
+                if self.is_paused():
+                    logger.debug("Player already in pause")
+                    return
+
                 logger.info("Setting pause")
                 self.player.pause()
                 logger.debug("Set pause")
+                self.paused_callback(self.playing_id, self.get_timing())
 
             else:
+                if not self.is_paused():
+                    logger.debug("Player already playing")
+                    return
+
                 logger.info("Resuming play")
                 self.player.play()
                 logger.debug("Resumed play")
+                self.resumed_callback(self.playing_id, self.get_timing())
 
     def stop_player(self):
         """Stop playing music
@@ -421,12 +490,16 @@ class VlcPlayer(Worker):
         logger.info("Stopping player")
 
         # send a warning within 3 seconds if VLC has not stopped already
-        self.timer_stop_player_too_long = Timer(
+        timer_stop_player_too_long = Timer(
             3, self.warn_stop_player_too_long
         )
 
-        self.timer_stop_player_too_long.start()
+        timer_stop_player_too_long.start()
         self.player.stop()
+
+        # clear the warning
+        timer_stop_player_too_long.cancel()
+
         logger.debug("Stopped player")
 
     @staticmethod
@@ -439,10 +512,6 @@ class VlcPlayer(Worker):
         """Exit the worker
         """
         self.stop_player()
-
-        # clear the warning message if any
-        if self.timer_stop_player_too_long:
-            self.timer_stop_player_too_long.cancel()
 
 
 def mrl_to_path(file_mrl):

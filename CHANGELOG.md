@@ -30,6 +30,10 @@
 
 ## Unreleased
 
+### Changed
+
+- In the config file, the `server.url` parameter is renamed `server.address` and contains the hostname of the server (without `http://` or `https://`). The encryption of the connection is obtained with the `server.ssl` parameter.
+
 ## 1.3.0 - 2018-10-07
 
 ### Changed

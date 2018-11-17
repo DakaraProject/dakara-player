@@ -107,17 +107,25 @@ class DakaraWorkerTestCase(TestCase):
     @patch('dakara_player_vlc.dakara_player_vlc.FontLoader')
     @patch('dakara_player_vlc.dakara_player_vlc.TextGenerator')
     @patch('dakara_player_vlc.dakara_player_vlc.VlcPlayer')
-    @patch('dakara_player_vlc.dakara_player_vlc.DakaraServer')
+    @patch('dakara_player_vlc.dakara_player_vlc.DakaraServerHTTPConnection')
+    @patch('dakara_player_vlc.dakara_player_vlc'
+           '.DakaraServerWebSocketConnection')
     @patch('dakara_player_vlc.dakara_player_vlc.DakaraManager')
-    def test_run(self, mock_dakara_manager_class, mock_dakara_server_class,
+    def test_run(self, mock_dakara_manager_class,
+                 mock_dakara_server_websocket_class,
+                 mock_dakara_server_http_class,
                  mock_vlc_player_class, mock_text_generator_class,
                  mock_font_loader_class, mock_temporary_directory_class):
         """Test a dummy run
         """
         # create mock instances
-        mock_dakara_manager = mock_dakara_manager_class.return_value\
-            .__enter__.return_value
-        mock_dakara_server = mock_dakara_server_class.return_value
+        mock_dakara_server_websocket = mock_dakara_server_websocket_class\
+            .return_value.__enter__.return_value
+        mock_dakara_server_http = mock_dakara_server_http_class.return_value
+        mock_dakara_server_http.get_token_header.return_value = 'token'
+        mock_vlc_player = mock_vlc_player_class.return_value.__enter__\
+            .return_value
+        mock_text_generator = mock_text_generator_class.return_value
         mock_font_loader = mock_font_loader_class.return_value\
             .__enter__.return_value
 
@@ -128,17 +136,22 @@ class DakaraWorkerTestCase(TestCase):
         self.dakara_worker.run()
 
         # assert the call
-        mock_temporary_directory_class.assert_called_with(suffix=ANY)
+        mock_temporary_directory_class.assert_called_with(suffix='.dakara')
         mock_font_loader_class.assert_called_with()
         mock_font_loader.load.assert_called_with()
         mock_text_generator_class.assert_called_with({}, ANY)
         mock_vlc_player_class.assert_called_with(self.stop, self.errors,
-                                                 self.config['player'], ANY)
-        mock_dakara_server_class.assert_called_with(self.config['server'])
-        mock_dakara_server.authenticate.assert_called_with()
-        mock_dakara_manager_class.assert_called_with(self.stop, self.errors,
-                                                     ANY, ANY, ANY)
-        mock_dakara_manager.timer.start.assert_called_with()
+                                                 self.config['player'],
+                                                 mock_text_generator)
+        mock_dakara_server_http_class.assert_called_with(self.config['server'])
+        mock_dakara_server_http.authenticate.assert_called_with()
+        mock_dakara_server_http.get_token_header.assert_called_with()
+        mock_dakara_server_websocket_class.assert_called_with(
+            self.stop, self.errors, self.config['server'], 'token')
+        mock_dakara_manager_class.assert_called_with(
+            mock_font_loader, mock_vlc_player,
+            mock_dakara_server_http, mock_dakara_server_websocket)
+        mock_dakara_server_websocket.timer.start.assert_called_with()
 
 
 class DakaraPlayerVlcTestCase(TestCase):

@@ -8,8 +8,11 @@ import os
 import sys
 
 from dakara_player_vlc.safe_workers import (
+    safe,
+    BaseSafeThread,
     SafeThread,
     SafeTimer,
+    BaseWorker,
     Worker,
     WorkerSafeThread,
     WorkerSafeTimer,
@@ -59,6 +62,120 @@ class BaseTestCase(TestCase):
             self.fail("{} raised".format(ExceptionClass.__name__))
 
 
+class SafeTestCase(BaseTestCase):
+    """Test the `safe` decorator
+    """
+    def create_classes(self):
+        """Create dummy classes
+        """
+        class Base:
+            @safe
+            def function_safe(self2):
+                self.function_safe()
+
+            @safe
+            def function_error(self2):
+                self.function_error()
+
+        class Thread(BaseSafeThread, Base):
+            pass
+
+        class Worker(BaseWorker, Base):
+            pass
+
+        class Other(Base):
+            pass
+
+        return Thread, Worker, Other
+
+    def test_worker_function_safe(self):
+        """Test a safe function of a worker
+
+        Test that a non-error function does not trigger any error, does not set
+        the stop event and does not put an error in the error queue.
+        """
+        # pre assertions
+        self.assertFalse(self.stop.is_set())
+        self.assertTrue(self.errors.empty())
+
+        # create instance
+        _, Worker, _ = self.create_classes()
+        worker = Worker(self.stop, self.errors)
+
+        # call the method
+        worker.function_safe()
+
+        # post assertions
+        self.assertFalse(self.stop.is_set())
+        self.assertTrue(self.errors.empty())
+
+    def test_worker_function_error(self):
+        """Test an error function of a worker
+
+        Test that an error function does not trigger any error, sets the stop
+        event and puts a TestError in the error queue.
+        """
+        # pre assertions
+        self.assertFalse(self.stop.is_set())
+        self.assertTrue(self.errors.empty())
+
+        # create instance
+        _, Worker, _ = self.create_classes()
+        worker = Worker(self.stop, self.errors)
+
+        # call the method
+        with self.assertNotRaises(TestError):
+            worker.function_error()
+
+        # post assertions
+        self.assertTrue(self.stop.is_set())
+        self.assertFalse(self.errors.empty())
+        _, error, _ = self.errors.get()
+        self.assertIsInstance(error, TestError)
+
+    def test_thread(self):
+        """Test a thread
+
+        Test that a non-error function does not trigger any error, does not set
+        the stop event and does not put an error in the error queue.
+        """
+        # pre assertions
+        self.assertFalse(self.stop.is_set())
+        self.assertTrue(self.errors.empty())
+
+        # create instance
+        Thread, _, _ = self.create_classes()
+        thread = Thread(self.stop, self.errors)
+
+        # call the method
+        thread.function_safe()
+
+        # post assertions
+        self.assertFalse(self.stop.is_set())
+        self.assertTrue(self.errors.empty())
+
+    def test_other(self):
+        """Test an other class
+
+        Test that the decorator raises an error, as the class is not supported.
+        """
+        # pre assertions
+        self.assertFalse(self.stop.is_set())
+        self.assertTrue(self.errors.empty())
+
+        # create instance
+        _, _, Other = self.create_classes()
+        other = Other()
+
+        # call the method
+        with self.assertRaises(ValueError):
+            other.function_safe()
+
+        # post assertions
+        self.assertFalse(self.stop.is_set())
+        self.assertTrue(self.errors.empty())
+
+
 class SafeThreadTestCase(BaseTestCase):
     """Test the SafeThread class
     """
@@ -74,8 +191,9 @@ class SafeThreadTestCase(BaseTestCase):
     def test_function_safe(self):
         """Test a safe function
 
-        Test that a non-error function does not trigger any error, does not set
-        the stop event and does not put an error in the error queue.
+        Test that a non-error function run as a thread does not trigger any
+        error, does not set the stop event and does not put an error in the
+        error queue.
         """
         # pre assertions
         self.assertFalse(self.stop.is_set())
@@ -95,8 +213,8 @@ class SafeThreadTestCase(BaseTestCase):
     def test_function_error(self):
         """Test an error function
 
-        Test that an error function does not trigger any error, sets the stop
-        event and puts a TestError in the error queue.
+        Test that an error function run as a thread does not trigger any error,
+        sets the stop event and puts a TestError in the error queue.
         """
         # pre assertions
         self.assertFalse(self.stop.is_set())

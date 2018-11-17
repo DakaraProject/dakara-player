@@ -5,3 +5,4 @@ path.py==11.0.1
 pyaml==17.12.1
 python-vlc==1.1.2
 requests==2.9.1
+websocket-client==0.48.0
