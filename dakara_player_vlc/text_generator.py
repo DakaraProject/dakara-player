@@ -20,10 +20,10 @@ ICON_MAP_FILE = "font-awesome.ini"
 
 
 LINK_TYPE_NAMES = {
-    'OP': "Opening",
-    'ED': "Ending",
-    'IN': "Insert song",
-    'IS': "Image song"
+    "OP": "Opening",
+    "ED": "Ending",
+    "IN": "Insert song",
+    "IS": "Image song",
 }
 
 
@@ -36,6 +36,7 @@ class TextGenerator:
     This class creates custom ASS files that are used for idle or transition
     screens. It uses Jinja to populate ASS templates with various informations.
     """
+
     def __init__(self, config, tempdir):
         self.config = config
         self.tempdir = tempdir
@@ -47,44 +48,36 @@ class TextGenerator:
         self.load_templates()
 
         # set text paths
-        self.transition_text_path = os.path.join(
-            self.tempdir,
-            TRANSITION_TEXT_NAME
-        )
+        self.transition_text_path = os.path.join(self.tempdir, TRANSITION_TEXT_NAME)
 
-        self.idle_text_path = os.path.join(
-            self.tempdir,
-            IDLE_TEXT_NAME
-        )
+        self.idle_text_path = os.path.join(self.tempdir, IDLE_TEXT_NAME)
 
     def load_templates(self):
         """Set up Jinja environment
         """
         # create Jinja2 environment
         self.environment = Environment(
-            loader=ChoiceLoader([
-                FileSystemLoader(self.config.get('directory', '')),
-                FileSystemLoader(PATH_TEMPLATES)
-            ])
+            loader=ChoiceLoader(
+                [
+                    FileSystemLoader(self.config.get("directory", "")),
+                    FileSystemLoader(PATH_TEMPLATES),
+                ]
+            )
         )
 
         # add filter for converting font icon name to character
-        self.environment.filters['icon'] = self.convert_icon
+        self.environment.filters["icon"] = self.convert_icon
 
         # add filter for work link type complete name
-        self.environment.filters['link_type_name'] = (
-            self.convert_link_type_name
-        )
+        self.environment.filters["link_type_name"] = self.convert_link_type_name
 
         # load templates
         self.load_transition_template(
-            self.config.get('transition_template_name',
-                            TRANSITION_TEMPLATE_NAME)
+            self.config.get("transition_template_name", TRANSITION_TEMPLATE_NAME)
         )
 
         self.load_idle_template(
-            self.config.get('idle_template_name',
-                            IDLE_TEMPLATE_NAME)
+            self.config.get("idle_template_name", IDLE_TEMPLATE_NAME)
         )
 
     def convert_icon(self, name):
@@ -97,9 +90,9 @@ class TextGenerator:
             str: corresponding character.
         """
         if name is None:
-            return ''
+            return ""
 
-        return chr(int(self.icon_map.get(name, '0020'), 16))
+        return chr(int(self.icon_map.get(name, "0020"), 16))
 
     @staticmethod
     def convert_link_type_name(link_type):
@@ -125,11 +118,10 @@ class TextGenerator:
         # using the template
         idle_text = self.idle_template.render(**info)
 
-        with open(self.idle_text_path, 'w', encoding='utf8') as file:
+        with open(self.idle_text_path, "w", encoding="utf8") as file:
             file.write(idle_text)
 
-        logger.debug("Create idle screen text file in '{}'".
-                     format(self.idle_text_path))
+        logger.debug("Create idle screen text file in '{}'".format(self.idle_text_path))
 
         return self.idle_text_path
 
@@ -145,11 +137,14 @@ class TextGenerator:
         """
         transition_text = self.transition_template.render(playlist_entry)
 
-        with open(self.transition_text_path, 'w', encoding='utf8') as file:
+        with open(self.transition_text_path, "w", encoding="utf8") as file:
             file.write(transition_text)
 
-        logger.debug("Create transition screen text file in '{}'".
-                     format(self.transition_text_path))
+        logger.debug(
+            "Create transition screen text file in '{}'".format(
+                self.transition_text_path
+            )
+        )
 
         return self.transition_text_path
 
@@ -160,7 +155,7 @@ class TextGenerator:
 
         icon_map = ConfigParser()
         icon_map.read(icon_map_path)
-        self.icon_map = icon_map['map']
+        self.icon_map = icon_map["map"]
 
     def load_transition_template(self, transition_template_name):
         """Load transition screen text template file
@@ -177,7 +172,8 @@ class TextGenerator:
             )
 
             self.transition_template = self.environment.get_template(
-                transition_template_name)
+                transition_template_name
+            )
 
             return
 
@@ -185,7 +181,8 @@ class TextGenerator:
             logger.debug("Loading default transition template file")
 
             self.transition_template = self.environment.get_template(
-                TRANSITION_TEMPLATE_NAME)
+                TRANSITION_TEMPLATE_NAME
+            )
 
             return
 
@@ -200,21 +197,17 @@ class TextGenerator:
 
         if idle_template_name in loader_custom.list_templates():
             logger.debug(
-                "Loading custom idle template file '{}'".format(
-                    idle_template_name
-                )
+                "Loading custom idle template file '{}'".format(idle_template_name)
             )
 
-            self.idle_template = self.environment.get_template(
-                idle_template_name)
+            self.idle_template = self.environment.get_template(idle_template_name)
 
             return
 
         if IDLE_TEMPLATE_NAME in loader_default.list_templates():
             logger.debug("Loading default idle template file")
 
-            self.idle_template = self.environment.get_template(
-                IDLE_TEMPLATE_NAME)
+            self.idle_template = self.environment.get_template(IDLE_TEMPLATE_NAME)
 
             return
 

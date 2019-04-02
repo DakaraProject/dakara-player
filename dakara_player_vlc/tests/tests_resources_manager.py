@@ -21,51 +21,48 @@ class ResourceListdirTestCase(TestCase):
     """Test the `resource_listdir` function
     """
 
-    @patch('dakara_player_vlc.resources_manager.resource_listdir_orig')
+    @patch("dakara_player_vlc.resources_manager.resource_listdir_orig")
     def test_no_dunderscore(self, mock_resource_listdir_orig):
         """Test the function does not output entries with dunderscore
         """
         # mock the call
-        mock_resource_listdir_orig.return_value = [
-            'aaaa.file',
-            '__init__.py'
-        ]
+        mock_resource_listdir_orig.return_value = ["aaaa.file", "__init__.py"]
 
         # call the function
-        result = resource_listdir('some path', '')
+        result = resource_listdir("some path", "")
 
         # assert the call
-        mock_resource_listdir_orig.assert_called_once_with('some path', '')
+        mock_resource_listdir_orig.assert_called_once_with("some path", "")
 
         # assert the result
-        self.assertListEqual(result, ['aaaa.file'])
+        self.assertListEqual(result, ["aaaa.file"])
 
 
 class GetFileTestCase(TestCase):
     """Test the `get_file` function
     """
 
-    @patch('dakara_player_vlc.resources_manager.resource_filename')
-    @patch('dakara_player_vlc.resources_manager.resource_exists')
+    @patch("dakara_player_vlc.resources_manager.resource_filename")
+    @patch("dakara_player_vlc.resources_manager.resource_exists")
     def test_success(self, mock_resource_exists, mock_resource_filename):
         """Test to get a file successfuly
         """
         # mock the call
         mock_resource_exists.return_value = True
-        mock_resource_filename.return_value = 'path to resource'
+        mock_resource_filename.return_value = "path to resource"
 
         # call the function
-        result = get_file('some resource')
+        result = get_file("some resource")
 
         # assert the call
-        mock_resource_exists.assert_called_once_with(ANY, 'some resource')
-        mock_resource_filename.assert_called_once_with(ANY, 'some resource')
+        mock_resource_exists.assert_called_once_with(ANY, "some resource")
+        mock_resource_filename.assert_called_once_with(ANY, "some resource")
 
         # assert the result
-        self.assertEqual(result, 'path to resource')
+        self.assertEqual(result, "path to resource")
 
-    @patch('dakara_player_vlc.resources_manager.resource_filename')
-    @patch('dakara_player_vlc.resources_manager.resource_exists')
+    @patch("dakara_player_vlc.resources_manager.resource_filename")
+    @patch("dakara_player_vlc.resources_manager.resource_exists")
     def test_fail(self, mock_resource_exists, mock_resource_filename):
         """Test to get a file that does not exist
         """
@@ -74,22 +71,21 @@ class GetFileTestCase(TestCase):
 
         # call the function
         with self.assertRaises(IOError):
-            get_file('some resource')
+            get_file("some resource")
 
         # assert the call
-        mock_resource_exists.assert_called_once_with(ANY, 'some resource')
+        mock_resource_exists.assert_called_once_with(ANY, "some resource")
         mock_resource_filename.assert_not_called()
 
     def test_real(self):
         """Test to access a real file
         """
         # call the function
-        result = get_file('font-awesome.ini')
+        result = get_file("font-awesome.ini")
 
         # assert the result
         self.assertEqual(
-            result,
-            MODULE_PATH / Path("resources/font-awesome.ini").normpath()
+            result, MODULE_PATH / Path("resources/font-awesome.ini").normpath()
         )
 
 
@@ -109,9 +105,7 @@ class GenerateGetResourceTestCase(TestCase):
 
         # set up resource getter
         self.get_resource = generate_get_resource(
-            "resources requirement",
-            [self.resource_name],
-            self.resource_type
+            "resources requirement", [self.resource_name], self.resource_type
         )
 
     def test_docstring(self):
@@ -119,7 +113,7 @@ class GenerateGetResourceTestCase(TestCase):
         """
         self.assertIsNotNone(self.get_resource.__doc__)
 
-    @patch('dakara_player_vlc.resources_manager.resource_filename')
+    @patch("dakara_player_vlc.resources_manager.resource_filename")
     def test_sucess(self, mock_resource_filename):
         """Test to get a resource successfuly
         """
@@ -135,7 +129,7 @@ class GenerateGetResourceTestCase(TestCase):
         # assert the result
         self.assertEqual(result, self.resource_path)
 
-    @patch('dakara_player_vlc.resources_manager.resource_filename')
+    @patch("dakara_player_vlc.resources_manager.resource_filename")
     def test_fail(self, mock_resource_filename):
         """Test to get a resource that does not exist
         """
@@ -145,9 +139,8 @@ class GenerateGetResourceTestCase(TestCase):
             self.assertEqual(
                 str(error),
                 "{} file '{}' not found within resources".format(
-                    self.resource_type,
-                    self.resource_name
-                )
+                    self.resource_type, self.resource_name
+                ),
             )
 
         # assert the call
@@ -162,12 +155,11 @@ class GetBackgroundTestCase(TestCase):
         """Test to access a real background
         """
         # call the function
-        result = get_background('idle.png')
+        result = get_background("idle.png")
 
         # assert the result
         self.assertEqual(
-            result,
-            MODULE_PATH / Path("resources/backgrounds/idle.png").normpath()
+            result, MODULE_PATH / Path("resources/backgrounds/idle.png").normpath()
         )
 
 
@@ -179,12 +171,11 @@ class GetTestFixtureTestCase(TestCase):
         """Test to access a real test material
         """
         # call the function
-        result = get_test_material('song.ass')
+        result = get_test_material("song.ass")
 
         # assert the result
         self.assertEqual(
-            result,
-            MODULE_PATH / Path("resources/tests/song.ass").normpath()
+            result, MODULE_PATH / Path("resources/tests/song.ass").normpath()
         )
 
 
@@ -196,12 +187,11 @@ class GetTemplateTestCase(TestCase):
         """Test to access a real template
         """
         # call the function
-        result = get_template('idle.ass')
+        result = get_template("idle.ass")
 
         # assert the result
         self.assertEqual(
-            result,
-            MODULE_PATH / Path("resources/templates/idle.ass").normpath()
+            result, MODULE_PATH / Path("resources/templates/idle.ass").normpath()
         )
 
 
@@ -209,27 +199,24 @@ class GetAllFontsTestCase(TestCase):
     """Test the `get_all_fonts` function
     """
 
-    @patch('dakara_player_vlc.resources_manager.resource_filename')
-    @patch('dakara_player_vlc.resources_manager.LIST_FONTS')
+    @patch("dakara_player_vlc.resources_manager.resource_filename")
+    @patch("dakara_player_vlc.resources_manager.LIST_FONTS")
     def test(self, mock_list_fonts, mock_resource_filename):
         """Test to get all the fonts
         """
         # mock the call
-        mock_list_fonts.__iter__.return_value = ['aa', 'bb']
-        mock_resource_filename.side_effect = ['path to aa', 'path to bb']
+        mock_list_fonts.__iter__.return_value = ["aa", "bb"]
+        mock_resource_filename.side_effect = ["path to aa", "path to bb"]
 
         # call the function
         result = get_all_fonts()
 
         # assert the call
         mock_list_fonts.__iter__.assert_called_once_with()
-        mock_resource_filename.assert_has_calls([
-            call(ANY, 'aa'),
-            call(ANY, 'bb')
-        ])
+        mock_resource_filename.assert_has_calls([call(ANY, "aa"), call(ANY, "bb")])
 
         # assert the result
-        self.assertListEqual(result, ['path to aa', 'path to bb'])
+        self.assertListEqual(result, ["path to aa", "path to bb"])
 
     def test_real(self):
         """Test there is at least a real font
@@ -239,7 +226,6 @@ class GetAllFontsTestCase(TestCase):
 
         # assert the result
         self.assertIn(
-            MODULE_PATH / Path(
-                "resources/fonts/fontawesome-webfont.ttf").normpath(),
-            result
+            MODULE_PATH / Path("resources/fonts/fontawesome-webfont.ttf").normpath(),
+            result,
         )

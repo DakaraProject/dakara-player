@@ -25,6 +25,7 @@ from dakara_player_vlc.safe_workers import (
 class TestError(Exception):
     """Dummy error class
     """
+
     pass
 
 
@@ -33,6 +34,7 @@ class BaseTestCase(TestCase):
 
     It includes some dummy functions a new assertion method.
     """
+
     def setUp(self):
         # create stop event and errors queue
         self.stop = Event()
@@ -46,7 +48,7 @@ class BaseTestCase(TestCase):
     def function_error(self):
         """Function that raises a TestError
         """
-        raise TestError('test error')
+        raise TestError("test error")
 
     @contextmanager
     def assertNotRaises(self, ExceptionClass):
@@ -65,9 +67,11 @@ class BaseTestCase(TestCase):
 class SafeTestCase(BaseTestCase):
     """Test the `safe` decorator
     """
+
     def create_classes(self):
         """Create dummy classes
         """
+
         class Base:
             @safe
             def function_safe(self2):
@@ -179,14 +183,11 @@ class SafeTestCase(BaseTestCase):
 class SafeThreadTestCase(BaseTestCase):
     """Test the SafeThread class
     """
+
     def create_controlled_thread(self, target):
         """Helper to create a safe thread for a target function
         """
-        return SafeThread(
-            self.stop,
-            self.errors,
-            target=target
-        )
+        return SafeThread(self.stop, self.errors, target=target)
 
     def test_function_safe(self):
         """Test a safe function
@@ -238,22 +239,19 @@ class SafeThreadTestCase(BaseTestCase):
 class SafeTimerTestCase(SafeThreadTestCase):
     """Test the SafeTimer class
     """
+
     def create_controlled_thread(self, target):
         """Helper to create a safe timer thread for a target function
 
         The delay is non null (0.5 s).
         """
-        return SafeTimer(
-            self.stop,
-            self.errors,
-            0.5,  # set a non-null delay
-            target,
-        )
+        return SafeTimer(self.stop, self.errors, 0.5, target)  # set a non-null delay
 
 
 class WorkerTestCase(BaseTestCase):
     """Test the Worker class
     """
+
     def test_run_safe(self):
         """Test a safe run
 
@@ -327,9 +325,7 @@ class WorkerTestCase(BaseTestCase):
         # create and run worker
         with self.assertNotRaises(TestError):
             with Worker(self.stop, self.errors) as worker:
-                worker.thread = worker.create_thread(
-                    target=self.function_error
-                )
+                worker.thread = worker.create_thread(target=self.function_error)
                 worker.thread.start()
                 worker.thread.join()
 
@@ -343,9 +339,11 @@ class WorkerTestCase(BaseTestCase):
 class WorkerSafeTimerTestCase(BaseTestCase):
     """Test the WorkerSafeTimer class
     """
+
     class WorkerSafeTimerToTest(WorkerSafeTimer):
         """Dummy worker class
         """
+
         def function_already_dead(self):
             """Function that ends immediately
             """
@@ -452,9 +450,11 @@ class WorkerSafeTimerTestCase(BaseTestCase):
 class WorkerSafeThreadTestCase(BaseTestCase):
     """Test the WorkerSafeThread class
     """
+
     class WorkerSafeThreadToTest(WorkerSafeThread):
         """Dummy worker class
         """
+
         def function_already_dead(self):
             """Function that ends immediately
             """
@@ -477,9 +477,7 @@ class WorkerSafeThreadTestCase(BaseTestCase):
 
         # create and run worker
         with self.WorkerSafeThreadToTest(self.stop, self.errors) as worker:
-            worker.thread = worker.create_thread(
-                target=worker.function_already_dead
-            )
+            worker.thread = worker.create_thread(target=worker.function_already_dead)
             worker.thread.start()
             worker.thread.join()
 
@@ -500,9 +498,7 @@ class WorkerSafeThreadTestCase(BaseTestCase):
 
         # create and run worker
         with self.WorkerSafeThreadToTest(self.stop, self.errors) as worker:
-            worker.thread = worker.create_thread(
-                target=worker.function_to_join
-            )
+            worker.thread = worker.create_thread(target=worker.function_to_join)
             worker.thread.start()
             sleep(0.5)
 
@@ -540,9 +536,11 @@ class RunnerTestCase(BaseTestCase):
     The class to test should leave because of a Ctrl+C, or because of an
     internal eror.
     """
+
     class WorkerError(Worker):
         """Dummy worker class
         """
+
         def init_worker(self):
             """Initialize the worker
             """
@@ -551,7 +549,7 @@ class RunnerTestCase(BaseTestCase):
         def test(self):
             """Raise an error
             """
-            raise TestError('test error')
+            raise TestError("test error")
 
     @staticmethod
     def get_worker_ready():
@@ -564,6 +562,7 @@ class RunnerTestCase(BaseTestCase):
         class WorkerReady(Worker):
             """Dummy worker class
             """
+
             def init_worker(self):
                 """Initialize the worker
                 """
@@ -581,8 +580,7 @@ class RunnerTestCase(BaseTestCase):
         # create class to test
         self.runner = Runner()
 
-    @skipIf(os.environ.get("APPVEYOR_CI_ENV", False),
-            "Disabled for Appveyor CI")
+    @skipIf(os.environ.get("APPVEYOR_CI_ENV", False), "Disabled for Appveyor CI")
     def test_run_interrupt(self):
         """Test a run with an interruption by Ctrl+C
 
@@ -603,7 +601,7 @@ class RunnerTestCase(BaseTestCase):
             """
             pid = os.getpid()
             ready.wait()
-            if sys.platform.startswith('win'):
+            if sys.platform.startswith("win"):
                 os.kill(pid, signal.CTRL_C_EVENT)
 
             else:

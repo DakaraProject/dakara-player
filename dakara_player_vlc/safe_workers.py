@@ -45,12 +45,16 @@ def safe(fun):
     The decorated function must be a method of a BaseSafeThread or a BaseWorker
     class (or inherited).
     """
+
     def call(self, *args, **kwargs):
         # check the target's class is a safe thread or a safe worker
         if not isinstance(self, (BaseSafeThread, BaseWorker)):
-            raise ValueError(("The class '{}' of method '{}' is not a "
-                              "BaseSafeThread or a BaseWorker")
-                             .format(self.__class__.__name__, fun.__name__))
+            raise ValueError(
+                (
+                    "The class '{}' of method '{}' is not a "
+                    "BaseSafeThread or a BaseWorker"
+                ).format(self.__class__.__name__, fun.__name__)
+            )
 
         # try to run the target
         try:
@@ -85,13 +89,12 @@ class BaseSafeThread:
         errors (queue.Queue): error queue to communicate the exception to the
             main thread.
     """
+
     def __init__(self, stop, errors, *args, **kwargs):
         # check arguments are valid
-        assert isinstance(stop, Event), \
-            "Stop argument must be of type Event"
+        assert isinstance(stop, Event), "Stop argument must be of type Event"
 
-        assert isinstance(errors, Queue), \
-            "Errors argument must be of type Queue"
+        assert isinstance(errors, Queue), "Errors argument must be of type Queue"
 
         # assign stop event and error queue
         self.stop = stop
@@ -126,6 +129,7 @@ class SafeThread(BaseSafeThread, Thread):
 
     Consult the help of `threading.Thread` for more information.
     """
+
     pass
 
 
@@ -148,6 +152,7 @@ class SafeTimer(BaseSafeThread, Timer):
 
     Consult the help of `threading.timer` for more information.
     """
+
     pass
 
 
@@ -176,15 +181,14 @@ class BaseWorker:
         errors (queue.Queue): error queue to communicate the exception to the
             main thread.
     """
+
     def __init__(self, stop, errors):
         # associate the stop event
-        assert isinstance(stop, Event), \
-            "Stop attribute must be of type Event"
+        assert isinstance(stop, Event), "Stop attribute must be of type Event"
         self.stop = stop
 
         # associate the errors queue
-        assert isinstance(errors, Queue), \
-            "Errors attribute must be of type Queue"
+        assert isinstance(errors, Queue), "Errors attribute must be of type Queue"
         self.errors = errors
 
     def init_worker(self):
@@ -269,6 +273,7 @@ class Worker(BaseWorker):
         errors (queue.Queue): error queue to communicate the exception to the
             main thread.
     """
+
     def __init__(self, stop, errors, *args, **kwargs):
         super().__init__(stop, errors)
 
@@ -282,16 +287,12 @@ class Worker(BaseWorker):
         """
         super().__exit__()
 
-        logger.debug("Exiting worker method ({})".format(
-            self.__class__.__name__
-            ))
+        logger.debug("Exiting worker method ({})".format(self.__class__.__name__))
 
         # call custom exit
         self.exit_worker(*args, **kwargs)
 
-        logger.debug("Exited worker method ({})".format(
-            self.__class__.__name__
-            ))
+        logger.debug("Exited worker method ({})".format(self.__class__.__name__))
 
 
 class WorkerSafeTimer(BaseWorker):
@@ -328,6 +329,7 @@ class WorkerSafeTimer(BaseWorker):
         errors (queue.Queue): error queue to communicate the exception to the
             main thread.
     """
+
     def __init__(self, stop, errors, *args, **kwargs):
         super().__init__(stop, errors)
 
@@ -358,10 +360,11 @@ class WorkerSafeTimer(BaseWorker):
         if not self.timer.is_alive():
             return
 
-        logger.debug("Closing worker safe timer thread '{}' ({})".format(
-            self.timer.getName(),
-            self.__class__.__name__
-        ))
+        logger.debug(
+            "Closing worker safe timer thread '{}' ({})".format(
+                self.timer.getName(), self.__class__.__name__
+            )
+        )
 
         # custom exit
         self.exit_worker(*args, **kwargs)
@@ -372,10 +375,11 @@ class WorkerSafeTimer(BaseWorker):
         # wait for termination, if the timer was running
         self.timer.join()
 
-        logger.debug("Closed worker safe timer thread '{}' ({})".format(
-            self.timer.getName(),
-            self.__class__.__name__
-        ))
+        logger.debug(
+            "Closed worker safe timer thread '{}' ({})".format(
+                self.timer.getName(), self.__class__.__name__
+            )
+        )
 
 
 class WorkerSafeThread(BaseWorker):
@@ -411,6 +415,7 @@ class WorkerSafeThread(BaseWorker):
         errors (queue.Queue): error queue to communicate the exception to the
             main thread.
     """
+
     def __init__(self, stop, errors, *args, **kwargs):
         super().__init__(stop, errors)
 
@@ -440,10 +445,11 @@ class WorkerSafeThread(BaseWorker):
         if not self.thread.is_alive():
             return
 
-        logger.debug("Closing worker safe thread '{}' ({})".format(
-            self.thread.getName(),
-            self.__class__.__name__
-        ))
+        logger.debug(
+            "Closing worker safe thread '{}' ({})".format(
+                self.thread.getName(), self.__class__.__name__
+            )
+        )
 
         # custom exit action
         self.exit_worker(*args, **kwargs)
@@ -451,10 +457,11 @@ class WorkerSafeThread(BaseWorker):
         # wait for termination
         self.thread.join()
 
-        logger.debug("Closed worker safe thread '{}' ({})".format(
-            self.thread.getName(),
-            self.__class__.__name__
-        ))
+        logger.debug(
+            "Closed worker safe thread '{}' ({})".format(
+                self.thread.getName(), self.__class__.__name__
+            )
+        )
 
 
 class Runner:
@@ -475,6 +482,7 @@ class Runner:
         errors (queue.Queue): error queue to communicate the exception of the
             thread.
     """
+
     POLLING_INTERVAL = 0.5
 
     def __init__(self, *args, **kwargs):
@@ -506,8 +514,7 @@ class Runner:
         """
         try:
             # create worker thread
-            with WorkerClass(self.stop, self.errors,
-                             *args, **kwargs) as worker:
+            with WorkerClass(self.stop, self.errors, *args, **kwargs) as worker:
 
                 logger.debug("Create worker thread")
                 worker.thread.start()
@@ -559,6 +566,7 @@ class UnredefinedTimerError(Exception):
     Error raised if the default timer of the `WorkerSafeTimer` class has not
     been redefined.
     """
+
     pass
 
 
@@ -568,4 +576,5 @@ class UnredefinedThreadError(Exception):
     Error raised if the default thread of the `WorkerSafeTimer` class has not
     been redefined.
     """
+
     pass

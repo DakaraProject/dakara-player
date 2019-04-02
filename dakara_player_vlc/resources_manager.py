@@ -11,23 +11,26 @@ RESOURCES_TEMPLATES = "dakara_player_vlc.resources.templates"
 RESOURCES_FONTS = "dakara_player_vlc.resources.fonts"
 RESOURCES_TEST_MATERIALS = "dakara_player_vlc.resources.tests"
 
-PATH_BACKGROUNDS = resource_filename(RESOURCES_BACKGROUNDS, '')
-PATH_TEMPLATES = resource_filename(RESOURCES_TEMPLATES, '')
-PATH_FONTS = resource_filename(RESOURCES_FONTS, '')
-PATH_TEST_MATERIALS = resource_filename(RESOURCES_TEST_MATERIALS, '')
+PATH_BACKGROUNDS = resource_filename(RESOURCES_BACKGROUNDS, "")
+PATH_TEMPLATES = resource_filename(RESOURCES_TEMPLATES, "")
+PATH_FONTS = resource_filename(RESOURCES_FONTS, "")
+PATH_TEST_MATERIALS = resource_filename(RESOURCES_TEST_MATERIALS, "")
 
 
 def resource_listdir(*args, **kwargs):
     """List resources without special files
     """
-    return [filename for filename in resource_listdir_orig(*args, **kwargs)
-            if not filename.startswith('__')]
+    return [
+        filename
+        for filename in resource_listdir_orig(*args, **kwargs)
+        if not filename.startswith("__")
+    ]
 
 
-LIST_BACKGROUNDS = resource_listdir(RESOURCES_BACKGROUNDS, '')
-LIST_TEMPLATES = resource_listdir(RESOURCES_TEMPLATES, '')
-LIST_FONTS = resource_listdir(RESOURCES_FONTS, '')
-LIST_TEST_MATERIALS = resource_listdir(RESOURCES_TEST_MATERIALS, '')
+LIST_BACKGROUNDS = resource_listdir(RESOURCES_BACKGROUNDS, "")
+LIST_TEMPLATES = resource_listdir(RESOURCES_TEMPLATES, "")
+LIST_FONTS = resource_listdir(RESOURCES_FONTS, "")
+LIST_TEST_MATERIALS = resource_listdir(RESOURCES_TEST_MATERIALS, "")
 
 
 def get_file(filename):
@@ -69,8 +72,7 @@ def generate_get_resource(resource, resource_list, resource_name):
         if filename not in resource_list:
             raise IOError(
                 "{} file '{}' not found within resources".format(
-                    resource_name.capitalize(),
-                    filename
+                    resource_name.capitalize(), filename
                 )
             )
 
@@ -79,13 +81,13 @@ def generate_get_resource(resource, resource_list, resource_name):
     return get_resource
 
 
-get_background = generate_get_resource(RESOURCES_BACKGROUNDS, LIST_BACKGROUNDS,
-                                       'background')
-get_template = generate_get_resource(RESOURCES_TEMPLATES, LIST_TEMPLATES,
-                                     'template')
-get_test_material = generate_get_resource(RESOURCES_TEST_MATERIALS,
-                                          LIST_TEST_MATERIALS,
-                                          'test material')
+get_background = generate_get_resource(
+    RESOURCES_BACKGROUNDS, LIST_BACKGROUNDS, "background"
+)
+get_template = generate_get_resource(RESOURCES_TEMPLATES, LIST_TEMPLATES, "template")
+get_test_material = generate_get_resource(
+    RESOURCES_TEST_MATERIALS, LIST_TEST_MATERIALS, "test material"
+)
 
 
 def get_all_fonts():
@@ -94,5 +96,4 @@ def get_all_fonts():
     Returns:
         list of str: list containing the absolute path to the files.
     """
-    return [resource_filename(RESOURCES_FONTS, filename)
-            for filename in LIST_FONTS]
+    return [resource_filename(RESOURCES_FONTS, filename) for filename in LIST_FONTS]

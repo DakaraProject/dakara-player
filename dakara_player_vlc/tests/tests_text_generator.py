@@ -20,6 +20,7 @@ from dakara_player_vlc.resources_manager import (
 class TextGeneratorTestCase(TestCase):
     """Test the text generator class
     """
+
     def setUp(self):
         # create temporary folder
         self.temdir = "nowhere"
@@ -28,39 +29,34 @@ class TextGeneratorTestCase(TestCase):
         self.idle_text_path = os.path.join(self.temdir, IDLE_TEXT_NAME)
 
         # creat transition text file path
-        self.transition_text_path = os.path.join(self.temdir,
-                                                 TRANSITION_TEXT_NAME)
+        self.transition_text_path = os.path.join(self.temdir, TRANSITION_TEXT_NAME)
 
         # create info dictionary
-        self.idle_info = {
-            'vlc_version': "0.0.0",
-        }
+        self.idle_info = {"vlc_version": "0.0.0"}
 
         # create playlist entry
         self.playlist_entry = {
-            'title': 'title',
-            'artists':  ['someone'],
-            'works': ['something'],
-            'owner': 'me',
+            "title": "title",
+            "artists": ["someone"],
+            "works": ["something"],
+            "owner": "me",
         }
 
         # create idle text content
-        self.idle_text_content = self.idle_info['vlc_version']
+        self.idle_text_content = self.idle_info["vlc_version"]
 
         # create transition text content
-        self.transition_text_content = \
-            "{title}\n{artists}\n{works}\n{owner}".format(
-                **self.playlist_entry
-            )
+        self.transition_text_content = "{title}\n{artists}\n{works}\n{owner}".format(
+            **self.playlist_entry
+        )
 
         # create text generator object
         # we use a custom template directory to use a simplified template
         self.text_generator = TextGenerator(
-            {'directory': PATH_TEST_MATERIALS},
-            self.temdir
+            {"directory": PATH_TEST_MATERIALS}, self.temdir
         )
 
-    @patch('dakara_player_vlc.text_generator.open', new_callable=mock_open)
+    @patch("dakara_player_vlc.text_generator.open", new_callable=mock_open)
     def test_create_idle_text(self, mock_open):
         """Test the generation of an idle text
         """
@@ -68,32 +64,22 @@ class TextGeneratorTestCase(TestCase):
         result = self.text_generator.create_idle_text(self.idle_info)
 
         # call assertions
-        mock_open.assert_called_once_with(
-            self.idle_text_path,
-            'w',
-            encoding='utf8'
-        )
+        mock_open.assert_called_once_with(self.idle_text_path, "w", encoding="utf8")
 
-        mock_open.return_value.write.assert_called_once_with(
-            self.idle_text_content
-        )
+        mock_open.return_value.write.assert_called_once_with(self.idle_text_content)
 
         self.assertEqual(result, self.idle_text_path)
 
-    @patch('dakara_player_vlc.text_generator.open', new_callable=mock_open)
+    @patch("dakara_player_vlc.text_generator.open", new_callable=mock_open)
     def test_create_transition_text(self, mock_open):
         """Test the generation of a transition text
         """
         # call method
-        result = self.text_generator.create_transition_text(
-            self.playlist_entry
-        )
+        result = self.text_generator.create_transition_text(self.playlist_entry)
 
         # call assertions
         mock_open.assert_called_once_with(
-            self.transition_text_path,
-            'w',
-            encoding='utf8'
+            self.transition_text_path, "w", encoding="utf8"
         )
 
         mock_open.return_value.write.assert_called_once_with(
@@ -106,30 +92,29 @@ class TextGeneratorTestCase(TestCase):
         """Test the convertion of an icon name to its code
         """
         # test only the music icon
-        self.assertEqual(self.text_generator.convert_icon('music'), '\uf001')
+        self.assertEqual(self.text_generator.convert_icon("music"), "\uf001")
 
     def test_convert_icon_none(self):
         """Test the convertion of a null icon name is handled
         """
         # test only the music icon
-        self.assertEqual(self.text_generator.convert_icon(None), '')
+        self.assertEqual(self.text_generator.convert_icon(None), "")
 
     def test_convert_link_type_name(self):
         """Test the convertion of a link type to its long name
         """
-        self.assertEqual(self.text_generator.convert_link_type_name('OP'),
-                         'Opening')
-        self.assertEqual(self.text_generator.convert_link_type_name('ED'),
-                         'Ending')
-        self.assertEqual(self.text_generator.convert_link_type_name('IN'),
-                         'Insert song')
-        self.assertEqual(self.text_generator.convert_link_type_name('IS'),
-                         'Image song')
+        self.assertEqual(self.text_generator.convert_link_type_name("OP"), "Opening")
+        self.assertEqual(self.text_generator.convert_link_type_name("ED"), "Ending")
+        self.assertEqual(
+            self.text_generator.convert_link_type_name("IN"), "Insert song"
+        )
+        self.assertEqual(self.text_generator.convert_link_type_name("IS"), "Image song")
 
 
 class TextGeneratorCustomTestCase(TestCase):
     """Test the text generator class with custom resources
     """
+
     def setUp(self):
         # create temporary folder
         self.tempdir = "nowhere"
@@ -140,19 +125,15 @@ class TextGeneratorCustomTestCase(TestCase):
         In that case, the templates come from the fallback directory.
         """
         # create object
-        text_generator = TextGenerator(
-            {},
-            self.tempdir
-        )
+        text_generator = TextGenerator({}, self.tempdir)
 
         # assert object
         self.assertEqual(
-            text_generator.idle_template.filename,
-            get_template(IDLE_TEMPLATE_NAME)
+            text_generator.idle_template.filename, get_template(IDLE_TEMPLATE_NAME)
         )
         self.assertEqual(
             text_generator.transition_template.filename,
-            get_template(TRANSITION_TEMPLATE_NAME)
+            get_template(TRANSITION_TEMPLATE_NAME),
         )
 
     def test_custom_template_directory_success(self):
@@ -161,19 +142,15 @@ class TextGeneratorCustomTestCase(TestCase):
         In that case, the templates come from this directory.
         """
         # create object
-        text_generator = TextGenerator(
-            {'directory': PATH_TEST_MATERIALS},
-            self.tempdir
-        )
+        text_generator = TextGenerator({"directory": PATH_TEST_MATERIALS}, self.tempdir)
 
         # assert object
         self.assertEqual(
-            text_generator.idle_template.filename,
-            get_test_material(IDLE_TEMPLATE_NAME)
+            text_generator.idle_template.filename, get_test_material(IDLE_TEMPLATE_NAME)
         )
         self.assertEqual(
             text_generator.transition_template.filename,
-            get_test_material(TRANSITION_TEMPLATE_NAME)
+            get_test_material(TRANSITION_TEMPLATE_NAME),
         )
 
     def test_custom_template_directory_fail(self):
@@ -182,19 +159,15 @@ class TextGeneratorCustomTestCase(TestCase):
         In that case, the templates come from the fallback directory.
         """
         # create object
-        text_generator = TextGenerator(
-            {'directory': "nowhere"},
-            self.tempdir
-        )
+        text_generator = TextGenerator({"directory": "nowhere"}, self.tempdir)
 
         # assert object
         self.assertEqual(
-            text_generator.idle_template.filename,
-            get_template(IDLE_TEMPLATE_NAME)
+            text_generator.idle_template.filename, get_template(IDLE_TEMPLATE_NAME)
         )
         self.assertEqual(
             text_generator.transition_template.filename,
-            get_template(TRANSITION_TEMPLATE_NAME)
+            get_template(TRANSITION_TEMPLATE_NAME),
         )
 
     def test_custom_template_names_success(self):
@@ -206,21 +179,19 @@ class TextGeneratorCustomTestCase(TestCase):
         # create object
         text_generator = TextGenerator(
             {
-                'directory': PATH_TEST_MATERIALS,
-                'idle_template_name': "song.ass",
-                'transition_template_name': "song.ass"
+                "directory": PATH_TEST_MATERIALS,
+                "idle_template_name": "song.ass",
+                "transition_template_name": "song.ass",
             },
-            self.tempdir
+            self.tempdir,
         )
 
         # assert object
         self.assertEqual(
-            text_generator.idle_template.filename,
-            get_test_material("song.ass")
+            text_generator.idle_template.filename, get_test_material("song.ass")
         )
         self.assertEqual(
-            text_generator.transition_template.filename,
-            get_test_material("song.ass")
+            text_generator.transition_template.filename, get_test_material("song.ass")
         )
 
     def test_custom_template_names_fail(self):
@@ -232,19 +203,18 @@ class TextGeneratorCustomTestCase(TestCase):
         # create object
         text_generator = TextGenerator(
             {
-                'directory': PATH_TEST_MATERIALS,
-                'idle_template_name': "nothing",
-                'transition_template_name': "nothing"
+                "directory": PATH_TEST_MATERIALS,
+                "idle_template_name": "nothing",
+                "transition_template_name": "nothing",
             },
-            self.tempdir
+            self.tempdir,
         )
 
         # assert object
         self.assertEqual(
-            text_generator.idle_template.filename,
-            get_test_material(IDLE_TEMPLATE_NAME)
+            text_generator.idle_template.filename, get_test_material(IDLE_TEMPLATE_NAME)
         )
         self.assertEqual(
             text_generator.transition_template.filename,
-            get_test_material(TRANSITION_TEMPLATE_NAME)
+            get_test_material(TRANSITION_TEMPLATE_NAME),
         )

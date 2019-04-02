@@ -7,6 +7,7 @@ from dakara_player_vlc.dakara_manager import DakaraManager
 class DakaraManagerTestCase(TestCase):
     """Test the dakara manager class
     """
+
     def setUp(self):
         # create a mock font loader
         self.font_loader = MagicMock()
@@ -25,7 +26,7 @@ class DakaraManagerTestCase(TestCase):
             self.font_loader,
             self.vlc_player,
             self.dakara_server_http,
-            self.dakara_server_websocket
+            self.dakara_server_websocket,
         )
 
     def test_start_idle(self):
@@ -41,25 +42,25 @@ class DakaraManagerTestCase(TestCase):
     def test_start_play_playlist_entry(self):
         """Test to launch the dakara manager when there is something to play
         """
-        playlist_entry = {'id': 42}
+        playlist_entry = {"id": 42}
 
         # call the methods and prevent to run as thread
         self.dakara_manager.play_playlist_entry(playlist_entry)
 
         # call assertions
         self.vlc_player.play_idle_screen.assert_not_called()
-        self.vlc_player.play_playlist_entry.assert_called_once_with(
-            playlist_entry)
+        self.vlc_player.play_playlist_entry.assert_called_once_with(playlist_entry)
 
     def test_handle_error(self):
         """Test the callback called on error
         """
         # call the method
-        self.dakara_manager.handle_error(999, 'message')
+        self.dakara_manager.handle_error(999, "message")
 
         # call assertions
         self.dakara_server_http.create_player_error.assert_called_once_with(
-            999, 'message')
+            999, "message"
+        )
 
     def test_handle_finished(self):
         """Test the callback called on song end
@@ -77,8 +78,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_started_transition(999)
 
         # call assertions
-        self.dakara_server_http.update_started_transition\
-            .assert_called_once_with(999)
+        self.dakara_server_http.update_started_transition.assert_called_once_with(999)
 
     def test_handle_started_song(self):
         """Test the callback called on song start
@@ -87,8 +87,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_started_song(999)
 
         # call assertions
-        self.dakara_server_http.update_started_song\
-            .assert_called_once_with(999)
+        self.dakara_server_http.update_started_song.assert_called_once_with(999)
 
     def test_handle_could_not_play(self):
         """Test the callback called when a playlist entry could not play
@@ -97,8 +96,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_could_not_play(999)
 
         # call assertions
-        self.dakara_server_http.update_could_not_play\
-            .assert_called_once_with(999)
+        self.dakara_server_http.update_could_not_play.assert_called_once_with(999)
 
     def test_handle_paused(self):
         """Test the callback called when the player is paused
@@ -125,7 +123,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.vlc_player.playing_id = 42
 
         # call the method for pause
-        self.dakara_manager.do_command('pause')
+        self.dakara_manager.do_command("pause")
 
         # assert the call
         self.dakara_manager.vlc_player.set_pause.assert_called_with(True)
@@ -134,13 +132,13 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.vlc_player.set_pause.reset_mock()
 
         # call the method for pause
-        self.dakara_manager.do_command('play')
+        self.dakara_manager.do_command("play")
 
         # assert the call
         self.dakara_manager.vlc_player.set_pause.assert_called_with(False)
 
         # call the method for skip
-        self.dakara_manager.do_command('skip')
+        self.dakara_manager.do_command("skip")
 
         # assert the call
         self.dakara_server_http.update_finished.assert_called_with(42)
@@ -151,4 +149,4 @@ class DakaraManagerTestCase(TestCase):
         """
         # call the method
         with self.assertRaises(ValueError):
-            self.dakara_manager.do_command('invalid')
+            self.dakara_manager.do_command("invalid")
