@@ -35,5 +35,5 @@ install:
 # command to run tests
 test_script:
   - "%PYTHON%/python.exe ./tests.py -v"
-  - "if NOT %PYTHON_VERSION% == 3.5 (%PYTHON/Scripts/black.exe . --check)"
+  - "if NOT %PYTHON_VERSION% == 3.5 (%PYTHON%/Scripts/black.exe . --check)"
   - "%PYTHON%/Scripts/flake8.exe"
