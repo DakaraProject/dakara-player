@@ -17,13 +17,14 @@ from dakara_player_vlc.vlc_player import (
 from dakara_player_vlc.resources_manager import (
     get_test_material,
     get_background,
-    PATH_TEST_MATERIALS
+    PATH_TEST_MATERIALS,
 )
 
 
 class VlcPlayerTestCase(TestCase):
     """Test the VLC player module
     """
+
     def setUp(self):
         # create instance parameter
         self.instance_parameters = []
@@ -56,27 +57,22 @@ class VlcPlayerTestCase(TestCase):
         self.song_file_path = get_test_material("song.png")
 
         # create playlist entry
-        self.playlist_entry = {
-            'id': 42,
-            'song': {
-                'file_path': self.song_file_path,
-                }
-        }
+        self.playlist_entry = {"id": 42, "song": {"file_path": self.song_file_path}}
 
         # create vlc player
         self.vlc_player = VlcPlayer(
             Event(),
             Queue(),
             {
-                'kara_folder': self.kara_folder,
-                'fullscreen': self.fullscreen,
-                'transition_duration': self.transition_duration,
-                'vlc': {
-                    'instance_parameters': self.instance_parameters,
-                    'media_parameters': self.media_parameters,
+                "kara_folder": self.kara_folder,
+                "fullscreen": self.fullscreen,
+                "transition_duration": self.transition_duration,
+                "vlc": {
+                    "instance_parameters": self.instance_parameters,
+                    "media_parameters": self.media_parameters,
                 },
             },
-            self.text_generator
+            self.text_generator,
         )
 
         # set callbacks for VLC
@@ -99,8 +95,15 @@ class VlcPlayerTestCase(TestCase):
     def test_set_callbacks(self):
         """Test the assignation of callbacks
         """
-        names = ("started_transition", "started_song", "could_not_play",
-                 "finished", "paused", "resumed", "error")
+        names = (
+            "started_transition",
+            "started_song",
+            "could_not_play",
+            "finished",
+            "paused",
+            "resumed",
+            "error",
+        )
 
         for name in names:
             method_name = "set_{}_callback".format(name)
@@ -110,15 +113,13 @@ class VlcPlayerTestCase(TestCase):
             callback = MagicMock()
 
             # pre assert
-            self.assertIsNot(getattr(self.vlc_player, callback_name),
-                             callback)
+            self.assertIsNot(getattr(self.vlc_player, callback_name), callback)
 
             # call the method
             method(callback)
 
             # post assert
-            self.assertIs(getattr(self.vlc_player, callback_name),
-                          callback)
+            self.assertIs(getattr(self.vlc_player, callback_name), callback)
 
     def test_play_idle_screen(self):
         """Test the display of the idle screen
@@ -129,14 +130,12 @@ class VlcPlayerTestCase(TestCase):
         # create an event for when the player starts to play
         is_playing, callback_is_playing = self.get_event_and_callback()
         self.vlc_player.event_manager.event_attach(
-            EventType.MediaPlayerPlaying,
-            callback_is_playing
+            EventType.MediaPlayerPlaying, callback_is_playing
         )
 
         # pre assertions
         self.assertIsNone(self.vlc_player.player.get_media())
-        self.assertEqual(self.vlc_player.player.get_state(),
-                         State.NothingSpecial)
+        self.assertEqual(self.vlc_player.player.get_state(), State.NothingSpecial)
 
         # call the method
         self.vlc_player.play_idle_screen()
@@ -145,16 +144,17 @@ class VlcPlayerTestCase(TestCase):
         is_playing.wait()
 
         # call assertions
-        self.text_generator.create_idle_text.assert_called_once_with({
-            'notes': [
-                "VLC " + self.vlc_player.vlc_version,
-                "Dakara player " + dakara_player_vlc_version
-            ]
-        })
+        self.text_generator.create_idle_text.assert_called_once_with(
+            {
+                "notes": [
+                    "VLC " + self.vlc_player.vlc_version,
+                    "Dakara player " + dakara_player_vlc_version,
+                ]
+            }
+        )
 
         # post assertions
-        self.assertEqual(self.vlc_player.player.get_state(),
-                         State.Playing)
+        self.assertEqual(self.vlc_player.player.get_state(), State.Playing)
 
         self.assertIsNotNone(self.vlc_player.player.get_media())
         media = self.vlc_player.player.get_media()
@@ -169,8 +169,7 @@ class VlcPlayerTestCase(TestCase):
         First, the transition screen is played, then the song itself.
         """
         # mock the text generator
-        self.text_generator.create_transition_text.return_value = \
-            self.subtitle_path
+        self.text_generator.create_transition_text.return_value = self.subtitle_path
 
         # mock the callbacks
         self.vlc_player.started_transition_callback = MagicMock()
@@ -179,16 +178,14 @@ class VlcPlayerTestCase(TestCase):
         # create an event for when the player starts to play
         is_playing, callback_is_playing = self.get_event_and_callback()
         self.vlc_player.event_manager.event_attach(
-            EventType.MediaPlayerPlaying,
-            callback_is_playing
+            EventType.MediaPlayerPlaying, callback_is_playing
         )
 
         # pre assertions
         self.assertIsNone(self.vlc_player.playing_id)
         self.assertFalse(self.vlc_player.in_transition)
         self.assertIsNone(self.vlc_player.player.get_media())
-        self.assertEqual(self.vlc_player.player.get_state(),
-                         State.NothingSpecial)
+        self.assertEqual(self.vlc_player.player.get_state(), State.NothingSpecial)
 
         # call the method
         self.vlc_player.play_playlist_entry(self.playlist_entry)
@@ -207,8 +204,7 @@ class VlcPlayerTestCase(TestCase):
         # post assertions for transition screen
         self.assertIsNotNone(self.vlc_player.playing_id)
         self.assertTrue(self.vlc_player.in_transition)
-        self.assertEqual(self.vlc_player.player.get_state(),
-                         State.Playing)
+        self.assertEqual(self.vlc_player.player.get_state(), State.Playing)
 
         self.assertIsNotNone(self.vlc_player.player.get_media())
         media = self.vlc_player.player.get_media()
@@ -219,15 +215,15 @@ class VlcPlayerTestCase(TestCase):
 
         # assert the started transition callback has been called
         self.vlc_player.started_transition_callback.assert_called_with(
-            self.playlist_entry['id'])
+            self.playlist_entry["id"]
+        )
 
         # wait for the player to start actually playing the song
         is_playing.wait()
 
         # post assertions for song
         self.assertFalse(self.vlc_player.in_transition)
-        self.assertEqual(self.vlc_player.player.get_state(),
-                         State.Playing)
+        self.assertEqual(self.vlc_player.player.get_state(), State.Playing)
 
         self.assertIsNotNone(self.vlc_player.player.get_media())
         media = self.vlc_player.player.get_media()
@@ -236,12 +232,13 @@ class VlcPlayerTestCase(TestCase):
 
         # assert the started song callback has been called
         self.vlc_player.started_song_callback.assert_called_with(
-            self.playlist_entry['id'])
+            self.playlist_entry["id"]
+        )
 
         # close the player
         self.vlc_player.stop_player()
 
-    @patch('dakara_player_vlc.vlc_player.os.path.isfile')
+    @patch("dakara_player_vlc.vlc_player.os.path.isfile")
     def test_play_playlist_entry_error_file(self, mock_isfile):
         """Test to play a file that does not exist
         """
@@ -256,8 +253,7 @@ class VlcPlayerTestCase(TestCase):
         # pre assertions
         self.assertIsNone(self.vlc_player.playing_id)
         self.assertIsNone(self.vlc_player.player.get_media())
-        self.assertEqual(self.vlc_player.player.get_state(),
-                         State.NothingSpecial)
+        self.assertEqual(self.vlc_player.player.get_state(), State.NothingSpecial)
 
         # call the method
         self.vlc_player.play_playlist_entry(self.playlist_entry)
@@ -268,14 +264,14 @@ class VlcPlayerTestCase(TestCase):
         # post assertions
         self.assertIsNone(self.vlc_player.playing_id)
         self.assertIsNone(self.vlc_player.player.get_media())
-        self.assertEqual(self.vlc_player.player.get_state(),
-                         State.NothingSpecial)
+        self.assertEqual(self.vlc_player.player.get_state(), State.NothingSpecial)
 
         # assert the callbacks
         self.vlc_player.started_transition_callback.assert_not_called()
         self.vlc_player.started_song_callback.assert_not_called()
         self.vlc_player.could_not_play_callback.assert_called_with(
-            self.playlist_entry['id'])
+            self.playlist_entry["id"]
+        )
 
     def test_end_reached_callback_transition(self):
         """Test song end callback for after a transition screen
@@ -285,19 +281,18 @@ class VlcPlayerTestCase(TestCase):
         in_transition = self.vlc_player.in_transition
         self.vlc_player.create_thread = MagicMock()
         self.vlc_player.media_pending = MagicMock()
-        self.vlc_player.media_pending.get_mrl.return_value = 'file:///test.mkv'
+        self.vlc_player.media_pending.get_mrl.return_value = "file:///test.mkv"
         self.vlc_player.started_song_callback = MagicMock()
         self.vlc_player.playing_id = 999
 
         # call the method
-        self.vlc_player.end_reached_callback('event')
+        self.vlc_player.end_reached_callback("event")
 
         # assert the call
         in_transition.__bool__.assert_called_with()
         self.assertFalse(self.vlc_player.in_transition)
         self.vlc_player.create_thread.assert_called_with(
-            target=self.vlc_player.play_media,
-            args=(self.vlc_player.media_pending,)
+            target=self.vlc_player.play_media, args=(self.vlc_player.media_pending,)
         )
         self.vlc_player.media_pending.get_mrl.assert_called_with()
         self.vlc_player.create_thread.return_value.start.assert_called_with()
@@ -315,13 +310,14 @@ class VlcPlayerTestCase(TestCase):
         self.vlc_player.create_thread = MagicMock()
 
         # call the method
-        self.vlc_player.end_reached_callback('event')
+        self.vlc_player.end_reached_callback("event")
 
         # assert the call
         in_transition.__bool__.assert_called_with()
         self.vlc_player.is_idle.assert_called_with()
         self.vlc_player.create_thread.assert_called_with(
-            target=self.vlc_player.play_idle_screen)
+            target=self.vlc_player.play_idle_screen
+        )
         self.vlc_player.create_thread.return_value.start.assert_called_with()
 
     def test_end_reached_callback_finished(self):
@@ -338,14 +334,14 @@ class VlcPlayerTestCase(TestCase):
         self.vlc_player.playing_id = 999
 
         # call the method
-        self.vlc_player.end_reached_callback('event')
+        self.vlc_player.end_reached_callback("event")
 
         # assert the call
         in_transition.__bool__.assert_called_with()
         self.vlc_player.is_idle.assert_called_with()
         self.vlc_player.finished_callback.assert_called_with(999)
 
-    @patch('dakara_player_vlc.vlc_player.vlc.libvlc_errmsg')
+    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_errmsg")
     def test_encountered_error_callback(self, mock_libvcl_errmsg):
         """Test error callback
         """
@@ -356,7 +352,7 @@ class VlcPlayerTestCase(TestCase):
         self.vlc_player.playing_id = 999
 
         # call the method
-        self.vlc_player.encountered_error_callback('event')
+        self.vlc_player.encountered_error_callback("event")
 
         # assert the call
         mock_libvcl_errmsg.assert_called_with()
@@ -368,8 +364,7 @@ class VlcPlayerTestCase(TestCase):
         """Test to pause and unpause the player
         """
         # mock the text generator
-        self.text_generator.create_transition_text.return_value = \
-            self.subtitle_path
+        self.text_generator.create_transition_text.return_value = self.subtitle_path
 
         # mock the callbacks
         self.vlc_player.paused_callback = MagicMock()
@@ -378,8 +373,7 @@ class VlcPlayerTestCase(TestCase):
         # create an event for when the player starts to play
         is_playing, callback_is_playing = self.get_event_and_callback()
         self.vlc_player.event_manager.event_attach(
-            EventType.MediaPlayerPlaying,
-            callback_is_playing
+            EventType.MediaPlayerPlaying, callback_is_playing
         )
 
         # start the playlist entry
@@ -403,8 +397,7 @@ class VlcPlayerTestCase(TestCase):
 
         # assert the callback
         self.vlc_player.paused_callback.assert_called_with(
-            self.playlist_entry['id'],
-            timing
+            self.playlist_entry["id"], timing
         )
         self.vlc_player.resumed_callback.assert_not_called()
 
@@ -421,8 +414,8 @@ class VlcPlayerTestCase(TestCase):
         # assert the callback
         self.vlc_player.paused_callback.assert_not_called()
         self.vlc_player.resumed_callback.assert_called_with(
-            self.playlist_entry['id'],
-            timing  # on a slow computer, the timing may be inaccurate
+            self.playlist_entry["id"],
+            timing,  # on a slow computer, the timing may be inaccurate
         )
 
         # close the player
@@ -432,8 +425,7 @@ class VlcPlayerTestCase(TestCase):
         """Test that double pause and double resume have no effects
         """
         # mock the text generator
-        self.text_generator.create_transition_text.return_value = \
-            self.subtitle_path
+        self.text_generator.create_transition_text.return_value = self.subtitle_path
 
         # mock the callbacks
         self.vlc_player.paused_callback = MagicMock()
@@ -442,8 +434,7 @@ class VlcPlayerTestCase(TestCase):
         # create an event for when the player starts to play
         is_playing, callback_is_playing = self.get_event_and_callback()
         self.vlc_player.event_manager.event_attach(
-            EventType.MediaPlayerPlaying,
-            callback_is_playing
+            EventType.MediaPlayerPlaying, callback_is_playing
         )
 
         # start the playlist entry
@@ -534,21 +525,12 @@ class VlcPlayerCustomTestCase(TestCase):
         In that case, backgrounds come from the fallback directory.
         """
         # create object
-        vlc_player = VlcPlayer(
-            self.stop,
-            self.errors,
-            {},
-            self.text_generator
-        )
+        vlc_player = VlcPlayer(self.stop, self.errors, {}, self.text_generator)
 
         # assert the object
+        self.assertEqual(vlc_player.idle_bg_path, get_background(IDLE_BG_NAME))
         self.assertEqual(
-            vlc_player.idle_bg_path,
-            get_background(IDLE_BG_NAME)
-        )
-        self.assertEqual(
-            vlc_player.transition_bg_path,
-            get_background(TRANSITION_BG_NAME)
+            vlc_player.transition_bg_path, get_background(TRANSITION_BG_NAME)
         )
 
     def test_custom_background_directory_success(self):
@@ -560,22 +542,14 @@ class VlcPlayerCustomTestCase(TestCase):
         vlc_player = VlcPlayer(
             self.stop,
             self.errors,
-            {
-                'backgrounds': {
-                    'directory': PATH_TEST_MATERIALS
-                }
-            },
-            self.text_generator
+            {"backgrounds": {"directory": PATH_TEST_MATERIALS}},
+            self.text_generator,
         )
 
         # assert the object
+        self.assertEqual(vlc_player.idle_bg_path, get_test_material(IDLE_BG_NAME))
         self.assertEqual(
-            vlc_player.idle_bg_path,
-            get_test_material(IDLE_BG_NAME)
-        )
-        self.assertEqual(
-            vlc_player.transition_bg_path,
-            get_test_material(TRANSITION_BG_NAME)
+            vlc_player.transition_bg_path, get_test_material(TRANSITION_BG_NAME)
         )
 
     def test_custom_background_directory_fail(self):
@@ -587,22 +561,14 @@ class VlcPlayerCustomTestCase(TestCase):
         vlc_player = VlcPlayer(
             self.stop,
             self.errors,
-            {
-                'backgrounds': {
-                    'directory': "nowhere"
-                }
-            },
-            self.text_generator
+            {"backgrounds": {"directory": "nowhere"}},
+            self.text_generator,
         )
 
         # assert the object
+        self.assertEqual(vlc_player.idle_bg_path, get_background(IDLE_BG_NAME))
         self.assertEqual(
-            vlc_player.idle_bg_path,
-            get_background(IDLE_BG_NAME)
-        )
-        self.assertEqual(
-            vlc_player.transition_bg_path,
-            get_background(TRANSITION_BG_NAME)
+            vlc_player.transition_bg_path, get_background(TRANSITION_BG_NAME)
         )
 
     def test_custom_background_names_success(self):
@@ -616,24 +582,18 @@ class VlcPlayerCustomTestCase(TestCase):
             self.stop,
             self.errors,
             {
-                'backgrounds': {
-                    'directory': PATH_TEST_MATERIALS,
-                    'idle_background_name': "song.png",
-                    'transition_background_name': "song.png"
+                "backgrounds": {
+                    "directory": PATH_TEST_MATERIALS,
+                    "idle_background_name": "song.png",
+                    "transition_background_name": "song.png",
                 }
             },
-            self.text_generator
+            self.text_generator,
         )
 
         # assert the object
-        self.assertEqual(
-            vlc_player.idle_bg_path,
-            get_test_material("song.png")
-        )
-        self.assertEqual(
-            vlc_player.transition_bg_path,
-            get_test_material("song.png")
-        )
+        self.assertEqual(vlc_player.idle_bg_path, get_test_material("song.png"))
+        self.assertEqual(vlc_player.transition_bg_path, get_test_material("song.png"))
 
     def test_custom_background_names_fail(self):
         """Test to instanciate with background names that do not exist
@@ -646,35 +606,29 @@ class VlcPlayerCustomTestCase(TestCase):
             self.stop,
             self.errors,
             {
-                'backgrounds': {
-                    'directory': PATH_TEST_MATERIALS,
-                    'idle_background_name': "nothing",
-                    'transition_background_name': "nothing"
+                "backgrounds": {
+                    "directory": PATH_TEST_MATERIALS,
+                    "idle_background_name": "nothing",
+                    "transition_background_name": "nothing",
                 }
             },
-            self.text_generator
+            self.text_generator,
         )
 
         # assert the object
+        self.assertEqual(vlc_player.idle_bg_path, get_test_material(IDLE_BG_NAME))
         self.assertEqual(
-            vlc_player.idle_bg_path,
-            get_test_material(IDLE_BG_NAME)
-        )
-        self.assertEqual(
-            vlc_player.transition_bg_path,
-            get_test_material(TRANSITION_BG_NAME)
+            vlc_player.transition_bg_path, get_test_material(TRANSITION_BG_NAME)
         )
 
 
 class MrlToPathTestCase(TestCase):
     """Test the `mrl_to_path` function
     """
+
     def test(self):
         """Test to call the function with various arguments
         """
-        self.assertEqual(mrl_to_path('file:///a/b/c'),
-                         Path('/a/b/c').normpath())
-        self.assertEqual(mrl_to_path('file:///a/b%20b/c'),
-                         Path('/a/b b/c').normpath())
-        self.assertEqual(mrl_to_path('file:///C:/a/b'),
-                         Path('C:/a/b').normpath())
+        self.assertEqual(mrl_to_path("file:///a/b/c"), Path("/a/b/c").normpath())
+        self.assertEqual(mrl_to_path("file:///a/b%20b/c"), Path("/a/b b/c").normpath())
+        self.assertEqual(mrl_to_path("file:///C:/a/b"), Path("C:/a/b").normpath())

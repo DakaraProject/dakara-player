@@ -15,15 +15,13 @@ def get_font_loader_class():
     Returns:
         FontLoader: specialized version of the font loader class.
     """
-    if 'linux' in sys.platform:
+    if "linux" in sys.platform:
         return FontLoaderLinux
 
-    if 'win' in sys.platform:
+    if "win" in sys.platform:
         return FontLoaderWindows
 
-    raise NotImplementedError(
-        "This operating system is not currently supported"
-    )
+    raise NotImplementedError("This operating system is not currently supported")
 
 
 class FontLoader(ABC):
@@ -31,6 +29,7 @@ class FontLoader(ABC):
 
     Must be specialized for a given OS.
     """
+
     GREETINGS = "Dummy font loader selected"
 
     def __init__(self):
@@ -60,6 +59,7 @@ class FontLoaderLinux(FontLoader):
     It symlinks fonts to install in the user fonts directory. On exit, it
     removes the created symlinks.
     """
+
     GREETINGS = "Font loader for Linux selected"
     FONT_DIR_SYSTEM = "/usr/share/fonts"
     FONT_DIR_USER = "~/.fonts"
@@ -108,49 +108,39 @@ class FontLoaderLinux(FontLoader):
             font_file_name = os.path.basename(font_file_path)
 
             # check if the font is installed at system level
-            if os.path.isfile(os.path.join(self.FONT_DIR_SYSTEM,
-                                           font_file_name)):
+            if os.path.isfile(os.path.join(self.FONT_DIR_SYSTEM, font_file_name)):
 
                 logger.debug(
-                    "Font '{}' found in system directory".format(
-                        font_file_name
-                    )
+                    "Font '{}' found in system directory".format(font_file_name)
                 )
 
                 continue
 
             # check if the font is installed at user level
             font_dir_user = os.path.expanduser(self.FONT_DIR_USER)
-            font_file_user_path = os.path.join(font_dir_user,
-                                               font_file_name)
+            font_file_user_path = os.path.join(font_dir_user, font_file_name)
 
-            if os.path.isfile(font_file_user_path) or \
-               os.path.islink(font_file_user_path):
+            if os.path.isfile(font_file_user_path) or os.path.islink(
+                font_file_user_path
+            ):
 
-                logger.debug("Font '{}' found in user directory".format(
-                    font_file_name
-                ))
+                logger.debug("Font '{}' found in user directory".format(font_file_name))
 
                 continue
 
             # then, if the font is not installed, install it
-            font_file_target_path = os.path.join(
-                font_dir_user,
-                font_file_name
-            )
+            font_file_target_path = os.path.join(font_dir_user, font_file_name)
 
-            os.symlink(
-                font_file_path,
-                font_file_target_path
-            )
+            os.symlink(font_file_path, font_file_target_path)
 
             # register the font
             self.fonts_loaded.append(font_file_target_path)
 
-            logger.debug("Font '{}' loaded in user directory: '{}'".format(
-                font_file_path,
-                font_file_target_path
-            ))
+            logger.debug(
+                "Font '{}' loaded in user directory: '{}'".format(
+                    font_file_path, font_file_target_path
+                )
+            )
 
     def unload(self):
         """Remove the installed fonts
@@ -158,14 +148,10 @@ class FontLoaderLinux(FontLoader):
         for font_path in self.fonts_loaded:
             try:
                 os.unlink(font_path)
-                logger.debug("Font '{}' unloaded".format(
-                    font_path
-                ))
+                logger.debug("Font '{}' unloaded".format(font_path))
 
             except OSError:
-                logger.error("Unable to unload '{}'".format(
-                    font_path
-                ))
+                logger.error("Unable to unload '{}'".format(font_path))
 
         self.fonts_loaded = []
 
@@ -176,6 +162,7 @@ class FontLoaderWindows(FontLoader):
     It cannot do anything, since it is impossible to install fonts on Windows
     programatically, as for now. It simply asks the user to do so.
     """
+
     GREETINGS = "Font loader for Windows selected"
 
     def load(self):
@@ -186,8 +173,12 @@ class FontLoaderWindows(FontLoader):
 
         # since there seems to be no workable way to install fonts on Windows
         # through Python, we ask the user to do it by themselve
-        print(("Please install the following fonts located in the '{}' "
-               "folder and press Enter:").format(PATH_FONTS))
+        print(
+            (
+                "Please install the following fonts located in the '{}' "
+                "folder and press Enter:"
+            ).format(PATH_FONTS)
+        )
 
         for font_file_path in font_file_path_list:
             font_file_name = os.path.basename(font_file_path)

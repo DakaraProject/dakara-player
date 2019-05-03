@@ -10,11 +10,14 @@ from dakara_player_vlc.version import __version__, __date__
 from dakara_player_vlc.safe_workers import WorkerSafeThread, Runner
 from dakara_player_vlc.text_generator import TextGenerator
 from dakara_player_vlc.vlc_player import VlcPlayer
-from dakara_player_vlc.dakara_server import (DakaraServerHTTPConnection,
-                                             DakaraServerWebSocketConnection)
+from dakara_player_vlc.dakara_server import (
+    DakaraServerHTTPConnection,
+    DakaraServerWebSocketConnection,
+)
 
 from dakara_player_vlc.dakara_manager import DakaraManager
 from dakara_player_vlc.font_loader import get_font_loader_class
+
 FontLoader = get_font_loader_class()
 
 
@@ -27,6 +30,7 @@ class DakaraPlayerVlc(Runner):
     It simply starts, launchs the worker and waits for it to terminate or for a
     user Ctrl+C to be fired.
     """
+
     def init_runner(self, config_path, debug):
         """Initialization
 
@@ -55,6 +59,7 @@ class DakaraWorker(WorkerSafeThread):
     It simply starts, loads configuration, set the different worker, launches
     the main polling thread and waits for the end.
     """
+
     def init_worker(self, config_path, debug):
         """Initialization
 
@@ -74,10 +79,7 @@ class DakaraWorker(WorkerSafeThread):
         # set thread
         self.thread = self.create_thread(target=self.run)
 
-        logger.info("Dakara player {} ({})".format(
-            __version__,
-            __date__
-        ))
+        logger.info("Dakara player {} ({})".format(__version__, __date__))
 
     def run(self):
         """Worker main method
@@ -103,9 +105,7 @@ class DakaraWorker(WorkerSafeThread):
         # be executed.
         with ExitStack() as stack:
             # temporary directory
-            tempdir = stack.enter_context(TemporaryDirectory(
-                suffix='.dakara'
-            ))
+            tempdir = stack.enter_context(TemporaryDirectory(suffix=".dakara"))
 
             # font loader
             font_loader = stack.enter_context(FontLoader())
@@ -113,38 +113,29 @@ class DakaraWorker(WorkerSafeThread):
 
             # text screen generator
             text_generator = TextGenerator(
-                self.config['player'].get('templates') or {},
-                tempdir
+                self.config["player"].get("templates") or {}, tempdir
             )
 
             # vlc player
-            vlc_player = stack.enter_context(VlcPlayer(
-                self.stop,
-                self.errors,
-                self.config['player'],
-                text_generator
-            ))
+            vlc_player = stack.enter_context(
+                VlcPlayer(self.stop, self.errors, self.config["player"], text_generator)
+            )
 
             # communication with the dakara HTTP server
-            dakara_server_http = DakaraServerHTTPConnection(
-                self.config['server'])
+            dakara_server_http = DakaraServerHTTPConnection(self.config["server"])
             dakara_server_http.authenticate()
             token_header = dakara_server_http.get_token_header()
 
             # communication with the dakara WebSocket server
             dakara_server_websocket = stack.enter_context(
-                DakaraServerWebSocketConnection(self.stop,
-                                                self.errors,
-                                                self.config['server'],
-                                                token_header)
+                DakaraServerWebSocketConnection(
+                    self.stop, self.errors, self.config["server"], token_header
+                )
             )
 
             # manager for the precedent workers
             dakara_manager = DakaraManager(  # noqa F841
-                font_loader,
-                vlc_player,
-                dakara_server_http,
-                dakara_server_websocket
+                font_loader, vlc_player, dakara_server_http, dakara_server_websocket
             )
 
             # start the worker timer
@@ -182,15 +173,13 @@ class DakaraWorker(WorkerSafeThread):
                 raise IOError("Unable to read config file") from error
 
         # check file content
-        for key in ('player', 'server'):
+        for key in ("player", "server"):
             if key not in config:
-                raise ValueError(
-                    "Invalid config file, missing '{}'".format(key)
-                )
+                raise ValueError("Invalid config file, missing '{}'".format(key))
 
         # if debug is set as argument, override the config
         if debug:
-            config['loglevel'] = 'DEBUG'
+            config["loglevel"] = "DEBUG"
 
         return config
 
@@ -199,7 +188,7 @@ class DakaraWorker(WorkerSafeThread):
 
         Set a validated logging level from configuration.
         """
-        loglevel = self.config.get('loglevel')
+        loglevel = self.config.get("loglevel")
 
         # if no loglevel is provided, keep the default one (info)
         if loglevel is None:
@@ -208,8 +197,6 @@ class DakaraWorker(WorkerSafeThread):
         # otherwise check if it is valid and apply it
         loglevel_numeric = getattr(logging, loglevel.upper(), None)
         if not isinstance(loglevel_numeric, int):
-            raise ValueError(
-                "Invalid loglevel in config file: '{}'".format(loglevel)
-            )
+            raise ValueError("Invalid loglevel in config file: '{}'".format(loglevel))
 
         coloredlogs.set_level(loglevel_numeric)
