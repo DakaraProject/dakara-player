@@ -33,42 +33,41 @@ class VlcPlayer(Worker):
 
     The playlist is virtually handled using song-end callbacks.
     """
+
     def init_worker(self, config, text_generator):
         """Init the worker
         """
         self.config = config
         self.text_generator = text_generator
 
-        config_vlc = config.get('vlc') or {}
+        config_vlc = config.get("vlc") or {}
 
         # parameters used to create the player instance
-        fullscreen = config.get('fullscreen', False)
-        instance_parameters = config_vlc.get('instance_parameters') or []
+        fullscreen = config.get("fullscreen", False)
+        instance_parameters = config_vlc.get("instance_parameters") or []
 
         # parameters that will be used later on
-        self.kara_folder_path = config.get('kara_folder', "")
-        self.media_parameters = config_vlc.get('media_parameters') or []
+        self.kara_folder_path = config.get("kara_folder", "")
+        self.media_parameters = config_vlc.get("media_parameters") or []
         self.media_parameters_text_screen = []
 
         # parameters for transition screen
         self.transition_duration = config.get(
-            'transition_duration', TRANSITION_DURATION
+            "transition_duration", TRANSITION_DURATION
         )
 
         # load backgrounds
-        config_backgrounds = config.get('backgrounds') or {}
-        custom_background_directory = config_backgrounds.get('directory', "")
+        config_backgrounds = config.get("backgrounds") or {}
+        custom_background_directory = config_backgrounds.get("directory", "")
 
         self.load_transition_bg_path(
             custom_background_directory,
-            config_backgrounds.get('transition_background_name',
-                                   TRANSITION_BG_NAME)
+            config_backgrounds.get("transition_background_name", TRANSITION_BG_NAME),
         )
 
         self.load_idle_bg_path(
             custom_background_directory,
-            config_backgrounds.get('idle_background_name',
-                                   IDLE_BG_NAME)
+            config_backgrounds.get("idle_background_name", IDLE_BG_NAME),
         )
 
         # playlist entry id of the current song
@@ -95,7 +94,7 @@ class VlcPlayer(Worker):
         version = parse_version(version_str)
 
         # perform action according to VLC version
-        if version >= parse_version('3.0.0'):
+        if version >= parse_version("3.0.0"):
             # starting from version 3, VLC prioritizes subtitle files that are
             # nearby the media played, not the ones explicitally added; this
             # option forces VLC to use the explicitally added files only
@@ -160,9 +159,7 @@ class VlcPlayer(Worker):
         if idle_bg_name in dir_content:
             bg_path = os.path.join(bg_directory_path, idle_bg_name)
             logger.debug(
-                "Loading custom idle background file '{}'".format(
-                    idle_bg_name
-                )
+                "Loading custom idle background file '{}'".format(idle_bg_name)
             )
 
         else:
@@ -207,8 +204,7 @@ class VlcPlayer(Worker):
             callback (function): function to assign.
         """
         self.event_manager.event_attach(
-            vlc.EventType.MediaPlayerEndReached,
-            self.end_reached_callback
+            vlc.EventType.MediaPlayerEndReached, self.end_reached_callback
         )
 
         self.finished_callback = callback
@@ -234,17 +230,14 @@ class VlcPlayer(Worker):
             # request to play the song itself
             self.in_transition = False
             thread = self.create_thread(
-                target=self.play_media,
-                args=(self.media_pending,)
+                target=self.play_media, args=(self.media_pending,)
             )
 
             thread.start()
 
             # get file path
             file_path = mrl_to_path(self.media_pending.get_mrl())
-            logger.info("Now playing '{}'".format(
-                file_path
-            ))
+            logger.info("Now playing '{}'".format(file_path))
 
             # call the callback for when a song starts
             self.started_song_callback(self.playing_id)
@@ -253,9 +246,7 @@ class VlcPlayer(Worker):
 
         if self.is_idle():
             # if the idle screen has finished, restart it
-            thread = self.create_thread(
-                target=self.play_idle_screen
-            )
+            thread = self.create_thread(target=self.play_idle_screen)
 
             thread.start()
             return
@@ -271,8 +262,7 @@ class VlcPlayer(Worker):
             callback (function): function to assign.
         """
         self.event_manager.event_attach(
-            vlc.EventType.MediaPlayerEncounteredError,
-            self.encountered_error_callback
+            vlc.EventType.MediaPlayerEncounteredError, self.encountered_error_callback
         )
 
         self.error_callback = callback
@@ -343,16 +333,15 @@ class VlcPlayer(Worker):
         """
         # file location
         file_path = os.path.join(
-            self.kara_folder_path,
-            playlist_entry["song"]["file_path"]
+            self.kara_folder_path, playlist_entry["song"]["file_path"]
         )
 
         # Check file exists
         if not os.path.isfile(file_path):
             message = "File not found '{}'".format(file_path)
             logger.error(message)
-            self.could_not_play_callback(playlist_entry['id'])
-            self.error_callback(playlist_entry['id'], message)
+            self.could_not_play_callback(playlist_entry["id"])
+            self.error_callback(playlist_entry["id"], message)
 
             return
 
@@ -366,21 +355,19 @@ class VlcPlayer(Worker):
             playlist_entry
         )
 
-        media_transition = self.instance.media_new_path(
-            self.transition_bg_path
-        )
+        media_transition = self.instance.media_new_path(self.transition_bg_path)
 
         media_transition.add_options(
             *self.media_parameters_text_screen,
             *self.media_parameters,
             "sub-file={}".format(transition_text_path),
-            "image-duration={}".format(self.transition_duration)
+            "image-duration={}".format(self.transition_duration),
         )
         self.in_transition = True
 
         self.play_media(media_transition)
         logger.info("Playing transition for '{}'".format(file_path))
-        self.started_transition_callback(playlist_entry['id'])
+        self.started_transition_callback(playlist_entry["id"])
 
     def play_idle_screen(self):
         """Play idle screen
@@ -390,17 +377,12 @@ class VlcPlayer(Worker):
         self.in_transition = False
 
         # create idle screen media
-        media = self.instance.media_new_path(
-            self.idle_bg_path
-        )
+        media = self.instance.media_new_path(self.idle_bg_path)
 
         # create the idle screen
-        idle_text_path = self.text_generator.create_idle_text({
-            'notes': [
-                "VLC " + self.vlc_version,
-                "Dakara player " + __version__
-                ]
-            })
+        idle_text_path = self.text_generator.create_idle_text(
+            {"notes": ["VLC " + self.vlc_version, "Dakara player " + __version__]}
+        )
 
         media.add_options(
             *self.media_parameters_text_screen,
@@ -490,9 +472,7 @@ class VlcPlayer(Worker):
         logger.info("Stopping player")
 
         # send a warning within 3 seconds if VLC has not stopped already
-        timer_stop_player_too_long = Timer(
-            3, self.warn_stop_player_too_long
-        )
+        timer_stop_player_too_long = Timer(3, self.warn_stop_player_too_long)
 
         timer_stop_player_too_long.start()
         self.player.stop()
@@ -525,7 +505,7 @@ def mrl_to_path(file_mrl):
     """
     path = urllib.parse.urlparse(file_mrl).path
     # remove first '/' if a colon character is found like in '/C:/a/b'
-    if path[0] == '/' and path[2] == ':':
+    if path[0] == "/" and path[2] == ":":
         path = path[1:]
 
     return Path(urllib.parse.unquote(path)).normpath()

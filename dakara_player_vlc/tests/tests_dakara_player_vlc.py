@@ -21,8 +21,9 @@ class DakaraWorkerTestCase(TestCase):
         # save instances
         self.stop = Event()
         self.errors = Queue()
-        self.dakara_worker = DakaraWorker(self.stop, self.errors,
-                                          self.config_path, False)
+        self.dakara_worker = DakaraWorker(
+            self.stop, self.errors, self.config_path, False
+        )
 
         # save config
         self.config = self.dakara_worker.config
@@ -34,7 +35,7 @@ class DakaraWorkerTestCase(TestCase):
 
         # assert the result
         self.assertTrue(config)
-        self.assertNotEqual(config['loglevel'].lower(), 'debug')
+        self.assertNotEqual(config["loglevel"].lower(), "debug")
 
     def test_load_config_success_debug(self):
         """Test to load the config file with debug mode enabled
@@ -42,15 +43,15 @@ class DakaraWorkerTestCase(TestCase):
         config = DakaraWorker.load_config(self.config_path, True)
 
         # assert the result
-        self.assertEqual(config['loglevel'].lower(), 'debug')
+        self.assertEqual(config["loglevel"].lower(), "debug")
 
     def test_load_config_fail_not_found(self):
         """Test to load a not found config file
         """
         with self.assertRaises(IOError):
-            DakaraWorker.load_config('nowhere', False)
+            DakaraWorker.load_config("nowhere", False)
 
-    @patch('dakara_player_vlc.dakara_player_vlc.yaml.load')
+    @patch("dakara_player_vlc.dakara_player_vlc.yaml.load")
     def test_load_config_fail_parser_error(self, mock_load):
         """Test to load an invalid config file
         """
@@ -64,11 +65,11 @@ class DakaraWorkerTestCase(TestCase):
         # assert the call
         mock_load.assert_called_with(ANY, Loader=ANY)
 
-    @patch('dakara_player_vlc.dakara_player_vlc.yaml.load')
+    @patch("dakara_player_vlc.dakara_player_vlc.yaml.load")
     def test_load_config_fail_missing_keys(self, mock_load):
         """Test to load a config file without required keys
         """
-        for key in ('player', 'server'):
+        for key in ("player", "server"):
             config = self.config.copy()
             config.pop(key)
 
@@ -80,12 +81,12 @@ class DakaraWorkerTestCase(TestCase):
                 DakaraWorker.load_config(self.config_path, False)
                 self.assertIn(key, str(error))
 
-    @patch('dakara_player_vlc.dakara_player_vlc.coloredlogs.set_level')
+    @patch("dakara_player_vlc.dakara_player_vlc.coloredlogs.set_level")
     def test_configure_logger_success(self, mock_set_level):
         """Test to configure the logger
         """
         # set the loglevel
-        self.dakara_worker.config['loglevel'] = 'debug'
+        self.dakara_worker.config["loglevel"] = "debug"
 
         # call the method
         self.dakara_worker.configure_logger()
@@ -97,37 +98,40 @@ class DakaraWorkerTestCase(TestCase):
         """Test to configure the logger with invalid log level
         """
         # set the loglevel
-        self.dakara_worker.config['loglevel'] = 'nothing'
+        self.dakara_worker.config["loglevel"] = "nothing"
 
         # call the method
         with self.assertRaises(ValueError):
             self.dakara_worker.configure_logger()
 
-    @patch('dakara_player_vlc.dakara_player_vlc.TemporaryDirectory')
-    @patch('dakara_player_vlc.dakara_player_vlc.FontLoader')
-    @patch('dakara_player_vlc.dakara_player_vlc.TextGenerator')
-    @patch('dakara_player_vlc.dakara_player_vlc.VlcPlayer')
-    @patch('dakara_player_vlc.dakara_player_vlc.DakaraServerHTTPConnection')
-    @patch('dakara_player_vlc.dakara_player_vlc'
-           '.DakaraServerWebSocketConnection')
-    @patch('dakara_player_vlc.dakara_player_vlc.DakaraManager')
-    def test_run(self, mock_dakara_manager_class,
-                 mock_dakara_server_websocket_class,
-                 mock_dakara_server_http_class,
-                 mock_vlc_player_class, mock_text_generator_class,
-                 mock_font_loader_class, mock_temporary_directory_class):
+    @patch("dakara_player_vlc.dakara_player_vlc.TemporaryDirectory")
+    @patch("dakara_player_vlc.dakara_player_vlc.FontLoader")
+    @patch("dakara_player_vlc.dakara_player_vlc.TextGenerator")
+    @patch("dakara_player_vlc.dakara_player_vlc.VlcPlayer")
+    @patch("dakara_player_vlc.dakara_player_vlc.DakaraServerHTTPConnection")
+    @patch("dakara_player_vlc.dakara_player_vlc" ".DakaraServerWebSocketConnection")
+    @patch("dakara_player_vlc.dakara_player_vlc.DakaraManager")
+    def test_run(
+        self,
+        mock_dakara_manager_class,
+        mock_dakara_server_websocket_class,
+        mock_dakara_server_http_class,
+        mock_vlc_player_class,
+        mock_text_generator_class,
+        mock_font_loader_class,
+        mock_temporary_directory_class,
+    ):
         """Test a dummy run
         """
         # create mock instances
-        mock_dakara_server_websocket = mock_dakara_server_websocket_class\
-            .return_value.__enter__.return_value
+        mock_dakara_server_websocket = (
+            mock_dakara_server_websocket_class.return_value.__enter__.return_value
+        )
         mock_dakara_server_http = mock_dakara_server_http_class.return_value
-        mock_dakara_server_http.get_token_header.return_value = 'token'
-        mock_vlc_player = mock_vlc_player_class.return_value.__enter__\
-            .return_value
+        mock_dakara_server_http.get_token_header.return_value = "token"
+        mock_vlc_player = mock_vlc_player_class.return_value.__enter__.return_value
         mock_text_generator = mock_text_generator_class.return_value
-        mock_font_loader = mock_font_loader_class.return_value\
-            .__enter__.return_value
+        mock_font_loader = mock_font_loader_class.return_value.__enter__.return_value
 
         # set the stop event
         self.stop.set()
@@ -136,21 +140,25 @@ class DakaraWorkerTestCase(TestCase):
         self.dakara_worker.run()
 
         # assert the call
-        mock_temporary_directory_class.assert_called_with(suffix='.dakara')
+        mock_temporary_directory_class.assert_called_with(suffix=".dakara")
         mock_font_loader_class.assert_called_with()
         mock_font_loader.load.assert_called_with()
         mock_text_generator_class.assert_called_with({}, ANY)
-        mock_vlc_player_class.assert_called_with(self.stop, self.errors,
-                                                 self.config['player'],
-                                                 mock_text_generator)
-        mock_dakara_server_http_class.assert_called_with(self.config['server'])
+        mock_vlc_player_class.assert_called_with(
+            self.stop, self.errors, self.config["player"], mock_text_generator
+        )
+        mock_dakara_server_http_class.assert_called_with(self.config["server"])
         mock_dakara_server_http.authenticate.assert_called_with()
         mock_dakara_server_http.get_token_header.assert_called_with()
         mock_dakara_server_websocket_class.assert_called_with(
-            self.stop, self.errors, self.config['server'], 'token')
+            self.stop, self.errors, self.config["server"], "token"
+        )
         mock_dakara_manager_class.assert_called_with(
-            mock_font_loader, mock_vlc_player,
-            mock_dakara_server_http, mock_dakara_server_websocket)
+            mock_font_loader,
+            mock_vlc_player,
+            mock_dakara_server_http,
+            mock_dakara_server_websocket,
+        )
         mock_dakara_server_websocket.timer.start.assert_called_with()
 
 

@@ -1,6 +1,7 @@
 language: python
 python:
   - "3.5"
+  - "3.6"
 
 # restrict to branches
 branches:
@@ -20,4 +21,5 @@ install:
 # command to run tests
 script:
   - ./tests.py -v
+  - if [[ $TRAVIS_PYTHON_VERSION != 3.5 ]]; then black . --check; fi
   - flake8
