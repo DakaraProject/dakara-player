@@ -62,7 +62,7 @@ class DakaraWorkerTestCase(TestCase):
             DakaraWorker.load_config(self.config_path, False)
 
         # assert the call
-        mock_load.assert_called_with(ANY)
+        mock_load.assert_called_with(ANY, Loader=ANY)
 
     @patch('dakara_player_vlc.dakara_player_vlc.yaml.load')
     def test_load_config_fail_missing_keys(self, mock_load):

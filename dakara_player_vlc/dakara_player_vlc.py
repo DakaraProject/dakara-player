@@ -176,7 +176,7 @@ class DakaraWorker(WorkerSafeThread):
         # load and parse the file
         with open(config_path) as file:
             try:
-                config = yaml.load(file)
+                config = yaml.load(file, Loader=yaml.Loader)
 
             except yaml.parser.ParserError as error:
                 raise IOError("Unable to read config file") from error

@@ -58,7 +58,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         # open the config
         config_path = get_test_material("config.yaml")
         with open(config_path) as file:
-            config = yaml.load(file)
+            config = yaml.load(file, Loader=yaml.Loader)
             config = config['server']
 
         # create an object
@@ -646,7 +646,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         # open the config
         config_path = get_test_material("config.yaml")
         with open(config_path) as file:
-            config = yaml.load(file)
+            config = yaml.load(file, Loader=yaml.Loader)
             config = config['server']
 
         # create an object
