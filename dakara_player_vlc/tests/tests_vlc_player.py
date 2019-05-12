@@ -519,13 +519,19 @@ class VlcPlayerCustomTestCase(TestCase):
         # create errors queue
         self.errors = Queue()
 
-    def test_default(self):
+    @patch("dakara_player_vlc.vlc_player.os.path.exists")
+    def test_default(self, mocked_exists):
         """Test to instanciate with default parameters
 
         In that case, backgrounds come from the fallback directory.
         """
+        # prepare mock
+        mocked_exists.return_value = True
+
         # create object
-        vlc_player = VlcPlayer(self.stop, self.errors, {}, self.text_generator)
+        vlc_player = VlcPlayer(
+            self.stop, self.errors, {"kara_folder": "/path/valid"}, self.text_generator
+        )
 
         # assert the object
         self.assertEqual(vlc_player.idle_bg_path, get_background(IDLE_BG_NAME))
@@ -533,16 +539,26 @@ class VlcPlayerCustomTestCase(TestCase):
             vlc_player.transition_bg_path, get_background(TRANSITION_BG_NAME)
         )
 
-    def test_custom_background_directory_success(self):
+        # assert the mock
+        mocked_exists.assert_called_with("/path/valid")
+
+    @patch("dakara_player_vlc.vlc_player.os.path.exists")
+    def test_custom_background_directory_success(self, mocked_exists):
         """Test to instanciate with an existing backgrounds directory
 
         In that case, backgrounds come from this directory.
         """
+        # prepare mock
+        mocked_exists.return_value = True
+
         # create object
         vlc_player = VlcPlayer(
             self.stop,
             self.errors,
-            {"backgrounds": {"directory": PATH_TEST_MATERIALS}},
+            {
+                "backgrounds": {"directory": PATH_TEST_MATERIALS},
+                "kara_folder": "/path/valid",
+            },
             self.text_generator,
         )
 
@@ -552,16 +568,20 @@ class VlcPlayerCustomTestCase(TestCase):
             vlc_player.transition_bg_path, get_test_material(TRANSITION_BG_NAME)
         )
 
-    def test_custom_background_directory_fail(self):
+    @patch("dakara_player_vlc.vlc_player.os.path.exists")
+    def test_custom_background_directory_fail(self, mocked_exists):
         """Test to instanciate with an inexisting backgrounds directory
 
         In that case, backgrounds come from the fallback directory.
         """
+        # prepare mock
+        mocked_exists.return_value = True
+
         # create object
         vlc_player = VlcPlayer(
             self.stop,
             self.errors,
-            {"backgrounds": {"directory": "nowhere"}},
+            {"backgrounds": {"directory": "nowhere"}, "kara_folder": "/path/valid"},
             self.text_generator,
         )
 
@@ -571,12 +591,16 @@ class VlcPlayerCustomTestCase(TestCase):
             vlc_player.transition_bg_path, get_background(TRANSITION_BG_NAME)
         )
 
-    def test_custom_background_names_success(self):
+    @patch("dakara_player_vlc.vlc_player.os.path.exists")
+    def test_custom_background_names_success(self, mocked_exists):
         """Test to instanciate with existing background names
 
         In that case, backgrounds come from the custom directory and have the
         correct name.
         """
+        # prepare mock
+        mocked_exists.return_value = True
+
         # create object
         vlc_player = VlcPlayer(
             self.stop,
@@ -586,7 +610,8 @@ class VlcPlayerCustomTestCase(TestCase):
                     "directory": PATH_TEST_MATERIALS,
                     "idle_background_name": "song.png",
                     "transition_background_name": "song.png",
-                }
+                },
+                "kara_folder": "/path/valid",
             },
             self.text_generator,
         )
@@ -595,12 +620,16 @@ class VlcPlayerCustomTestCase(TestCase):
         self.assertEqual(vlc_player.idle_bg_path, get_test_material("song.png"))
         self.assertEqual(vlc_player.transition_bg_path, get_test_material("song.png"))
 
-    def test_custom_background_names_fail(self):
+    @patch("dakara_player_vlc.vlc_player.os.path.exists")
+    def test_custom_background_names_fail(self, mocked_exists):
         """Test to instanciate with background names that do not exist
 
         In that case, backgrounds come from the custom directory and have the
         default name.
         """
+        # prepare mock
+        mocked_exists.return_value = True
+
         # create object
         vlc_player = VlcPlayer(
             self.stop,
@@ -610,7 +639,8 @@ class VlcPlayerCustomTestCase(TestCase):
                     "directory": PATH_TEST_MATERIALS,
                     "idle_background_name": "nothing",
                     "transition_background_name": "nothing",
-                }
+                },
+                "kara_folder": "/path/valid",
             },
             self.text_generator,
         )
@@ -619,6 +649,27 @@ class VlcPlayerCustomTestCase(TestCase):
         self.assertEqual(vlc_player.idle_bg_path, get_test_material(IDLE_BG_NAME))
         self.assertEqual(
             vlc_player.transition_bg_path, get_test_material(TRANSITION_BG_NAME)
+        )
+
+    @patch("dakara_player_vlc.vlc_player.os.path.exists")
+    def test_kara_folder_path_not_valid(self, mocked_exists):
+        """Test the given karaoke path exists
+        """
+        # prepare mock
+        mocked_exists.return_value = False
+
+        # create object
+        with self.assertRaises(ValueError) as error:
+            VlcPlayer(
+                self.stop,
+                self.errors,
+                {"kara_folder": "/path/not/valid"},
+                self.text_generator,
+            )
+
+        # assert the error
+        self.assertEqual(
+            str(error.exception), 'The karaoke folder "/path/not/valid" does not exist'
         )
 
 

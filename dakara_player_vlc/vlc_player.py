@@ -48,6 +48,7 @@ class VlcPlayer(Worker):
 
         # parameters that will be used later on
         self.kara_folder_path = config.get("kara_folder", "")
+        self.check_kara_folder_path(self.kara_folder_path)
         self.media_parameters = config_vlc.get("media_parameters") or []
         self.media_parameters_text_screen = []
 
@@ -492,6 +493,13 @@ class VlcPlayer(Worker):
         """Exit the worker
         """
         self.stop_player()
+
+    @staticmethod
+    def check_kara_folder_path(kara_path):
+        """Check the kara folder is valid
+        """
+        if not os.path.exists(kara_path):
+            raise ValueError('The karaoke folder "{}" does not exist'.format(kara_path))
 
 
 def mrl_to_path(file_mrl):
