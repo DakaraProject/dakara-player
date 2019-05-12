@@ -104,6 +104,37 @@ class DakaraWorkerTestCase(TestCase):
         with self.assertRaises(ValueError):
             self.dakara_worker.configure_logger()
 
+    @patch("dakara_player_vlc.dakara_player_vlc.logger")
+    def test_check_version_release(self, mocked_logger):
+        """Test to display the version for a release
+        """
+        with patch.multiple(
+            "dakara_player_vlc.dakara_player_vlc",
+            __version__="0.0.0",
+            __date__="1970-01-01",
+        ):
+            self.dakara_worker.check_version()
+
+        # TODO use `self.assertLogs` instead, see #49
+        mocked_logger.info.assert_called_with("Dakara player 0.0.0 (1970-01-01)")
+
+    @patch("dakara_player_vlc.dakara_player_vlc.logger")
+    def test_check_version_non_release(self, mocked_logger):
+        """Test to display the version for a non release
+        """
+        with patch.multiple(
+            "dakara_player_vlc.dakara_player_vlc",
+            __version__="0.1.0-dev",
+            __date__="1970-01-01",
+        ):
+            self.dakara_worker.check_version()
+
+        # TODO use `self.assertLogs` instead, see #49
+        mocked_logger.info.assert_called_with("Dakara player 0.1.0-dev (1970-01-01)")
+        mocked_logger.warning.assert_called_with(
+            "You are running a dev version, use it at your own risks!"
+        )
+
     @patch("dakara_player_vlc.dakara_player_vlc.TemporaryDirectory")
     @patch("dakara_player_vlc.dakara_player_vlc.FontLoader")
     @patch("dakara_player_vlc.dakara_player_vlc.TextGenerator")
