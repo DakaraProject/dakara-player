@@ -23,8 +23,8 @@ version_date=$(date -I -u)
 # change internal version file
 version_file=dakara_player_vlc/version.py
 cat <<EOF >$version_file
-__version__ = '$version_number'
-__date__ = '$version_date'
+__version__ = "$version_number"
+__date__ = "$version_date"
 EOF
 
 # change version in changelog
@@ -47,8 +47,8 @@ echo "Version bumped to $version_number"
 
 # change internal version file to dev version
 cat <<EOF >$version_file
-__version__ = '$dev_version_number'
-__date__ = '$version_date'
+__version__ = "$dev_version_number"
+__date__ = "$version_date"
 EOF
 
 # change version in appveyor config file
