@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import MagicMock, NonCallableMagicMock, patch, ANY
+from unittest.mock import MagicMock, patch, ANY
 from threading import Event
 from queue import Queue
 
@@ -76,8 +76,8 @@ class VlcPlayerTestCase(TestCase):
         )
 
         # set callbacks for VLC
-        self.vlc_player.set_finished_callback(lambda self: None)
-        self.vlc_player.set_error_callback(lambda self, message: None)
+        # self.vlc_player.set_finished_callback(lambda self: None)
+        # self.vlc_player.set_error_callback(lambda self, message: None)
 
     @staticmethod
     def get_event_and_callback():
@@ -92,34 +92,51 @@ class VlcPlayerTestCase(TestCase):
 
         return event, callback
 
-    def test_set_callbacks(self):
-        """Test the assignation of callbacks
+    def test_set_callback(self):
+        """Test the assignation of a callback
         """
-        names = (
-            "started_transition",
-            "started_song",
-            "could_not_play",
-            "finished",
-            "paused",
-            "resumed",
-            "error",
+        # create a callback function
+        callback = MagicMock()
+
+        # pre assert the callback is not set yet
+        self.assertIsNot(self.vlc_player.callbacks.get("test"), callback)
+
+        # call the method
+        self.vlc_player.set_callback("test", callback)
+
+        # post assert the callback is now set
+        self.assertIs(self.vlc_player.callbacks.get("test"), callback)
+
+    def test_set_vlc_callback(self):
+        """Test the assignation of a callback to a VLC event
+
+        We have also to mock the event manager method because there is no way
+        with the VLC library to know which callback is associated to a given
+        event.
+        """
+        # patch the event creator
+        self.vlc_player.event_manager.event_attach = MagicMock()
+
+        # create a callback function
+        callback = MagicMock()
+
+        # pre assert the callback is not set yet
+        self.assertIsNot(
+            self.vlc_player.vlc_callbacks.get(EventType.MediaPlayerEndReached), callback
         )
 
-        for name in names:
-            method_name = "set_{}_callback".format(name)
-            callback_name = "{}_callback".format(name)
+        # call the method
+        self.vlc_player.set_vlc_callback(EventType.MediaPlayerEndReached, callback)
 
-            method = getattr(self.vlc_player, method_name)
-            callback = MagicMock()
+        # assert the callback is now set
+        self.assertIs(
+            self.vlc_player.vlc_callbacks.get(EventType.MediaPlayerEndReached), callback
+        )
 
-            # pre assert
-            self.assertIsNot(getattr(self.vlc_player, callback_name), callback)
-
-            # call the method
-            method(callback)
-
-            # post assert
-            self.assertIs(getattr(self.vlc_player, callback_name), callback)
+        # assert the event manager got the right arguments
+        self.vlc_player.event_manager.event_attach.assert_called_with(
+            EventType.MediaPlayerEndReached, callback
+        )
 
     def test_play_idle_screen(self):
         """Test the display of the idle screen
@@ -129,7 +146,7 @@ class VlcPlayerTestCase(TestCase):
 
         # create an event for when the player starts to play
         is_playing, callback_is_playing = self.get_event_and_callback()
-        self.vlc_player.event_manager.event_attach(
+        self.vlc_player.set_vlc_callback(
             EventType.MediaPlayerPlaying, callback_is_playing
         )
 
@@ -172,12 +189,12 @@ class VlcPlayerTestCase(TestCase):
         self.text_generator.create_transition_text.return_value = self.subtitle_path
 
         # mock the callbacks
-        self.vlc_player.started_transition_callback = MagicMock()
-        self.vlc_player.started_song_callback = MagicMock()
+        self.vlc_player.set_callback("started_transition", MagicMock())
+        self.vlc_player.set_callback("started_song", MagicMock())
 
         # create an event for when the player starts to play
         is_playing, callback_is_playing = self.get_event_and_callback()
-        self.vlc_player.event_manager.event_attach(
+        self.vlc_player.set_vlc_callback(
             EventType.MediaPlayerPlaying, callback_is_playing
         )
 
@@ -214,7 +231,7 @@ class VlcPlayerTestCase(TestCase):
         # seems impossible to do for now
 
         # assert the started transition callback has been called
-        self.vlc_player.started_transition_callback.assert_called_with(
+        self.vlc_player.callbacks["started_transition"].assert_called_with(
             self.playlist_entry["id"]
         )
 
@@ -231,7 +248,7 @@ class VlcPlayerTestCase(TestCase):
         self.assertEqual(file_path, self.song_file_path)
 
         # assert the started song callback has been called
-        self.vlc_player.started_song_callback.assert_called_with(
+        self.vlc_player.callbacks["started_song"].assert_called_with(
             self.playlist_entry["id"]
         )
 
@@ -246,9 +263,9 @@ class VlcPlayerTestCase(TestCase):
         mock_isfile.return_value = False
 
         # mock the callbacks
-        self.vlc_player.started_transition_callback = MagicMock()
-        self.vlc_player.started_song_callback = MagicMock()
-        self.vlc_player.could_not_play_callback = MagicMock()
+        self.vlc_player.set_callback("started_transition", MagicMock())
+        self.vlc_player.set_callback("started_song", MagicMock())
+        self.vlc_player.set_callback("could_not_play", MagicMock())
 
         # pre assertions
         self.assertIsNone(self.vlc_player.playing_id)
@@ -267,96 +284,90 @@ class VlcPlayerTestCase(TestCase):
         self.assertEqual(self.vlc_player.player.get_state(), State.NothingSpecial)
 
         # assert the callbacks
-        self.vlc_player.started_transition_callback.assert_not_called()
-        self.vlc_player.started_song_callback.assert_not_called()
-        self.vlc_player.could_not_play_callback.assert_called_with(
+        self.vlc_player.callbacks["started_transition"].assert_not_called()
+        self.vlc_player.callbacks["started_song"].assert_not_called()
+        self.vlc_player.callbacks["could_not_play"].assert_called_with(
             self.playlist_entry["id"]
         )
 
-    def test_end_reached_callback_transition(self):
+    def test_handle_end_reached_transition(self):
         """Test song end callback for after a transition screen
         """
         # mock the call
-        self.vlc_player.in_transition = NonCallableMagicMock()
-        in_transition = self.vlc_player.in_transition
-        self.vlc_player.create_thread = MagicMock()
-        self.vlc_player.media_pending = MagicMock()
-        self.vlc_player.media_pending.get_mrl.return_value = "file:///test.mkv"
-        self.vlc_player.started_song_callback = MagicMock()
+        self.vlc_player.in_transition = True
         self.vlc_player.playing_id = 999
+        self.vlc_player.set_callback("finished", MagicMock())
+        self.vlc_player.set_callback("started_song", MagicMock())
+        self.vlc_player.create_thread = MagicMock()
+        media_pending = MagicMock()
+        self.vlc_player.media_pending = media_pending
+        self.vlc_player.media_pending.get_mrl.return_value = "file:///test.mkv"
 
         # call the method
-        self.vlc_player.end_reached_callback("event")
+        self.vlc_player.handle_end_reached("event")
 
         # assert the call
-        in_transition.__bool__.assert_called_with()
         self.assertFalse(self.vlc_player.in_transition)
-        self.vlc_player.create_thread.assert_called_with(
-            target=self.vlc_player.play_media, args=(self.vlc_player.media_pending,)
-        )
         self.vlc_player.media_pending.get_mrl.assert_called_with()
-        self.vlc_player.create_thread.return_value.start.assert_called_with()
-        self.vlc_player.started_song_callback.assert_called_with(999)
+        self.vlc_player.callbacks["finished"].assert_not_called()
+        self.vlc_player.callbacks["started_song"].assert_called_with(999)
+        self.vlc_player.create_thread.assert_called_with(
+            target=self.vlc_player.play_media, args=(media_pending,)
+        )
 
-    def test_end_reached_callback_idle(self):
+    def test_handle_end_reached_idle(self):
         """Test song end callback for after an idle screen
         """
         # mock the call
-        self.vlc_player.in_transition = NonCallableMagicMock()
-        in_transition = self.vlc_player.in_transition
-        in_transition.__bool__.return_value = False
-        self.vlc_player.is_idle = MagicMock()
-        self.vlc_player.is_idle.return_value = True
+        self.vlc_player.in_transition = False
+        self.vlc_player.playing_id = None
+        self.vlc_player.set_callback("finished", MagicMock())
+        self.vlc_player.set_callback("started_song", MagicMock())
         self.vlc_player.create_thread = MagicMock()
 
         # call the method
-        self.vlc_player.end_reached_callback("event")
+        self.vlc_player.handle_end_reached("event")
 
         # assert the call
-        in_transition.__bool__.assert_called_with()
-        self.vlc_player.is_idle.assert_called_with()
+        self.vlc_player.callbacks["finished"].assert_not_called()
+        self.vlc_player.callbacks["started_song"].assert_not_called()
         self.vlc_player.create_thread.assert_called_with(
             target=self.vlc_player.play_idle_screen
         )
-        self.vlc_player.create_thread.return_value.start.assert_called_with()
 
-    def test_end_reached_callback_finished(self):
+    def test_handle_end_reached_finished(self):
         """Test song end callback for after an actual song
         """
         # mock the call
-        self.vlc_player.in_transition = NonCallableMagicMock()
-        in_transition = self.vlc_player.in_transition
-        in_transition.__bool__.return_value = False
-        self.vlc_player.is_idle = MagicMock()
-        self.vlc_player.is_idle.return_value = False
-        self.vlc_player.playing_id = MagicMock()
-        self.vlc_player.finished_callback = MagicMock()
+        self.vlc_player.in_transition = False
         self.vlc_player.playing_id = 999
+        self.vlc_player.set_callback("finished", MagicMock())
+        self.vlc_player.set_callback("started_song", MagicMock())
+        self.vlc_player.create_thread = MagicMock()
 
         # call the method
-        self.vlc_player.end_reached_callback("event")
+        self.vlc_player.handle_end_reached("event")
 
         # assert the call
-        in_transition.__bool__.assert_called_with()
-        self.vlc_player.is_idle.assert_called_with()
-        self.vlc_player.finished_callback.assert_called_with(999)
+        self.vlc_player.callbacks["finished"].assert_called_with(999)
+        self.vlc_player.callbacks["started_song"].assert_not_called()
+        self.vlc_player.create_thread.assert_not_called()
 
     @patch("dakara_player_vlc.vlc_player.vlc.libvlc_errmsg")
-    def test_encountered_error_callback(self, mock_libvcl_errmsg):
+    def test_handle_encountered_error(self, mock_libvcl_errmsg):
         """Test error callback
         """
         # mock the call
         mock_libvcl_errmsg.return_value = b"error"
-        self.vlc_player.error_callback = MagicMock()
-        self.vlc_player.playing_id = NonCallableMagicMock()
+        self.vlc_player.set_callback("error", MagicMock())
         self.vlc_player.playing_id = 999
 
         # call the method
-        self.vlc_player.encountered_error_callback("event")
+        self.vlc_player.handle_encountered_error("event")
 
         # assert the call
         mock_libvcl_errmsg.assert_called_with()
-        self.vlc_player.error_callback.assert_called_with(999, "error")
+        self.vlc_player.callbacks["error"].assert_called_with(999, "error")
         self.assertIsNone(self.vlc_player.playing_id)
         self.assertFalse(self.vlc_player.in_transition)
 
@@ -367,12 +378,12 @@ class VlcPlayerTestCase(TestCase):
         self.text_generator.create_transition_text.return_value = self.subtitle_path
 
         # mock the callbacks
-        self.vlc_player.paused_callback = MagicMock()
-        self.vlc_player.resumed_callback = MagicMock()
+        self.vlc_player.set_callback("paused", MagicMock())
+        self.vlc_player.set_callback("resumed", MagicMock())
 
         # create an event for when the player starts to play
         is_playing, callback_is_playing = self.get_event_and_callback()
-        self.vlc_player.event_manager.event_attach(
+        self.vlc_player.set_vlc_callback(
             EventType.MediaPlayerPlaying, callback_is_playing
         )
 
@@ -396,14 +407,14 @@ class VlcPlayerTestCase(TestCase):
         self.assertTrue(self.vlc_player.is_paused())
 
         # assert the callback
-        self.vlc_player.paused_callback.assert_called_with(
+        self.vlc_player.callbacks["paused"].assert_called_with(
             self.playlist_entry["id"], timing
         )
-        self.vlc_player.resumed_callback.assert_not_called()
+        self.vlc_player.callbacks["resumed"].assert_not_called()
 
         # reset the mocks
-        self.vlc_player.paused_callback.reset_mock()
-        self.vlc_player.resumed_callback.reset_mock()
+        self.vlc_player.callbacks["paused"].reset_mock()
+        self.vlc_player.callbacks["resumed"].reset_mock()
 
         # call the method to resume the player
         self.vlc_player.set_pause(False)
@@ -412,8 +423,8 @@ class VlcPlayerTestCase(TestCase):
         self.assertFalse(self.vlc_player.is_paused())
 
         # assert the callback
-        self.vlc_player.paused_callback.assert_not_called()
-        self.vlc_player.resumed_callback.assert_called_with(
+        self.vlc_player.callbacks["paused"].assert_not_called()
+        self.vlc_player.callbacks["resumed"].assert_called_with(
             self.playlist_entry["id"],
             timing,  # on a slow computer, the timing may be inaccurate
         )
@@ -428,12 +439,12 @@ class VlcPlayerTestCase(TestCase):
         self.text_generator.create_transition_text.return_value = self.subtitle_path
 
         # mock the callbacks
-        self.vlc_player.paused_callback = MagicMock()
-        self.vlc_player.resumed_callback = MagicMock()
+        self.vlc_player.set_callback("paused", MagicMock())
+        self.vlc_player.set_callback("resumed", MagicMock())
 
         # create an event for when the player starts to play
         is_playing, callback_is_playing = self.get_event_and_callback()
-        self.vlc_player.event_manager.event_attach(
+        self.vlc_player.set_vlc_callback(
             EventType.MediaPlayerPlaying, callback_is_playing
         )
 
@@ -456,12 +467,12 @@ class VlcPlayerTestCase(TestCase):
         self.assertTrue(self.vlc_player.is_paused())
 
         # assert the callback
-        self.vlc_player.paused_callback.assert_called_with(ANY, ANY)
-        self.vlc_player.resumed_callback.assert_not_called()
+        self.vlc_player.callbacks["paused"].assert_called_with(ANY, ANY)
+        self.vlc_player.callbacks["resumed"].assert_not_called()
 
         # reset the mocks
-        self.vlc_player.paused_callback.reset_mock()
-        self.vlc_player.resumed_callback.reset_mock()
+        self.vlc_player.callbacks["paused"].reset_mock()
+        self.vlc_player.callbacks["resumed"].reset_mock()
 
         # re-call the method to pause the player
         self.vlc_player.set_pause(True)
@@ -470,12 +481,12 @@ class VlcPlayerTestCase(TestCase):
         self.assertTrue(self.vlc_player.is_paused())
 
         # assert the callback
-        self.vlc_player.paused_callback.assert_not_called()
-        self.vlc_player.resumed_callback.assert_not_called()
+        self.vlc_player.callbacks["paused"].assert_not_called()
+        self.vlc_player.callbacks["resumed"].assert_not_called()
 
         # reset the mocks
-        self.vlc_player.paused_callback.reset_mock()
-        self.vlc_player.resumed_callback.reset_mock()
+        self.vlc_player.callbacks["paused"].reset_mock()
+        self.vlc_player.callbacks["resumed"].reset_mock()
 
         # call the method to resume the player
         self.vlc_player.set_pause(False)
@@ -484,12 +495,12 @@ class VlcPlayerTestCase(TestCase):
         self.assertFalse(self.vlc_player.is_paused())
 
         # assert the callback
-        self.vlc_player.paused_callback.assert_not_called()
-        self.vlc_player.resumed_callback.assert_called_with(ANY, ANY)
+        self.vlc_player.callbacks["paused"].assert_not_called()
+        self.vlc_player.callbacks["resumed"].assert_called_with(ANY, ANY)
 
         # reset the mocks
-        self.vlc_player.paused_callback.reset_mock()
-        self.vlc_player.resumed_callback.reset_mock()
+        self.vlc_player.callbacks["paused"].reset_mock()
+        self.vlc_player.callbacks["resumed"].reset_mock()
 
         # re-call the method to resume the player
         self.vlc_player.set_pause(False)
@@ -498,8 +509,8 @@ class VlcPlayerTestCase(TestCase):
         self.assertFalse(self.vlc_player.is_paused())
 
         # assert the callback
-        self.vlc_player.paused_callback.assert_not_called()
-        self.vlc_player.resumed_callback.assert_not_called()
+        self.vlc_player.callbacks["paused"].assert_not_called()
+        self.vlc_player.callbacks["resumed"].assert_not_called()
 
         # close the player
         self.vlc_player.stop_player()
