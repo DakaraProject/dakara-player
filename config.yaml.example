@@ -100,20 +100,20 @@ player:
     # The fallback directory is 'dakara_player_vlc/resources/backgrounds'. To
     # customize your backgrounds, you can copy this fallback directory to some places
     # and use the content as a starter.
-    # You have to set this parameter in order to set 'transitionBackgroundName' and
-    # 'idleBackgroundName'.
+    # You have to set this parameter in order to set 'transition_background_name' and
+    # 'idle_background_name'.
     # directory: path/to/backgrounds/directory
 
     # Name of the background file of the transition screen.
     # In case of a picture, it will be displayed during 'transitionDuration'
     # seconds.
     # Default is 'transition.png'.
-    # You have to set 'backgrounds_directory' to set this parameter.
+    # You have to set 'directory' to set this parameter.
     # transition_background_name: transition_background.file
 
     # Name of the background file of the idle screen.
     # Default is 'idle.png'.
-    # You have to set 'backgrounds_directory' to set this parameter.
+    # You have to set 'directory' to set this parameter.
     # idle_background_name: idle_background.file
 
 # Parameters for the server

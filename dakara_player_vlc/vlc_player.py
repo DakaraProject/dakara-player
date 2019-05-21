@@ -9,16 +9,15 @@ from path import Path
 
 from dakara_player_vlc.version import __version__
 from dakara_player_vlc.safe_workers import Worker
-from dakara_player_vlc.resources_manager import get_background
+from dakara_player_vlc.background_loader import BackgroundLoader
+from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
 
 
 TRANSITION_DURATION = 2
-TRANSITION_BG_NAME = "transition.png"
-
-
 IDLE_DURATION = 300
-IDLE_BG_NAME = "idle.png"
 
+IDLE_BG_NAME = "idle.png"
+TRANSITION_BG_NAME = "transition.png"
 
 logger = logging.getLogger("vlc_player")
 
@@ -60,17 +59,19 @@ class VlcPlayer(Worker):
 
         # load backgrounds
         config_backgrounds = config.get("backgrounds") or {}
-        custom_background_directory = config_backgrounds.get("directory", "")
-
-        self.load_transition_bg_path(
-            custom_background_directory,
-            config_backgrounds.get("transition_background_name", TRANSITION_BG_NAME),
+        self.background_loader = BackgroundLoader(
+            directory=Path(config_backgrounds.get("directory", "")),
+            default_directory=Path(PATH_BACKGROUNDS),
+            background_filenames={
+                "transition": config_backgrounds.get("transition_background_name"),
+                "idle": config_backgrounds.get("idle_background_name"),
+            },
+            default_background_filenames={
+                "transition": TRANSITION_BG_NAME,
+                "idle": IDLE_BG_NAME,
+            },
         )
-
-        self.load_idle_bg_path(
-            custom_background_directory,
-            config_backgrounds.get("idle_background_name", IDLE_BG_NAME),
-        )
+        self.background_loader.load()
 
         # playlist entry id of the current song
         # if no songs are playing, its value is None
@@ -124,70 +125,6 @@ class VlcPlayer(Worker):
         self.set_callback("paused", lambda playlist_entry_id, timing: None)
         self.set_callback("resumed", lambda playlist_entry_id, timing: None)
         self.set_callback("error", lambda playlist_entry_id, message: None)
-
-    def load_transition_bg_path(self, bg_directory_path, transition_bg_name):
-        """Load transition backgound file path
-
-        Load the customized background path or the default background path for
-        the transition screen.
-
-        Called once by the constructor.
-
-        Args:
-            bg_directory_path (str): path to the background directory.
-        """
-        dir_exists = os.path.isdir(bg_directory_path)
-        dir_content = os.listdir(bg_directory_path) if dir_exists else []
-
-        if transition_bg_name in dir_content:
-            bg_path = os.path.join(bg_directory_path, transition_bg_name)
-            logger.debug(
-                "Loading custom transition background file '{}'".format(
-                    transition_bg_name
-                )
-            )
-
-        else:
-            logger.debug("Loading default transition background file")
-
-            if TRANSITION_BG_NAME in dir_content:
-                bg_path = os.path.join(bg_directory_path, TRANSITION_BG_NAME)
-
-            else:
-                bg_path = get_background(TRANSITION_BG_NAME)
-
-        self.transition_bg_path = bg_path
-
-    def load_idle_bg_path(self, bg_directory_path, idle_bg_name):
-        """Load idle backgound file path
-
-        Load the customized background path or the default background path for
-        the idle screen.
-
-        Called once by the constructor.
-
-        Args:
-            bg_directory_path (str): path to the background directory.
-        """
-        dir_exists = os.path.isdir(bg_directory_path)
-        dir_content = os.listdir(bg_directory_path) if dir_exists else []
-
-        if idle_bg_name in dir_content:
-            bg_path = os.path.join(bg_directory_path, idle_bg_name)
-            logger.debug(
-                "Loading custom idle background file '{}'".format(idle_bg_name)
-            )
-
-        else:
-            logger.debug("Loading default idle background file")
-
-            if IDLE_BG_NAME in dir_content:
-                bg_path = os.path.join(bg_directory_path, IDLE_BG_NAME)
-
-            else:
-                bg_path = get_background(IDLE_BG_NAME)
-
-        self.idle_bg_path = bg_path
 
     def set_callback(self, name, callback):
         """Assign an arbitrary callback
@@ -348,7 +285,9 @@ class VlcPlayer(Worker):
             playlist_entry
         )
 
-        media_transition = self.instance.media_new_path(self.transition_bg_path)
+        media_transition = self.instance.media_new_path(
+            self.background_loader.backgrounds["transition"]
+        )
 
         media_transition.add_options(
             *self.media_parameters_text_screen,
@@ -370,7 +309,7 @@ class VlcPlayer(Worker):
         self.in_transition = False
 
         # create idle screen media
-        media = self.instance.media_new_path(self.idle_bg_path)
+        media = self.instance.media_new_path(self.background_loader.backgrounds["idle"])
 
         # create the idle screen
         idle_text_path = self.text_generator.create_idle_text(

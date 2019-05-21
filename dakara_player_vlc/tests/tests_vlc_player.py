@@ -4,7 +4,6 @@ from threading import Event
 from queue import Queue
 
 from vlc import State, EventType
-from path import Path
 
 from dakara_player_vlc.version import __version__ as dakara_player_vlc_version
 from dakara_player_vlc.vlc_player import (
@@ -516,8 +515,10 @@ class VlcPlayerTestCase(TestCase):
         self.vlc_player.stop_player()
 
 
-class VlcPlayerCustomTestCase(TestCase):
-    """Test the VLC player class with custom resources
+@patch("dakara_player_vlc.vlc_player.PATH_BACKGROUNDS", "/bg")
+@patch("dakara_player_vlc.vlc_player.BackgroundLoader")
+class VlcPlayerCustomBackgroundsTestCase(TestCase):
+    """Test the VLC player class with custom backgrounds
     """
 
     def setUp(self):
@@ -530,116 +531,50 @@ class VlcPlayerCustomTestCase(TestCase):
         # create errors queue
         self.errors = Queue()
 
-    def test_default(self):
-        """Test to instanciate with default parameters
-
-        In that case, backgrounds come from the fallback directory.
+    def test_default_backgrounds(self, mocked_background_loader_class):
+        """Test to instanciate with default backgrounds
         """
         # create object
-        vlc_player = VlcPlayer(self.stop, self.errors, {}, self.text_generator)
+        VlcPlayer(self.stop, self.errors, {}, self.text_generator)
 
-        # assert the object
-        self.assertEqual(vlc_player.idle_bg_path, get_background(IDLE_BG_NAME))
-        self.assertEqual(
-            vlc_player.transition_bg_path, get_background(TRANSITION_BG_NAME)
+        # assert the instanciation of the background loader
+        mocked_background_loader_class.assert_called_with(
+            directory="",
+            default_directory="/bg",
+            background_filenames={"transition": None, "idle": None},
+            default_background_filenames={
+                "transition": "transition.png",
+                "idle": "idle.png",
+            },
         )
 
-    def test_custom_background_directory_success(self):
+    def test_custom_backgrounds(self, mocked_background_loader_class):
         """Test to instanciate with an existing backgrounds directory
-
-        In that case, backgrounds come from this directory.
         """
         # create object
-        vlc_player = VlcPlayer(
-            self.stop,
-            self.errors,
-            {"backgrounds": {"directory": PATH_TEST_MATERIALS}},
-            self.text_generator,
-        )
-
-        # assert the object
-        self.assertEqual(vlc_player.idle_bg_path, get_test_material(IDLE_BG_NAME))
-        self.assertEqual(
-            vlc_player.transition_bg_path, get_test_material(TRANSITION_BG_NAME)
-        )
-
-    def test_custom_background_directory_fail(self):
-        """Test to instanciate with an inexisting backgrounds directory
-
-        In that case, backgrounds come from the fallback directory.
-        """
-        # create object
-        vlc_player = VlcPlayer(
-            self.stop,
-            self.errors,
-            {"backgrounds": {"directory": "nowhere"}},
-            self.text_generator,
-        )
-
-        # assert the object
-        self.assertEqual(vlc_player.idle_bg_path, get_background(IDLE_BG_NAME))
-        self.assertEqual(
-            vlc_player.transition_bg_path, get_background(TRANSITION_BG_NAME)
-        )
-
-    def test_custom_background_names_success(self):
-        """Test to instanciate with existing background names
-
-        In that case, backgrounds come from the custom directory and have the
-        correct name.
-        """
-        # create object
-        vlc_player = VlcPlayer(
+        VlcPlayer(
             self.stop,
             self.errors,
             {
                 "backgrounds": {
-                    "directory": PATH_TEST_MATERIALS,
-                    "idle_background_name": "song.png",
-                    "transition_background_name": "song.png",
+                    "directory": "/custom/bg",
+                    "transition_background_name": "custom_transition.png",
+                    "idle_background_name": "custom_idle.png",
                 }
             },
             self.text_generator,
         )
 
-        # assert the object
-        self.assertEqual(vlc_player.idle_bg_path, get_test_material("song.png"))
-        self.assertEqual(vlc_player.transition_bg_path, get_test_material("song.png"))
-
-    def test_custom_background_names_fail(self):
-        """Test to instanciate with background names that do not exist
-
-        In that case, backgrounds come from the custom directory and have the
-        default name.
-        """
-        # create object
-        vlc_player = VlcPlayer(
-            self.stop,
-            self.errors,
-            {
-                "backgrounds": {
-                    "directory": PATH_TEST_MATERIALS,
-                    "idle_background_name": "nothing",
-                    "transition_background_name": "nothing",
-                }
+        # assert the instanciation of the background loader
+        mocked_background_loader_class.assert_called_with(
+            directory="/custom/bg",
+            default_directory="/bg",
+            background_filenames={
+                "transition": "custom_transition.png",
+                "idle": "custom_idle.png",
             },
-            self.text_generator,
+            default_background_filenames={
+                "transition": "transition.png",
+                "idle": "idle.png",
+            },
         )
-
-        # assert the object
-        self.assertEqual(vlc_player.idle_bg_path, get_test_material(IDLE_BG_NAME))
-        self.assertEqual(
-            vlc_player.transition_bg_path, get_test_material(TRANSITION_BG_NAME)
-        )
-
-
-class MrlToPathTestCase(TestCase):
-    """Test the `mrl_to_path` function
-    """
-
-    def test(self):
-        """Test to call the function with various arguments
-        """
-        self.assertEqual(mrl_to_path("file:///a/b/c"), Path("/a/b/c").normpath())
-        self.assertEqual(mrl_to_path("file:///a/b%20b/c"), Path("/a/b b/c").normpath())
-        self.assertEqual(mrl_to_path("file:///C:/a/b"), Path("C:/a/b").normpath())
