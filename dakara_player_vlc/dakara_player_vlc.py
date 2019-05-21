@@ -2,6 +2,7 @@ import os
 import logging
 from tempfile import TemporaryDirectory
 from contextlib import ExitStack
+from pkg_resources import parse_version
 
 import coloredlogs
 import yaml
@@ -79,7 +80,8 @@ class DakaraWorker(WorkerSafeThread):
         # set thread
         self.thread = self.create_thread(target=self.run)
 
-        logger.info("Dakara player {} ({})".format(__version__, __date__))
+        # check version
+        self.check_version()
 
     def run(self):
         """Worker main method
@@ -200,3 +202,14 @@ class DakaraWorker(WorkerSafeThread):
             raise ValueError("Invalid loglevel in config file: '{}'".format(loglevel))
 
         coloredlogs.set_level(loglevel_numeric)
+
+    def check_version(self):
+        """Display version number and check if on release
+        """
+        # log player versio
+        logger.info("Dakara player {} ({})".format(__version__, __date__))
+
+        # check version is a release
+        version = parse_version(__version__)
+        if version.is_prerelease:
+            logger.warning("You are running a dev version, use it at your own risks!")
