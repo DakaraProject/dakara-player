@@ -6,6 +6,7 @@ player:
     instance_parameters:
   templates:
   backgrounds:
+  durations:
 server:
   address: www.example.com
   login: player_login
