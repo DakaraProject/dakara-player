@@ -578,3 +578,43 @@ class VlcPlayerCustomBackgroundsTestCase(TestCase):
                 "idle": "idle.png",
             },
         )
+
+
+@patch("dakara_player_vlc.vlc_player.TRANSITION_DURATION", 10)
+@patch("dakara_player_vlc.vlc_player.IDLE_DURATION", 20)
+class VlcPlayerCustomDurationsTestCase(TestCase):
+    """Test the VLC player class with custom durations
+    """
+
+    def setUp(self):
+        # create a mock text generator
+        self.text_generator = MagicMock()
+
+        # create stop event
+        self.stop = Event()
+
+        # create errors queue
+        self.errors = Queue()
+
+    def test_default_durations(self):
+        """Test to instanciate with default durations
+        """
+        # create object
+        vlc_player = VlcPlayer(self.stop, self.errors, {}, self.text_generator)
+
+        # assert the instance
+        self.assertDictEqual(vlc_player.durations, {"transition": 10, "idle": 20})
+
+    def test_customs(self):
+        """Test to instanciate with custom durations
+        """
+        # create object
+        vlc_player = VlcPlayer(
+            self.stop,
+            self.errors,
+            {"durations": {"transition_duration": 5}},
+            self.text_generator,
+        )
+
+        # assert the instance
+        self.assertDictEqual(vlc_player.durations, {"transition": 5, "idle": 20})

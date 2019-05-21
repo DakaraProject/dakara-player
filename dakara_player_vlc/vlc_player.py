@@ -52,10 +52,14 @@ class VlcPlayer(Worker):
         self.media_parameters = config_vlc.get("media_parameters") or []
         self.media_parameters_text_screen = []
 
-        # parameters for transition screen
-        self.transition_duration = config.get(
-            "transition_duration", TRANSITION_DURATION
-        )
+        # set durations
+        config_durations = config.get("durations") or {}
+        self.durations = {
+            "transition": config_durations.get(
+                "transition_duration", TRANSITION_DURATION
+            ),
+            "idle": IDLE_DURATION,
+        }
 
         # load backgrounds
         config_backgrounds = config.get("backgrounds") or {}
@@ -293,7 +297,7 @@ class VlcPlayer(Worker):
             *self.media_parameters_text_screen,
             *self.media_parameters,
             "sub-file={}".format(transition_text_path),
-            "image-duration={}".format(self.transition_duration),
+            "image-duration={}".format(self.durations["transition"]),
         )
         self.in_transition = True
 
@@ -319,7 +323,7 @@ class VlcPlayer(Worker):
         media.add_options(
             *self.media_parameters_text_screen,
             *self.media_parameters,
-            "image-duration={}".format(IDLE_DURATION),
+            "image-duration={}".format(self.durations["idle"]),
             "sub-file={}".format(idle_text_path),
         )
 

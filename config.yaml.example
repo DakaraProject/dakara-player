@@ -10,11 +10,6 @@ player:
   # Enable or disable fullscreen mode
   fullscreen: false
 
-  # Duration of the transition screen between two songs in seconds, won't work
-  # if the background file is a video.
-  # Default is 2 seconds.
-  # transition_duration: 2
-
   # Parameters for VLC
   # You can pass extra options to VLC through the media and/or instance
   # parameters. Bellow are listed some common ones. For other options, consult
@@ -115,6 +110,13 @@ player:
     # Default is 'idle.png'.
     # You have to set 'directory' to set this parameter.
     # idle_background_name: idle_background.file
+
+  # Parameters for durations
+  durations:
+    # Duration of the transition screen between two songs in seconds, won't work
+    # if the background file is a video.
+    # Default is 2 seconds.
+    # transition_duration: 2
 
 # Parameters for the server
 server:
