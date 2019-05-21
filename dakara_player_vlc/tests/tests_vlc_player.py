@@ -74,10 +74,6 @@ class VlcPlayerTestCase(TestCase):
             self.text_generator,
         )
 
-        # set callbacks for VLC
-        # self.vlc_player.set_finished_callback(lambda self: None)
-        # self.vlc_player.set_error_callback(lambda self, message: None)
-
     @staticmethod
     def get_event_and_callback():
         """Get an event and a callback that sets this event

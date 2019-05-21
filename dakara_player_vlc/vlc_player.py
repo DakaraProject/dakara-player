@@ -160,8 +160,8 @@ class VlcPlayer(Worker):
 
         This happens when:
             - A transition screen ends, leading to playing the actual song;
-            - A song ends, leading to calling the callback set by
-                `set_finished_callback`;
+            - A song ends, leading to calling the callback
+                `callbacks["finished"]`;
             - An idle screen ends, leading to reloop it.
 
         A new thread is created in any case.
@@ -204,8 +204,8 @@ class VlcPlayer(Worker):
     def handle_encountered_error(self, event):
         """Callback called when error occurs
 
-        Try to get error message and then call the callback set by
-        `set_error_callback`.
+        Try to get error message and then call the callbacks
+        `callbackss["finished"]` and `callbacks["error"]`
 
         Args:
             event (vlc.EventType): VLC event object.
