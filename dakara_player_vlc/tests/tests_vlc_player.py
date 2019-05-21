@@ -4,6 +4,7 @@ from threading import Event
 from queue import Queue
 
 from vlc import State, EventType
+from path import Path
 
 from dakara_player_vlc.version import __version__ as dakara_player_vlc_version
 from dakara_player_vlc.vlc_player import (
@@ -511,7 +512,7 @@ class VlcPlayerTestCase(TestCase):
         self.vlc_player.stop_player()
 
 
-@patch("dakara_player_vlc.vlc_player.PATH_BACKGROUNDS", "/bg")
+@patch("dakara_player_vlc.vlc_player.PATH_BACKGROUNDS", "bg")
 @patch("dakara_player_vlc.vlc_player.BackgroundLoader")
 class VlcPlayerCustomBackgroundsTestCase(TestCase):
     """Test the VLC player class with custom backgrounds
@@ -536,7 +537,7 @@ class VlcPlayerCustomBackgroundsTestCase(TestCase):
         # assert the instanciation of the background loader
         mocked_background_loader_class.assert_called_with(
             directory="",
-            default_directory="/bg",
+            default_directory=Path("bg"),
             background_filenames={"transition": None, "idle": None},
             default_background_filenames={
                 "transition": "transition.png",
@@ -553,7 +554,7 @@ class VlcPlayerCustomBackgroundsTestCase(TestCase):
             self.errors,
             {
                 "backgrounds": {
-                    "directory": "/custom/bg",
+                    "directory": Path("custom/bg"),
                     "transition_background_name": "custom_transition.png",
                     "idle_background_name": "custom_idle.png",
                 }
@@ -563,8 +564,8 @@ class VlcPlayerCustomBackgroundsTestCase(TestCase):
 
         # assert the instanciation of the background loader
         mocked_background_loader_class.assert_called_with(
-            directory="/custom/bg",
-            default_directory="/bg",
+            directory=Path("custom/bg"),
+            default_directory=Path("bg"),
             background_filenames={
                 "transition": "custom_transition.png",
                 "idle": "custom_idle.png",
