@@ -122,6 +122,7 @@ class DakaraWorker(WorkerSafeThread):
             vlc_player = stack.enter_context(
                 VlcPlayer(self.stop, self.errors, self.config["player"], text_generator)
             )
+            vlc_player.load()
 
             # communication with the dakara HTTP server
             dakara_server_http = DakaraServerHTTPConnection(self.config["server"])

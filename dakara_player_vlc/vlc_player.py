@@ -16,8 +16,8 @@ from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
 TRANSITION_DURATION = 2
 IDLE_DURATION = 300
 
-IDLE_BG_NAME = "idle.png"
 TRANSITION_BG_NAME = "transition.png"
+IDLE_BG_NAME = "idle.png"
 
 logger = logging.getLogger("vlc_player")
 
@@ -31,26 +31,55 @@ class VlcPlayer(Worker):
     player.
 
     The playlist is virtually handled using song-end callbacks.
+
+    After being instanciated, the object must be loaded with `load`.
+
+    Attributes:
+        text_generator (TextGenerator): generator of on-screen texts.
+        callbacks (dict): dictionary of external callbacs that are run by VLC
+            on certain events. They must be set with `set_callback`.
+        vlc_callback (dict): dictionary of callbacks associated to VLC events.
+            They must be set with `set_vlc_callback`.
+        durations (dict): dictionary of durations for screens.
+        fullscreen (bool): is the player running fullscreen flag.
+        kara_folder_path (str): path to the root karaoke folder containing
+            songs.
+        media_parameters (list): list of parameters for VLC, applied for each
+            media.
+        media_parameters_text_screen (list): list of parameters for VLC,
+            applied for each text screen.
+        instance (vlc.Instance): instance of the VLC player.
+        player (vlc.MediaPlayer): instance of the VLC media player, attached to
+            the player.
+        event_manager (vlc.EventManager): instance of the VLC event manager,
+            attached to the media player.
+        vlc_version (str): version of VLC.
+        playing_id (int): playlist entry id of the current song if no songs are
+            playing, its value is None.
+        in_transition (bool): flag set to True is a transition screen is
+            playing.
+        media_pending (vlc.Media): media containing a song which will be played
+            after the transition screen.
+
+    Args:
+        stop (Event): event to stop the program.
+        errors (Queue): queue of errors.
+        config (dict): configuration.
+        text_generator (TextGenerator): generator of on-screen texts.
     """
 
     def init_worker(self, config, text_generator):
         """Init the worker
         """
-        self.config = config
         self.text_generator = text_generator
+
+        # callbacks
         self.callbacks = {}
         self.vlc_callbacks = {}
 
-        config_vlc = config.get("vlc") or {}
-
-        # parameters used to create the player instance
-        fullscreen = config.get("fullscreen", False)
-        instance_parameters = config_vlc.get("instance_parameters") or []
-
-        # parameters that will be used later on
+        # karaoke parameters
+        self.fullscreen = config.get("fullscreen", False)
         self.kara_folder_path = config.get("kara_folder", "")
-        self.media_parameters = config_vlc.get("media_parameters") or []
-        self.media_parameters_text_screen = []
 
         # set durations
         config_durations = config.get("durations") or {}
@@ -61,7 +90,7 @@ class VlcPlayer(Worker):
             "idle": IDLE_DURATION,
         }
 
-        # load backgrounds
+        # set background manager
         config_backgrounds = config.get("backgrounds") or {}
         self.background_loader = BackgroundLoader(
             directory=Path(config_backgrounds.get("directory", "")),
@@ -75,7 +104,15 @@ class VlcPlayer(Worker):
                 "idle": IDLE_BG_NAME,
             },
         )
-        self.background_loader.load()
+
+        # set VLC objects
+        config_vlc = config.get("vlc") or {}
+        self.media_parameters = config_vlc.get("media_parameters") or []
+        self.media_parameters_text_screen = []
+        self.instance = vlc.Instance(config_vlc.get("instance_parameters") or [])
+        self.player = self.instance.media_player_new()
+        self.event_manager = self.player.event_manager()
+        self.vlc_version = None
 
         # playlist entry id of the current song
         # if no songs are playing, its value is None
@@ -88,15 +125,32 @@ class VlcPlayer(Worker):
         # screen
         self.media_pending = None
 
-        # VLC objects
-        self.instance = vlc.Instance(instance_parameters)
-        self.player = self.instance.media_player_new()
-        self.player.set_fullscreen(fullscreen)
-        self.event_manager = self.player.event_manager()
+    def load(self):
+        """Prepare the instance
 
-        # VLC version
+        Perform actions with side effects.
+        """
+        # check VLC
+        self.check_vlc_version()
+
+        # set VLC fullscreen
+        self.player.set_fullscreen(self.fullscreen)
+
+        # set default callbacks
+        self.set_default_callbacks()
+
+        # load backgrounds
+        self.background_loader.load()
+
+    def check_vlc_version(self):
+        """Print the VLC version and perform some parameter adjustements
+        """
+        # get and log version
         self.vlc_version = vlc.libvlc_get_version().decode()
         logger.info("VLC %s", self.vlc_version)
+
+        # VLC version is on the form "x.y.z CodeName"
+        # so we split the string to have the version number only
         version_str, _ = self.vlc_version.split()
         version = parse_version(version_str)
 
@@ -106,9 +160,6 @@ class VlcPlayer(Worker):
             # nearby the media played, not the ones explicitally added; this
             # option forces VLC to use the explicitally added files only
             self.media_parameters_text_screen.append("no-sub-autodetect-file")
-
-        # set default callbacks
-        self.set_default_callbacks()
 
     def set_default_callbacks(self):
         """Set all the default callbacks

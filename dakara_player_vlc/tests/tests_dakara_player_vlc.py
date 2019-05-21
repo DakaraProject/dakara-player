@@ -140,7 +140,7 @@ class DakaraWorkerTestCase(TestCase):
     @patch("dakara_player_vlc.dakara_player_vlc.TextGenerator")
     @patch("dakara_player_vlc.dakara_player_vlc.VlcPlayer")
     @patch("dakara_player_vlc.dakara_player_vlc.DakaraServerHTTPConnection")
-    @patch("dakara_player_vlc.dakara_player_vlc" ".DakaraServerWebSocketConnection")
+    @patch("dakara_player_vlc.dakara_player_vlc.DakaraServerWebSocketConnection")
     @patch("dakara_player_vlc.dakara_player_vlc.DakaraManager")
     def test_run(
         self,
@@ -178,6 +178,7 @@ class DakaraWorkerTestCase(TestCase):
         mock_vlc_player_class.assert_called_with(
             self.stop, self.errors, self.config["player"], mock_text_generator
         )
+        mock_vlc_player.load.assert_called_with()
         mock_dakara_server_http_class.assert_called_with(self.config["server"])
         mock_dakara_server_http.authenticate.assert_called_with()
         mock_dakara_server_http.get_token_header.assert_called_with()

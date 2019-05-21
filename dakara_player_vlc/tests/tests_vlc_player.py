@@ -21,72 +21,13 @@ from dakara_player_vlc.resources_manager import (
 )
 
 
-class VlcPlayerTestCase(TestCase):
-    """Test the VLC player module
+class VlcPlayerPreLoadTestCase(TestCase):
+    """Test the VLC player class before it is loaded
     """
 
     def setUp(self):
-        # create instance parameter
-        self.instance_parameters = []
-
-        # create fullscreen flag
-        self.fullscreen = True
-
-        # create kara folder
-        self.kara_folder = PATH_TEST_MATERIALS
-
-        # create media parameter
-        self.media_parameters = ["no-video"]
-
-        # create idle background path
-        self.idle_background_path = get_background(IDLE_BG_NAME)
-
-        # create transition background path
-        self.transition_background_path = get_background(TRANSITION_BG_NAME)
-
-        # create transition duration
-        self.transition_duration = 1
-
-        # create a mock text generator
-        self.text_generator = MagicMock()
-
-        # create a subtitle
-        self.subtitle_path = get_test_material("song.ass")
-
-        # create song path
-        self.song_file_path = get_test_material("song.png")
-
-        # create playlist entry
-        self.playlist_entry = {"id": 42, "song": {"file_path": self.song_file_path}}
-
-        # create vlc player
-        self.vlc_player = VlcPlayer(
-            Event(),
-            Queue(),
-            {
-                "kara_folder": self.kara_folder,
-                "fullscreen": self.fullscreen,
-                "transition_duration": self.transition_duration,
-                "vlc": {
-                    "instance_parameters": self.instance_parameters,
-                    "media_parameters": self.media_parameters,
-                },
-            },
-            self.text_generator,
-        )
-
-    @staticmethod
-    def get_event_and_callback():
-        """Get an event and a callback that sets this event
-        """
-        event = Event()
-
-        def callback(*args, **kwargs):
-            """Callback that sets the joined event
-            """
-            event.set()
-
-        return event, callback
+        # create instance
+        self.vlc_player = VlcPlayer(Event(), Queue(), {}, MagicMock())
 
     def test_set_callback(self):
         """Test the assignation of a callback
@@ -133,6 +74,161 @@ class VlcPlayerTestCase(TestCase):
         self.vlc_player.event_manager.event_attach.assert_called_with(
             EventType.MediaPlayerEndReached, callback
         )
+
+    @patch("dakara_player_vlc.vlc_player.logger")
+    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version")
+    def test_check_vlc_version(self, mocked_libvlc_get_version, mocked_logger):
+        """Test to check a VLC version
+        """
+        # mock the version of VLC
+        mocked_libvlc_get_version.return_value = b"0.0.0 NoName"
+
+        # pre assert that test screen parameters are empty
+        self.assertListEqual(self.vlc_player.media_parameters_text_screen, [])
+
+        # call the method
+        self.vlc_player.check_vlc_version()
+
+        # assert the effect on logger
+        mocked_logger.info.assert_called_with("VLC %s", "0.0.0 NoName")
+
+        # assert that test screen parameters are empty
+        self.assertListEqual(self.vlc_player.media_parameters_text_screen, [])
+
+    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version")
+    def test_check_vlc_version_3(self, mocked_libvlc_get_version):
+        """Test to check VLC version 3
+        """
+        # mock the version of VLC
+        mocked_libvlc_get_version.return_value = b"3.0.0 NoName"
+
+        # pre assert that test screen parameters are empty
+        self.assertListEqual(self.vlc_player.media_parameters_text_screen, [])
+
+        # call the method
+        self.vlc_player.check_vlc_version()
+
+        # assert that test screen parameters are empty
+        self.assertListEqual(
+            self.vlc_player.media_parameters_text_screen, ["no-sub-autodetect-file"]
+        )
+
+    def test_set_default_callbacks(self):
+        """Test to set the default callbacks
+        """
+        # assert there are no callbacks
+        self.assertCountEqual(list(self.vlc_player.callbacks.keys()), [])
+        self.assertCountEqual(list(self.vlc_player.vlc_callbacks.keys()), [])
+
+        # call the method
+        self.vlc_player.set_default_callbacks()
+
+        # assert there are callbacks defined
+        self.assertCountEqual(
+            list(self.vlc_player.callbacks.keys()),
+            [
+                "started_transition",
+                "started_song",
+                "could_not_play",
+                "finished",
+                "paused",
+                "resumed",
+                "error",
+            ],
+        )
+        self.assertCountEqual(
+            list(self.vlc_player.vlc_callbacks.keys()),
+            [EventType.MediaPlayerEndReached, EventType.MediaPlayerEncounteredError],
+        )
+
+    @patch.object(VlcPlayer, "set_default_callbacks")
+    @patch.object(VlcPlayer, "check_vlc_version")
+    def test_load(self, mocked_check_vlc_version, mocked_set_default_callbacks):
+        """Test to load the instance
+        """
+        # hard patch the attributes
+        # normally, I should put these actions in dedicated methods I would
+        # `patch.object`ed, but since the added value is negligible, I stick
+        # with this weird hybrid approach for now
+        self.vlc_player.player = MagicMock()
+        self.vlc_player.background_loader = MagicMock()
+
+        # call the method
+        self.vlc_player.load()
+
+        # assert the calls
+        mocked_check_vlc_version.assert_called_with()
+        mocked_set_default_callbacks.assert_called_with()
+        self.vlc_player.player.set_fullscreen.assert_called_with(False)
+        self.vlc_player.background_loader.load.assert_called_with()
+
+
+class VlcPlayerPostLoadTestCase(TestCase):
+    """Test the VLC player class after it is loaded
+    """
+
+    def setUp(self):
+        # create instance parameter
+        self.instance_parameters = []
+
+        # create fullscreen flag
+        self.fullscreen = True
+
+        # create kara folder
+        self.kara_folder = PATH_TEST_MATERIALS
+
+        # create media parameter
+        self.media_parameters = ["no-video"]
+
+        # create idle background path
+        self.idle_background_path = get_background(IDLE_BG_NAME)
+
+        # create transition background path
+        self.transition_background_path = get_background(TRANSITION_BG_NAME)
+
+        # create transition duration
+        self.transition_duration = 1
+
+        # create a mock text generator
+        self.text_generator = MagicMock()
+
+        # create a subtitle
+        self.subtitle_path = get_test_material("song.ass")
+
+        # create song path
+        self.song_file_path = get_test_material("song.png")
+
+        # create playlist entry
+        self.playlist_entry = {"id": 42, "song": {"file_path": self.song_file_path}}
+
+        # create vlc player and load it
+        self.vlc_player = VlcPlayer(
+            Event(),
+            Queue(),
+            {
+                "kara_folder": self.kara_folder,
+                "fullscreen": self.fullscreen,
+                "vlc": {
+                    "instance_parameters": self.instance_parameters,
+                    "media_parameters": self.media_parameters,
+                },
+            },
+            self.text_generator,
+        )
+        self.vlc_player.load()
+
+    @staticmethod
+    def get_event_and_callback():
+        """Get an event and a callback that sets this event
+        """
+        event = Event()
+
+        def callback(*args, **kwargs):
+            """Callback that sets the joined event
+            """
+            event.set()
+
+        return event, callback
 
     def test_play_idle_screen(self):
         """Test the display of the idle screen
