@@ -228,22 +228,6 @@ class VlcPlayer(Worker):
         self.playing_id = None
         self.in_transition = False
 
-    def set_paused_callback(self, callback):
-        """Assign callback for when the player is paused
-
-        Args:
-            callback (function): function to assign.
-        """
-        self.paused_callback = callback
-
-    def set_resumed_callback(self, callback):
-        """Assign callback for when the player is resumed
-
-        Args:
-            callback (function): function to assign.
-        """
-        self.resumed_callback = callback
-
     def play_media(self, media):
         """Play the given media
 
