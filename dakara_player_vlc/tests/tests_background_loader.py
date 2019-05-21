@@ -28,7 +28,8 @@ class BackgroundLoaderTestCase(TestCase):
 
         # assert the backgrounds
         self.assertDictEqual(
-            loader.backgrounds, {"background": Path("default/background.png")}
+            loader.backgrounds,
+            {"background": Path("default/background.png").normpath()},
         )
 
         # assert the call of the mocked method
@@ -53,11 +54,11 @@ class BackgroundLoaderTestCase(TestCase):
 
         # assert the backgrounds
         self.assertDictEqual(
-            loader.backgrounds, {"background": Path("custom/background.png")}
+            loader.backgrounds, {"background": Path("custom/background.png").normpath()}
         )
 
         # assert the call of the mocked method
-        mocked_exists.assert_called_with(Path("custom/background.png"))
+        mocked_exists.assert_called_with(Path("custom/background.png").normpath())
 
     @patch("dakara_player_vlc.background_loader.exists", return_value=True)
     def test_load_custom_name_custom_directory(self, mocked_exists):
@@ -79,11 +80,11 @@ class BackgroundLoaderTestCase(TestCase):
 
         # assert the backgrounds
         self.assertDictEqual(
-            loader.backgrounds, {"background": Path("custom/custom.png")}
+            loader.backgrounds, {"background": Path("custom/custom.png").normpath()}
         )
 
         # assert the call of the mocked method
-        mocked_exists.assert_called_with(Path("custom/custom.png"))
+        mocked_exists.assert_called_with(Path("custom/custom.png").normpath())
 
     @patch("dakara_player_vlc.background_loader.exists", return_value=True)
     def test_load_custom_name_default_directory(self, mocked_exists):
@@ -106,11 +107,12 @@ class BackgroundLoaderTestCase(TestCase):
 
         # assert the backgrounds
         self.assertDictEqual(
-            loader.backgrounds, {"background": Path("default/background.png")}
+            loader.backgrounds,
+            {"background": Path("default/background.png").normpath()},
         )
 
         # assert the call of the mocked method
-        mocked_exists.assert_called_with(Path("default/background.png"))
+        mocked_exists.assert_called_with(Path("default/background.png").normpath())
 
     @patch("dakara_player_vlc.background_loader.exists")
     def test_load_fallback_default_name_custom_directory(self, mocked_exists):
@@ -137,12 +139,15 @@ class BackgroundLoaderTestCase(TestCase):
 
         # assert the backgrounds
         self.assertDictEqual(
-            loader.backgrounds, {"background": Path("custom/background.png")}
+            loader.backgrounds, {"background": Path("custom/background.png").normpath()}
         )
 
         # assert the call of the mocked method
         mocked_exists.assert_has_calls(
-            [call(Path("custom/custom.png")), call(Path("custom/background.png"))]
+            [
+                call(Path("custom/custom.png").normpath()),
+                call(Path("custom/background.png").normpath()),
+            ]
         )
 
     @patch("dakara_player_vlc.background_loader.exists")
@@ -170,15 +175,16 @@ class BackgroundLoaderTestCase(TestCase):
 
         # assert the backgrounds
         self.assertDictEqual(
-            loader.backgrounds, {"background": Path("default/background.png")}
+            loader.backgrounds,
+            {"background": Path("default/background.png").normpath()},
         )
 
         # assert the call of the mocked method
         mocked_exists.assert_has_calls(
             [
-                call(Path("custom/custom.png")),
-                call(Path("custom/background.png")),
-                call(Path("default/background.png")),
+                call(Path("custom/custom.png").normpath()),
+                call(Path("custom/background.png").normpath()),
+                call(Path("default/background.png").normpath()),
             ]
         )
 
@@ -217,9 +223,9 @@ class BackgroundLoaderTestCase(TestCase):
         # assert the call of the mocked method
         mocked_exists.assert_has_calls(
             [
-                call(Path("custom/custom.png")),
-                call(Path("custom/background.png")),
-                call(Path("default/background.png")),
+                call(Path("custom/custom.png").normpath()),
+                call(Path("custom/background.png").normpath()),
+                call(Path("default/background.png").normpath()),
             ]
         )
 
@@ -242,8 +248,8 @@ class BackgroundLoaderTestCase(TestCase):
 
         # assert the backgrounds
         self.assertDictEqual(
-            loader.backgrounds, {"background": Path("custom/background.png")}
+            loader.backgrounds, {"background": Path("custom/background.png").normpath()}
         )
 
         # assert the call of the mocked method
-        mocked_exists.assert_called_with(Path("custom/background.png"))
+        mocked_exists.assert_called_with(Path("custom/background.png").normpath())
