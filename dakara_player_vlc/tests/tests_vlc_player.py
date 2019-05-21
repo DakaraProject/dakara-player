@@ -554,7 +554,7 @@ class VlcPlayerCustomBackgroundsTestCase(TestCase):
             self.errors,
             {
                 "backgrounds": {
-                    "directory": Path("custom/bg"),
+                    "directory": Path("custom/bg").normpath(),
                     "transition_background_name": "custom_transition.png",
                     "idle_background_name": "custom_idle.png",
                 }
@@ -564,7 +564,7 @@ class VlcPlayerCustomBackgroundsTestCase(TestCase):
 
         # assert the instanciation of the background loader
         mocked_background_loader_class.assert_called_with(
-            directory=Path("custom/bg"),
+            directory=Path("custom/bg").normpath(),
             default_directory=Path("bg"),
             background_filenames={
                 "transition": "custom_transition.png",

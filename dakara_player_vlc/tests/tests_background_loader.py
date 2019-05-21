@@ -33,7 +33,7 @@ class BackgroundLoaderTestCase(TestCase):
         )
 
         # assert the call of the mocked method
-        mocked_exists.assert_called_with(Path("default/background.png"))
+        mocked_exists.assert_called_with(Path("default/background.png").normpath())
 
     @patch("dakara_player_vlc.background_loader.exists", return_value=True)
     def test_load_default_name_custom_directory(self, mocked_exists):
