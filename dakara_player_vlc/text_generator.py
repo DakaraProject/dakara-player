@@ -39,18 +39,27 @@ class TextGenerator:
 
     def __init__(self, config, tempdir):
         self.config = config
+        self.directory = config.get("directory", "")
         self.tempdir = tempdir
 
+        # set text paths
+        self.transition_text_path = os.path.join(self.tempdir, TRANSITION_TEXT_NAME)
+        self.idle_text_path = os.path.join(self.tempdir, IDLE_TEXT_NAME)
+
+        # Jinja2 elements
+        self.environment = None
+        self.transition_template = None
+        self.idle_template = None
+
+        # icon map
+        self.icon_map = {}
+
+    def load(self):
         # load icon mapping
         self.load_icon_map()
 
         # load templates
         self.load_templates()
-
-        # set text paths
-        self.transition_text_path = os.path.join(self.tempdir, TRANSITION_TEXT_NAME)
-
-        self.idle_text_path = os.path.join(self.tempdir, IDLE_TEXT_NAME)
 
     def load_templates(self):
         """Set up Jinja environment
@@ -58,10 +67,7 @@ class TextGenerator:
         # create Jinja2 environment
         self.environment = Environment(
             loader=ChoiceLoader(
-                [
-                    FileSystemLoader(self.config.get("directory", "")),
-                    FileSystemLoader(PATH_TEMPLATES),
-                ]
+                [FileSystemLoader(self.directory), FileSystemLoader(PATH_TEMPLATES)]
             )
         )
 

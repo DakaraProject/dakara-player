@@ -117,6 +117,7 @@ class DakaraWorker(WorkerSafeThread):
             text_generator = TextGenerator(
                 self.config["player"].get("templates") or {}, tempdir
             )
+            text_generator.load()
 
             # vlc player
             vlc_player = stack.enter_context(

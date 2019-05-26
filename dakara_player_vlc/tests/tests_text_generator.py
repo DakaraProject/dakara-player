@@ -17,8 +17,183 @@ from dakara_player_vlc.resources_manager import (
 )
 
 
-class TextGeneratorTestCase(TestCase):
-    """Test the text generator class
+class TextGeneratorPreLoadTestCase(TestCase):
+    """Test the text generator class before it is loaded
+    """
+
+    def setUp(self):
+        # create temporary folder
+        self.tempdir = "nowhere"
+
+    @patch.object(TextGenerator, "load_templates")
+    @patch.object(TextGenerator, "load_icon_map")
+    def test_load(self, mocked_load_icon_map, mocked_load_templates):
+        """Test the load method
+        """
+        # create ojbect
+        text_generator = TextGenerator({}, self.tempdir)
+
+        # call the method
+        text_generator.load()
+
+        # assert the call
+        mocked_load_icon_map.assert_called_once_with()
+        mocked_load_templates.assert_called_once_with()
+
+    # NOTE pass the icon map to the JSON format first
+    # def test_load_icon_map(self):
+    #     """Test to load the icon map
+    #     """
+    #     # create the object
+    #     text_generator = TextGenerator({}, self.tempdir)
+    #
+    #     # pre assert there are not icon map
+    #     self.assertDictEqual(text_generator.icon_map, {})
+    #
+    #     # call the method
+    #     text_generator.load_icon_map()
+    #
+    #     # assert there is an icon map
+    #     self.assertDictEqual(dict(text_generator.icon_map), {"name": "value"})
+
+    def test_load_templates_default(self):
+        """Test to load default templates for text
+
+        In that case, the templates come from the fallback directory.
+        """
+        # create object
+        text_generator = TextGenerator({}, self.tempdir)
+
+        # pre assert there are no templates
+        self.assertIsNone(text_generator.idle_template)
+        self.assertIsNone(text_generator.transition_template)
+
+        # call the method
+        text_generator.load_templates()
+
+        # assert there are templates defined
+        self.assertEqual(
+            text_generator.idle_template.filename, get_template(IDLE_TEMPLATE_NAME)
+        )
+        self.assertEqual(
+            text_generator.transition_template.filename,
+            get_template(TRANSITION_TEMPLATE_NAME),
+        )
+
+    def test_load_templates_custom_directory_success(self):
+        """Test to load custom templates using an existing directory
+
+        In that case, the templates come from this directory.
+        """
+        # create object
+        text_generator = TextGenerator({"directory": PATH_TEST_MATERIALS}, self.tempdir)
+
+        # pre assert there are no templates
+        self.assertIsNone(text_generator.idle_template)
+        self.assertIsNone(text_generator.transition_template)
+
+        # call the method
+        text_generator.load_templates()
+
+        # assert there are templates defined
+        self.assertEqual(
+            text_generator.idle_template.filename, get_test_material(IDLE_TEMPLATE_NAME)
+        )
+        self.assertEqual(
+            text_generator.transition_template.filename,
+            get_test_material(TRANSITION_TEMPLATE_NAME),
+        )
+
+    def test_load_templates_custom_directory_fail(self):
+        """Test to load templates using a directory that does not exist
+
+        In that case, the templates come from the fallback directory.
+        """
+        # create object
+        text_generator = TextGenerator({"directory": "nowhere"}, self.tempdir)
+
+        # pre assert there are no templates
+        self.assertIsNone(text_generator.idle_template)
+        self.assertIsNone(text_generator.transition_template)
+
+        # call the method
+        text_generator.load_templates()
+
+        # assert there are templates defined
+        self.assertEqual(
+            text_generator.idle_template.filename, get_template(IDLE_TEMPLATE_NAME)
+        )
+        self.assertEqual(
+            text_generator.transition_template.filename,
+            get_template(TRANSITION_TEMPLATE_NAME),
+        )
+
+    def test_load_templates_custom_names_success(self):
+        """Test to load templates using existing names
+
+        In that case, the templates come from the custom directory and have the
+        correct name.
+        """
+        # create object
+        text_generator = TextGenerator(
+            {
+                "directory": PATH_TEST_MATERIALS,
+                "idle_template_name": "song.ass",
+                "transition_template_name": "song.ass",
+            },
+            self.tempdir,
+        )
+
+        # pre assert there are no templates
+        self.assertIsNone(text_generator.idle_template)
+        self.assertIsNone(text_generator.transition_template)
+
+        # call the method
+        text_generator.load_templates()
+
+        # assert there are templates defined
+        self.assertEqual(
+            text_generator.idle_template.filename, get_test_material("song.ass")
+        )
+        self.assertEqual(
+            text_generator.transition_template.filename, get_test_material("song.ass")
+        )
+
+    def test_load_templates_custom_names_fail(self):
+        """Test to load templates using names that do not exist
+
+        In that case, the templates come from the custom directory and have
+        the default name.
+        """
+        # create object
+        text_generator = TextGenerator(
+            {
+                "directory": PATH_TEST_MATERIALS,
+                "idle_template_name": "nothing",
+                "transition_template_name": "nothing",
+            },
+            self.tempdir,
+        )
+
+        # pre assert there are no templates
+        self.assertIsNone(text_generator.idle_template)
+        self.assertIsNone(text_generator.transition_template)
+
+        # call the method
+        text_generator.load_templates()
+
+        # assert there are templates defined
+        self.assertEqual(
+            text_generator.idle_template.filename, get_test_material(IDLE_TEMPLATE_NAME)
+        )
+        self.assertEqual(
+            text_generator.transition_template.filename,
+            get_test_material(TRANSITION_TEMPLATE_NAME),
+        )
+
+
+class TextGeneratorPostLoadTestCase(TestCase):
+    """Test the text generator class after it is loaded
     """
 
     def setUp(self):
@@ -55,6 +230,7 @@ class TextGeneratorTestCase(TestCase):
         self.text_generator = TextGenerator(
             {"directory": PATH_TEST_MATERIALS}, self.temdir
         )
+        self.text_generator.load()
 
     @patch("dakara_player_vlc.text_generator.open", new_callable=mock_open)
     def test_create_idle_text(self, mock_open):
@@ -109,112 +285,3 @@ class TextGeneratorTestCase(TestCase):
             self.text_generator.convert_link_type_name("IN"), "Insert song"
         )
         self.assertEqual(self.text_generator.convert_link_type_name("IS"), "Image song")
-
-
-class TextGeneratorCustomTestCase(TestCase):
-    """Test the text generator class with custom resources
-    """
-
-    def setUp(self):
-        # create temporary folder
-        self.tempdir = "nowhere"
-
-    def test_default(self):
-        """Test to instanciate with default parameters
-
-        In that case, the templates come from the fallback directory.
-        """
-        # create object
-        text_generator = TextGenerator({}, self.tempdir)
-
-        # assert object
-        self.assertEqual(
-            text_generator.idle_template.filename, get_template(IDLE_TEMPLATE_NAME)
-        )
-        self.assertEqual(
-            text_generator.transition_template.filename,
-            get_template(TRANSITION_TEMPLATE_NAME),
-        )
-
-    def test_custom_template_directory_success(self):
-        """Test to instanciate with an existing templates directory
-
-        In that case, the templates come from this directory.
-        """
-        # create object
-        text_generator = TextGenerator({"directory": PATH_TEST_MATERIALS}, self.tempdir)
-
-        # assert object
-        self.assertEqual(
-            text_generator.idle_template.filename, get_test_material(IDLE_TEMPLATE_NAME)
-        )
-        self.assertEqual(
-            text_generator.transition_template.filename,
-            get_test_material(TRANSITION_TEMPLATE_NAME),
-        )
-
-    def test_custom_template_directory_fail(self):
-        """Test to instanciate with a templates directory thad does not exist
-
-        In that case, the templates come from the fallback directory.
-        """
-        # create object
-        text_generator = TextGenerator({"directory": "nowhere"}, self.tempdir)
-
-        # assert object
-        self.assertEqual(
-            text_generator.idle_template.filename, get_template(IDLE_TEMPLATE_NAME)
-        )
-        self.assertEqual(
-            text_generator.transition_template.filename,
-            get_template(TRANSITION_TEMPLATE_NAME),
-        )
-
-    def test_custom_template_names_success(self):
-        """Test to instanciate with existing template names
-
-        In that case, the templates come from the custom directory and have the
-        correct name.
-        """
-        # create object
-        text_generator = TextGenerator(
-            {
-                "directory": PATH_TEST_MATERIALS,
-                "idle_template_name": "song.ass",
-                "transition_template_name": "song.ass",
-            },
-            self.tempdir,
-        )
-
-        # assert object
-        self.assertEqual(
-            text_generator.idle_template.filename, get_test_material("song.ass")
-        )
-        self.assertEqual(
-            text_generator.transition_template.filename, get_test_material("song.ass")
-        )
-
-    def test_custom_template_names_fail(self):
-        """Test to instanciate with template names that do not exist
-
-        In that case, the templates come from the custom directory and have
-        the default name.
-        """
-        # create object
-        text_generator = TextGenerator(
-            {
-                "directory": PATH_TEST_MATERIALS,
-                "idle_template_name": "nothing",
-                "transition_template_name": "nothing",
-            },
-            self.tempdir,
-        )
-
-        # assert object
-        self.assertEqual(
-            text_generator.idle_template.filename, get_test_material(IDLE_TEMPLATE_NAME)
-        )
-        self.assertEqual(
-            text_generator.transition_template.filename,
-            get_test_material(TRANSITION_TEMPLATE_NAME),
-        )

@@ -175,6 +175,7 @@ class DakaraWorkerTestCase(TestCase):
         mock_font_loader_class.assert_called_with()
         mock_font_loader.load.assert_called_with()
         mock_text_generator_class.assert_called_with({}, ANY)
+        mock_text_generator.load.assert_called_with()
         mock_vlc_player_class.assert_called_with(
             self.stop, self.errors, self.config["player"], mock_text_generator
         )
