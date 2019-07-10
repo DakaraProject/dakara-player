@@ -81,11 +81,11 @@ class GetFileTestCase(TestCase):
         """Test to access a real file
         """
         # call the function
-        result = get_file("font-awesome.ini")
+        result = get_file("font-awesome.json")
 
         # assert the result
         self.assertEqual(
-            result, MODULE_PATH / Path("resources/font-awesome.ini").normpath()
+            result, MODULE_PATH / Path("resources/font-awesome.json").normpath()
         )
 
 

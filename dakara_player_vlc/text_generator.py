@@ -1,7 +1,7 @@
 import os
 import logging
+import json
 from codecs import open
-from configparser import ConfigParser
 
 from jinja2 import Environment, FileSystemLoader, ChoiceLoader
 
@@ -16,7 +16,7 @@ IDLE_TEMPLATE_NAME = "idle.ass"
 IDLE_TEXT_NAME = "idle.ass"
 
 
-ICON_MAP_FILE = "font-awesome.ini"
+ICON_MAP_FILE = "font-awesome.json"
 
 
 LINK_TYPE_NAMES = {
@@ -55,11 +55,22 @@ class TextGenerator:
         self.icon_map = {}
 
     def load(self):
+        """Load the different parts of the class
+
+        Here are the actions with side effect.
+        """
         # load icon mapping
         self.load_icon_map()
 
         # load templates
         self.load_templates()
+
+    def load_icon_map(self):
+        """Load the icon map
+        """
+        icon_map_path = get_file(ICON_MAP_FILE)
+        with open(icon_map_path) as file:
+            self.icon_map = json.load(file)
 
     def load_templates(self):
         """Set up Jinja environment
@@ -85,6 +96,62 @@ class TextGenerator:
         self.load_idle_template(
             self.config.get("idle_template_name", IDLE_TEMPLATE_NAME)
         )
+
+    def load_transition_template(self, transition_template_name):
+        """Load transition screen text template file
+
+        Load the default or customized ASS template for transition screen.
+        """
+        loader_custom, loader_default = self.environment.loader.loaders
+
+        if transition_template_name in loader_custom.list_templates():
+            logger.debug(
+                "Loading custom transition template file '{}'".format(
+                    transition_template_name
+                )
+            )
+
+            self.transition_template = self.environment.get_template(
+                transition_template_name
+            )
+
+            return
+
+        if TRANSITION_TEMPLATE_NAME in loader_default.list_templates():
+            logger.debug("Loading default transition template file")
+
+            self.transition_template = self.environment.get_template(
+                TRANSITION_TEMPLATE_NAME
+            )
+
+            return
+
+        raise IOError("No template file for transition screen found")
+
+    def load_idle_template(self, idle_template_name):
+        """Load idle screen text template file
+
+        Load the default or customized ASS template for idle screen.
+        """
+        loader_custom, loader_default = self.environment.loader.loaders
+
+        if idle_template_name in loader_custom.list_templates():
+            logger.debug(
+                "Loading custom idle template file '{}'".format(idle_template_name)
+            )
+
+            self.idle_template = self.environment.get_template(idle_template_name)
+
+            return
+
+        if IDLE_TEMPLATE_NAME in loader_default.list_templates():
+            logger.debug("Loading default idle template file")
+
+            self.idle_template = self.environment.get_template(IDLE_TEMPLATE_NAME)
+
+            return
+
+        raise IOError("No template file for idle screen found")
 
     def convert_icon(self, name):
         """Convert the name of an icon to its code
@@ -153,68 +220,3 @@ class TextGenerator:
         )
 
         return self.transition_text_path
-
-    def load_icon_map(self):
-        """Load the icon map
-        """
-        icon_map_path = get_file(ICON_MAP_FILE)
-
-        icon_map = ConfigParser()
-        icon_map.read(icon_map_path)
-        self.icon_map = icon_map["map"]
-
-    def load_transition_template(self, transition_template_name):
-        """Load transition screen text template file
-
-        Load the default or customized ASS template for transition screen.
-        """
-        loader_custom, loader_default = self.environment.loader.loaders
-
-        if transition_template_name in loader_custom.list_templates():
-            logger.debug(
-                "Loading custom transition template file '{}'".format(
-                    transition_template_name
-                )
-            )
-
-            self.transition_template = self.environment.get_template(
-                transition_template_name
-            )
-
-            return
-
-        if TRANSITION_TEMPLATE_NAME in loader_default.list_templates():
-            logger.debug("Loading default transition template file")
-
-            self.transition_template = self.environment.get_template(
-                TRANSITION_TEMPLATE_NAME
-            )
-
-            return
-
-        raise IOError("No template file for transition screen found")
-
-    def load_idle_template(self, idle_template_name):
-        """Load idle screen text template file
-
-        Load the default or customized ASS template for idle screen.
-        """
-        loader_custom, loader_default = self.environment.loader.loaders
-
-        if idle_template_name in loader_custom.list_templates():
-            logger.debug(
-                "Loading custom idle template file '{}'".format(idle_template_name)
-            )
-
-            self.idle_template = self.environment.get_template(idle_template_name)
-
-            return
-
-        if IDLE_TEMPLATE_NAME in loader_default.list_templates():
-            logger.debug("Loading default idle template file")
-
-            self.idle_template = self.environment.get_template(IDLE_TEMPLATE_NAME)
-
-            return
-
-        raise IOError("No template file for idle screen found")

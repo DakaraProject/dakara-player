@@ -40,21 +40,33 @@ class TextGeneratorPreLoadTestCase(TestCase):
         mocked_load_icon_map.assert_called_once_with()
         mocked_load_templates.assert_called_once_with()
 
-    # NOTE pass the icon map to the JSON format first
-    # def test_load_icon_map(self):
-    #     """Test to load the icon map
-    #     """
-    #     # create the object
-    #     text_generator = TextGenerator({}, self.tempdir)
-    #
-    #     # pre assert there are not icon map
-    #     self.assertDictEqual(text_generator.icon_map, {})
-    #
-    #     # call the method
-    #     text_generator.load_icon_map()
-    #
-    #     # assert there is an icon map
-    #     self.assertDictEqual(dict(text_generator.icon_map), {"name": "value"})
+    @patch("dakara_player_vlc.text_generator.open", new_callable=mock_open)
+    @patch("dakara_player_vlc.text_generator.ICON_MAP_FILE", "icon_map_file")
+    @patch("dakara_player_vlc.text_generator.get_file")
+    @patch("dakara_player_vlc.text_generator.json.load")
+    def test_load_icon_map(self, mocked_load, mocked_get_file, mocked_open):
+        """Test to load the icon map
+        """
+        # create the mock
+        mocked_load.return_value = {"name": "value"}
+        mocked_get_file.return_value = "path/to/icon_map_file"
+
+        # create the object
+        text_generator = TextGenerator({}, self.tempdir)
+
+        # pre assert there are not icon map
+        self.assertDictEqual(text_generator.icon_map, {})
+
+        # call the method
+        text_generator.load_icon_map()
+
+        # assert there is an icon map
+        self.assertDictEqual(text_generator.icon_map, {"name": "value"})
+
+        # assert the mock
+        mocked_load.assert_called_with(mocked_open.return_value)
+        mocked_get_file.assert_called_with("icon_map_file")
+        mocked_open.assert_called_with("path/to/icon_map_file")
 
     def test_load_templates_default(self):
         """Test to load default templates for text
@@ -232,6 +244,33 @@ class TextGeneratorPostLoadTestCase(TestCase):
         )
         self.text_generator.load()
 
+    def test_convert_icon(self):
+        """Test the convertion of an available icon name to its code
+        """
+        self.assertEqual(self.text_generator.convert_icon("music"), "\uf001")
+        self.assertEqual(self.text_generator.convert_icon("other"), " ")
+
+    def test_convert_icon_unavailable(self):
+        """Test the convertion of an unavailable icon name to a generic code
+        """
+        self.assertEqual(self.text_generator.convert_icon("unavailable"), " ")
+
+    def test_convert_icon_none(self):
+        """Test the convertion of a null icon name is handled
+        """
+        # test only the music icon
+        self.assertEqual(self.text_generator.convert_icon(None), "")
+
+    def test_convert_link_type_name(self):
+        """Test the convertion of a link type to its long name
+        """
+        self.assertEqual(self.text_generator.convert_link_type_name("OP"), "Opening")
+        self.assertEqual(self.text_generator.convert_link_type_name("ED"), "Ending")
+        self.assertEqual(
+            self.text_generator.convert_link_type_name("IN"), "Insert song"
+        )
+        self.assertEqual(self.text_generator.convert_link_type_name("IS"), "Image song")
+
     @patch("dakara_player_vlc.text_generator.open", new_callable=mock_open)
     def test_create_idle_text(self, mock_open):
         """Test the generation of an idle text
@@ -263,25 +302,3 @@ class TextGeneratorPostLoadTestCase(TestCase):
         )
 
         self.assertEqual(result, self.transition_text_path)
-
-    def test_convert_icon(self):
-        """Test the convertion of an icon name to its code
-        """
-        # test only the music icon
-        self.assertEqual(self.text_generator.convert_icon("music"), "\uf001")
-
-    def test_convert_icon_none(self):
-        """Test the convertion of a null icon name is handled
-        """
-        # test only the music icon
-        self.assertEqual(self.text_generator.convert_icon(None), "")
-
-    def test_convert_link_type_name(self):
-        """Test the convertion of a link type to its long name
-        """
-        self.assertEqual(self.text_generator.convert_link_type_name("OP"), "Opening")
-        self.assertEqual(self.text_generator.convert_link_type_name("ED"), "Ending")
-        self.assertEqual(
-            self.text_generator.convert_link_type_name("IN"), "Insert song"
-        )
-        self.assertEqual(self.text_generator.convert_link_type_name("IS"), "Image song")
