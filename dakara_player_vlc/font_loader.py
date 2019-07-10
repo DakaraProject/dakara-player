@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from dakara_player_vlc.resources_manager import get_all_fonts, PATH_FONTS
 
 
-logger = logging.getLogger("font_loader")
+logger = logging.getLogger(__name__)
 
 
 def get_font_loader_class():
@@ -56,7 +56,7 @@ class FontLoader(ABC):
 class FontLoaderLinux(FontLoader):
     """Font loader for Linux
 
-    It symlinks fonts to install in the user fonts directory. On exit, it
+    It symlinks fonts to load in the user fonts directory. On exit, it
     removes the created symlinks.
     """
 
@@ -87,91 +87,101 @@ class FontLoaderLinux(FontLoader):
     def load_from_resources_directory(self):
         """Load all the fonts situated in the resources font directory
         """
-        logger.debug("Scanning font directory")
+        logger.debug("Scanning fonts directory")
         font_file_path_list = get_all_fonts()
 
-        for font_file_path in font_file_path_list:
-            font_file_name = os.path.basename(font_file_path)
-            logger.debug("Font '{}' found to install".format(font_file_name))
-
+        logger.debug("Found %i font(s) to load", len(font_file_path_list))
         self.load_from_list(font_file_path_list)
 
     def load_from_list(self, font_file_path_list):
-        """Load the provided fonts
+        """Load the provided list of fonts
 
         Args:
             font_file_path_list (list of str): list of absolute path of the
-                fonts to install.
+                fonts to load.
         """
+        # display list of fonts
         for font_file_path in font_file_path_list:
-            # get font file name
             font_file_name = os.path.basename(font_file_path)
+            logger.debug("Font '%s' found to be loaded", font_file_name)
 
-            # check if the font is installed at system level
-            if os.path.isfile(os.path.join(self.FONT_DIR_SYSTEM, font_file_name)):
+        # load the fonts
+        for font_file_path in font_file_path_list:
+            self.load_font(font_file_path)
 
-                logger.debug(
-                    "Font '{}' found in system directory".format(font_file_name)
-                )
+    def load_font(self, font_file_path):
+        """Load the provided font
 
-                continue
+        Args:
+            font_file_path (str): absolute path of the font to load.
+        """
+        # get font file name
+        font_file_name = os.path.basename(font_file_path)
 
-            # check if the font is installed at user level
-            font_dir_user = os.path.expanduser(self.FONT_DIR_USER)
-            font_file_user_path = os.path.join(font_dir_user, font_file_name)
+        # check if the font is installed at system level
+        if os.path.isfile(os.path.join(self.FONT_DIR_SYSTEM, font_file_name)):
+            logger.debug("Font '%s' found in system directory", font_file_name)
+            return
 
-            if os.path.isfile(font_file_user_path) or os.path.islink(
-                font_file_user_path
-            ):
+        # check if the font is installed at user level
+        font_dir_user = os.path.expanduser(self.FONT_DIR_USER)
+        font_file_user_path = os.path.join(font_dir_user, font_file_name)
 
-                logger.debug("Font '{}' found in user directory".format(font_file_name))
+        if os.path.isfile(font_file_user_path) or os.path.islink(font_file_user_path):
+            logger.debug("Font '%s' found in user directory", font_file_name)
+            return
 
-                continue
+        # then, if the font is not installed, load it
+        font_file_target_path = os.path.join(font_dir_user, font_file_name)
 
-            # then, if the font is not installed, install it
-            font_file_target_path = os.path.join(font_dir_user, font_file_name)
+        os.symlink(font_file_path, font_file_target_path)
 
-            os.symlink(font_file_path, font_file_target_path)
+        # register the font
+        self.fonts_loaded.append(font_file_target_path)
 
-            # register the font
-            self.fonts_loaded.append(font_file_target_path)
-
-            logger.debug(
-                "Font '{}' loaded in user directory: '{}'".format(
-                    font_file_path, font_file_target_path
-                )
-            )
+        logger.debug(
+            "Font '%s' loaded in user directory: '%s'",
+            font_file_name,
+            font_file_target_path,
+        )
 
     def unload(self):
-        """Remove the installed fonts
+        """Remove loaded fonts
         """
         for font_path in self.fonts_loaded:
-            try:
-                os.unlink(font_path)
-                logger.debug("Font '{}' unloaded".format(font_path))
+            self.unload_font(font_path)
 
-            except OSError:
-                logger.error("Unable to unload '{}'".format(font_path))
+    def unload_font(self, font_path):
+        """Remove the provided font
 
-        self.fonts_loaded = []
+        Args:
+            font_path (str): absolute path of the font to unload.
+        """
+        try:
+            os.unlink(font_path)
+            self.fonts_loaded.remove(font_path)
+            logger.debug("Font '%s' unloaded", font_path)
+
+        except OSError:
+            logger.error("Unable to unload '%s'", font_path)
 
 
 class FontLoaderWindows(FontLoader):
     """Font loader for Windows
 
-    It cannot do anything, since it is impossible to install fonts on Windows
+    It cannot do anything, since it is impossible to load fonts on Windows
     programatically, as for now. It simply asks the user to do so.
     """
 
     GREETINGS = "Font loader for Windows selected"
 
     def load(self):
-        """Prompt the user to install the fonts
+        """Prompt the user to load the fonts
         """
         logger.debug("Scanning font directory")
         font_file_path_list = get_all_fonts()
 
-        # since there seems to be no workable way to install fonts on Windows
+        # since there seems to be no workable way to load fonts on Windows
         # through Python, we ask the user to do it by themselve
         print(
             (
