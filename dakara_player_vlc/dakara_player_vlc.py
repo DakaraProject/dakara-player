@@ -135,7 +135,11 @@ class DakaraWorker(WorkerSafeThread):
             # communication with the dakara WebSocket server
             dakara_server_websocket = stack.enter_context(
                 DakaraServerWebSocketConnection(
-                    self.stop, self.errors, self.config["server"], token_header
+                    self.stop,
+                    self.errors,
+                    self.config["server"],
+                    header=token_header,
+                    route="ws/playlist/device",
                 )
             )
 

@@ -208,7 +208,11 @@ class DakaraWorkerTestCase(TestCase):
         mock_dakara_server_http.authenticate.assert_called_with()
         mock_dakara_server_http.get_token_header.assert_called_with()
         mock_dakara_server_websocket_class.assert_called_with(
-            self.stop, self.errors, self.config["server"], "token"
+            self.stop,
+            self.errors,
+            self.config["server"],
+            header="token",
+            route="ws/playlist/device",
         )
         mock_dakara_manager_class.assert_called_with(
             mock_font_loader,

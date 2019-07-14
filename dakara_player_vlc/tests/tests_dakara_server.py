@@ -1,19 +1,12 @@
 from unittest import TestCase
-from unittest.mock import patch, MagicMock, ANY
+from unittest.mock import patch, MagicMock
 from threading import Event
 from queue import Queue
-import yaml
-
-from websocket import WebSocketBadStatusException, WebSocketConnectionClosedException
 
 from dakara_player_vlc.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
-    NetworkError,
-    AuthenticationError,
-    connected,
 )
-from dakara_player_vlc.resources_manager import get_test_material
 
 
 class DakaraServerHTTPConnectionTestCase(TestCase):
@@ -302,43 +295,6 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         mock_put.assert_not_called()
 
 
-class ConnectedTestCase(TestCase):
-    """Test the `connected` decorator
-    """
-
-    class Connected:
-        def __init__(self):
-            self.websocket = None
-
-        @connected
-        def dummy(self):
-            pass
-
-    def test_connected_sucessful(self):
-        """Test the connected decorator when websocket is set
-
-        Use the `run` method for the test.
-        """
-        instance = self.Connected()
-
-        # set the token
-        instance.websocket = True
-
-        # call a protected method
-        instance.dummy()
-
-    def test_connected_error(self):
-        """Test the connected decorator when token is not set
-
-        Use the interal `get_token_header` method for test.
-        """
-        instance = self.Connected()
-
-        # call a protected method
-        with self.assertRaises(ConnectionError):
-            instance.dummy()
-
-
 class DakaraServerWebSocketConnectionTestCase(TestCase):
     """Test the WebSocket connection with the server
     """
@@ -351,7 +307,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.address = "www.example.com"
 
         # create an URL
-        self.url = "ws://www.example.com/ws/playlist/device/"
+        self.url = "ws://www.example.com/ws"
 
         # create token header
         self.header = {"token": "token"}
@@ -368,439 +324,112 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
             self.stop,
             self.errors,
             {"address": self.address, "reconnect_interval": self.reconnect_interval},
-            self.header,
+            header=self.header,
+            route="ws",
         )
 
-    def test_init_worker(self):
-        """Test the created object
+    def test_init_url(self):
+        """Test the URL of the created object
         """
         self.assertEqual(self.dakara_server.server_url, self.url)
-        self.assertEqual(self.dakara_server.header, self.header)
-        self.assertEqual(self.dakara_server.reconnect_interval, self.reconnect_interval)
-        self.assertIsNone(self.dakara_server.websocket)
 
-    def test_init_worker_from_config(self):
-        """Test to create the object from a config file
-        """
-        # open the config
-        config_path = get_test_material("config.yaml")
-        with open(config_path) as file:
-            config = yaml.load(file, Loader=yaml.Loader)
-            config = config["server"]
-
-        # create an object
-        dakara_server = DakaraServerWebSocketConnection(
-            self.stop, self.errors, config, self.header
-        )
-
-        # test the created object
-        self.assertEqual(
-            dakara_server.server_url, "wss://www.example.com/ws/playlist/device/"
-        )
-        self.assertEqual(dakara_server.reconnect_interval, 10)
-
-    def test_exit_worker(self):
-        """Test to exit the worker
-        """
-        # mock the abort function
-        self.dakara_server.abort = MagicMock()
-
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
-            self.dakara_server.exit_worker()
-
-        # assert the call
-        self.dakara_server.abort.assert_called_with()
-
-    def test_on_open(self):
+    @patch.object(DakaraServerWebSocketConnection, "send_ready")
+    def test_on_connected(self, mocked_send_ready):
         """Test the callback on connection open
         """
         # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
-            self.dakara_server.on_open()
+        self.dakara_server.on_connected()
 
         # assert the call
-        self.assertFalse(self.dakara_server.retry)
-
-    def test_on_close_normal(self):
-        """Test the callback on connection close when the program is closing
-        """
-        # pre assert
-        self.assertFalse(self.dakara_server.retry)
-
-        # mock the create timer helper that should not be called
-        self.dakara_server.create_timer = MagicMock()
-
-        # set the program is closing
-        self.stop.set()
-
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
-            self.dakara_server.on_close(None, None)
-
-        # assert the websocket object has been destroyed
-        self.assertIsNone(self.dakara_server.websocket)
-
-        # assert the create timer helper was not called
-        self.dakara_server.create_timer.assert_not_called()
-
-    def test_on_close_retry(self):
-        """Test the callback on connection close when connection should retry
-        """
-        # set the retry flag on
-        self.dakara_server.retry = True
-
-        # mock the create timer helper
-        self.dakara_server.create_timer = MagicMock()
-
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
-            self.dakara_server.on_close(None, None)
-
-        # assert the different calls
-        self.dakara_server.create_timer.assert_called_with(
-            self.reconnect_interval, self.dakara_server.run
-        )
-        self.dakara_server.timer.start.assert_called_with()
-
-    def test_on_message_successful(self):
-        """Test a normal use of the on message method
-        """
-        event = '{"type": "dummy", "data": "data"}'
-        content = "data"
-
-        # mock the method to call for this type
-        self.dakara_server.receive_dummy = MagicMock()
-
-        # call the method
-        self.dakara_server.on_message(event)
-
-        # assert the dummy method has been called
-        self.dakara_server.receive_dummy.assert_called_with(content)
-
-    @patch("dakara_player_vlc.dakara_server.getattr")
-    def test_on_message_failed_json(self, mock_getattr):
-        """Test the on message method when event is not a JSON string
-        """
-        event = "definitely not a JSON string"
-
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
-            self.dakara_server.on_message(event)
-
-        # assert no method has been called
-        mock_getattr.assert_not_called()
-
-    @patch("dakara_player_vlc.dakara_server.getattr")
-    def test_on_message_failed_type(self, mock_getattr):
-        """Test the on message method when event has an unknown type
-        """
-        event = '{"type": "dummy", "data": "data"}'
-
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
-            self.dakara_server.on_message(event)
-
-        # assert no method has been called
-        mock_getattr.assert_not_called()
-
-    @patch("dakara_player_vlc.dakara_server.logger")
-    def test_on_error_closing(self, mock_logger):
-        """Test the callback on error when the program is closing
-
-        The error should be ignored.
-        """
-        # close the program
-        self.stop.set()
-
-        # call the method
-        self.dakara_server.on_error(Exception("error message"))
-
-        # assert the call
-        mock_logger.assert_not_called()
-        self.assertTrue(self.errors.empty())
-
-    def test_on_error_unknown(self):
-        """Test the callback on an unknown error
-
-        The error should be logged only.
-        """
-        # pre assert
-        self.assertFalse(self.stop.is_set())
-
-        class CustomError(Exception):
-            pass
-
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
-            self.dakara_server.on_error(CustomError("error message"))
-
-        # assert the call
-        self.assertTrue(self.errors.empty())
-
-    def test_on_error_authentication(self):
-        """Test the callback on error when the authentication is refused
-        """
-        # pre assert
-        self.assertFalse(self.stop.is_set())
-        self.assertTrue(self.errors.empty())
-
-        # call the method
-        self.dakara_server.on_error(WebSocketBadStatusException("error %s", 0))
-
-        # assert the call
-        self.assertFalse(self.errors.empty())
-        _, error, _ = self.errors.get()
-        self.assertIsInstance(error, AuthenticationError)
-
-    def test_on_error_network_normal(self):
-        """Test the callback on error when the server is unreachable
-        """
-        # pre assert
-        self.assertFalse(self.dakara_server.retry)
-        self.assertFalse(self.stop.is_set())
-        self.assertTrue(self.errors.empty())
-
-        # call the method
-        self.dakara_server.on_error(ConnectionRefusedError("error"))
-
-        # assert the call
-        self.assertFalse(self.errors.empty())
-        _, error, _ = self.errors.get()
-        self.assertIsInstance(error, NetworkError)
-
-    def test_on_error_network_retry(self):
-        """Test the callback on error when the server is unreachable on retry
-
-        No exception should be raised, the error should be logged only.
-        """
-        # pre assert
-        self.assertFalse(self.stop.is_set())
-
-        # set retry flag on
-        self.dakara_server.retry = True
-
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
-            self.dakara_server.on_error(ConnectionRefusedError("error"))
-
-        # assert the call
-        self.assertTrue(self.errors.empty())
-
-    def test_on_error_route(self):
-        """Test the callback on error when the route is invalid
-        """
-        # pre assert
-        self.assertFalse(self.stop.is_set())
-        self.assertTrue(self.errors.empty())
-
-        # call the method
-        self.dakara_server.on_error(ConnectionResetError("error"))
-
-        # assert the call
-        self.assertFalse(self.errors.empty())
-        _, error, _ = self.errors.get()
-        self.assertIsInstance(error, ValueError)
-
-    def test_on_error_closed(self):
-        """Test the callback on error when the connection is closed by server
-        """
-        # pre assert
-        self.assertFalse(self.stop.is_set())
-        self.assertFalse(self.dakara_server.retry)
-
-        # mock the callback for connection lost
-        self.dakara_server.connection_lost_callback = MagicMock()
-
-        # call the methods
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
-            self.dakara_server.on_error(WebSocketConnectionClosedException("error"))
-            self.dakara_server.on_close(None, None)
-
-        # assert the call
-        self.assertTrue(self.dakara_server.retry)
-        self.dakara_server.connection_lost_callback.assert_called_with()
-
-    def test_send(self):
-        """Test a normal use of the function
-        """
-        event = '{"data": "data"}'
-        content = {"data": "data"}
-
-        # mock the websocket
-        self.dakara_server.websocket = MagicMock()
-
-        # call the method
-        self.dakara_server.send(content)
-
-        # assert the call
-        self.dakara_server.websocket.send.assert_called_with(event)
-
-    def test_abort_connected(self):
-        """Test to abort the connection
-        """
-        # pre assert
-        self.assertFalse(self.dakara_server.retry)
-
-        # mock the websocket
-        self.dakara_server.websocket = MagicMock()
-
-        # call the method
-        self.dakara_server.abort()
-
-        # assert the call
-        self.dakara_server.websocket.sock.abort.assert_called_with()
-        self.assertFalse(self.dakara_server.retry)
-
-    def test_abort_disconnected(self):
-        """Test to abort the connection when already disconnected
-        """
-        # pre assert
-        self.assertFalse(self.dakara_server.retry)
-        self.assertIsNone(self.dakara_server.websocket)
-
-        # call the method
-        self.dakara_server.abort()
-
-        # assert the call
-        self.assertFalse(self.dakara_server.retry)
-
-    def test_abort_retry(self):
-        """Test to abort the connection when retry is set
-        """
-        # set the retry flag on
-        self.dakara_server.retry = True
-
-        # call the method
-        self.dakara_server.abort()
-
-        # assert the call
-        self.assertFalse(self.dakara_server.retry)
-
-    @patch("dakara_player_vlc.dakara_server.WebSocketApp")
-    def test_run(self, mock_websocket_app_class):
-        """Test to create and run the connection
-        """
-        # mock the callback methods
-        self.dakara_server.on_open = MagicMock()
-        self.dakara_server.on_close = MagicMock()
-        self.dakara_server.on_message = MagicMock()
-        self.dakara_server.on_error = MagicMock()
-
-        # pre assert
-        self.assertIsNone(self.dakara_server.websocket)
-
-        # call the method
-        self.dakara_server.run()
-
-        # assert the call
-        mock_websocket_app_class.assert_called_with(
-            self.url,
-            header=self.header,
-            on_open=ANY,
-            on_close=ANY,
-            on_message=ANY,
-            on_error=ANY,
-        )
-        self.dakara_server.websocket.run_forever.assert_called_with()
-
-        # assert that the callback are correctly set
-        # since the callback methods are adapted, we cannot check directy if
-        # the given method reference is the same as the corresponding instance
-        # method
-        # so, we check that calling the given method calls the instance method
-        websocket = MagicMock()
-        _, kwargs = mock_websocket_app_class.call_args
-
-        kwargs["on_open"](websocket)
-        self.dakara_server.on_open.assert_called_with()
-
-        kwargs["on_close"](websocket, None, None)
-        self.dakara_server.on_close.assert_called_with(None, None)
-
-        kwargs["on_message"](websocket, "message")
-        self.dakara_server.on_message.assert_called_with("message")
-
-        kwargs["on_error"](websocket, "error")
-        self.dakara_server.on_error.assert_called_with("error")
-
-        # post assert
-        # in real world, this test is impossible, since the websocket object
-        # has been destroyed by `on_close`
-        # we use the fact this callback is not called to check if the
-        # object has been created as expected
-        # maybe there is a better scenario to test this
-        self.assertIsNotNone(self.dakara_server.websocket)
-
-    def test_set_callbacks(self):
-        """Test the callback setter methods
-        """
-
-        def dummy_function():
-            pass
-
-        for name in ("idle", "playlist_entry", "command", "connection_lost"):
-            method = getattr(self.dakara_server, "{}_callback".format(name))
-            set_method = getattr(self.dakara_server, "set_{}_callback".format(name))
-
-            # assert the initial case
-            self.assertIsNot(method, dummy_function)
-
-            # call the method
-            set_method(dummy_function)
-
-            # assert the result
-            method = getattr(self.dakara_server, "{}_callback".format(name))
-            self.assertIs(method, dummy_function)
+        mocked_send_ready.assert_called_once_with()
 
     def test_receive_idle(self):
         """Test the receive idle event method
         """
-        # mock the call
-        self.dakara_server.idle_callback = MagicMock()
+        # mock the callback
+        mocked_idle_callback = MagicMock()
+        self.dakara_server.set_callback("idle", mocked_idle_callback)
 
         # call the method
-        self.dakara_server.receive_idle({})
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+            self.dakara_server.receive_idle({})
+
+        # assert the effect on logs
+        self.assertListEqual(
+            logger.output, ["DEBUG:dakara_player_vlc.dakara_server:Received idle order"]
+        )
 
         # assert the call
-        self.dakara_server.idle_callback.assert_called_with()
+        mocked_idle_callback.assert_called_with()
 
     def test_receive_playlist_entry(self):
         """Test the receive new playlist entry event method
         """
         content = {"id": 0, "song": None}
 
-        # mock the call
-        self.dakara_server.playlist_entry_callback = MagicMock()
+        # mock the callback
+        mocked_playlist_entry_callback = MagicMock()
+        self.dakara_server.set_callback(
+            "playlist_entry", mocked_playlist_entry_callback
+        )
 
         # call the method
-        self.dakara_server.receive_playlist_entry(content)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+            self.dakara_server.receive_playlist_entry(content)
+
+        # assert the effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.dakara_server:"
+                "Received new playlist entry 0 order"
+            ],
+        )
 
         # assert the call
-        self.dakara_server.playlist_entry_callback.assert_called_with(content)
+        mocked_playlist_entry_callback.assert_called_with(content)
 
     def test_receive_command(self):
         """Test the receive command event method
         """
         content = {"command": "command_value"}
 
-        # mock the call
-        self.dakara_server.command_callback = MagicMock()
+        # mock the callback
+        mocked_command_callback = MagicMock()
+        self.dakara_server.set_callback("command", mocked_command_callback)
 
         # call the method
-        self.dakara_server.receive_command(content)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+            self.dakara_server.receive_command(content)
+
+        # assert the effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.dakara_server:"
+                "Received command command_value order"
+            ],
+        )
 
         # assert the call
-        self.dakara_server.command_callback.assert_called_with("command_value")
+        mocked_command_callback.assert_called_with("command_value")
 
-    def test_send_ready(self):
+    @patch.object(DakaraServerWebSocketConnection, "send")
+    def test_send_ready(self, mocked_send):
         """Test to notify the server that the player is ready
         """
-        # mock the send command
-        self.dakara_server.send = MagicMock()
-
         # call the command
-        self.dakara_server.send_ready()
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+            self.dakara_server.send_ready()
+
+        # assert the effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.dakara_server:"
+                "Telling the server that the player is ready"
+            ],
+        )
 
         # assert the call
-        self.dakara_server.send.assert_called_with({"type": "ready"})
+        mocked_send.assert_called_with({"type": "ready"})
