@@ -132,7 +132,7 @@ class DakaraWorkerTestCase(TestCase):
         )
         mocked_vlc_player.load.assert_called_with()
         mocked_dakara_server_http_class.assert_called_with(
-            self.config["server"], route="api", mute_raise=True
+            self.config["server"], route="api/", mute_raise=True
         )
         mocked_dakara_server_http.authenticate.assert_called_with()
         mocked_dakara_server_http.get_token_header.assert_called_with()
@@ -141,7 +141,7 @@ class DakaraWorkerTestCase(TestCase):
             self.errors,
             self.config["server"],
             header="token",
-            route="ws/playlist/device",
+            route="ws/playlist/device/",
         )
         mocked_dakara_manager_class.assert_called_with(
             mocked_font_loader,
