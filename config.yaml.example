@@ -120,15 +120,19 @@ player:
 
 # Parameters for the server
 server:
-  # Server address
+  # Server address (host and port given at the same time)
   address: 127.0.0.1:8000
+
+  # Server host and port (given distinctly)
+  # host: 127.0.0.1
+  # port: 8000
+
+  # Use a secured connection
+  # ssl: false
 
   # Credentials for server authentication
   login: login
   password: pass
-
-  # Use a secured connection
-  # ssl: false
 
   # Interval to reconnect to the server if connection lost (in seconds)
   # reconnect_interval: 5
@@ -139,4 +143,4 @@ server:
 # For debug level, you can call `dakara.py` with the `−d` flag to show
 # traceback on exceptions.
 # Default is 'info'
-loglevel: info
+# loglevel: info
