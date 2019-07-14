@@ -202,7 +202,9 @@ class DakaraWorkerTestCase(TestCase):
             self.stop, self.errors, self.config["player"], mock_text_generator
         )
         mock_vlc_player.load.assert_called_with()
-        mock_dakara_server_http_class.assert_called_with(self.config["server"])
+        mock_dakara_server_http_class.assert_called_with(
+            self.config["server"], route="api"
+        )
         mock_dakara_server_http.authenticate.assert_called_with()
         mock_dakara_server_http.get_token_header.assert_called_with()
         mock_dakara_server_websocket_class.assert_called_with(

@@ -2,7 +2,8 @@ import json
 import logging
 import urllib.parse
 
-import requests
+from dakara_base.http_client import HTTPClient, authenticated
+from dakara_base.utils import display_message
 from websocket import (
     WebSocketApp,
     WebSocketBadStatusException,
@@ -11,9 +12,6 @@ from websocket import (
 
 from dakara_player_vlc.safe_workers import WorkerSafeTimer, safe
 
-# enforce loglevel warning for requests log messages
-logging.getLogger("requests").setLevel(logging.WARNING)
-
 
 logger = logging.getLogger(__name__)
 
@@ -21,169 +19,12 @@ logger = logging.getLogger(__name__)
 RECONNECT_INTERVAL = 5
 
 
-def authenticated(fun):
-    """Decorator that ensures the token is set
-
-    It makes sure that the given function is callel once authenticated.
-
-    Args:
-        fun (function): function to decorate.
-
-    Returns:
-        function: decorated function.
-    """
-
-    def call(self, *args, **kwargs):
-        if self.token is None:
-            raise AuthenticationError("No connection established")
-
-        return fun(self, *args, **kwargs)
-
-    return call
-
-
-class DakaraServerHTTPConnection:
+class DakaraServerHTTPConnection(HTTPClient):
     """Object representing a HTTP connection with the Dakara server
 
     Args:
         config (dict): config of the server.
     """
-
-    def __init__(self, config):
-        try:
-            # setting config
-            self.server_url = urllib.parse.urlunparse(
-                (
-                    "https" if config.get("ssl") else "http",
-                    config["address"],
-                    "/api/",
-                    "",
-                    "",
-                    "",
-                )
-            )
-
-            # authentication
-            self.token = None
-            self.login = config["login"]
-            self.password = config["password"]
-
-        except KeyError as error:
-            raise ValueError(
-                "Missing parameter in server config: {}".format(error)
-            ) from error
-
-    @authenticated
-    def send_request(self, method, *args, message_on_error="", **kwargs):
-        """Generic method to send requests to the server
-
-        It adds token header for authentication and takes care of errors.
-
-        Args:
-            method (str): name of the HTTP method to use.
-            message_on_error (str): message to display in logs in case of
-                error. It should describe what the request was about.
-
-        Raises:
-            ValueError: if the method is not supported.
-        """
-        # handle method function
-        if not hasattr(requests, method):
-            raise ValueError("Method {} not supported".format(method))
-
-        send_method = getattr(requests, method)
-
-        # handle message on error
-        if not message_on_error:
-            message_on_error = "Unable to request the server"
-
-        try:
-            response = send_method(*args, headers=self.get_token_header(), **kwargs)
-
-        except requests.exceptions.RequestException as error:
-            logger.error("{}, network error".format(message_on_error))
-            return None
-
-        if response.ok:
-            return response
-
-        logger.error(message_on_error)
-        logger.debug(
-            "Error {code}: {message}".format(
-                code=response.status_code, message=display_message(response.text)
-            )
-        )
-
-        return None
-
-    def get(self, *args, **kwargs):
-        """Generic method to get data on server
-        """
-        return self.send_request("get", *args, **kwargs)
-
-    def post(self, *args, **kwargs):
-        """Generic method to post data on server
-        """
-        return self.send_request("post", *args, **kwargs)
-
-    def put(self, *args, **kwargs):
-        """Generic method to put data on server
-        """
-        return self.send_request("put", *args, **kwargs)
-
-    def patch(self, *args, **kwargs):
-        """Generic method to patch data on server
-        """
-        return self.send_request("patch", *args, **kwargs)
-
-    def authenticate(self):
-        """Connect to the server
-
-        The authentication process relies on login/password which gives an
-        authentication token. This token is stored in the instance.
-        """
-        data = {"username": self.login, "password": self.password}
-
-        # connect to the server with login/password
-        try:
-            response = requests.post(self.server_url + "token-auth/", data=data)
-
-        except requests.exceptions.RequestException as error:
-            raise NetworkError(
-                ("Network error, unable to talk " "to the server for authentication")
-            ) from error
-
-        # manage sucessful connection response
-        # store token
-        if response.ok:
-            self.token = response.json().get("token")
-            logger.info("Login to server successful")
-            logger.debug("Token: " + self.token)
-            return
-
-        # manage failed connection response
-        if response.status_code == 400:
-            raise AuthenticationError(
-                ("Login to server failed, check the " "config file")
-            )
-
-        # manage any other error
-        raise AuthenticationError(
-            "Unable to connect to server, error {code}: {message}".format(
-                code=response.status_code, message=display_message(response.text)
-            )
-        )
-
-    @authenticated
-    def get_token_header(self):
-        """Get the connection token as it should appear in the header
-
-        Can be called only once login has been sucessful.
-
-        Returns:
-            dict: formatted token.
-        """
-        return {"Authorization": "Token " + self.token}
 
     @authenticated
     def create_player_error(self, playlist_entry_id, message):
@@ -197,16 +38,15 @@ class DakaraServerHTTPConnection:
         Raises:
             ValueError: if `playlist_entry_id` is `None`.
         """
-        if playlist_entry_id is None:
-            raise ValueError("Entry with ID None is invalid")
+        assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
         logger.debug(
-            "Telling the server that playlist entry {} "
-            "cannot be played".format(playlist_entry_id)
+            "Telling the server that playlist entry %i cannot be played",
+            playlist_entry_id,
         )
 
         self.post(
-            self.server_url + "playlist/player/errors/",
+            endpoint="playlist/player/errors/",
             data={
                 "playlist_entry_id": playlist_entry_id,
                 "error_message": display_message(message, 255),
@@ -225,19 +65,16 @@ class DakaraServerHTTPConnection:
         Raises:
             ValueError: if `playlist_entry_id` is `None`.
         """
-        if playlist_entry_id is None:
-            raise ValueError("Entry with ID None is invalid")
+        assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
         logger.debug(
-            "Telling the server that playlist entry {} is finished".format(
-                playlist_entry_id
-            )
+            "Telling the server that playlist entry %i is finished", playlist_entry_id
         )
 
         self.put(
-            self.server_url + "playlist/player/status/",
+            endpoint="playlist/player/status/",
             data={"event": "finished", "playlist_entry_id": playlist_entry_id},
-            message_on_error=("Unable to report that a playlist " "entry has finished"),
+            message_on_error="Unable to report that a playlist entry has finished",
         )
 
     @authenticated
@@ -251,23 +88,21 @@ class DakaraServerHTTPConnection:
         Raises:
             ValueError: if `playlist_entry_id` is `None`.
         """
-        if playlist_entry_id is None:
-            raise ValueError("Entry with ID None is invalid")
+        assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
         logger.debug(
-            "Telling the server that the transition of playlist "
-            "entry {} has started".format(playlist_entry_id)
+            "Telling the server that the transition of playlist entry %i has started",
+            playlist_entry_id,
         )
 
         self.put(
-            self.server_url + "playlist/player/status/",
+            endpoint="playlist/player/status/",
             data={
                 "event": "started_transition",
                 "playlist_entry_id": playlist_entry_id,
             },
             message_on_error=(
-                "Unable to report that the transition of "
-                "a playlist entry has started"
+                "Unable to report that the transition of a playlist entry has started"
             ),
         )
 
@@ -282,19 +117,18 @@ class DakaraServerHTTPConnection:
         Raises:
             ValueError: if `playlist_entry_id` is `None`.
         """
-        if playlist_entry_id is None:
-            raise ValueError("Entry with ID None is invalid")
+        assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
         logger.debug(
-            "Telling the server that the song of playlist "
-            "entry {} has started".format(playlist_entry_id)
+            "Telling the server that the song of playlist entry %i has started",
+            playlist_entry_id,
         )
 
         self.put(
-            self.server_url + "playlist/player/status/",
+            endpoint="playlist/player/status/",
             data={"event": "started_song", "playlist_entry_id": playlist_entry_id},
             message_on_error=(
-                "Unable to report that the song of " "a playlist entry has started"
+                "Unable to report that the song of a playlist entry has started"
             ),
         )
 
@@ -309,18 +143,17 @@ class DakaraServerHTTPConnection:
         Raises:
             ValueError: if `playlist_entry_id` is `None`.
         """
-        if playlist_entry_id is None:
-            raise ValueError("Entry with ID None is invalid")
+        assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
         logger.debug(
-            "Telling the server that the playlist entry {}"
-            "could not play".format(playlist_entry_id)
+            "Telling the server that the playlist entry %i could not play",
+            playlist_entry_id,
         )
 
         self.put(
-            self.server_url + "playlist/player/status/",
+            endpoint="playlist/player/status/",
             data={"event": "could_not_play", "playlist_entry_id": playlist_entry_id},
-            message_on_error=("Unable to report that playlist entry could " "not play"),
+            message_on_error="Unable to report that playlist entry could not play",
         )
 
     @authenticated
@@ -335,19 +168,18 @@ class DakaraServerHTTPConnection:
         Raises:
             ValueError: if `playlist_entry_id` is `None`.
         """
-        if playlist_entry_id is None:
-            raise ValueError("Entry with ID None is invalid")
+        assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
         logger.debug("Telling the server that the player is paused")
 
         self.put(
-            self.server_url + "playlist/player/status/",
+            endpoint="playlist/player/status/",
             data={
                 "event": "paused",
                 "playlist_entry_id": playlist_entry_id,
                 "timing": timing,
             },
-            message_on_error=("Unable to report that the player is paused"),
+            message_on_error="Unable to report that the player is paused",
         )
 
     @authenticated
@@ -362,19 +194,18 @@ class DakaraServerHTTPConnection:
         Raises:
             ValueError: if `playlist_entry_id` is `None`.
         """
-        if playlist_entry_id is None:
-            raise ValueError("Entry with ID None is invalid")
+        assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
         logger.debug("Telling the server that the player resumed playing")
 
         self.put(
-            self.server_url + "playlist/player/status/",
+            endpoint="playlist/player/status/",
             data={
                 "event": "resumed",
                 "playlist_entry_id": playlist_entry_id,
                 "timing": timing,
             },
-            message_on_error=("Unable to report that the player resumed " "playing"),
+            message_on_error="Unable to report that the player resumed playing",
         )
 
 
@@ -660,15 +491,6 @@ class DakaraServerWebSocketConnection(WorkerSafeTimer):
         """
         logger.debug("Telling the server that the player is ready")
         self.send({"type": "ready"})
-
-
-def display_message(message, limit=100):
-    """Display the 100 first characters of a message
-    """
-    if len(message) <= limit:
-        return message
-
-    return message[: limit - 3].strip() + "..."
 
 
 class AuthenticationError(Exception):

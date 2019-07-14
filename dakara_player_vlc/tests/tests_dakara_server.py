@@ -4,7 +4,6 @@ from threading import Event
 from queue import Queue
 import yaml
 
-from requests.exceptions import RequestException
 from websocket import WebSocketBadStatusException, WebSocketConnectionClosedException
 
 from dakara_player_vlc.dakara_server import (
@@ -12,8 +11,6 @@ from dakara_player_vlc.dakara_server import (
     DakaraServerWebSocketConnection,
     NetworkError,
     AuthenticationError,
-    display_message,
-    authenticated,
     connected,
 )
 from dakara_player_vlc.resources_manager import get_test_material
@@ -31,7 +28,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         self.address = "www.example.com"
 
         # create a server URL
-        self.url = "http://www.example.com/api/"
+        self.url = "http://www.example.com/api"
 
         # create a login and password
         self.login = "test"
@@ -39,471 +36,270 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
         # create a DakaraServerHTTPConnection instance
         self.dakara_server = DakaraServerHTTPConnection(
-            {"address": self.address, "login": self.login, "password": self.password}
+            {"address": self.address, "login": self.login, "password": self.password},
+            route="api",
         )
+        self.set_token()
 
-    def test_init(self):
-        """Test the created object
+    def set_token(self):
+        """Set the token for the test client
+        """
+        self.dakara_server.token = "Token"
+
+    def test_init_url(self):
+        """Test the object has the correct URL
         """
         self.assertEqual(self.dakara_server.server_url, self.url)
-        self.assertEqual(self.dakara_server.login, self.login)
-        self.assertEqual(self.dakara_server.password, self.password)
-        self.assertIsNone(self.dakara_server.token)
 
-    def test_init_from_config(self):
-        """Test to create the object from a config file
-        """
-        # open the config
-        config_path = get_test_material("config.yaml")
-        with open(config_path) as file:
-            config = yaml.load(file, Loader=yaml.Loader)
-            config = config["server"]
-
-        # create an object
-        dakara_server = DakaraServerHTTPConnection(config)
-
-        # test the created object
-        self.assertEqual(dakara_server.server_url, "https://www.example.com/api/")
-        self.assertEqual(dakara_server.login, "player_login")
-        self.assertEqual(dakara_server.password, "player_password")
-
-    @patch("dakara_player_vlc.dakara_server.requests.post")
-    def test_send_request_successful(self, mock_post):
-        """Test to send a request with the generic method
-        """
-        # set the token
-        self.dakara_server.token = self.token
-
-        # call the method
-        self.dakara_server.send_request(
-            "post", self.url, data={"content": "test"}, message_on_error="error message"
-        )
-
-        # assert the call
-        mock_post.assert_called_with(
-            self.url,
-            headers={"Authorization": "Token token value"},
-            data={"content": "test"},
-        )
-
-    def test_send_request_error_method(self):
-        """Test that a wrong method name fails for a generic request
-        """
-        # set the token
-        self.dakara_server.token = self.token
-
-        # call the method
-        with self.assertRaises(ValueError):
-            self.dakara_server.send_request(
-                "invalid",
-                self.url,
-                data={"content": "test"},
-                message_on_error="error message",
-            )
-
-    @patch("dakara_player_vlc.dakara_server.requests.post")
-    def test_send_request_error_network(self, mock_post):
-        """Test to send a request when there is a network error
-        """
-        # set the token
-        self.dakara_server.token = self.token
-
-        # mock the response of the server
-        mock_post.side_effect = RequestException()
-
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
-            self.dakara_server.send_request(
-                "post",
-                self.url,
-                data={"content": "test"},
-                message_on_error="error message",
-            )
-
-    @patch("dakara_player_vlc.dakara_server.requests.get")
-    def test_get(self, mock_get):
-        """Test the get method
-        """
-        # set the token
-        self.dakara_server.token = self.token
-
-        # mock the response
-        response = MagicMock()
-        response.data = "data"
-        mock_get.return_value = response
-
-        # call the method
-        response_obtained = self.dakara_server.get(self.url)
-
-        # assert the call
-        mock_get.assert_called_with(self.url, headers=ANY)
-
-        # assert the result
-        self.assertEqual(response_obtained.data, "data")
-
-    @patch("dakara_player_vlc.dakara_server.requests.post")
-    def test_post(self, mock_post):
-        """Test the post method
-        """
-        # set the token
-        self.dakara_server.token = self.token
-
-        # call the method
-        self.dakara_server.post(self.url, data={"content": "content"})
-
-        # assert the call
-        mock_post.assert_called_with(self.url, headers=ANY, data={"content": "content"})
-
-    @patch("dakara_player_vlc.dakara_server.requests.patch")
-    def test_patch(self, mock_patch):
-        """Test the patch method
-        """
-        # set the token
-        self.dakara_server.token = self.token
-
-        # call the method
-        self.dakara_server.patch(self.url, data={"content": "content"})
-
-        # assert the call
-        mock_patch.assert_called_with(
-            self.url, headers=ANY, data={"content": "content"}
-        )
-
-    @patch("dakara_player_vlc.dakara_server.requests.put")
-    def test_put(self, mock_put):
-        """Test the put method
-        """
-        # set the token
-        self.dakara_server.token = self.token
-
-        # call the method
-        self.dakara_server.put(self.url, data={"content": "content"})
-
-        # assert the call
-        mock_put.assert_called_with(self.url, headers=ANY, data={"content": "content"})
-
-    @patch("dakara_player_vlc.dakara_server.requests.post")
-    def test_authenticate_successful(self, mock_post):
-        """Test a successful authentication with the server
-        """
-        # mock the response of the server
-        mock_post.return_value.ok = True
-        mock_post.return_value.json.return_value = {"token": self.token}
-
-        # pre assertions
-        self.assertFalse(self.dakara_server.token)
-
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server"):
-            self.dakara_server.authenticate()
-
-        # call assertions
-        mock_post.assert_called_with(
-            self.url + "token-auth/",
-            data={"username": self.login, "password": self.password},
-        )
-
-        # post assertions
-        self.assertTrue(self.dakara_server.token)
-        self.assertEqual(self.dakara_server.token, self.token)
-
-    @patch("dakara_player_vlc.dakara_server.requests.post")
-    def test_authenticate_error_network(self, mock_post):
-        """Test a network error when authenticating
-        """
-        # mock the response of the server
-        mock_post.side_effect = RequestException()
-
-        # call the method
-        with self.assertRaises(NetworkError):
-            self.dakara_server.authenticate()
-
-    @patch("dakara_player_vlc.dakara_server.requests.post")
-    def test_authenticate_error_authentication(self, mock_post):
-        """Test an authentication error when authenticating
-        """
-        # mock the response of the server
-        mock_post.return_value.ok = False
-        mock_post.return_value.status_code = 400
-
-        # call the method
-        with self.assertRaises(AuthenticationError):
-            self.dakara_server.authenticate()
-
-    @patch("dakara_player_vlc.dakara_server.requests.post")
-    def test_authenticate_error_other(self, mock_post):
-        """Test a server error when authenticating
-        """
-        # mock the response of the server
-        mock_post.return_value.ok = False
-        mock_post.return_value.status_code = 999
-        mock_post.return_value.test = "error"
-
-        # call the method
-        with self.assertRaises(AuthenticationError):
-            self.dakara_server.authenticate()
-
-    def test_get_token_header(self):
-        """Test the helper to get token header
-        """
-        # set the token
-        self.dakara_server.token = self.token
-
-        # call the method
-        result = self.dakara_server.get_token_header()
-
-        # call assertions
-        self.assertEqual(result, {"Authorization": "Token " + self.token})
-
-    @patch("dakara_player_vlc.dakara_server.requests.post")
+    @patch.object(DakaraServerHTTPConnection, "post")
     def test_create_player_error_successful(self, mock_post):
         """Test to report an error sucessfuly
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        self.dakara_server.create_player_error(42, "message")
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+            self.dakara_server.create_player_error(42, "message")
+
+        # assert the effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.dakara_server:"
+                "Telling the server that playlist entry 42 cannot be played"
+            ],
+        )
 
         # assert the call
         mock_post.assert_called_with(
-            "http://www.example.com/api/playlist/player/errors/",
-            headers=ANY,
+            endpoint="playlist/player/errors/",
             data={"playlist_entry_id": 42, "error_message": "message"},
+            message_on_error="Unable to send player error to server",
         )
 
-    @patch("dakara_player_vlc.dakara_server.requests.post")
+    @patch.object(DakaraServerHTTPConnection, "post")
     def test_create_player_error_failed(self, mock_post):
         """Test to report an invalid error
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AssertionError):
             self.dakara_server.create_player_error(None, "message")
 
         # assert the call
         mock_post.assert_not_called()
 
-    @patch("dakara_player_vlc.dakara_server.requests.put")
+    @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_finished_successful(self, mock_put):
         """Test to report that a playlist entry finished
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        self.dakara_server.update_finished(42)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+            self.dakara_server.update_finished(42)
+
+        # assert the effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.dakara_server:"
+                "Telling the server that playlist entry 42 is finished"
+            ],
+        )
 
         # assert the call
         mock_put.assert_called_with(
-            "http://www.example.com/api/playlist/player/status/",
-            headers=ANY,
+            endpoint="playlist/player/status/",
             data={"event": "finished", "playlist_entry_id": 42},
+            message_on_error="Unable to report that a playlist entry has finished",
         )
 
-    @patch("dakara_player_vlc.dakara_server.requests.put")
-    def test_send_playlist_entry_finished_failed(self, mock_put):
+    @patch.object(DakaraServerHTTPConnection, "put")
+    def test_update_finished_failed(self, mock_put):
         """Test to report that an invalid playlist entry finished
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AssertionError):
             self.dakara_server.update_finished(None)
 
         # assert the call
         mock_put.assert_not_called()
 
-    @patch("dakara_player_vlc.dakara_server.requests.put")
+    @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_started_transition_successful(self, mock_put):
         """Test to report that a playlist entry transition started
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        self.dakara_server.update_started_transition(42)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+            self.dakara_server.update_started_transition(42)
+
+        # assert the effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.dakara_server:"
+                "Telling the server that the transition of playlist entry "
+                "42 has started"
+            ],
+        )
 
         # assert the call
         mock_put.assert_called_with(
-            "http://www.example.com/api/playlist/player/status/",
-            headers=ANY,
+            endpoint="playlist/player/status/",
             data={"event": "started_transition", "playlist_entry_id": 42},
+            message_on_error=(
+                "Unable to report that the transition of a playlist entry has started"
+            ),
         )
 
-    @patch("dakara_player_vlc.dakara_server.requests.put")
-    def test_update_playlist_entry_started_failed(self, mock_put):
+    @patch.object(DakaraServerHTTPConnection, "put")
+    def test_update_started_transition_failed(self, mock_put):
         """Test to report that an invalid playlist entry transition started
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AssertionError):
             self.dakara_server.update_started_transition(None)
 
         # assert the call
         mock_put.assert_not_called()
 
-    @patch("dakara_player_vlc.dakara_server.requests.put")
+    @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_started_song_successful(self, mock_put):
         """Test to report that a playlist entry song started
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        self.dakara_server.update_started_song(42)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+            self.dakara_server.update_started_song(42)
+
+        # assert the effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.dakara_server:"
+                "Telling the server that the song of playlist entry 42 has started"
+            ],
+        )
 
         # assert the call
         mock_put.assert_called_with(
-            "http://www.example.com/api/playlist/player/status/",
-            headers=ANY,
+            endpoint="playlist/player/status/",
             data={"event": "started_song", "playlist_entry_id": 42},
+            message_on_error=(
+                "Unable to report that the song of a playlist entry has started"
+            ),
         )
 
-    @patch("dakara_player_vlc.dakara_server.requests.put")
+    @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_started_song_failed(self, mock_put):
         """Test to report that an invalid playlist entry song started
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AssertionError):
             self.dakara_server.update_started_song(None)
 
         # assert the call
         mock_put.assert_not_called()
 
-    @patch("dakara_player_vlc.dakara_server.requests.put")
+    @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_could_not_play_successful(self, mock_put):
         """Test to report that a playlist entry could not be played
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        self.dakara_server.update_could_not_play(42)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+            self.dakara_server.update_could_not_play(42)
+
+        # assert the effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.dakara_server:"
+                "Telling the server that the playlist entry 42 could not play"
+            ],
+        )
 
         # assert the call
         mock_put.assert_called_with(
-            "http://www.example.com/api/playlist/player/status/",
-            headers=ANY,
+            endpoint="playlist/player/status/",
             data={"event": "could_not_play", "playlist_entry_id": 42},
+            message_on_error="Unable to report that playlist entry could not play",
         )
 
-    @patch("dakara_player_vlc.dakara_server.requests.put")
+    @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_could_not_play_failed(self, mock_put):
         """Test to report that an invalid playlist entry could not be played
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AssertionError):
             self.dakara_server.update_could_not_play(None)
 
         # assert the call
         mock_put.assert_not_called()
 
-    @patch("dakara_player_vlc.dakara_server.requests.put")
+    @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_paused_successful(self, mock_put):
         """Test to report that the player paused
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        self.dakara_server.update_paused(42, 424242)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+            self.dakara_server.update_paused(42, 424242)
+
+        # assert the effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.dakara_server:"
+                "Telling the server that the player is paused"
+            ],
+        )
 
         # assert the call
         mock_put.assert_called_with(
-            "http://www.example.com/api/playlist/player/status/",
-            headers=ANY,
+            endpoint="playlist/player/status/",
             data={"event": "paused", "playlist_entry_id": 42, "timing": 424242},
+            message_on_error="Unable to report that the player is paused",
         )
 
-    @patch("dakara_player_vlc.dakara_server.requests.put")
+    @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_paused_failed(self, mock_put):
         """Test to report that the player paused with incorrect entry
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AssertionError):
             self.dakara_server.update_paused(None, 424242)
 
         # assert the call
         mock_put.assert_not_called()
 
-    @patch("dakara_player_vlc.dakara_server.requests.put")
+    @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_resumed_successful(self, mock_put):
         """Test to report that the player resumed playing
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        self.dakara_server.update_resumed(42, 424242)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+            self.dakara_server.update_resumed(42, 424242)
+
+        # assert the effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.dakara_server:"
+                "Telling the server that the player resumed playing"
+            ],
+        )
 
         # assert the call
         mock_put.assert_called_with(
-            "http://www.example.com/api/playlist/player/status/",
-            headers=ANY,
+            endpoint="playlist/player/status/",
             data={"event": "resumed", "playlist_entry_id": 42, "timing": 424242},
+            message_on_error="Unable to report that the player resumed playing",
         )
 
-    @patch("dakara_player_vlc.dakara_server.requests.put")
+    @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_resumed_failed(self, mock_put):
         """Test to report that the player resumed playing with incorrect entry
         """
-        # simulate authentication
-        self.dakara_server.token = "Token"
-
         # call the method
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AssertionError):
             self.dakara_server.update_resumed(None, 424242)
 
         # assert the call
         mock_put.assert_not_called()
-
-
-class AuthenticatedTestCase(TestCase):
-    """Test the `authenticated` decorator
-    """
-
-    class Authenticated:
-        def __init__(self):
-            self.token = None
-
-        @authenticated
-        def dummy(self):
-            pass
-
-    def test_authenticated_sucessful(self):
-        """Test the authenticated decorator when token is set
-        """
-        instance = self.Authenticated()
-
-        # set the token
-        instance.token = True
-
-        # call a protected method
-        instance.dummy()
-
-    def test_authenticated_error(self):
-        """Test the authenticated decorator when token is not set
-        """
-        instance = self.Authenticated()
-
-        # call a protected method
-        with self.assertRaises(AuthenticationError):
-            instance.dummy()
 
 
 class ConnectedTestCase(TestCase):
@@ -1008,26 +804,3 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
 
         # assert the call
         self.dakara_server.send.assert_called_with({"type": "ready"})
-
-
-class DisplayMessageTestCase(TestCase):
-    """Test the message display helper
-    """
-
-    def test_small_message(self):
-        """Test a small message is completelly displayed
-        """
-        message = "few characters"
-        message_displayed = display_message(message, limit=50)
-
-        self.assertEqual(message_displayed, "few characters")
-        self.assertLessEqual(len(message_displayed), 50)
-
-    def test_long_message(self):
-        """Test a long message is cut
-        """
-        message = "few characters"
-        message_displayed = display_message(message, limit=5)
-
-        self.assertEqual(message_displayed, "fe...")
-        self.assertLessEqual(len(message_displayed), 5)

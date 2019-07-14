@@ -126,7 +126,9 @@ class DakaraWorker(WorkerSafeThread):
             vlc_player.load()
 
             # communication with the dakara HTTP server
-            dakara_server_http = DakaraServerHTTPConnection(self.config["server"])
+            dakara_server_http = DakaraServerHTTPConnection(
+                self.config["server"], route="api"
+            )
             dakara_server_http.authenticate()
             token_header = dakara_server_http.get_token_header()
 
