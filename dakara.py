@@ -74,7 +74,7 @@ if __name__ == "__main__":
         exit(1)
 
     except BaseException as error:
-        logger.exception("Unexpected error: {}".format(error))
+        logger.exception("Unexpected error: %s", str(error))
         logger.critical(
             "Please fill a bug report at "
             "https://github.com/DakaraProject/dakara-playel-vlc/issues"

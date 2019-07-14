@@ -149,7 +149,7 @@ class DakaraWorker(WorkerSafeThread):
         """Display version number and check if on release
         """
         # log player versio
-        logger.info("Dakara player {} ({})".format(__version__, __date__))
+        logger.info("Dakara player %s (%s)", __version__, __date__)
 
         # check version is a release
         version = parse_version(__version__)

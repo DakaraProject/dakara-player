@@ -29,7 +29,7 @@ LINK_TYPE_NAMES = {
 }
 
 
-logger = logging.getLogger("text_generator")
+logger = logging.getLogger(__name__)
 
 
 class TextGenerator:
@@ -108,9 +108,7 @@ class TextGenerator:
 
         if transition_template_name in loader_custom.list_templates():
             logger.debug(
-                "Loading custom transition template file '{}'".format(
-                    transition_template_name
-                )
+                "Loading custom transition template file '%s'", transition_template_name
             )
 
             self.transition_template = self.environment.get_template(
@@ -138,9 +136,7 @@ class TextGenerator:
         loader_custom, loader_default = self.environment.loader.loaders
 
         if idle_template_name in loader_custom.list_templates():
-            logger.debug(
-                "Loading custom idle template file '{}'".format(idle_template_name)
-            )
+            logger.debug("Loading custom idle template file '%s'", idle_template_name)
 
             self.idle_template = self.environment.get_template(idle_template_name)
 
@@ -196,7 +192,7 @@ class TextGenerator:
         with open(self.idle_text_path, "w", encoding="utf8") as file:
             file.write(idle_text)
 
-        logger.debug("Create idle screen text file in '{}'".format(self.idle_text_path))
+        logger.debug("Create idle screen text file in '%s'", self.idle_text_path)
 
         return self.idle_text_path
 
@@ -216,9 +212,7 @@ class TextGenerator:
             file.write(transition_text)
 
         logger.debug(
-            "Create transition screen text file in '{}'".format(
-                self.transition_text_path
-            )
+            "Create transition screen text file in '%s'", self.transition_text_path
         )
 
         return self.transition_text_path

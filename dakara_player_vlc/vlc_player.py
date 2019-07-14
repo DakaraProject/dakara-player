@@ -234,7 +234,7 @@ class VlcPlayer(Worker):
 
             # get file path
             file_path = mrl_to_path(self.media_pending.get_mrl())
-            logger.info("Now playing '{}'".format(file_path))
+            logger.info("Now playing '%s'", file_path)
 
             # call the callback for when a song starts
             self.callbacks["started_song"](self.playing_id)
@@ -338,7 +338,7 @@ class VlcPlayer(Worker):
         self.in_transition = True
 
         self.play_media(media_transition)
-        logger.info("Playing transition for '{}'".format(file_path))
+        logger.info("Playing transition for '%s'", file_path)
         self.callbacks["started_transition"](playlist_entry["id"])
 
     def play_idle_screen(self):

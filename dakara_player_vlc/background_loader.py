@@ -97,9 +97,7 @@ class BackgroundLoader:
             filename = self.background_filenames[name]
             path = self.directory / filename
             if exists(path):
-                logger.debug(
-                    "Loading custom {} background file '{}'".format(name, path)
-                )
+                logger.debug("Loading custom %s background file '%s'", name, path)
                 return path
 
         # trying to load from default name and custom directory
@@ -107,15 +105,13 @@ class BackgroundLoader:
         if self.directory:
             path = self.directory / default_filename
             if exists(path):
-                logger.debug(
-                    "Loading default {} background file '{}'".format(name, path)
-                )
+                logger.debug("Loading default %s background file '%s'", name, path)
                 return path
 
         # trying to load from default name and default directory
         path = self.default_directory / default_filename
         if exists(path):
-            logger.debug("Loading default {} background file '{}'".format(name, path))
+            logger.debug("Loading default %s background file '%s'", name, path)
             return path
 
         raise BackgroundNotFoundError(
