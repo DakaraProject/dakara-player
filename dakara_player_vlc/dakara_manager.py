@@ -42,12 +42,14 @@ class DakaraManager:
         self.vlc_player.set_callback("error", self.handle_error)
 
         # set dakara server websocket callbacks
-        self.dakara_server_websocket.set_idle_callback(self.play_idle_screen)
-        self.dakara_server_websocket.set_playlist_entry_callback(
-            self.play_playlist_entry
+        self.dakara_server_websocket.set_callback("idle", self.play_idle_screen)
+        self.dakara_server_websocket.set_callback(
+            "playlist_entry", self.play_playlist_entry
         )
-        self.dakara_server_websocket.set_command_callback(self.do_command)
-        self.dakara_server_websocket.set_connection_lost_callback(self.play_idle_screen)
+        self.dakara_server_websocket.set_callback("command", self.do_command)
+        self.dakara_server_websocket.set_callback(
+            "connection_lost", self.play_idle_screen
+        )
 
     def handle_error(self, playlist_entry_id, message):
         """Callback when a VLC error occurs

@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import patch, MagicMock
+from unittest.mock import ANY, patch, MagicMock
 from threading import Event
 from queue import Queue
 
@@ -343,6 +343,22 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         # assert the call
         mocked_send_ready.assert_called_once_with()
 
+    @patch.object(DakaraServerWebSocketConnection, "create_timer")
+    def test_on_connection_lost(self, mocked_create_timer):
+        """Test the callback on connection lost
+        """
+        # mock the callback
+        mocked_connection_lost = MagicMock()
+        self.dakara_server.set_callback("connection_lost", mocked_connection_lost)
+
+        # call the on_close callback
+        with self.assertLogs("dakara_base.websocket_client", "DEBUG"):
+            self.dakara_server.on_close(None, None)
+
+        # assert the call
+        mocked_connection_lost.assert_called_once_with()
+        mocked_create_timer.assert_called_once_with(ANY, ANY)
+
     def test_receive_idle(self):
         """Test the receive idle event method
         """
@@ -360,7 +376,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         )
 
         # assert the call
-        mocked_idle_callback.assert_called_with()
+        mocked_idle_callback.assert_called_once_with()
 
     def test_receive_playlist_entry(self):
         """Test the receive new playlist entry event method

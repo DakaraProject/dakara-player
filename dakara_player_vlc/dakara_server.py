@@ -207,10 +207,23 @@ class DakaraServerWebSocketConnection(WebSocketClient):
         header (dict): header containing the authentication token.
     """
 
+    def set_default_callbacks(self):
+        """Set all the default callbacks
+        """
+        self.set_callback("idle", lambda: None)
+        self.set_callback("playlist_entry", lambda playlist_entry: None)
+        self.set_callback("command", lambda command: None)
+        self.set_callback("connection_lost", lambda: None)
+
     def on_connected(self):
         """Callback when the connection is open
         """
         self.send_ready()
+
+    def on_connection_lost(self):
+        """Callback when the connection is lost
+        """
+        self.callbacks["connection_lost"]()
 
     def receive_idle(self, content):
         """Receive idle order

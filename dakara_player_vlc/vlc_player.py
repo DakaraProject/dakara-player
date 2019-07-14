@@ -125,6 +125,9 @@ class VlcPlayer(Worker):
         # screen
         self.media_pending = None
 
+        # set default callbacks
+        self.set_default_callbacks()
+
     def load(self):
         """Prepare the instance
 
@@ -135,9 +138,6 @@ class VlcPlayer(Worker):
 
         # set VLC fullscreen
         self.player.set_fullscreen(self.fullscreen)
-
-        # set default callbacks
-        self.set_default_callbacks()
 
         # load backgrounds
         self.background_loader.load()

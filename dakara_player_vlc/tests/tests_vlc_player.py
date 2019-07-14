@@ -119,9 +119,9 @@ class VlcPlayerPreLoadTestCase(TestCase):
     def test_set_default_callbacks(self):
         """Test to set the default callbacks
         """
-        # assert there are no callbacks
-        self.assertCountEqual(list(self.vlc_player.callbacks.keys()), [])
-        self.assertCountEqual(list(self.vlc_player.vlc_callbacks.keys()), [])
+        # macke the callbacks lists empty
+        self.vlc_player.callbacks = {}
+        self.vlc_player.vlc_callbacks = {}
 
         # call the method
         self.vlc_player.set_default_callbacks()
@@ -144,9 +144,8 @@ class VlcPlayerPreLoadTestCase(TestCase):
             [EventType.MediaPlayerEndReached, EventType.MediaPlayerEncounteredError],
         )
 
-    @patch.object(VlcPlayer, "set_default_callbacks")
     @patch.object(VlcPlayer, "check_vlc_version")
-    def test_load(self, mocked_check_vlc_version, mocked_set_default_callbacks):
+    def test_load(self, mocked_check_vlc_version):
         """Test to load the instance
         """
         # hard patch the attributes
@@ -161,7 +160,6 @@ class VlcPlayerPreLoadTestCase(TestCase):
 
         # assert the calls
         mocked_check_vlc_version.assert_called_with()
-        mocked_set_default_callbacks.assert_called_with()
         self.vlc_player.player.set_fullscreen.assert_called_with(False)
         self.vlc_player.background_loader.load.assert_called_with()
 
