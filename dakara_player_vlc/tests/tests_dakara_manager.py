@@ -148,5 +148,5 @@ class DakaraManagerTestCase(TestCase):
         """Test the command manager for an invalid command
         """
         # call the method
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AssertionError):
             self.dakara_manager.do_command("invalid")

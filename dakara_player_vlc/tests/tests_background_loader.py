@@ -3,7 +3,10 @@ from unittest.mock import patch, call
 
 from path import Path
 
-from dakara_player_vlc.background_loader import BackgroundLoader
+from dakara_player_vlc.background_loader import (
+    BackgroundLoader,
+    BackgroundNotFoundError,
+)
 
 
 class BackgroundLoaderTestCase(TestCase):
@@ -209,7 +212,7 @@ class BackgroundLoaderTestCase(TestCase):
         self.assertDictEqual(loader.backgrounds, {})
 
         # load the backgrounds
-        with self.assertRaises(FileNotFoundError) as error:
+        with self.assertRaises(BackgroundNotFoundError) as error:
             loader.load()
 
         # assert the error

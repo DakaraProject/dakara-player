@@ -25,7 +25,7 @@ class DakaraServerHTTPConnection(HTTPClient):
             message (str): error message.
 
         Raises:
-            ValueError: if `playlist_entry_id` is `None`.
+            AssertError: if `playlist_entry_id` is `None`.
         """
         assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
@@ -52,7 +52,7 @@ class DakaraServerHTTPConnection(HTTPClient):
                 `None`.
 
         Raises:
-            ValueError: if `playlist_entry_id` is `None`.
+            AssertError: if `playlist_entry_id` is `None`.
         """
         assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
@@ -75,7 +75,7 @@ class DakaraServerHTTPConnection(HTTPClient):
                 `None`.
 
         Raises:
-            ValueError: if `playlist_entry_id` is `None`.
+            AssertError: if `playlist_entry_id` is `None`.
         """
         assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
@@ -104,7 +104,7 @@ class DakaraServerHTTPConnection(HTTPClient):
                 `None`.
 
         Raises:
-            ValueError: if `playlist_entry_id` is `None`.
+            AssertError: if `playlist_entry_id` is `None`.
         """
         assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
@@ -130,7 +130,7 @@ class DakaraServerHTTPConnection(HTTPClient):
                 `None`.
 
         Raises:
-            ValueError: if `playlist_entry_id` is `None`.
+            AssertError: if `playlist_entry_id` is `None`.
         """
         assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
@@ -155,7 +155,7 @@ class DakaraServerHTTPConnection(HTTPClient):
             timing (int): progress of the player in seconds.
 
         Raises:
-            ValueError: if `playlist_entry_id` is `None`.
+            AssertError: if `playlist_entry_id` is `None`.
         """
         assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
@@ -181,7 +181,7 @@ class DakaraServerHTTPConnection(HTTPClient):
             timing (int): progress of the player in seconds.
 
         Raises:
-            ValueError: if `playlist_entry_id` is `None`.
+            AssertError: if `playlist_entry_id` is `None`.
         """
         assert playlist_entry_id is not None, "Entry with ID None is invalid"
 

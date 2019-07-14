@@ -128,10 +128,13 @@ class DakaraManager:
             command (str): name of the command to execute.
 
         Raises:
-            ValueError: if the command is not known.
+            AssertError: if the command is not known.
         """
-        if command not in ("pause", "play", "skip"):
-            raise ValueError("Unknown command requested: '{}'".format(command))
+        assert command in (
+            "pause",
+            "play",
+            "skip",
+        ), "Unknown command requested: '{}'".format(command)
 
         if command == "pause":
             self.vlc_player.set_pause(True)

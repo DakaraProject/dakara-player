@@ -2,6 +2,7 @@ import logging
 from os.path import exists
 
 from path import Path
+from dakara_base.exceptions import DakaraError
 
 
 logger = logging.getLogger(__name__)
@@ -117,4 +118,11 @@ class BackgroundLoader:
             logger.debug("Loading default {} background file '{}'".format(name, path))
             return path
 
-        raise FileNotFoundError("Unable to find a background file for {}".format(name))
+        raise BackgroundNotFoundError(
+            "Unable to find a background file for {}".format(name)
+        )
+
+
+class BackgroundNotFoundError(DakaraError, FileNotFoundError):
+    """Error raised when a background cannot be found
+    """

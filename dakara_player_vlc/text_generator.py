@@ -5,6 +5,7 @@ from codecs import open
 
 from jinja2 import Environment, FileSystemLoader, ChoiceLoader
 from dakara_base.resources_manager import get_file
+from dakara_base.exceptions import DakaraError
 
 from dakara_player_vlc.resources_manager import PATH_TEMPLATES
 
@@ -127,7 +128,7 @@ class TextGenerator:
 
             return
 
-        raise IOError("No template file for transition screen found")
+        raise TemplateNotFoundError("No template file for transition screen found")
 
     def load_idle_template(self, idle_template_name):
         """Load idle screen text template file
@@ -152,7 +153,7 @@ class TextGenerator:
 
             return
 
-        raise IOError("No template file for idle screen found")
+        raise TemplateNotFoundError("No template file for idle screen found")
 
     def convert_icon(self, name):
         """Convert the name of an icon to its code
@@ -221,3 +222,8 @@ class TextGenerator:
         )
 
         return self.transition_text_path
+
+
+class TemplateNotFoundError(DakaraError, FileNotFoundError):
+    """Error raised when a template cannot be found
+    """

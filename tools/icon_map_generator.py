@@ -13,7 +13,7 @@ def generate(css_file, json_file):
     """
     # check css_file exists
     if not os.path.isfile(css_file):
-        raise IOError("File '{}' not found".format(css_file))
+        raise FileNotFoundError("File '{}' not found".format(css_file))
 
     # load css file
     with open(css_file, "r") as file:
