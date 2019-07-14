@@ -1,8 +1,6 @@
-coloredlogs==10.0
 black==19.3b0; python_version >= '3.6'
 dakarabase
 flake8==3.5.0
 Jinja2==2.10.1
 path.py==11.0.1
-pyaml==17.12.1
 python-vlc==1.1.2

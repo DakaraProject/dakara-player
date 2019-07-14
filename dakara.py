@@ -2,26 +2,25 @@
 import logging
 from argparse import ArgumentParser
 
-import coloredlogs
+from dakara_base.exceptions import DakaraError
+from dakara_base.config import load_config, create_logger, set_loglevel
+from path import Path
 
 from dakara_player_vlc.dakara_player_vlc import DakaraPlayerVlc
-
-
-logger = logging.getLogger("dakara")
 
 
 CONFIG_FILE_PATH = "config.yaml"
 
 
-# tweak colors for coloredlogs and install it
-field_styles = coloredlogs.DEFAULT_FIELD_STYLES.copy()
-field_styles["levelname"] = {"color": "white", "bold": True}
-coloredlogs.install(
-    fmt="[%(asctime)s] %(name)s %(levelname)s %(message)s", field_styles=field_styles
-)
+logger = logging.getLogger(__name__)
 
 
 def get_parser():
+    """Get a parser
+
+    Returns:
+        argparse.ArgumentParser: parser.
+    """
     parser = ArgumentParser(description="Player for the Dakara project")
 
     parser.add_argument(
@@ -41,20 +40,45 @@ def get_parser():
 
 
 def runplayer(args):
-    try:
-        dakara = DakaraPlayerVlc(args.config, args.debug)
-        dakara.run()
+    """Execute the player
 
-    except BaseException as error:
-        if args.debug:
-            raise
+    Args:
+        args (argparse.Namespace): arguments from command line.
+    """
+    # prepare execution
+    create_logger()
+    config = load_config(Path(args.config), args.debug)
+    set_loglevel(config)
 
-        logger.critical(error)
-        exit(1)
+    # run the player
+    dakara = DakaraPlayerVlc(config)
+    dakara.run()
 
 
 if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
 
-    runplayer(args)
+    try:
+        runplayer(args)
+
+    except SystemExit:
+        logger.info("Quit by system")
+        exit(254)
+
+    except DakaraError as error:
+        if args.debug:
+            raise
+
+        logger.critical(error)
+        exit(1)
+
+    except BaseException as error:
+        logger.exception("Unexpected error: {}".format(error))
+        logger.critical(
+            "Please fill a bug report at "
+            "https://github.com/DakaraProject/dakara-playel-vlc/issues"
+        )
+        exit(128)
+
+    exit(0)

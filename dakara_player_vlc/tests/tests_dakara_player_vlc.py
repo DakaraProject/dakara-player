@@ -1,13 +1,29 @@
 from unittest import TestCase
-from unittest.mock import patch, ANY, MagicMock
+from unittest.mock import patch, ANY
 from threading import Event
 from queue import Queue
-import logging
 
-from yaml.parser import ParserError
-
-from dakara_player_vlc.resources_manager import get_test_material
 from dakara_player_vlc.dakara_player_vlc import DakaraWorker, DakaraPlayerVlc
+
+
+CONFIG = {
+    "player": {
+        "kara_folder": "/some/path",
+        "fullscreen": True,
+        "vlc": {"media_parameters": None, "instance_parameters": None},
+        "templates": None,
+        "backgrounds": None,
+        "durations": None,
+    },
+    "server": {
+        "address": "www.example.com",
+        "login": "player_login",
+        "password": "player_password",
+        "ssl": True,
+        "reconnect_interval": 10,
+    },
+    "loglevel": "info",
+}
 
 
 class DakaraWorkerTestCase(TestCase):
@@ -15,8 +31,8 @@ class DakaraWorkerTestCase(TestCase):
     """
 
     def setUp(self):
-        # save config path
-        self.config_path = get_test_material("config.yaml")
+        # save config
+        self.config = CONFIG
 
         # save instances
         self.stop = Event()
@@ -24,96 +40,7 @@ class DakaraWorkerTestCase(TestCase):
 
         # create Dakara worker
         with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
-            self.dakara_worker = DakaraWorker(
-                self.stop, self.errors, self.config_path, False
-            )
-
-        # save config
-        self.config = self.dakara_worker.config
-
-    def test_load_config_success(self):
-        """Test to load the config file
-        """
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
-            config = DakaraWorker.load_config(self.config_path, False)
-
-        # assert the result
-        self.assertTrue(config)
-        self.assertNotEqual(config["loglevel"].lower(), "debug")
-
-    def test_load_config_success_debug(self):
-        """Test to load the config file with debug mode enabled
-        """
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
-            config = DakaraWorker.load_config(self.config_path, True)
-
-        # assert the result
-        self.assertEqual(config["loglevel"].lower(), "debug")
-
-    def test_load_config_fail_not_found(self):
-        """Test to load a not found config file
-        """
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
-            with self.assertRaises(IOError):
-                DakaraWorker.load_config("nowhere", False)
-
-    @patch("dakara_player_vlc.dakara_player_vlc.yaml.load")
-    def test_load_config_fail_parser_error(self, mock_load):
-        """Test to load an invalid config file
-        """
-        # mock the call to yaml
-        mock_load.side_effect = ParserError("parser error")
-
-        # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
-            with self.assertRaises(IOError):
-                DakaraWorker.load_config(self.config_path, False)
-
-        # assert the call
-        mock_load.assert_called_with(ANY, Loader=ANY)
-
-    @patch("dakara_player_vlc.dakara_player_vlc.yaml.load")
-    def test_load_config_fail_missing_keys(self, mock_load):
-        """Test to load a config file without required keys
-        """
-        for key in ("player", "server"):
-            config = self.config.copy()
-            config.pop(key)
-
-            # mock the call to yaml
-            mock_load.return_value = config
-
-            # call the method
-            with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
-                with self.assertRaises(ValueError) as error:
-                    DakaraWorker.load_config(self.config_path, False)
-                    self.assertIn(key, str(error))
-
-    @patch("dakara_player_vlc.dakara_player_vlc.coloredlogs.set_level")
-    def test_configure_logger_success(self, mock_set_level):
-        """Test to configure the logger
-        """
-        # set the loglevel
-        self.dakara_worker.config["loglevel"] = "debug"
-
-        # call the method
-        self.dakara_worker.configure_logger()
-
-        # assert the result
-        mock_set_level.assert_called_with(logging.DEBUG)
-
-    def test_configure_logger_fail(self):
-        """Test to configure the logger with invalid log level
-        """
-        # set the loglevel
-        self.dakara_worker.config["loglevel"] = "nothing"
-
-        # call the method
-        with self.assertRaises(ValueError):
-            self.dakara_worker.configure_logger()
+            self.dakara_worker = DakaraWorker(self.stop, self.errors, self.config)
 
     def test_check_version_release(self):
         """Test to display the version for a release
@@ -228,22 +155,19 @@ class DakaraPlayerVlcTestCase(TestCase):
     """
 
     def setUp(self):
-        # save config path
-        self.config_path = get_test_material("config.yaml")
+        # save config
+        self.config = CONFIG
 
         # save instance
-        self.dakara_player_vlc = DakaraPlayerVlc(self.config_path, False)
+        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
+            self.dakara_player_vlc = DakaraPlayerVlc(self.config)
 
-    def test_run(self):
+    @patch.object(DakaraPlayerVlc, "run_safe")
+    def test_run(self, mocked_run_safe):
         """Test a dummy run
         """
-        # patch the `run_safe` method
-        self.dakara_player_vlc.run_safe = MagicMock()
-
         # call the method
         self.dakara_player_vlc.run()
 
         # assert the call
-        self.dakara_player_vlc.run_safe.assert_called_with(
-            DakaraWorker, self.config_path, False
-        )
+        self.dakara_player_vlc.run_safe.assert_called_with(DakaraWorker, self.config)
