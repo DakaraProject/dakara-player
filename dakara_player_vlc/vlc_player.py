@@ -6,9 +6,9 @@ from pkg_resources import parse_version
 
 import vlc
 from path import Path
+from dakara_base.safe_workers import Worker
 
 from dakara_player_vlc.version import __version__
-from dakara_player_vlc.safe_workers import Worker
 from dakara_player_vlc.background_loader import BackgroundLoader
 from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
 

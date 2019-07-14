@@ -3,8 +3,9 @@ from tempfile import TemporaryDirectory
 from contextlib import ExitStack
 from pkg_resources import parse_version
 
+from dakara_base.safe_workers import WorkerSafeThread, Runner
+
 from dakara_player_vlc.version import __version__, __date__
-from dakara_player_vlc.safe_workers import WorkerSafeThread, Runner
 from dakara_player_vlc.text_generator import TextGenerator
 from dakara_player_vlc.vlc_player import VlcPlayer
 from dakara_player_vlc.dakara_server import (
