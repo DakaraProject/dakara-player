@@ -433,6 +433,7 @@ class VlcPlayerPostLoadTestCase(TestCase):
         media_pending = MagicMock()
         self.vlc_player.media_pending = media_pending
         self.vlc_player.media_pending.get_mrl.return_value = "file:///test.mkv"
+        file_path = Path("/test.mkv")
 
         # call the method
         with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
@@ -443,7 +444,9 @@ class VlcPlayerPostLoadTestCase(TestCase):
             logger.output,
             [
                 "DEBUG:dakara_player_vlc.vlc_player:Song end callback called",
-                "INFO:dakara_player_vlc.vlc_player:Now playing '/test.mkv'",
+                "INFO:dakara_player_vlc.vlc_player:Now playing '{}'".format(
+                    file_path.normpath()
+                ),
             ],
         )
 
