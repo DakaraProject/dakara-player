@@ -112,9 +112,13 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         mock_post.side_effect = RequestException()
 
         # call the method
-        self.dakara_server.send_request(
-            "post", self.url, data={"content": "test"}, message_on_error="error message"
-        )
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
+            self.dakara_server.send_request(
+                "post",
+                self.url,
+                data={"content": "test"},
+                message_on_error="error message",
+            )
 
     @patch("dakara_player_vlc.dakara_server.requests.get")
     def test_get(self, mock_get):
@@ -190,7 +194,8 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         self.assertFalse(self.dakara_server.token)
 
         # call the method
-        self.dakara_server.authenticate()
+        with self.assertLogs("dakara_player_vlc.dakara_server"):
+            self.dakara_server.authenticate()
 
         # call assertions
         mock_post.assert_called_with(
@@ -605,7 +610,8 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.dakara_server.abort = MagicMock()
 
         # call the method
-        self.dakara_server.exit_worker()
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
+            self.dakara_server.exit_worker()
 
         # assert the call
         self.dakara_server.abort.assert_called_with()
@@ -614,7 +620,8 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         """Test the callback on connection open
         """
         # call the method
-        self.dakara_server.on_open()
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
+            self.dakara_server.on_open()
 
         # assert the call
         self.assertFalse(self.dakara_server.retry)
@@ -632,7 +639,8 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.stop.set()
 
         # call the method
-        self.dakara_server.on_close(None, None)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
+            self.dakara_server.on_close(None, None)
 
         # assert the websocket object has been destroyed
         self.assertIsNone(self.dakara_server.websocket)
@@ -650,7 +658,8 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.dakara_server.create_timer = MagicMock()
 
         # call the method
-        self.dakara_server.on_close(None, None)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
+            self.dakara_server.on_close(None, None)
 
         # assert the different calls
         self.dakara_server.create_timer.assert_called_with(
@@ -680,7 +689,8 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         event = "definitely not a JSON string"
 
         # call the method
-        self.dakara_server.on_message(event)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
+            self.dakara_server.on_message(event)
 
         # assert no method has been called
         mock_getattr.assert_not_called()
@@ -692,7 +702,8 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         event = '{"type": "dummy", "data": "data"}'
 
         # call the method
-        self.dakara_server.on_message(event)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
+            self.dakara_server.on_message(event)
 
         # assert no method has been called
         mock_getattr.assert_not_called()
@@ -725,7 +736,8 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
             pass
 
         # call the method
-        self.dakara_server.on_error(CustomError("error message"))
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
+            self.dakara_server.on_error(CustomError("error message"))
 
         # assert the call
         self.assertTrue(self.errors.empty())
@@ -773,7 +785,8 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.dakara_server.retry = True
 
         # call the method
-        self.dakara_server.on_error(ConnectionRefusedError("error"))
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
+            self.dakara_server.on_error(ConnectionRefusedError("error"))
 
         # assert the call
         self.assertTrue(self.errors.empty())
@@ -804,8 +817,9 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.dakara_server.connection_lost_callback = MagicMock()
 
         # call the methods
-        self.dakara_server.on_error(WebSocketConnectionClosedException("error"))
-        self.dakara_server.on_close(None, None)
+        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG"):
+            self.dakara_server.on_error(WebSocketConnectionClosedException("error"))
+            self.dakara_server.on_close(None, None)
 
         # assert the call
         self.assertTrue(self.dakara_server.retry)

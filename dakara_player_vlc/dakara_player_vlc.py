@@ -22,7 +22,7 @@ from dakara_player_vlc.font_loader import get_font_loader_class
 FontLoader = get_font_loader_class()
 
 
-logger = logging.getLogger("dakara_player_vlc")
+logger = logging.getLogger(__name__)
 
 
 class DakaraPlayerVlc(Runner):
@@ -75,7 +75,7 @@ class DakaraWorker(WorkerSafeThread):
 
         # configure loader
         self.configure_logger()
-        logger.debug("Starting worker")
+        logger.debug("Starting Dakara worker")
 
         # set thread
         self.thread = self.create_thread(target=self.run)

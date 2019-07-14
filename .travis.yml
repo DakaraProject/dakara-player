@@ -20,6 +20,6 @@ install:
 
 # command to run tests
 script:
-  - ./tests.py -v
+  - python -m unittest -v
   - if [[ $TRAVIS_PYTHON_VERSION != 3.5 ]]; then black . --check; fi
   - flake8

@@ -15,7 +15,7 @@ from dakara_player_vlc.safe_workers import WorkerSafeTimer, safe
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 
-logger = logging.getLogger("dakara_server")
+logger = logging.getLogger(__name__)
 
 
 RECONNECT_INTERVAL = 5

@@ -21,9 +21,12 @@ class DakaraWorkerTestCase(TestCase):
         # save instances
         self.stop = Event()
         self.errors = Queue()
-        self.dakara_worker = DakaraWorker(
-            self.stop, self.errors, self.config_path, False
-        )
+
+        # create Dakara worker
+        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
+            self.dakara_worker = DakaraWorker(
+                self.stop, self.errors, self.config_path, False
+            )
 
         # save config
         self.config = self.dakara_worker.config
@@ -31,7 +34,9 @@ class DakaraWorkerTestCase(TestCase):
     def test_load_config_success(self):
         """Test to load the config file
         """
-        config = DakaraWorker.load_config(self.config_path, False)
+        # call the method
+        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
+            config = DakaraWorker.load_config(self.config_path, False)
 
         # assert the result
         self.assertTrue(config)
@@ -40,7 +45,9 @@ class DakaraWorkerTestCase(TestCase):
     def test_load_config_success_debug(self):
         """Test to load the config file with debug mode enabled
         """
-        config = DakaraWorker.load_config(self.config_path, True)
+        # call the method
+        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
+            config = DakaraWorker.load_config(self.config_path, True)
 
         # assert the result
         self.assertEqual(config["loglevel"].lower(), "debug")
@@ -48,8 +55,10 @@ class DakaraWorkerTestCase(TestCase):
     def test_load_config_fail_not_found(self):
         """Test to load a not found config file
         """
-        with self.assertRaises(IOError):
-            DakaraWorker.load_config("nowhere", False)
+        # call the method
+        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
+            with self.assertRaises(IOError):
+                DakaraWorker.load_config("nowhere", False)
 
     @patch("dakara_player_vlc.dakara_player_vlc.yaml.load")
     def test_load_config_fail_parser_error(self, mock_load):
@@ -59,8 +68,9 @@ class DakaraWorkerTestCase(TestCase):
         mock_load.side_effect = ParserError("parser error")
 
         # call the method
-        with self.assertRaises(IOError):
-            DakaraWorker.load_config(self.config_path, False)
+        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
+            with self.assertRaises(IOError):
+                DakaraWorker.load_config(self.config_path, False)
 
         # assert the call
         mock_load.assert_called_with(ANY, Loader=ANY)
@@ -77,9 +87,10 @@ class DakaraWorkerTestCase(TestCase):
             mock_load.return_value = config
 
             # call the method
-            with self.assertRaises(ValueError) as error:
-                DakaraWorker.load_config(self.config_path, False)
-                self.assertIn(key, str(error))
+            with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
+                with self.assertRaises(ValueError) as error:
+                    DakaraWorker.load_config(self.config_path, False)
+                    self.assertIn(key, str(error))
 
     @patch("dakara_player_vlc.dakara_player_vlc.coloredlogs.set_level")
     def test_configure_logger_success(self, mock_set_level):
@@ -104,35 +115,46 @@ class DakaraWorkerTestCase(TestCase):
         with self.assertRaises(ValueError):
             self.dakara_worker.configure_logger()
 
-    @patch("dakara_player_vlc.dakara_player_vlc.logger")
-    def test_check_version_release(self, mocked_logger):
+    def test_check_version_release(self):
         """Test to display the version for a release
         """
-        with patch.multiple(
-            "dakara_player_vlc.dakara_player_vlc",
-            __version__="0.0.0",
-            __date__="1970-01-01",
-        ):
-            self.dakara_worker.check_version()
+        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG") as logger:
+            with patch.multiple(
+                "dakara_player_vlc.dakara_player_vlc",
+                __version__="0.0.0",
+                __date__="1970-01-01",
+            ):
+                self.dakara_worker.check_version()
 
-        # TODO use `self.assertLogs` instead, see #49
-        mocked_logger.info.assert_called_with("Dakara player 0.0.0 (1970-01-01)")
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "INFO:dakara_player_vlc.dakara_player_vlc:"
+                "Dakara player 0.0.0 (1970-01-01)"
+            ],
+        )
 
-    @patch("dakara_player_vlc.dakara_player_vlc.logger")
-    def test_check_version_non_release(self, mocked_logger):
+    def test_check_version_non_release(self):
         """Test to display the version for a non release
         """
-        with patch.multiple(
-            "dakara_player_vlc.dakara_player_vlc",
-            __version__="0.1.0-dev",
-            __date__="1970-01-01",
-        ):
-            self.dakara_worker.check_version()
+        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG") as logger:
+            with patch.multiple(
+                "dakara_player_vlc.dakara_player_vlc",
+                __version__="0.1.0-dev",
+                __date__="1970-01-01",
+            ):
+                self.dakara_worker.check_version()
 
-        # TODO use `self.assertLogs` instead, see #49
-        mocked_logger.info.assert_called_with("Dakara player 0.1.0-dev (1970-01-01)")
-        mocked_logger.warning.assert_called_with(
-            "You are running a dev version, use it at your own risks!"
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "INFO:dakara_player_vlc.dakara_player_vlc:"
+                "Dakara player 0.1.0-dev (1970-01-01)",
+                "WARNING:dakara_player_vlc.dakara_player_vlc:"
+                "You are running a dev version, use it at your own risks!",
+            ],
         )
 
     @patch("dakara_player_vlc.dakara_player_vlc.TemporaryDirectory")

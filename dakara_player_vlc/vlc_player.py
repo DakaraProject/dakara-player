@@ -19,7 +19,7 @@ IDLE_DURATION = 300
 TRANSITION_BG_NAME = "transition.png"
 IDLE_BG_NAME = "idle.png"
 
-logger = logging.getLogger("vlc_player")
+logger = logging.getLogger(__name__)
 
 
 class VlcPlayer(Worker):
@@ -307,10 +307,11 @@ class VlcPlayer(Worker):
 
         # Check file exists
         if not os.path.isfile(file_path):
-            message = "File not found '{}'".format(file_path)
-            logger.error(message)
+            logger.error("File not found '%s'", file_path)
             self.callbacks["could_not_play"](playlist_entry["id"])
-            self.callbacks["error"](playlist_entry["id"], message)
+            self.callbacks["error"](
+                playlist_entry["id"], "File not found '{}'".format(file_path)
+            )
 
             return
 
