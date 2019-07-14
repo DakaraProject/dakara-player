@@ -1,11 +1,9 @@
-from pkg_resources import (
-    resource_filename,
-    resource_listdir as resource_listdir_orig,
-    resource_exists,
-)
+from pkg_resources import resource_filename
+
+from dakara_base.resources_manager import resource_listdir, generate_get_resource
+
 
 RESOURCES = "dakara_player_vlc.resources"
-
 RESOURCES_BACKGROUNDS = "dakara_player_vlc.resources.backgrounds"
 RESOURCES_TEMPLATES = "dakara_player_vlc.resources.templates"
 RESOURCES_FONTS = "dakara_player_vlc.resources.fonts"
@@ -16,75 +14,20 @@ PATH_TEMPLATES = resource_filename(RESOURCES_TEMPLATES, "")
 PATH_FONTS = resource_filename(RESOURCES_FONTS, "")
 PATH_TEST_MATERIALS = resource_filename(RESOURCES_TEST_MATERIALS, "")
 
-
-def resource_listdir(*args, **kwargs):
-    """List resources without special files
-    """
-    return [
-        filename
-        for filename in resource_listdir_orig(*args, **kwargs)
-        if not filename.startswith("__")
-    ]
-
-
 LIST_BACKGROUNDS = resource_listdir(RESOURCES_BACKGROUNDS, "")
 LIST_TEMPLATES = resource_listdir(RESOURCES_TEMPLATES, "")
 LIST_FONTS = resource_listdir(RESOURCES_FONTS, "")
 LIST_TEST_MATERIALS = resource_listdir(RESOURCES_TEST_MATERIALS, "")
 
 
-def get_file(filename):
-    """Get an arbitrary resource file
-
-    Args:
-        filename (str): name or path to the file.
-
-    Returns:
-        str: absolute path of the file.
-    """
-    if not resource_exists(RESOURCES, filename):
-        raise IOError("File '{}' not found within resources".format(filename))
-
-    return resource_filename(RESOURCES, filename)
-
-
-def generate_get_resource(resource, resource_list, resource_name):
-    """Function factory for resource getter
-
-    Args:
-        resource (str): requirement.
-        resource_list (list of str): list of files within the requirement.
-        resource_name (str): human readable name of the resource.
-
-    Returns:
-        function: resource getter.
-    """
-
-    def get_resource(filename):
-        """Get a resource within the resource files
-
-        Args:
-            filename (str): name of the file to get.
-
-        Returns:
-            str: absolute path of the file.
-        """
-        if filename not in resource_list:
-            raise IOError(
-                "{} file '{}' not found within resources".format(
-                    resource_name.capitalize(), filename
-                )
-            )
-
-        return resource_filename(resource, filename)
-
-    return get_resource
-
-
 get_background = generate_get_resource(
     RESOURCES_BACKGROUNDS, LIST_BACKGROUNDS, "background"
 )
+
+
 get_template = generate_get_resource(RESOURCES_TEMPLATES, LIST_TEMPLATES, "template")
+
+
 get_test_material = generate_get_resource(
     RESOURCES_TEST_MATERIALS, LIST_TEST_MATERIALS, "test material"
 )

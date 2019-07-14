@@ -65,7 +65,9 @@ class TextGeneratorPreLoadTestCase(TestCase):
 
         # assert the mock
         mocked_load.assert_called_with(mocked_open.return_value)
-        mocked_get_file.assert_called_with("icon_map_file")
+        mocked_get_file.assert_called_with(
+            "dakara_player_vlc.resources", "icon_map_file"
+        )
         mocked_open.assert_called_with("path/to/icon_map_file")
 
     def test_load_templates_default(self):
