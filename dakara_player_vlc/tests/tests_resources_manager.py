@@ -62,19 +62,19 @@ class GetAllFontsTestCase(TestCase):
 
     @patch("dakara_player_vlc.resources_manager.resource_filename")
     @patch("dakara_player_vlc.resources_manager.LIST_FONTS")
-    def test(self, mock_list_fonts, mock_resource_filename):
+    def test(self, mocked_list_fonts, mocked_resource_filename):
         """Test to get all the fonts
         """
         # mock the call
-        mock_list_fonts.__iter__.return_value = ["aa", "bb"]
-        mock_resource_filename.side_effect = ["path to aa", "path to bb"]
+        mocked_list_fonts.__iter__.return_value = ["aa", "bb"]
+        mocked_resource_filename.side_effect = ["path to aa", "path to bb"]
 
         # call the function
         result = get_all_fonts()
 
         # assert the call
-        mock_list_fonts.__iter__.assert_called_once_with()
-        mock_resource_filename.assert_has_calls([call(ANY, "aa"), call(ANY, "bb")])
+        mocked_list_fonts.__iter__.assert_called_once_with()
+        mocked_resource_filename.assert_has_calls([call(ANY, "aa"), call(ANY, "bb")])
 
         # assert the result
         self.assertListEqual(result, ["path to aa", "path to bb"])

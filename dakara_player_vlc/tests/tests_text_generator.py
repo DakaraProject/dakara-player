@@ -44,7 +44,7 @@ class TextGeneratorPreLoadTestCase(TestCase):
     @patch("dakara_player_vlc.text_generator.ICON_MAP_FILE", "icon_map_file")
     @patch("dakara_player_vlc.text_generator.get_file")
     @patch("dakara_player_vlc.text_generator.json.load")
-    def test_load_icon_map(self, mocked_load, mocked_get_file, mocked_open):
+    def test_load_icon_map(self, mocked_load, mocked_get_file, mock_open):
         """Test to load the icon map
         """
         # create the mock
@@ -64,11 +64,11 @@ class TextGeneratorPreLoadTestCase(TestCase):
         self.assertDictEqual(text_generator.icon_map, {"name": "value"})
 
         # assert the mock
-        mocked_load.assert_called_with(mocked_open.return_value)
+        mocked_load.assert_called_with(mock_open.return_value)
         mocked_get_file.assert_called_with(
             "dakara_player_vlc.resources", "icon_map_file"
         )
-        mocked_open.assert_called_with("path/to/icon_map_file")
+        mock_open.assert_called_with("path/to/icon_map_file")
 
     def test_load_templates_default(self):
         """Test to load default templates for text

@@ -55,12 +55,12 @@ class FontLoaderLinuxTestCase(TestCase):
     @patch.object(FontLoaderLinux, "load_from_list")
     @patch("dakara_player_vlc.font_loader.get_all_fonts")
     def test_load_from_resources_directory(
-        self, mock_get_all_fonts, mocked_load_from_list
+        self, mocked_get_all_fonts, mocked_load_from_list
     ):
         """Test to load fonts from the resources directory
         """
         # mock system calls
-        mock_get_all_fonts.return_value = self.font_path_list
+        mocked_get_all_fonts.return_value = self.font_path_list
 
         # call the method
         with self.assertLogs("dakara_player_vlc.font_loader", "DEBUG") as logger:
@@ -76,7 +76,7 @@ class FontLoaderLinuxTestCase(TestCase):
         )
 
         # call assertions
-        mock_get_all_fonts.assert_called_once_with()
+        mocked_get_all_fonts.assert_called_once_with()
         mocked_load_from_list.assert_called_once_with(self.font_path_list)
 
     @patch.object(FontLoaderLinux, "load_font")
@@ -221,7 +221,7 @@ class FontLoaderLinuxTestCase(TestCase):
     @patch("dakara_player_vlc.font_loader.os.path.expanduser")
     @patch("dakara_player_vlc.font_loader.os.mkdir")
     def test_load(
-        self, mock_mkdir, mocked_expanduser, mocked_load_from_resources_directory
+        self, mocked_mkdir, mocked_expanduser, mocked_load_from_resources_directory
     ):
         """Test to load fonts from main method
         """
@@ -232,7 +232,7 @@ class FontLoaderLinuxTestCase(TestCase):
         self.font_loader.load()
 
         # assert the call
-        mock_mkdir.assert_called_once_with("/home/user/.fonts")
+        mocked_mkdir.assert_called_once_with("/home/user/.fonts")
         mocked_expanduser.assert_called_once_with("~/.fonts")
         mocked_load_from_resources_directory.assert_called_once_with()
 
@@ -250,7 +250,7 @@ class FontLoaderLinuxTestCase(TestCase):
         mocked_unload_font.assert_called_once_with(self.font_path)
 
     @patch("dakara_player_vlc.font_loader.os.unlink")
-    def test_unload_font(self, mock_unlink):
+    def test_unload_font(self, mocked_unlink):
         """Test to unload one font
         """
         # set a font as loaded
@@ -270,7 +270,7 @@ class FontLoaderLinuxTestCase(TestCase):
         )
 
         # assert the call
-        mock_unlink.assert_called_once_with(self.font_path)
+        mocked_unlink.assert_called_once_with(self.font_path)
 
         # assert there are no font loaded anymore
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)

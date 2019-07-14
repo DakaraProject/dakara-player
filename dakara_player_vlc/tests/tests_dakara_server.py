@@ -45,7 +45,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         self.assertEqual(self.dakara_server.server_url, self.url)
 
     @patch.object(DakaraServerHTTPConnection, "post")
-    def test_create_player_error_successful(self, mock_post):
+    def test_create_player_error_successful(self, mocked_post):
         """Test to report an error sucessfuly
         """
         # call the method
@@ -62,14 +62,14 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         )
 
         # assert the call
-        mock_post.assert_called_with(
+        mocked_post.assert_called_with(
             endpoint="playlist/player/errors/",
             data={"playlist_entry_id": 42, "error_message": "message"},
             message_on_error="Unable to send player error to server",
         )
 
     @patch.object(DakaraServerHTTPConnection, "post")
-    def test_create_player_error_failed(self, mock_post):
+    def test_create_player_error_failed(self, mocked_post):
         """Test to report an invalid error
         """
         # call the method
@@ -77,10 +77,10 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
             self.dakara_server.create_player_error(None, "message")
 
         # assert the call
-        mock_post.assert_not_called()
+        mocked_post.assert_not_called()
 
     @patch.object(DakaraServerHTTPConnection, "put")
-    def test_update_finished_successful(self, mock_put):
+    def test_update_finished_successful(self, mocked_put):
         """Test to report that a playlist entry finished
         """
         # call the method
@@ -97,14 +97,14 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         )
 
         # assert the call
-        mock_put.assert_called_with(
+        mocked_put.assert_called_with(
             endpoint="playlist/player/status/",
             data={"event": "finished", "playlist_entry_id": 42},
             message_on_error="Unable to report that a playlist entry has finished",
         )
 
     @patch.object(DakaraServerHTTPConnection, "put")
-    def test_update_finished_failed(self, mock_put):
+    def test_update_finished_failed(self, mocked_put):
         """Test to report that an invalid playlist entry finished
         """
         # call the method
@@ -112,10 +112,10 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
             self.dakara_server.update_finished(None)
 
         # assert the call
-        mock_put.assert_not_called()
+        mocked_put.assert_not_called()
 
     @patch.object(DakaraServerHTTPConnection, "put")
-    def test_update_started_transition_successful(self, mock_put):
+    def test_update_started_transition_successful(self, mocked_put):
         """Test to report that a playlist entry transition started
         """
         # call the method
@@ -133,7 +133,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         )
 
         # assert the call
-        mock_put.assert_called_with(
+        mocked_put.assert_called_with(
             endpoint="playlist/player/status/",
             data={"event": "started_transition", "playlist_entry_id": 42},
             message_on_error=(
@@ -142,7 +142,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         )
 
     @patch.object(DakaraServerHTTPConnection, "put")
-    def test_update_started_transition_failed(self, mock_put):
+    def test_update_started_transition_failed(self, mocked_put):
         """Test to report that an invalid playlist entry transition started
         """
         # call the method
@@ -150,10 +150,10 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
             self.dakara_server.update_started_transition(None)
 
         # assert the call
-        mock_put.assert_not_called()
+        mocked_put.assert_not_called()
 
     @patch.object(DakaraServerHTTPConnection, "put")
-    def test_update_started_song_successful(self, mock_put):
+    def test_update_started_song_successful(self, mocked_put):
         """Test to report that a playlist entry song started
         """
         # call the method
@@ -170,7 +170,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         )
 
         # assert the call
-        mock_put.assert_called_with(
+        mocked_put.assert_called_with(
             endpoint="playlist/player/status/",
             data={"event": "started_song", "playlist_entry_id": 42},
             message_on_error=(
@@ -179,7 +179,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         )
 
     @patch.object(DakaraServerHTTPConnection, "put")
-    def test_update_started_song_failed(self, mock_put):
+    def test_update_started_song_failed(self, mocked_put):
         """Test to report that an invalid playlist entry song started
         """
         # call the method
@@ -187,10 +187,10 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
             self.dakara_server.update_started_song(None)
 
         # assert the call
-        mock_put.assert_not_called()
+        mocked_put.assert_not_called()
 
     @patch.object(DakaraServerHTTPConnection, "put")
-    def test_update_could_not_play_successful(self, mock_put):
+    def test_update_could_not_play_successful(self, mocked_put):
         """Test to report that a playlist entry could not be played
         """
         # call the method
@@ -207,14 +207,14 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         )
 
         # assert the call
-        mock_put.assert_called_with(
+        mocked_put.assert_called_with(
             endpoint="playlist/player/status/",
             data={"event": "could_not_play", "playlist_entry_id": 42},
             message_on_error="Unable to report that playlist entry could not play",
         )
 
     @patch.object(DakaraServerHTTPConnection, "put")
-    def test_update_could_not_play_failed(self, mock_put):
+    def test_update_could_not_play_failed(self, mocked_put):
         """Test to report that an invalid playlist entry could not be played
         """
         # call the method
@@ -222,10 +222,10 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
             self.dakara_server.update_could_not_play(None)
 
         # assert the call
-        mock_put.assert_not_called()
+        mocked_put.assert_not_called()
 
     @patch.object(DakaraServerHTTPConnection, "put")
-    def test_update_paused_successful(self, mock_put):
+    def test_update_paused_successful(self, mocked_put):
         """Test to report that the player paused
         """
         # call the method
@@ -242,14 +242,14 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         )
 
         # assert the call
-        mock_put.assert_called_with(
+        mocked_put.assert_called_with(
             endpoint="playlist/player/status/",
             data={"event": "paused", "playlist_entry_id": 42, "timing": 424242},
             message_on_error="Unable to report that the player is paused",
         )
 
     @patch.object(DakaraServerHTTPConnection, "put")
-    def test_update_paused_failed(self, mock_put):
+    def test_update_paused_failed(self, mocked_put):
         """Test to report that the player paused with incorrect entry
         """
         # call the method
@@ -257,10 +257,10 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
             self.dakara_server.update_paused(None, 424242)
 
         # assert the call
-        mock_put.assert_not_called()
+        mocked_put.assert_not_called()
 
     @patch.object(DakaraServerHTTPConnection, "put")
-    def test_update_resumed_successful(self, mock_put):
+    def test_update_resumed_successful(self, mocked_put):
         """Test to report that the player resumed playing
         """
         # call the method
@@ -277,14 +277,14 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         )
 
         # assert the call
-        mock_put.assert_called_with(
+        mocked_put.assert_called_with(
             endpoint="playlist/player/status/",
             data={"event": "resumed", "playlist_entry_id": 42, "timing": 424242},
             message_on_error="Unable to report that the player resumed playing",
         )
 
     @patch.object(DakaraServerHTTPConnection, "put")
-    def test_update_resumed_failed(self, mock_put):
+    def test_update_resumed_failed(self, mocked_put):
         """Test to report that the player resumed playing with incorrect entry
         """
         # call the method
@@ -292,7 +292,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
             self.dakara_server.update_resumed(None, 424242)
 
         # assert the call
-        mock_put.assert_not_called()
+        mocked_put.assert_not_called()
 
 
 class DakaraServerWebSocketConnectionTestCase(TestCase):

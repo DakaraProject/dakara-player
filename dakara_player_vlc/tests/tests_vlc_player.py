@@ -374,11 +374,11 @@ class VlcPlayerPostLoadTestCase(TestCase):
         )
 
     @patch("dakara_player_vlc.vlc_player.os.path.isfile")
-    def test_play_playlist_entry_error_file(self, mock_isfile):
+    def test_play_playlist_entry_error_file(self, mocked_isfile):
         """Test to play a file that does not exist
         """
         # mock the system call
-        mock_isfile.return_value = False
+        mocked_isfile.return_value = False
 
         # mock the callbacks
         self.vlc_player.set_callback("started_transition", MagicMock())
@@ -395,7 +395,7 @@ class VlcPlayerPostLoadTestCase(TestCase):
             self.vlc_player.play_playlist_entry(self.playlist_entry)
 
             # call assertions
-            mock_isfile.assert_called_once_with(self.song_file_path)
+            mocked_isfile.assert_called_once_with(self.song_file_path)
 
             # post assertions
             self.assertIsNone(self.vlc_player.playing_id)
@@ -498,11 +498,11 @@ class VlcPlayerPostLoadTestCase(TestCase):
         self.vlc_player.create_thread.assert_not_called()
 
     @patch("dakara_player_vlc.vlc_player.vlc.libvlc_errmsg")
-    def test_handle_encountered_error(self, mock_libvcl_errmsg):
+    def test_handle_encountered_error(self, mocked_libvcl_errmsg):
         """Test error callback
         """
         # mock the call
-        mock_libvcl_errmsg.return_value = b"error"
+        mocked_libvcl_errmsg.return_value = b"error"
         self.vlc_player.set_callback("error", MagicMock())
         self.vlc_player.playing_id = 999
 
@@ -520,7 +520,7 @@ class VlcPlayerPostLoadTestCase(TestCase):
         )
 
         # assert the call
-        mock_libvcl_errmsg.assert_called_with()
+        mocked_libvcl_errmsg.assert_called_with()
         self.vlc_player.callbacks["error"].assert_called_with(999, "error")
         self.assertIsNone(self.vlc_player.playing_id)
         self.assertFalse(self.vlc_player.in_transition)
