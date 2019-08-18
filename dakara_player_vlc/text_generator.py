@@ -36,6 +36,28 @@ class TextGenerator:
 
     This class creates custom ASS files that are used for idle or transition
     screens. It uses Jinja to populate ASS templates with various informations.
+
+    Args:
+        config (dict): config dictionary, which may contain the keys
+            "directory", "transition_template_name" and "idle_template_name".
+        tempdir (path.Path): path to a temporary directory where to store the
+            generated texts.
+
+    Attributes:
+        config (dict): config dictionary.
+        directory (path.Path): path to custom templates directory.
+        tempdir (path.Path): path to temporary directory to store generated
+            texts in.
+        transition_text_path (path.Path): path to the generated transition text
+            (inside the temporary directory).
+        idle_text_path (path.Path): path to the generated idle text (inside the
+            temporary directory).
+        environment (jinja2.Environment): environment for Jinja2.
+        transition_template_name (jinja2.Template): template to generate the
+            transition text.
+        idle_template_name (jinja2.Template): template to generate the idle
+            text.
+        icon_map (dict): map of icons. Keys are icon name, values are icon character.
     """
 
     def __init__(self, config, tempdir):
@@ -101,6 +123,10 @@ class TextGenerator:
         """Load transition screen text template file
 
         Load the default or customized ASS template for transition screen.
+
+        Args:
+            transition_template_name (str): name of the transition template to
+                use.
         """
         loader_custom, loader_default = self.environment.loader.loaders
 
@@ -130,6 +156,9 @@ class TextGenerator:
         """Load idle screen text template file
 
         Load the default or customized ASS template for idle screen.
+
+        Args:
+            transition_template_name (str): name of the idle template to use.
         """
         loader_custom, loader_default = self.environment.loader.loaders
 
@@ -179,10 +208,10 @@ class TextGenerator:
         """Create custom idle text and save it
 
         Args:
-            info: dictionnary of additionnal information.
+            info (dict): dictionnary of additionnal information.
 
         Returns:
-            path of the text containing the idle screen content.
+            path.Path: path of the text containing the idle screen content.
         """
         # using the template
         idle_text = self.idle_template.render(**info)
@@ -198,11 +227,12 @@ class TextGenerator:
         """Create custom transition text and save it
 
         Args:
-            playlist_entry: dictionary containing keys for the playlist
+            playlist_entry (dict): dictionary containing keys for the playlist
                 entry.
 
         Returns:
-            path of the text containing the transition screen content.
+            path.Path: path of the text containing the transition screen
+            content.
         """
         transition_text = self.transition_template.render(playlist_entry)
 
