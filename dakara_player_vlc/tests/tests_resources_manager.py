@@ -67,7 +67,7 @@ class GetAllFontsTestCase(TestCase):
         """
         # mock the call
         mocked_list_fonts.__iter__.return_value = ["aa", "bb"]
-        mocked_resource_filename.side_effect = ["path to aa", "path to bb"]
+        mocked_resource_filename.side_effect = ["path/to/aa", "path/to/bb"]
 
         # call the function
         result = get_all_fonts()
@@ -77,7 +77,7 @@ class GetAllFontsTestCase(TestCase):
         mocked_resource_filename.assert_has_calls([call(ANY, "aa"), call(ANY, "bb")])
 
         # assert the result
-        self.assertListEqual(result, ["path to aa", "path to bb"])
+        self.assertListEqual(result, [Path("path/to/aa"), Path("path/to/bb")])
 
     def test_real(self):
         """Test there is at least a real font

@@ -1,6 +1,7 @@
 from pkg_resources import resource_filename
 
 from dakara_base.resources_manager import resource_listdir, generate_get_resource
+from path import Path
 
 
 RESOURCES = "dakara_player_vlc.resources"
@@ -37,6 +38,8 @@ def get_all_fonts():
     """Get all font resource files
 
     Returns:
-        list of str: list containing the absolute path to the files.
+        list of path.Path: list containing the absolute path to the files.
     """
-    return [resource_filename(RESOURCES_FONTS, filename) for filename in LIST_FONTS]
+    return [
+        Path(resource_filename(RESOURCES_FONTS, filename)) for filename in LIST_FONTS
+    ]
