@@ -1,5 +1,5 @@
 black==19.3b0; python_version >= '3.6'
-dakarabase
+dakarabase==1.0.0
 flake8==3.5.0
 Jinja2==2.10.1
 path.py==11.0.1
