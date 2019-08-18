@@ -1,11 +1,10 @@
-import os
 import logging
 import json
-from codecs import open
 
 from jinja2 import Environment, FileSystemLoader, ChoiceLoader
 from dakara_base.resources_manager import get_file
 from dakara_base.exceptions import DakaraError
+from path import Path
 
 from dakara_player_vlc.resources_manager import PATH_TEMPLATES
 
@@ -41,12 +40,12 @@ class TextGenerator:
 
     def __init__(self, config, tempdir):
         self.config = config
-        self.directory = config.get("directory", "")
-        self.tempdir = tempdir
+        self.directory = Path(config.get("directory", ""))
+        self.tempdir = Path(tempdir)
 
         # set text paths
-        self.transition_text_path = os.path.join(self.tempdir, TRANSITION_TEXT_NAME)
-        self.idle_text_path = os.path.join(self.tempdir, IDLE_TEXT_NAME)
+        self.transition_text_path = self.tempdir / TRANSITION_TEXT_NAME
+        self.idle_text_path = self.tempdir / IDLE_TEXT_NAME
 
         # Jinja2 elements
         self.environment = None
@@ -71,18 +70,17 @@ class TextGenerator:
         """Load the icon map
         """
         icon_map_path = get_file("dakara_player_vlc.resources", ICON_MAP_FILE)
-        with open(icon_map_path) as file:
+        with icon_map_path.open() as file:
             self.icon_map = json.load(file)
 
     def load_templates(self):
         """Set up Jinja environment
         """
+        # create loaders
+        loaders = [FileSystemLoader(self.directory), FileSystemLoader(PATH_TEMPLATES)]
+
         # create Jinja2 environment
-        self.environment = Environment(
-            loader=ChoiceLoader(
-                [FileSystemLoader(self.directory), FileSystemLoader(PATH_TEMPLATES)]
-            )
-        )
+        self.environment = Environment(loader=ChoiceLoader(loaders))
 
         # add filter for converting font icon name to character
         self.environment.filters["icon"] = self.convert_icon
@@ -189,7 +187,7 @@ class TextGenerator:
         # using the template
         idle_text = self.idle_template.render(**info)
 
-        with open(self.idle_text_path, "w", encoding="utf8") as file:
+        with self.idle_text_path.open("w", encoding="utf8") as file:
             file.write(idle_text)
 
         logger.debug("Create idle screen text file in '%s'", self.idle_text_path)
@@ -208,7 +206,7 @@ class TextGenerator:
         """
         transition_text = self.transition_template.render(playlist_entry)
 
-        with open(self.transition_text_path, "w", encoding="utf8") as file:
+        with self.transition_text_path.open("w", encoding="utf8") as file:
             file.write(transition_text)
 
         logger.debug(

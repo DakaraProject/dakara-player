@@ -1,6 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch, mock_open
-import os
+
+from path import Path
 
 from dakara_player_vlc.text_generator import (
     TextGenerator,
@@ -23,7 +24,7 @@ class TextGeneratorPreLoadTestCase(TestCase):
 
     def setUp(self):
         # create temporary folder
-        self.tempdir = "nowhere"
+        self.tempdir = Path("nowhere")
 
     @patch.object(TextGenerator, "load_templates")
     @patch.object(TextGenerator, "load_icon_map")
@@ -40,7 +41,7 @@ class TextGeneratorPreLoadTestCase(TestCase):
         mocked_load_icon_map.assert_called_once_with()
         mocked_load_templates.assert_called_once_with()
 
-    @patch("dakara_player_vlc.text_generator.open", new_callable=mock_open)
+    @patch.object(Path, "open", new_callable=mock_open)
     @patch("dakara_player_vlc.text_generator.ICON_MAP_FILE", "icon_map_file")
     @patch("dakara_player_vlc.text_generator.get_file")
     @patch("dakara_player_vlc.text_generator.json.load")
@@ -49,7 +50,7 @@ class TextGeneratorPreLoadTestCase(TestCase):
         """
         # create the mock
         mocked_load.return_value = {"name": "value"}
-        mocked_get_file.return_value = "path/to/icon_map_file"
+        mocked_get_file.return_value = Path("path/to/icon_map_file")
 
         # create the object
         text_generator = TextGenerator({}, self.tempdir)
@@ -68,7 +69,7 @@ class TextGeneratorPreLoadTestCase(TestCase):
         mocked_get_file.assert_called_with(
             "dakara_player_vlc.resources", "icon_map_file"
         )
-        mock_open.assert_called_with("path/to/icon_map_file")
+        mock_open.assert_called_with()
 
     def test_load_templates_default(self):
         """Test to load default templates for text
@@ -212,13 +213,13 @@ class TextGeneratorPostLoadTestCase(TestCase):
 
     def setUp(self):
         # create temporary folder
-        self.temdir = "nowhere"
+        self.tempdir = Path("nowhere")
 
         # create idle text file path
-        self.idle_text_path = os.path.join(self.temdir, IDLE_TEXT_NAME)
+        self.idle_text_path = self.tempdir / IDLE_TEXT_NAME
 
         # creat transition text file path
-        self.transition_text_path = os.path.join(self.temdir, TRANSITION_TEXT_NAME)
+        self.transition_text_path = self.tempdir / TRANSITION_TEXT_NAME
 
         # create info dictionary
         self.idle_info = {"vlc_version": "0.0.0"}
@@ -242,7 +243,7 @@ class TextGeneratorPostLoadTestCase(TestCase):
         # create text generator object
         # we use a custom template directory to use a simplified template
         self.text_generator = TextGenerator(
-            {"directory": PATH_TEST_MATERIALS}, self.temdir
+            {"directory": PATH_TEST_MATERIALS}, self.tempdir
         )
         self.text_generator.load()
 
@@ -273,7 +274,7 @@ class TextGeneratorPostLoadTestCase(TestCase):
         )
         self.assertEqual(self.text_generator.convert_link_type_name("IS"), "Image song")
 
-    @patch("dakara_player_vlc.text_generator.open", new_callable=mock_open)
+    @patch.object(Path, "open", new_callable=mock_open)
     def test_create_idle_text(self, mock_open):
         """Test the generation of an idle text
         """
@@ -281,13 +282,13 @@ class TextGeneratorPostLoadTestCase(TestCase):
         result = self.text_generator.create_idle_text(self.idle_info)
 
         # call assertions
-        mock_open.assert_called_once_with(self.idle_text_path, "w", encoding="utf8")
+        mock_open.assert_called_once_with("w", encoding="utf8")
 
         mock_open.return_value.write.assert_called_once_with(self.idle_text_content)
 
         self.assertEqual(result, self.idle_text_path)
 
-    @patch("dakara_player_vlc.text_generator.open", new_callable=mock_open)
+    @patch.object(Path, "open", new_callable=mock_open)
     def test_create_transition_text(self, mock_open):
         """Test the generation of a transition text
         """
@@ -295,9 +296,7 @@ class TextGeneratorPostLoadTestCase(TestCase):
         result = self.text_generator.create_transition_text(self.playlist_entry)
 
         # call assertions
-        mock_open.assert_called_once_with(
-            self.transition_text_path, "w", encoding="utf8"
-        )
+        mock_open.assert_called_once_with("w", encoding="utf8")
 
         mock_open.return_value.write.assert_called_once_with(
             self.transition_text_content
