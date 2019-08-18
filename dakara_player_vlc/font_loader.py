@@ -21,7 +21,9 @@ def get_font_loader_class():
     if "win" in sys.platform:
         return FontLoaderWindows
 
-    raise NotImplementedError("This operating system is not currently supported")
+    raise NotImplementedError(
+        "This operating system ({}) is not currently supported".format(sys.platform)
+    )
 
 
 class FontLoader(ABC):
