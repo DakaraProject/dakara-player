@@ -373,7 +373,7 @@ class VlcPlayerPostLoadTestCase(TestCase):
             ],
         )
 
-    @patch("dakara_player_vlc.vlc_player.os.path.isfile")
+    @patch("dakara_player_vlc.vlc_player.isfile")
     def test_play_playlist_entry_error_file(self, mocked_isfile):
         """Test to play a file that does not exist
         """

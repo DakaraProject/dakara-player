@@ -1,8 +1,8 @@
-import os
 import logging
 import urllib
 from threading import Timer
 from pkg_resources import parse_version
+from os.path import isfile
 
 import vlc
 from path import Path
@@ -42,7 +42,7 @@ class VlcPlayer(Worker):
             They must be set with `set_vlc_callback`.
         durations (dict): dictionary of durations for screens.
         fullscreen (bool): is the player running fullscreen flag.
-        kara_folder_path (str): path to the root karaoke folder containing
+        kara_folder_path (path.Path): path to the root karaoke folder containing
             songs.
         media_parameters (list): list of parameters for VLC, applied for each
             media.
@@ -79,7 +79,7 @@ class VlcPlayer(Worker):
 
         # karaoke parameters
         self.fullscreen = config.get("fullscreen", False)
-        self.kara_folder_path = config.get("kara_folder", "")
+        self.kara_folder_path = Path(config.get("kara_folder", ""))
 
         # set durations
         config_durations = config.get("durations") or {}
@@ -301,12 +301,10 @@ class VlcPlayer(Worker):
                 the key `file_path`.
         """
         # file location
-        file_path = os.path.join(
-            self.kara_folder_path, playlist_entry["song"]["file_path"]
-        )
+        file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
 
         # Check file exists
-        if not os.path.isfile(file_path):
+        if not isfile(file_path):
             logger.error("File not found '%s'", file_path)
             self.callbacks["could_not_play"](playlist_entry["id"])
             self.callbacks["error"](
@@ -317,7 +315,7 @@ class VlcPlayer(Worker):
 
         # create the media
         self.playing_id = playlist_entry["id"]
-        self.media_pending = self.instance.media_new_path(file_path)
+        self.media_pending = self.instance.media_new_path(str(file_path))
         self.media_pending.add_options(*self.media_parameters)
 
         # create the transition screen
