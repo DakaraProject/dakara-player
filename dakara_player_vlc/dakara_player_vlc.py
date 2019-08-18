@@ -115,7 +115,7 @@ class DakaraWorker(WorkerSafeThread):
 
             # communication with the dakara HTTP server
             dakara_server_http = DakaraServerHTTPConnection(
-                self.config["server"], route="api/", mute_raise=True
+                self.config["server"], endpoint="api/", mute_raise=True
             )
             dakara_server_http.authenticate()
             token_header = dakara_server_http.get_token_header()
@@ -127,7 +127,7 @@ class DakaraWorker(WorkerSafeThread):
                     self.errors,
                     self.config["server"],
                     header=token_header,
-                    route="ws/playlist/device/",
+                    endpoint="ws/playlist/device/",
                 )
             )
 

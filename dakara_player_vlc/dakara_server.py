@@ -2,7 +2,7 @@ import logging
 
 from dakara_base.http_client import HTTPClient, authenticated
 from dakara_base.websocket_client import WebSocketClient
-from dakara_base.utils import display_message
+from dakara_base.utils import truncate_message
 
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class DakaraServerHTTPConnection(HTTPClient):
             endpoint="playlist/player/errors/",
             data={
                 "playlist_entry_id": playlist_entry_id,
-                "error_message": display_message(message, 255),
+                "error_message": truncate_message(message, 255),
             },
             message_on_error="Unable to send player error to server",
         )

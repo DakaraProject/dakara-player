@@ -30,7 +30,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         # create a DakaraServerHTTPConnection instance
         self.dakara_server = DakaraServerHTTPConnection(
             {"address": self.address, "login": self.login, "password": self.password},
-            route="api",
+            endpoint_prefix="api",
         )
         self.set_token()
 
@@ -325,7 +325,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
             self.errors,
             {"address": self.address, "reconnect_interval": self.reconnect_interval},
             header=self.header,
-            route="ws",
+            endpoint="ws",
         )
 
     def test_init_url(self):
