@@ -1,7 +1,8 @@
 from unittest import TestCase, skipUnless
 from unittest.mock import patch, call
-import os
 import sys
+
+from path import Path
 
 from dakara_player_vlc.font_loader import (
     FontLoaderLinux,
@@ -45,13 +46,16 @@ class FontLoaderLinuxTestCase(TestCase):
 
     def setUp(self):
         # create directory
-        self.directory = "directory"
+        self.directory = Path("directory")
 
         # create font file list
         self.font_name = "font file"
         self.font_name_list = [self.font_name]
-        self.font_path = os.path.join(self.directory, self.font_name)
+        self.font_path = self.directory / self.font_name
         self.font_path_list = [self.font_path]
+
+        # save user directory
+        self.user_directory = Path("~").expanduser()
 
         # create a font loader object
         with self.assertLogs("dakara_player_vlc.font_loader", "DEBUG"):
@@ -105,7 +109,7 @@ class FontLoaderLinuxTestCase(TestCase):
         mocked_load_font.assert_called_once_with(self.font_path)
 
     @patch("dakara_player_vlc.font_loader.os.symlink")
-    @patch("dakara_player_vlc.font_loader.os.path.isfile")
+    @patch("dakara_player_vlc.font_loader.isfile")
     def test_load_font_system(self, mocked_isfile, mocked_symlink):
         """Test to load one font which is in system directory
         """
@@ -136,18 +140,14 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
     @patch("dakara_player_vlc.font_loader.os.symlink")
-    @patch("dakara_player_vlc.font_loader.os.path.expanduser")
-    @patch("dakara_player_vlc.font_loader.os.path.islink")
-    @patch("dakara_player_vlc.font_loader.os.path.isfile")
-    def test_load_font_user(
-        self, mocked_isfile, mocked_islink, mocked_expanduser, mocked_symlink
-    ):
+    @patch("dakara_player_vlc.font_loader.islink")
+    @patch("dakara_player_vlc.font_loader.isfile")
+    def test_load_font_user(self, mocked_isfile, mocked_islink, mocked_symlink):
         """Test to load one font which is in user directory
         """
         # prepare the mock
         mocked_isfile.side_effect = [False, True]
         mocked_islink.return_value = False
-        mocked_expanduser.return_value = "/home/user/.fonts"
 
         # pre assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
@@ -167,28 +167,26 @@ class FontLoaderLinuxTestCase(TestCase):
 
         # assert the call
         mocked_isfile.assert_has_calls(
-            [call("/usr/share/fonts/font file"), call("/home/user/.fonts/font file")]
+            [
+                call("/usr/share/fonts/font file"),
+                call(self.user_directory / ".fonts/font file"),
+            ]
         )
         mocked_islink.assert_not_called()
-        mocked_expanduser.assert_called_once_with("~/.fonts")
         mocked_symlink.assert_not_called()
 
         # post assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
     @patch("dakara_player_vlc.font_loader.os.symlink")
-    @patch("dakara_player_vlc.font_loader.os.path.expanduser")
-    @patch("dakara_player_vlc.font_loader.os.path.islink")
-    @patch("dakara_player_vlc.font_loader.os.path.isfile")
-    def test_load_font_install(
-        self, mocked_isfile, mocked_islink, mocked_expanduser, mocked_symlink
-    ):
+    @patch("dakara_player_vlc.font_loader.islink")
+    @patch("dakara_player_vlc.font_loader.isfile")
+    def test_load_font_install(self, mocked_isfile, mocked_islink, mocked_symlink):
         """Test to load one font which is not installed
         """
         # prepare the mock
         mocked_isfile.return_value = False
         mocked_islink.return_value = False
-        mocked_expanduser.return_value = "/home/user/.fonts"
 
         # pre assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
@@ -198,47 +196,43 @@ class FontLoaderLinuxTestCase(TestCase):
             self.font_loader.load_font(self.font_path)
 
         # assert effect on logs
+        font_path = self.user_directory / ".fonts/font file"
         self.assertListEqual(
             logger.output,
             [
                 "DEBUG:dakara_player_vlc.font_loader:Font 'font file' "
-                "loaded in user directory: '/home/user/.fonts/font file'"
+                "loaded in user directory: '{}'".format(font_path)
             ],
         )
 
         # assert the call
         mocked_isfile.assert_has_calls(
-            [call("/usr/share/fonts/font file"), call("/home/user/.fonts/font file")]
+            [
+                call("/usr/share/fonts/font file"),
+                call(self.user_directory / ".fonts/font file"),
+            ]
         )
-        mocked_islink.assert_called_once_with("/home/user/.fonts/font file")
-        mocked_expanduser.assert_called_once_with("~/.fonts")
+        mocked_islink.assert_called_once_with(self.user_directory / ".fonts/font file")
         mocked_symlink.assert_called_once_with(
-            "directory/font file", "/home/user/.fonts/font file"
+            "directory/font file", self.user_directory / ".fonts/font file"
         )
 
         # post assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 1)
         self.assertEqual(
-            self.font_loader.fonts_loaded[0], "/home/user/.fonts/font file"
+            self.font_loader.fonts_loaded[0], self.user_directory / ".fonts/font file"
         )
 
     @patch.object(FontLoaderLinux, "load_from_resources_directory")
-    @patch("dakara_player_vlc.font_loader.os.path.expanduser")
     @patch("dakara_player_vlc.font_loader.os.mkdir")
-    def test_load(
-        self, mocked_mkdir, mocked_expanduser, mocked_load_from_resources_directory
-    ):
+    def test_load(self, mocked_mkdir, mocked_load_from_resources_directory):
         """Test to load fonts from main method
         """
-        # prepare the mock
-        mocked_expanduser.return_value = "/home/user/.fonts"
-
         # call the method
         self.font_loader.load()
 
         # assert the call
-        mocked_mkdir.assert_called_once_with("/home/user/.fonts")
-        mocked_expanduser.assert_called_once_with("~/.fonts")
+        mocked_mkdir.assert_called_once_with(self.user_directory / ".fonts")
         mocked_load_from_resources_directory.assert_called_once_with()
 
     @patch.object(FontLoaderLinux, "unload_font")
