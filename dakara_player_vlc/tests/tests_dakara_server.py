@@ -448,4 +448,4 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         )
 
         # assert the call
-        mocked_send.assert_called_with({"type": "ready"})
+        mocked_send.assert_called_with("ready")

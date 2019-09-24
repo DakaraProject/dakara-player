@@ -257,4 +257,4 @@ class DakaraServerWebSocketConnection(WebSocketClient):
         """Tell the server that the player is ready
         """
         logger.debug("Telling the server that the player is ready")
-        self.send({"type": "ready"})
+        self.send("ready")

@@ -127,7 +127,7 @@ class DakaraWorkerTestCase(TestCase):
         )
         mocked_vlc_player.load.assert_called_with()
         mocked_dakara_server_http_class.assert_called_with(
-            self.config["server"], endpoint="api/", mute_raise=True
+            self.config["server"], endpoint_prefix="api/", mute_raise=True
         )
         mocked_dakara_server_http.authenticate.assert_called_with()
         mocked_dakara_server_http.get_token_header.assert_called_with()
