@@ -28,9 +28,9 @@ Dialogue: 0,0:00:00.00,0:10:00.00,detail,,0,0,0,,Dakara player 0.0.0
 ; Your modification will be lost during the next update.
 
 ; To make your own idle template, copy this file with another name and modify it.
-; Then uncomment the line `idleTemplateName` in `config.ini` and modify it to
+; Then uncomment the line `idle_template_name` in `config.yaml` and modify it to
 ; point to your new template file. Same goes for the idle background file,
-; uncomment the line `idleBgPath` and modify it to point to your new background
+; uncomment the line `idle_background_path` and modify it to point to your new background
 ; file.
 
 ; We have decided to use subtitle files for text display with VLC
@@ -46,7 +46,10 @@ Dialogue: 0,0:00:00.00,0:10:00.00,detail,,0,0,0,,Dakara player 0.0.0
 ; template, which are associated to the following data:
 
 ; {
-;     "vlc_version": "version of the current VLC player"
+;     "notes": [
+;         "vlc version",
+;         "dakara player version",
+;     ]
 ; }
 
 ; For further information about the Jinja2 template engine and its abilities,

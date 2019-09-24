@@ -34,9 +34,9 @@ Dialogue: 0,0:00:00.10,0:00:05.00,detail-text,,0,0,70,,{\fad(500, 0)}{{ owner.us
 ; Your modification will be lost during the next update.
 
 ; To make your own transition template, copy this file with another name and
-; modify it. Then uncomment the line `transitionTemplateName` in `config.ini`
+; modify it. Then uncomment the line `transition_template_name` in `config.yaml`
 ; and modify it to point to your new template file. Same goes for the
-; transition background file, uncomment the line `transitionBgPath` and
+; transition background file, uncomment the line `transition_background_name` and
 ; modify it to point to your new background file.
 
 ; We have decided to use subtitle files for text display with VLC
