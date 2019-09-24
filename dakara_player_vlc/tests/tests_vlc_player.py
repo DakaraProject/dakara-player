@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch, ANY
 from threading import Event
 from queue import Queue
 
+from dakara_base.resources_manager import get_file
 from vlc import State, EventType
 from path import Path
 
@@ -15,11 +16,7 @@ from dakara_player_vlc.vlc_player import (
     TRANSITION_BG_NAME,
 )
 
-from dakara_player_vlc.resources_manager import (
-    get_test_material,
-    get_background,
-    PATH_TEST_MATERIALS,
-)
+from dakara_player_vlc.resources_manager import get_background
 
 
 @patch("dakara_player_vlc.vlc_player.PATH_BACKGROUNDS", "bg")
@@ -459,7 +456,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
         self.fullscreen = True
 
         # create kara folder
-        self.kara_folder = PATH_TEST_MATERIALS
+        self.kara_folder = get_file("dakara_player_vlc.tests.resources", "")
 
         # create media parameter
         self.media_parameters = ["no-video"]
@@ -474,10 +471,12 @@ class VlcPlayerIntegrationTestCase(TestCase):
         self.transition_duration = 1
 
         # create a subtitle
-        self.subtitle_path = get_test_material("song.ass")
+        self.subtitle_name = "song.ass"
+        self.subtitle_path = self.kara_folder / self.subtitle_name
 
         # create song path
-        self.song_file_path = get_test_material("song.png")
+        self.song_file_name = "song.png"
+        self.song_file_path = self.kara_folder / self.song_file_name
 
         # create playlist entry
         self.playlist_entry = {

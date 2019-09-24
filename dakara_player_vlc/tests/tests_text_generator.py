@@ -1,6 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch, mock_open
 
+from dakara_base.resources_manager import get_file
 from path import Path
 
 from dakara_player_vlc.text_generator import (
@@ -11,11 +12,7 @@ from dakara_player_vlc.text_generator import (
     TRANSITION_TEMPLATE_NAME,
 )
 
-from dakara_player_vlc.resources_manager import (
-    PATH_TEST_MATERIALS,
-    get_test_material,
-    get_template,
-)
+from dakara_player_vlc.resources_manager import get_template
 
 
 class TextGeneratorTestCase(TestCase):
@@ -101,7 +98,10 @@ class TextGeneratorTestCase(TestCase):
         In that case, the templates come from this directory.
         """
         # create object
-        text_generator = TextGenerator({"directory": PATH_TEST_MATERIALS}, self.tempdir)
+        text_generator = TextGenerator(
+            {"directory": get_file("dakara_player_vlc.tests.resources", "")},
+            self.tempdir,
+        )
 
         # pre assert there are no templates
         self.assertIsNone(text_generator.idle_template)
@@ -112,11 +112,12 @@ class TextGeneratorTestCase(TestCase):
 
         # assert there are templates defined
         self.assertEqual(
-            text_generator.idle_template.filename, get_test_material(IDLE_TEMPLATE_NAME)
+            text_generator.idle_template.filename,
+            get_file("dakara_player_vlc.tests.resources", IDLE_TEMPLATE_NAME),
         )
         self.assertEqual(
             text_generator.transition_template.filename,
-            get_test_material(TRANSITION_TEMPLATE_NAME),
+            get_file("dakara_player_vlc.tests.resources", TRANSITION_TEMPLATE_NAME),
         )
 
     def test_load_templates_custom_directory_fail(self):
@@ -152,7 +153,7 @@ class TextGeneratorTestCase(TestCase):
         # create object
         text_generator = TextGenerator(
             {
-                "directory": PATH_TEST_MATERIALS,
+                "directory": get_file("dakara_player_vlc.tests.resources", ""),
                 "idle_template_name": "song.ass",
                 "transition_template_name": "song.ass",
             },
@@ -168,10 +169,12 @@ class TextGeneratorTestCase(TestCase):
 
         # assert there are templates defined
         self.assertEqual(
-            text_generator.idle_template.filename, get_test_material("song.ass")
+            text_generator.idle_template.filename,
+            get_file("dakara_player_vlc.tests.resources", "song.ass"),
         )
         self.assertEqual(
-            text_generator.transition_template.filename, get_test_material("song.ass")
+            text_generator.transition_template.filename,
+            get_file("dakara_player_vlc.tests.resources", "song.ass"),
         )
 
     def test_load_templates_custom_names_fail(self):
@@ -183,7 +186,7 @@ class TextGeneratorTestCase(TestCase):
         # create object
         text_generator = TextGenerator(
             {
-                "directory": PATH_TEST_MATERIALS,
+                "directory": get_file("dakara_player_vlc.tests.resources", ""),
                 "idle_template_name": "nothing",
                 "transition_template_name": "nothing",
             },
@@ -199,11 +202,12 @@ class TextGeneratorTestCase(TestCase):
 
         # assert there are templates defined
         self.assertEqual(
-            text_generator.idle_template.filename, get_test_material(IDLE_TEMPLATE_NAME)
+            text_generator.idle_template.filename,
+            get_file("dakara_player_vlc.tests.resources", IDLE_TEMPLATE_NAME),
         )
         self.assertEqual(
             text_generator.transition_template.filename,
-            get_test_material(TRANSITION_TEMPLATE_NAME),
+            get_file("dakara_player_vlc.tests.resources", TRANSITION_TEMPLATE_NAME),
         )
 
 
@@ -246,7 +250,8 @@ class TextGeneratorIntegrationTestCase(TestCase):
         # create text generator object
         # we use a custom template directory to use a simplified template
         self.text_generator = TextGenerator(
-            {"directory": PATH_TEST_MATERIALS}, self.tempdir
+            {"directory": get_file("dakara_player_vlc.tests.resources", "")},
+            self.tempdir,
         )
         self.text_generator.load()
 

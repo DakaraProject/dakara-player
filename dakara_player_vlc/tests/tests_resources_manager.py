@@ -2,16 +2,16 @@ from unittest import TestCase
 from unittest.mock import patch, ANY, call
 
 from path import Path
+from dakara_base.resources_manager import get_file
 
 from dakara_player_vlc.resources_manager import (
     get_background,
-    get_test_material,
     get_template,
     get_all_fonts,
 )
 
 
-MODULE_PATH = Path(__file__).abspath().parent.parent
+MODULE_PATH = get_file("dakara_player_vlc", "")
 
 
 class GetBackgroundTestCase(TestCase):
@@ -26,20 +26,6 @@ class GetBackgroundTestCase(TestCase):
 
         # assert the result
         self.assertEqual(result, MODULE_PATH / "resources" / "backgrounds" / "idle.png")
-
-
-class GetTestMaterialTestCase(TestCase):
-    """Test the `get_test_material` function
-    """
-
-    def test_real(self):
-        """Test to access a real test material
-        """
-        # call the function
-        result = get_test_material("song.ass")
-
-        # assert the result
-        self.assertEqual(result, MODULE_PATH / "resources" / "tests" / "song.ass")
 
 
 class GetTemplateTestCase(TestCase):
