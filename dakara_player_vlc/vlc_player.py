@@ -2,14 +2,15 @@ import logging
 import urllib
 from threading import Timer
 from pkg_resources import parse_version
-from os.path import isfile
 
 import vlc
+from vlc import Instance
 from path import Path
 from dakara_base.safe_workers import Worker
 
 from dakara_player_vlc.version import __version__
 from dakara_player_vlc.background_loader import BackgroundLoader
+from dakara_player_vlc.text_generator import TextGenerator
 from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
 
 
@@ -65,14 +66,12 @@ class VlcPlayer(Worker):
         stop (Event): event to stop the program.
         errors (Queue): queue of errors.
         config (dict): configuration.
-        text_generator (TextGenerator): generator of on-screen texts.
+        tempdir (path.Path): path to a temporary directory.
     """
 
-    def init_worker(self, config, text_generator):
+    def init_worker(self, config, tempdir):
         """Init the worker
         """
-        self.text_generator = text_generator
-
         # callbacks
         self.callbacks = {}
         self.vlc_callbacks = {}
@@ -90,7 +89,12 @@ class VlcPlayer(Worker):
             "idle": IDLE_DURATION,
         }
 
-        # set background manager
+        # set text generator
+        config_texts = config.get("templates") or {}
+        self.text_generator = TextGenerator(config_texts, tempdir)
+
+        # set background loader
+        # we need to make some adaptations here
         config_backgrounds = config.get("backgrounds") or {}
         self.background_loader = BackgroundLoader(
             directory=Path(config_backgrounds.get("directory", "")),
@@ -109,7 +113,7 @@ class VlcPlayer(Worker):
         config_vlc = config.get("vlc") or {}
         self.media_parameters = config_vlc.get("media_parameters") or []
         self.media_parameters_text_screen = []
-        self.instance = vlc.Instance(config_vlc.get("instance_parameters") or [])
+        self.instance = Instance(config_vlc.get("instance_parameters") or [])
         self.player = self.instance.media_player_new()
         self.event_manager = self.player.event_manager()
         self.vlc_version = None
@@ -138,6 +142,9 @@ class VlcPlayer(Worker):
 
         # set VLC fullscreen
         self.player.set_fullscreen(self.fullscreen)
+
+        # load text generator
+        self.text_generator.load()
 
         # load backgrounds
         self.background_loader.load()
@@ -304,7 +311,7 @@ class VlcPlayer(Worker):
         file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
 
         # Check file exists
-        if not isfile(file_path):
+        if not file_path.exists():
             logger.error("File not found '%s'", file_path)
             self.callbacks["could_not_play"](playlist_entry["id"])
             self.callbacks["error"](

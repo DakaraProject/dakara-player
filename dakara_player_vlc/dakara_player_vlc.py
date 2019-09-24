@@ -4,9 +4,9 @@ from contextlib import ExitStack
 from pkg_resources import parse_version
 
 from dakara_base.safe_workers import WorkerSafeThread, Runner
+from path import Path
 
 from dakara_player_vlc.version import __version__, __date__
-from dakara_player_vlc.text_generator import TextGenerator
 from dakara_player_vlc.vlc_player import VlcPlayer
 from dakara_player_vlc.dakara_server import (
     DakaraServerHTTPConnection,
@@ -95,21 +95,15 @@ class DakaraWorker(WorkerSafeThread):
         # be executed.
         with ExitStack() as stack:
             # temporary directory
-            tempdir = stack.enter_context(TemporaryDirectory(suffix=".dakara"))
+            tempdir = Path(stack.enter_context(TemporaryDirectory(suffix=".dakara")))
 
             # font loader
             font_loader = stack.enter_context(FontLoader())
             font_loader.load()
 
-            # text screen generator
-            text_generator = TextGenerator(
-                self.config["player"].get("templates") or {}, tempdir
-            )
-            text_generator.load()
-
             # vlc player
             vlc_player = stack.enter_context(
-                VlcPlayer(self.stop, self.errors, self.config["player"], text_generator)
+                VlcPlayer(self.stop, self.errors, self.config["player"], tempdir)
             )
             vlc_player.load()
 

@@ -86,7 +86,6 @@ class DakaraWorkerTestCase(TestCase):
 
     @patch("dakara_player_vlc.dakara_player_vlc.TemporaryDirectory")
     @patch("dakara_player_vlc.dakara_player_vlc.FontLoader")
-    @patch("dakara_player_vlc.dakara_player_vlc.TextGenerator")
     @patch("dakara_player_vlc.dakara_player_vlc.VlcPlayer")
     @patch("dakara_player_vlc.dakara_player_vlc.DakaraServerHTTPConnection")
     @patch("dakara_player_vlc.dakara_player_vlc.DakaraServerWebSocketConnection")
@@ -97,7 +96,6 @@ class DakaraWorkerTestCase(TestCase):
         mocked_dakara_server_websocket_class,
         mocked_dakara_server_http_class,
         mocked_vlc_player_class,
-        mocked_text_generator_class,
         mocked_font_loader_class,
         mocked_temporary_directory_class,
     ):
@@ -110,7 +108,6 @@ class DakaraWorkerTestCase(TestCase):
         mocked_dakara_server_http = mocked_dakara_server_http_class.return_value
         mocked_dakara_server_http.get_token_header.return_value = "token"
         mocked_vlc_player = mocked_vlc_player_class.return_value.__enter__.return_value
-        mocked_text_generator = mocked_text_generator_class.return_value
         mocked_font_loader = (
             mocked_font_loader_class.return_value.__enter__.return_value
         )
@@ -125,10 +122,8 @@ class DakaraWorkerTestCase(TestCase):
         mocked_temporary_directory_class.assert_called_with(suffix=".dakara")
         mocked_font_loader_class.assert_called_with()
         mocked_font_loader.load.assert_called_with()
-        mocked_text_generator_class.assert_called_with({}, ANY)
-        mocked_text_generator.load.assert_called_with()
         mocked_vlc_player_class.assert_called_with(
-            self.stop, self.errors, self.config["player"], mocked_text_generator
+            self.stop, self.errors, self.config["player"], ANY
         )
         mocked_vlc_player.load.assert_called_with()
         mocked_dakara_server_http_class.assert_called_with(

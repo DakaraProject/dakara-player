@@ -18,8 +18,8 @@ from dakara_player_vlc.resources_manager import (
 )
 
 
-class TextGeneratorPreLoadTestCase(TestCase):
-    """Test the text generator class before it is loaded
+class TextGeneratorTestCase(TestCase):
+    """Test the text generator class unitary
     """
 
     def setUp(self):
@@ -207,8 +207,11 @@ class TextGeneratorPreLoadTestCase(TestCase):
         )
 
 
-class TextGeneratorPostLoadTestCase(TestCase):
-    """Test the text generator class after it is loaded
+class TextGeneratorIntegrationTestCase(TestCase):
+    """Test the text generator class in more real conditions
+
+    This is not a true integration test, though, as we mock writing on the
+    disk.
     """
 
     def setUp(self):
