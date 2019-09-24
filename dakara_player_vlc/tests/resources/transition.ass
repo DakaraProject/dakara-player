@@ -1,4 +1,97 @@
-{{ title }}
-{{ artists }}
-{{ works }}
-{{ owner }}
+﻿; DON'T TOUCH THIS FILE!
+; Consult the documentation below if you want to customize
+; the transition screen template
+
+[Script Info]
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.601
+PlayResX: 1920
+PlayResY: 1080
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: title,Roboto Thin,70,&H00191919,&H00191919,&H00A01286,&H00000000,0,0,0,0,100,100,0,0,3,20,0,1,70,70,585,1
+Style: detail-text,Roboto Light,50,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,140,70,540,1
+Style: detail-icon,Roboto Light,50,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,8,70,1780,540,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:05.00,title,,0,0,0,,{\fad(500, 0)}Song title
+
+Dialogue: 0,0:00:00.10,0:00:05.00,detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome\fs40}{\r} 
+Dialogue: 0,0:00:00.10,0:00:05.00,detail-text,,0,0,0,,{\fad(500, 0)}Artist name
+
+
+Dialogue: 0,0:00:00.20,0:00:05.00,detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome\fs40}{\r} 
+Dialogue: 0,0:00:00.20,0:00:05.00,detail-text,,0,0,0,,{\fad(500, 0)}Work title {\alpha&H80&}Subtitle of the work{\r} OP1
+
+Dialogue: 0,0:00:00.10,0:00:05.00,detail-icon,,0,0,70,,{\fad(500, 0)}{\fnFontAwesome\fs40}{\r} 
+Dialogue: 0,0:00:00.10,0:00:05.00,detail-text,,0,0,70,,{\fad(500, 0)}User
+
+; DON'T TOUCH THIS FILE!
+; Your modification will be lost during the next update.
+
+; To make your own transition template, copy this file with another name and
+; modify it. Then uncomment the line `transitionTemplateName` in `config.ini`
+; and modify it to point to your new template file. Same goes for the
+; transition background file, uncomment the line `transitionBgPath` and
+; modify it to point to your new background file.
+
+; We have decided to use subtitle files for text display with VLC
+; because we can get a fancy output quite easily. Subtitles allow
+; formatting and easy text positionning. We have used Advanced
+; Subtitle Station Alpha format because it has some animation
+; features and it is widely used for karaoke subbing. You should
+; feel at home!
+
+; You can use any kind of subtitle format for the transition template file, as
+; long as VLC can display it. The template is handled within the program by
+; the Jinja2 template engine. Playlist entry information are added by the
+; mean of placeholders in the template, which are associated to the data
+; structure of the playlist entry:
+
+; {
+;     "song": {
+;         "title": "song title",
+;         "artists": [
+;             {
+;                 "id": "id of the artist",
+;                 "name": "artist name"
+;             }
+;         ],
+;         "works": [
+;             {
+;                 "work": {
+;                     "id": "id of the work",
+;                     "title": "title of the work",
+;                     "subtitle": "subtitle of the work",
+;                     "work_type": {
+;                         "name": "name of the type of work",
+;                         "name_plural": "plural form of the name",
+;                         "query_name": "query name form of the name",
+;                         "icon_name": "FontAwesome name of the icon",
+;                     }
+;                 },
+;                 "link_type": "type of relation betwoon the song and the work",
+;                 "link_type_number": "number of the relation",
+;                 "episodes": "episodes where this song is used"
+;             }
+;         ],
+;         "file_path": "path to the song file",
+;     },
+;     "owner": {
+;         "id": "id of the user who asked this song",
+;         "username": "name of the user"
+;     },
+;     "date_created": "date when the playlist entry was created"
+; }
+
+; Icon name can be used with the filter `icon` to get an actual icon (you have to
+; set the font as Fontawesome). Long name of the link type is obtained with the
+; `link_type_name` filter.
+
+; For further information about the Jinja2 template engine and its abilities,
+; please consult the documentation:
+; http://jinja.pocoo.org/docs/latest/

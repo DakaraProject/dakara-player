@@ -1,1 +1,54 @@
-{{ vlc_version }}
+﻿; DON'T TOUCH THIS FILE!
+; Consult the documentation below if you want to customize
+; the idle screen template
+
+[Script Info]
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: PC.601
+PlayResX: 1920
+PlayResY: 1080
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: title,Roboto Thin,140,&H00666666,&H00666666,&H00333333,&H00000000,0,0,0,0,100,100,0,0,3,20,0,8,70,70,140,1
+Style: detail,Roboto Light,50,&H00333333,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,3,70,70,140,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:10:00.00,title,,0,0,0,,Dakara
+
+Dialogue: 0,0:00:00.00,0:10:00.00,detail,,0,0,0,,VLC 0.0.0
+
+Dialogue: 0,0:00:00.00,0:10:00.00,detail,,0,0,0,,Dakara player 0.0.0
+
+
+; DON'T TOUCH THIS FILE!
+; Your modification will be lost during the next update.
+
+; To make your own idle template, copy this file with another name and modify it.
+; Then uncomment the line `idleTemplateName` in `config.ini` and modify it to
+; point to your new template file. Same goes for the idle background file,
+; uncomment the line `idleBgPath` and modify it to point to your new background
+; file.
+
+; We have decided to use subtitle files for text display with VLC
+; because we can get a fancy output quite easily. Subtitles allow
+; formatting and easy text positionning. We have used Advanced
+; Subtitle Station Alpha format because it has some animation
+; features and it is widely used for karaoke subbing. You should
+; feel at home!
+
+; You can use any kind of subtitle format for the idle template file, as long as
+; VLC can display it. The template is handled within the program by the Jinja2
+; template engine. Information are added by the mean of placeholders in the
+; template, which are associated to the following data:
+
+; {
+;     "vlc_version": "version of the current VLC player"
+; }
+
+; For further information about the Jinja2 template engine and its abilities,
+; please consult the documentation:
+; http://jinja.pocoo.org/docs/latest/

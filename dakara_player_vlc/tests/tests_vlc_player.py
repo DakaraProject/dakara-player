@@ -445,7 +445,7 @@ class VlcPlayerTestCase(TestCase):
 
 
 class VlcPlayerIntegrationTestCase(TestCase):
-    """Test the VLC player class in real condition
+    """Test the VLC player class in real conditions
     """
 
     def setUp(self):

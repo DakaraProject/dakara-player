@@ -14,11 +14,13 @@ from dakara_player_vlc.text_generator import TextGenerator
 from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
 
 
-TRANSITION_DURATION = 2
-IDLE_DURATION = 300
-
 TRANSITION_BG_NAME = "transition.png"
+TRANSITION_TEXT_NAME = "transition.ass"
+TRANSITION_DURATION = 2
+
 IDLE_BG_NAME = "idle.png"
+IDLE_TEXT_NAME = "idle.ass"
+IDLE_DURATION = 300
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +93,7 @@ class VlcPlayer(Worker):
 
         # set text generator
         config_texts = config.get("templates") or {}
-        self.text_generator = TextGenerator(config_texts, tempdir)
+        self.text_generator = TextGenerator(config_texts)
 
         # set background loader
         # we need to make some adaptations here
@@ -117,6 +119,10 @@ class VlcPlayer(Worker):
         self.player = self.instance.media_player_new()
         self.event_manager = self.player.event_manager()
         self.vlc_version = None
+
+        # set path of ASS files for text screens
+        self.idle_text_path = tempdir / IDLE_TEXT_NAME
+        self.transition_text_path = tempdir / TRANSITION_TEXT_NAME
 
         # playlist entry id of the current song
         # if no songs are playing, its value is None
@@ -326,9 +332,8 @@ class VlcPlayer(Worker):
         self.media_pending.add_options(*self.media_parameters)
 
         # create the transition screen
-        transition_text_path = self.text_generator.create_transition_text(
-            playlist_entry
-        )
+        with self.transition_text_path.open("w") as file:
+            file.write(self.text_generator.create_transition_text(playlist_entry))
 
         media_transition = self.instance.media_new_path(
             self.background_loader.backgrounds["transition"]
@@ -337,7 +342,7 @@ class VlcPlayer(Worker):
         media_transition.add_options(
             *self.media_parameters_text_screen,
             *self.media_parameters,
-            "sub-file={}".format(transition_text_path),
+            "sub-file={}".format(self.transition_text_path),
             "image-duration={}".format(self.durations["transition"]),
         )
         self.in_transition = True
@@ -357,15 +362,23 @@ class VlcPlayer(Worker):
         media = self.instance.media_new_path(self.background_loader.backgrounds["idle"])
 
         # create the idle screen
-        idle_text_path = self.text_generator.create_idle_text(
-            {"notes": ["VLC " + self.vlc_version, "Dakara player " + __version__]}
-        )
+        with self.idle_text_path.open("w") as file:
+            file.write(
+                self.text_generator.create_idle_text(
+                    {
+                        "notes": [
+                            "VLC " + self.vlc_version,
+                            "Dakara player " + __version__,
+                        ]
+                    }
+                )
+            )
 
         media.add_options(
             *self.media_parameters_text_screen,
             *self.media_parameters,
             "image-duration={}".format(self.durations["idle"]),
-            "sub-file={}".format(idle_text_path),
+            "sub-file={}".format(self.idle_text_path),
         )
 
         self.play_media(media)

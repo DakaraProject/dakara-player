@@ -10,15 +10,9 @@ from dakara_player_vlc.resources_manager import PATH_TEMPLATES
 
 
 TRANSITION_TEMPLATE_NAME = "transition.ass"
-TRANSITION_TEXT_NAME = "transition.ass"
-
-
 IDLE_TEMPLATE_NAME = "idle.ass"
-IDLE_TEXT_NAME = "idle.ass"
-
 
 ICON_MAP_FILE = "font-awesome.json"
-
 
 LINK_TYPE_NAMES = {
     "OP": "Opening",
@@ -26,7 +20,6 @@ LINK_TYPE_NAMES = {
     "IN": "Insert song",
     "IS": "Image song",
 }
-
 
 logger = logging.getLogger(__name__)
 
@@ -40,18 +33,10 @@ class TextGenerator:
     Args:
         config (dict): config dictionary, which may contain the keys
             "directory", "transition_template_name" and "idle_template_name".
-        tempdir (path.Path): path to a temporary directory where to store the
-            generated texts.
 
     Attributes:
         config (dict): config dictionary.
         directory (path.Path): path to custom templates directory.
-        tempdir (path.Path): path to temporary directory to store generated
-            texts in.
-        transition_text_path (path.Path): path to the generated transition text
-            (inside the temporary directory).
-        idle_text_path (path.Path): path to the generated idle text (inside the
-            temporary directory).
         environment (jinja2.Environment): environment for Jinja2.
         transition_template_name (jinja2.Template): template to generate the
             transition text.
@@ -60,14 +45,9 @@ class TextGenerator:
         icon_map (dict): map of icons. Keys are icon name, values are icon character.
     """
 
-    def __init__(self, config, tempdir):
+    def __init__(self, config):
         self.config = config
         self.directory = Path(config.get("directory", ""))
-        self.tempdir = Path(tempdir)
-
-        # set text paths
-        self.transition_text_path = self.tempdir / TRANSITION_TEXT_NAME
-        self.idle_text_path = self.tempdir / IDLE_TEXT_NAME
 
         # Jinja2 elements
         self.environment = None
@@ -211,17 +191,9 @@ class TextGenerator:
             info (dict): dictionnary of additionnal information.
 
         Returns:
-            path.Path: path of the text containing the idle screen content.
+            str: text containing the idle screen content.
         """
-        # using the template
-        idle_text = self.idle_template.render(**info)
-
-        with self.idle_text_path.open("w", encoding="utf8") as file:
-            file.write(idle_text)
-
-        logger.debug("Create idle screen text file in '%s'", self.idle_text_path)
-
-        return self.idle_text_path
+        return self.idle_template.render(**info)
 
     def create_transition_text(self, playlist_entry):
         """Create custom transition text and save it
@@ -231,19 +203,9 @@ class TextGenerator:
                 entry.
 
         Returns:
-            path.Path: path of the text containing the transition screen
-            content.
+            str: text containing the transition screen content.
         """
-        transition_text = self.transition_template.render(playlist_entry)
-
-        with self.transition_text_path.open("w", encoding="utf8") as file:
-            file.write(transition_text)
-
-        logger.debug(
-            "Create transition screen text file in '%s'", self.transition_text_path
-        )
-
-        return self.transition_text_path
+        return self.transition_template.render(playlist_entry)
 
 
 class TemplateNotFoundError(DakaraError, FileNotFoundError):
