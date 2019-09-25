@@ -27,8 +27,23 @@ logger = logging.getLogger(__name__)
 class TextGenerator:
     """Text generator
 
-    This class creates custom ASS files that are used for idle or transition
+    This class creates custom ASS contents that are used for idle or transition
     screens. It uses Jinja to populate ASS templates with various informations.
+
+    Example of use:
+
+    >>> from path import Path
+    >>> config = {
+    ...     "directory": Path("my/directory")
+    ... }
+    >>> generator = TextGenerator(config)
+    >>> generator.load()
+    >>> idle_screen_content = generator.create_idle_text({
+    ...     "notes": [
+    ...         "line1",
+    ...         "line2",
+    ...     ]
+    ... })
 
     Args:
         config (dict): config dictionary, which may contain the keys

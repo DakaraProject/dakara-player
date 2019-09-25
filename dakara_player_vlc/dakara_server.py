@@ -11,8 +11,25 @@ logger = logging.getLogger(__name__)
 class DakaraServerHTTPConnection(HTTPClient):
     """Object representing a HTTP connection with the Dakara server
 
+    Example of use:
+
+    >>> http_connection = DakaraServerHTTPConnection(
+    ...     {
+    ...         "address": "www.example.com",
+    ...         "port": 8080,
+    ...         "login": "player",
+    ...         "password": "pass"
+    ...     },
+    ...     enpoint_prefix="api/",
+    ...     mute_raise=True,
+    ... )
+    >>> http_connection.authenticate()
+
     Args:
         config (dict): config of the server.
+        endpoint_prefix (str): prefix of the endpoint, added to the URL.
+        mute_raise (bool): if true, no exception will be raised when performing
+            connections with the server (but authentication), only logged.
     """
 
     @authenticated
@@ -201,9 +218,39 @@ class DakaraServerHTTPConnection(HTTPClient):
 class DakaraServerWebSocketConnection(WebSocketClient):
     """Object representing the WebSocket connection with the Dakara server
 
+    Example of use:
+
+    >>> config = {
+    ...     "address": "www.example.com",
+    ...     "port": 8080,
+    ...     "login": "player",
+    ...     "password": "pass"
+    ... }
+    >>> http_connection = DakaraServerWebSocketConnection(
+    ...     config,
+    ...     enpoint_prefix="api/",
+    ... )
+    >>> http_connection.authenticate()
+    >>> header = http_connection.get_token_header()
+    >>> from thread import Event
+    >>> from queue import Queue
+    >>> stop = Event()
+    >>> errors = Queue()
+    >>> ws_connection = DakaraServerWebSocketConnection(
+    ...     stop,
+    ...     errors,
+    ...     config,
+    ...     enpoint="ws/playlist",
+    ...     header=header
+    ... )
+    >>> ws_connection.run()
+
     Args:
+        stop (Event): event to stop the program.
+        errors (Queue): queue of errors.
         config (dict): configuration for the server, the same as
             DakaraServerHTTPConnection.
+        endpoint (str): enpoint of the WebSocket connection, added to the URL.
         header (dict): header containing the authentication token.
     """
 

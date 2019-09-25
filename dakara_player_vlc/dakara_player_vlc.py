@@ -51,7 +51,7 @@ class DakaraWorker(WorkerSafeThread):
     """Class associated with the worker thread
 
     It simply starts, loads configuration, set the different worker, launches
-    the main polling thread and waits for the end.
+    the main thread and waits for the end.
     """
 
     def init_worker(self, config):

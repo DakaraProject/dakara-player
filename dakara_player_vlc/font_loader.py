@@ -63,6 +63,13 @@ class FontLoaderLinux(FontLoader):
 
     It symlinks fonts to load in the user fonts directory. On exit, it
     removes the created symlinks.
+
+    Example of use:
+
+    >>> with FontLoaderLinux() as loader:
+    ...     loader.load()
+    ...     # do stuff while fonts are loaded
+    >>> # now fonts are unloaded
     """
 
     GREETINGS = "Font loader for Linux selected"
@@ -175,6 +182,13 @@ class FontLoaderWindows(FontLoader):
 
     It cannot do anything, since it is impossible to load fonts on Windows
     programatically, as for now. It simply asks the user to do so.
+
+    Example of use:
+
+    >>> with FontLoaderWindows() as loader:
+    ...     loader.load() # prompts the user to install fonts manually
+    ...     # do stuff while fonts are loaded
+    >>> # fonts are not unloaded, as they were manually installed
     """
 
     GREETINGS = "Font loader for Windows selected"
