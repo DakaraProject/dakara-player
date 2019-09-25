@@ -1,6 +1,6 @@
 black==19.3b0; python_version >= '3.6'
-dakarabase==1.0.0
-flake8==3.5.0
+dakarabase==1.1.0
+flake8==3.7.8
 Jinja2==2.10.1
 path.py<12.1,>=12.0
 python-vlc==1.1.2
