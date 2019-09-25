@@ -292,7 +292,7 @@ class TextGeneratorIntegrationTestCase(TestCase):
         result = self.text_generator.create_idle_text(self.idle_info)
 
         # check file content
-        idle_text_content = self.idle_text_path.text()
+        idle_text_content = self.idle_text_path.text(encoding="utf8")
         self.assertEqual(idle_text_content, result)
 
     def test_create_transition_text(self):
@@ -302,5 +302,5 @@ class TextGeneratorIntegrationTestCase(TestCase):
         result = self.text_generator.create_transition_text(self.playlist_entry)
 
         # check file content
-        transition_text_content = self.transition_text_path.text()
+        transition_text_content = self.transition_text_path.text(encoding="utf8")
         self.assertEqual(transition_text_content, result)
