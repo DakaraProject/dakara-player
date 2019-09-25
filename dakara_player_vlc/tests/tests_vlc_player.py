@@ -122,7 +122,7 @@ class VlcPlayerTestCase(TestCase):
             EventType.MediaPlayerEndReached, callback
         )
 
-    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version")
+    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version", autospec=True)
     def test_check_vlc_version(self, mocked_libvlc_get_version):
         """Test to check a VLC version
         """
@@ -147,7 +147,7 @@ class VlcPlayerTestCase(TestCase):
         # assert that test screen parameters are empty
         self.assertListEqual(vlc_player.media_parameters_text_screen, [])
 
-    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version")
+    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version", autospec=True)
     def test_check_vlc_version_3(self, mocked_libvlc_get_version):
         """Test to check VLC version 3
         """
@@ -348,7 +348,7 @@ class VlcPlayerTestCase(TestCase):
         vlc_player.callbacks["started_song"].assert_not_called()
         mocked_create_thread.assert_not_called()
 
-    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_errmsg")
+    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_errmsg", autospec=True)
     def test_handle_encountered_error(self, mocked_libvcl_errmsg):
         """Test error callback
         """

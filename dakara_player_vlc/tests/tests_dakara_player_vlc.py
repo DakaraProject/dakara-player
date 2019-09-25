@@ -84,12 +84,17 @@ class DakaraWorkerTestCase(TestCase):
             ],
         )
 
-    @patch("dakara_player_vlc.dakara_player_vlc.TemporaryDirectory")
-    @patch("dakara_player_vlc.dakara_player_vlc.FontLoader")
-    @patch("dakara_player_vlc.dakara_player_vlc.VlcPlayer")
-    @patch("dakara_player_vlc.dakara_player_vlc.DakaraServerHTTPConnection")
-    @patch("dakara_player_vlc.dakara_player_vlc.DakaraServerWebSocketConnection")
-    @patch("dakara_player_vlc.dakara_player_vlc.DakaraManager")
+    @patch("dakara_player_vlc.dakara_player_vlc.TemporaryDirectory", autospec=True)
+    @patch("dakara_player_vlc.dakara_player_vlc.FontLoader", autospec=True)
+    @patch("dakara_player_vlc.dakara_player_vlc.VlcPlayer", autospec=True)
+    @patch(
+        "dakara_player_vlc.dakara_player_vlc.DakaraServerHTTPConnection", autospec=True
+    )
+    @patch(
+        "dakara_player_vlc.dakara_player_vlc.DakaraServerWebSocketConnection",
+        autospec=True,
+    )
+    @patch("dakara_player_vlc.dakara_player_vlc.DakaraManager", autospec=True)
     def test_run(
         self,
         mocked_dakara_manager_class,

@@ -46,8 +46,8 @@ class GetAllFontsTestCase(TestCase):
     """Test the `get_all_fonts` function
     """
 
-    @patch("dakara_player_vlc.resources_manager.resource_filename")
-    @patch("dakara_player_vlc.resources_manager.LIST_FONTS")
+    @patch("dakara_player_vlc.resources_manager.resource_filename", autospec=True)
+    @patch("dakara_player_vlc.resources_manager.LIST_FONTS", autospec=True)
     def test(self, mocked_list_fonts, mocked_resource_filename):
         """Test to get all the fonts
         """

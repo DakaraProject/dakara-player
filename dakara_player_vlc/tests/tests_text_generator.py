@@ -34,8 +34,8 @@ class TextGeneratorTestCase(TestCase):
 
     @patch.object(Path, "open", new_callable=mock_open)
     @patch("dakara_player_vlc.text_generator.ICON_MAP_FILE", "icon_map_file")
-    @patch("dakara_player_vlc.text_generator.get_file")
-    @patch("dakara_player_vlc.text_generator.json.load")
+    @patch("dakara_player_vlc.text_generator.get_file", autospec=True)
+    @patch("dakara_player_vlc.text_generator.json.load", autospec=True)
     def test_load_icon_map(self, mocked_load, mocked_get_file, mocked_open):
         """Test to load the icon map
         """

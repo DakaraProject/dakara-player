@@ -13,7 +13,9 @@ class BackgroundLoaderTestCase(TestCase):
     """Test the loader for backgrounds
     """
 
-    @patch("dakara_player_vlc.background_loader.exists", return_value=True)
+    @patch(
+        "dakara_player_vlc.background_loader.exists", return_value=True, autospec=True
+    )
     def test_load_default_name_default_directory(self, mocked_exists):
         """Test to load one default background from defauld directory
         """
@@ -38,7 +40,9 @@ class BackgroundLoaderTestCase(TestCase):
         # assert the call of the mocked method
         mocked_exists.assert_called_with(Path("default/background.png").normpath())
 
-    @patch("dakara_player_vlc.background_loader.exists", return_value=True)
+    @patch(
+        "dakara_player_vlc.background_loader.exists", return_value=True, autospec=True
+    )
     def test_load_default_name_custom_directory(self, mocked_exists):
         """Test to load one default background from custom directory
         """
@@ -63,7 +67,9 @@ class BackgroundLoaderTestCase(TestCase):
         # assert the call of the mocked method
         mocked_exists.assert_called_with(Path("custom/background.png").normpath())
 
-    @patch("dakara_player_vlc.background_loader.exists", return_value=True)
+    @patch(
+        "dakara_player_vlc.background_loader.exists", return_value=True, autospec=True
+    )
     def test_load_custom_name_custom_directory(self, mocked_exists):
         """Test to load one custom background from custom directory
         """
@@ -89,7 +95,9 @@ class BackgroundLoaderTestCase(TestCase):
         # assert the call of the mocked method
         mocked_exists.assert_called_with(Path("custom/custom.png").normpath())
 
-    @patch("dakara_player_vlc.background_loader.exists", return_value=True)
+    @patch(
+        "dakara_player_vlc.background_loader.exists", return_value=True, autospec=True
+    )
     def test_load_custom_name_default_directory(self, mocked_exists):
         """Test to load one custom background from default directory
 
@@ -117,7 +125,7 @@ class BackgroundLoaderTestCase(TestCase):
         # assert the call of the mocked method
         mocked_exists.assert_called_with(Path("default/background.png").normpath())
 
-    @patch("dakara_player_vlc.background_loader.exists")
+    @patch("dakara_player_vlc.background_loader.exists", autospec=True)
     def test_load_fallback_default_name_custom_directory(self, mocked_exists):
         """Test to fallback to load one default background from custom directory
 
@@ -153,7 +161,7 @@ class BackgroundLoaderTestCase(TestCase):
             ]
         )
 
-    @patch("dakara_player_vlc.background_loader.exists")
+    @patch("dakara_player_vlc.background_loader.exists", autospec=True)
     def test_load_fallback_default_name_default_directory(self, mocked_exists):
         """Test to fallback to load one default background from default directory
 
@@ -191,7 +199,7 @@ class BackgroundLoaderTestCase(TestCase):
             ]
         )
 
-    @patch("dakara_player_vlc.background_loader.exists")
+    @patch("dakara_player_vlc.background_loader.exists", autospec=True)
     def test_load_error(self, mocked_exists):
         """Test to load one unexisting background
 
@@ -232,7 +240,9 @@ class BackgroundLoaderTestCase(TestCase):
             ]
         )
 
-    @patch("dakara_player_vlc.background_loader.exists", return_value=True)
+    @patch(
+        "dakara_player_vlc.background_loader.exists", return_value=True, autospec=True
+    )
     def test_load_none_filename(self, mocked_exists):
         """Test to load a None custom filename
         """
