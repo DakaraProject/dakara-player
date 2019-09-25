@@ -1,6 +1,5 @@
 import shutil
 import tempfile
-import time
 from unittest import TestCase
 from unittest.mock import MagicMock, patch, ANY
 from threading import Event
@@ -508,8 +507,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.vlc_player.load()
 
     def tearDown(self):
-        # remove temporary directory after 1 second
-        time.sleep(1)
+        # remove temporary directory
         shutil.rmtree(self.temp)
 
     @staticmethod
@@ -555,9 +553,17 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # TODO check which subtitle file is read
             # seems impossible to do for now
 
+            # close the player
+            self.vlc_player.stop_player()
+
         # assert the effect on logs
         self.assertListEqual(
-            logger.output, ["DEBUG:dakara_player_vlc.vlc_player:Playing idle screen"]
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.vlc_player:Playing idle screen",
+                "INFO:dakara_player_vlc.vlc_player:Stopping player",
+                "DEBUG:dakara_player_vlc.vlc_player:Stopped player",
+            ],
         )
 
     def test_play_playlist_entry(self):
