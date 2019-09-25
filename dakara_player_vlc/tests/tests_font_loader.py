@@ -140,8 +140,8 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
     @patch("dakara_player_vlc.font_loader.os.symlink", autospec=True)
-    @patch("dakara_player_vlc.font_loader.islink", autospec=True)
-    @patch("dakara_player_vlc.font_loader.isfile", autospec=True)
+    @patch("dakara_player_vlc.font_loader.islink")
+    @patch("dakara_player_vlc.font_loader.isfile")
     def test_load_font_user(self, mocked_isfile, mocked_islink, mocked_symlink):
         """Test to load one font which is in user directory
         """
