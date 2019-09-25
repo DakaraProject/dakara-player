@@ -1,13 +1,13 @@
 from unittest import TestCase
-from unittest.mock import patch, ANY, call
+from unittest.mock import ANY, call, patch
 
 from path import Path
 from dakara_base.resources_manager import get_file
 
 from dakara_player_vlc.resources_manager import (
+    get_all_fonts,
     get_background,
     get_template,
-    get_all_fonts,
 )
 
 

@@ -1,6 +1,6 @@
 from pkg_resources import resource_filename
 
-from dakara_base.resources_manager import resource_listdir, generate_get_resource
+from dakara_base.resources_manager import generate_get_resource, resource_listdir
 from path import Path
 
 

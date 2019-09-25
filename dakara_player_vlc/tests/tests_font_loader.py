@@ -1,6 +1,6 @@
+import sys
 from unittest import TestCase, skipUnless
 from unittest.mock import patch, call
-import sys
 
 from path import Path
 

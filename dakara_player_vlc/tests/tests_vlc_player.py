@@ -1,19 +1,19 @@
 import shutil
 import tempfile
+from queue import Queue
+from threading import Event
 from unittest import TestCase
 from unittest.mock import MagicMock, patch, ANY
-from threading import Event
-from queue import Queue
 
 from dakara_base.resources_manager import get_file
-from vlc import State, EventType
 from path import Path
+from vlc import State, EventType
 
 from dakara_player_vlc.vlc_player import (
-    VlcPlayer,
-    mrl_to_path,
     IDLE_BG_NAME,
+    mrl_to_path,
     TRANSITION_BG_NAME,
+    VlcPlayer,
 )
 
 from dakara_player_vlc.resources_manager import get_background

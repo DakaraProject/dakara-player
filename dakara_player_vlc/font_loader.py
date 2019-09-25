@@ -1,6 +1,6 @@
-import os
-import sys
 import logging
+import sys
+import os
 from abc import ABC, abstractmethod
 from os.path import isfile, islink
 

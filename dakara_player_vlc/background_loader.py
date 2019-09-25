@@ -1,8 +1,8 @@
 import logging
 from os.path import exists
 
-from path import Path
 from dakara_base.exceptions import DakaraError
+from path import Path
 
 
 logger = logging.getLogger(__name__)

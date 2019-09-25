@@ -1,7 +1,7 @@
-from unittest import TestCase
-from unittest.mock import ANY, patch, MagicMock
-from threading import Event
 from queue import Queue
+from threading import Event
+from unittest import TestCase
+from unittest.mock import ANY, MagicMock, patch
 
 from dakara_player_vlc.dakara_server import (
     DakaraServerHTTPConnection,

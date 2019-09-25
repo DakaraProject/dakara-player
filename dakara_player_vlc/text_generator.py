@@ -1,9 +1,9 @@
-import logging
 import json
+import logging
 
-from jinja2 import Environment, FileSystemLoader, ChoiceLoader
-from dakara_base.resources_manager import get_file
 from dakara_base.exceptions import DakaraError
+from dakara_base.resources_manager import get_file
+from jinja2 import ChoiceLoader, Environment, FileSystemLoader
 from path import Path
 
 from dakara_player_vlc.resources_manager import PATH_TEMPLATES

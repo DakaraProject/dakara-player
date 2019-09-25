@@ -1,12 +1,12 @@
 from unittest import TestCase
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
 from dakara_base.resources_manager import get_file
 from path import Path
 
 from dakara_player_vlc.text_generator import (
-    TextGenerator,
     IDLE_TEMPLATE_NAME,
+    TextGenerator,
     TRANSITION_TEMPLATE_NAME,
 )
 

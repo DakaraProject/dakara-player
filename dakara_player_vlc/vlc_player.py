@@ -1,17 +1,17 @@
 import logging
 import urllib
-from threading import Timer
 from pkg_resources import parse_version
+from threading import Timer
 
 import vlc
+from dakara_base.safe_workers import Worker
 from vlc import Instance
 from path import Path
-from dakara_base.safe_workers import Worker
 
-from dakara_player_vlc.version import __version__
 from dakara_player_vlc.background_loader import BackgroundLoader
-from dakara_player_vlc.text_generator import TextGenerator
 from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
+from dakara_player_vlc.text_generator import TextGenerator
+from dakara_player_vlc.version import __version__
 
 
 TRANSITION_BG_NAME = "transition.png"

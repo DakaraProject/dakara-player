@@ -1,19 +1,19 @@
 import logging
-from tempfile import TemporaryDirectory
 from contextlib import ExitStack
 from pkg_resources import parse_version
+from tempfile import TemporaryDirectory
 
-from dakara_base.safe_workers import WorkerSafeThread, Runner
+from dakara_base.safe_workers import Runner, WorkerSafeThread
 from path import Path
 
-from dakara_player_vlc.version import __version__, __date__
-from dakara_player_vlc.vlc_player import VlcPlayer
+from dakara_player_vlc.font_loader import get_font_loader_class
+from dakara_player_vlc.dakara_manager import DakaraManager
 from dakara_player_vlc.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
 )
-from dakara_player_vlc.dakara_manager import DakaraManager
-from dakara_player_vlc.font_loader import get_font_loader_class
+from dakara_player_vlc.version import __date__, __version__
+from dakara_player_vlc.vlc_player import VlcPlayer
 
 FontLoader = get_font_loader_class()
 
