@@ -1,5 +1,6 @@
 import shutil
 import tempfile
+import time
 from unittest import TestCase
 from unittest.mock import MagicMock, patch, ANY
 from threading import Event
@@ -507,7 +508,8 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.vlc_player.load()
 
     def tearDown(self):
-        # remove temporary directory
+        # remove temporary directory after 1 second
+        time.sleep(1)
         shutil.rmtree(self.temp)
 
     @staticmethod
