@@ -332,7 +332,7 @@ class VlcPlayer(Worker):
         self.media_pending.add_options(*self.media_parameters)
 
         # create the transition screen
-        with self.transition_text_path.open("w") as file:
+        with self.transition_text_path.open("w", encoding="utf8") as file:
             file.write(self.text_generator.create_transition_text(playlist_entry))
 
         media_transition = self.instance.media_new_path(
@@ -362,7 +362,7 @@ class VlcPlayer(Worker):
         media = self.instance.media_new_path(self.background_loader.backgrounds["idle"])
 
         # create the idle screen
-        with self.idle_text_path.open("w") as file:
+        with self.idle_text_path.open("w", encoding="utf8") as file:
             file.write(
                 self.text_generator.create_idle_text(
                     {
