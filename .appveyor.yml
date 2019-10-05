@@ -42,7 +42,7 @@ install:
 # command to run tests
 test_script:
   # run tests
-  - "py -%PYTHON_VERSION% -m coverage run ./tests.py -v"
+  - "py -%PYTHON_VERSION% -m coverage run --source dakara_player_vlc ./tests.py -v"
 
   # run code formatting tests
   - "if NOT %PYTHON_VERSION% == 3.5 (py -%PYTHON_VERSION% -m  black . --check)"

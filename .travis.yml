@@ -24,7 +24,7 @@ install:
 # command to run tests
 script:
   # run tests
-  - python -m coverage run ./tests.py -v
+  - python -m coverage run --source dakara_player_vlc ./tests.py -v
 
   # run code formatting tests
   - if [[ $TRAVIS_PYTHON_VERSION != 3.5 ]]; then black . --check; fi
