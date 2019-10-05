@@ -7,3 +7,5 @@ pyaml==17.12.1
 python-vlc==1.1.2
 requests==2.21.0
 websocket-client==0.48.0
+coverage
+codecov
