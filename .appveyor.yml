@@ -29,15 +29,21 @@ environment:
 
 # check current python version
 init:
-  - "echo %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+  - "py -%PYTHON_VERSION% --version"
 
 # command to install system and python dependencies
 install:
+  # install system dependencies
   - "cinst vlc"
-  - "%PYTHON%/Scripts/pip.exe install -r requirements.txt"
+
+  # install dependencies for test
+  - "py -%PYTHON_VERSION% -m pip install -r requirements.txt"
 
 # command to run tests
 test_script:
-  - "%PYTHON%/python.exe ./tests.py -v"
-  - "if NOT %PYTHON_VERSION% == 3.5 (%PYTHON%/Scripts/black.exe . --check)"
-  - "%PYTHON%/Scripts/flake8.exe"
+  # run tests
+  - "py -%PYTHON_VERSION% ./tests.py -v"
+
+  # run code formatting tests
+  - "if NOT %PYTHON_VERSION% == 3.5 (py -%PYTHON_VERSION% -m  black . --check)"
+  - "py -%PYTHON_VERSION% -m flake8"

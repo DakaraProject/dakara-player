@@ -23,6 +23,9 @@ install:
 
 # command to run tests
 script:
+  # run tests
   - ./tests.py -v
+
+  # run code formatting tests
   - if [[ $TRAVIS_PYTHON_VERSION != 3.5 ]]; then black . --check; fi
   - flake8
