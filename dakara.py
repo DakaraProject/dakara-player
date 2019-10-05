@@ -21,7 +21,7 @@ def get_parser():
     Returns:
         argparse.ArgumentParser: parser.
     """
-    parser = ArgumentParser(description="Player for the Dakara project")
+    parser = ArgumentParser(description="VLC based player for the Dakara project")
 
     parser.add_argument(
         "-d",
@@ -74,6 +74,9 @@ if __name__ == "__main__":
         exit(1)
 
     except BaseException as error:
+        if args.debug:
+            raise
+
         logger.exception("Unexpected error: %s", str(error))
         logger.critical(
             "Please fill a bug report at "
