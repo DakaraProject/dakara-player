@@ -1,28 +1,24 @@
-import os
 import logging
-from tempfile import TemporaryDirectory
 from contextlib import ExitStack
 from pkg_resources import parse_version
+from tempfile import TemporaryDirectory
 
-import coloredlogs
-import yaml
+from dakara_base.safe_workers import Runner, WorkerSafeThread
+from path import Path
 
-from dakara_player_vlc.version import __version__, __date__
-from dakara_player_vlc.safe_workers import WorkerSafeThread, Runner
-from dakara_player_vlc.text_generator import TextGenerator
-from dakara_player_vlc.vlc_player import VlcPlayer
+from dakara_player_vlc.font_loader import get_font_loader_class
+from dakara_player_vlc.dakara_manager import DakaraManager
 from dakara_player_vlc.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
 )
-
-from dakara_player_vlc.dakara_manager import DakaraManager
-from dakara_player_vlc.font_loader import get_font_loader_class
+from dakara_player_vlc.version import __date__, __version__
+from dakara_player_vlc.vlc_player import VlcPlayer
 
 FontLoader = get_font_loader_class()
 
 
-logger = logging.getLogger("dakara_player_vlc")
+logger = logging.getLogger(__name__)
 
 
 class DakaraPlayerVlc(Runner):
@@ -32,50 +28,42 @@ class DakaraPlayerVlc(Runner):
     user Ctrl+C to be fired.
     """
 
-    def init_runner(self, config_path, debug):
+    def init_runner(self, config):
         """Initialization
 
         Creates the worker stop event.
 
         Args:
-            config_path (str): path to the config file. Will be passed to the
-                worker, who uses it.
-            debug (bool): run in debug mode.
+            config (dict): configuration for the program.
         """
         # store arguments
-        self.config_path = config_path
-        self.debug = debug
+        self.config = config
 
         logger.debug("Started main")
 
     def run(self):
         """Launch the worker and wait for the end
         """
-        self.run_safe(DakaraWorker, self.config_path, self.debug)
+        self.run_safe(DakaraWorker, self.config)
 
 
 class DakaraWorker(WorkerSafeThread):
     """Class associated with the worker thread
 
     It simply starts, loads configuration, set the different worker, launches
-    the main polling thread and waits for the end.
+    the main thread and waits for the end.
     """
 
-    def init_worker(self, config_path, debug):
+    def init_worker(self, config):
         """Initialization
 
         Load the config and set the logger loglevel.
 
         Args:
-            config_path (str): path to the config file.
-            debug (bool): run in debug mode.
+            config (dict): configuration for the program.
         """
-        # load config
-        self.config = self.load_config(config_path, debug)
-
-        # configure loader
-        self.configure_logger()
-        logger.debug("Starting worker")
+        self.config = config
+        logger.debug("Starting Dakara worker")
 
         # set thread
         self.thread = self.create_thread(target=self.run)
@@ -107,31 +95,33 @@ class DakaraWorker(WorkerSafeThread):
         # be executed.
         with ExitStack() as stack:
             # temporary directory
-            tempdir = stack.enter_context(TemporaryDirectory(suffix=".dakara"))
+            tempdir = Path(stack.enter_context(TemporaryDirectory(suffix=".dakara")))
 
             # font loader
             font_loader = stack.enter_context(FontLoader())
             font_loader.load()
 
-            # text screen generator
-            text_generator = TextGenerator(
-                self.config["player"].get("templates") or {}, tempdir
-            )
-
             # vlc player
             vlc_player = stack.enter_context(
-                VlcPlayer(self.stop, self.errors, self.config["player"], text_generator)
+                VlcPlayer(self.stop, self.errors, self.config["player"], tempdir)
             )
+            vlc_player.load()
 
             # communication with the dakara HTTP server
-            dakara_server_http = DakaraServerHTTPConnection(self.config["server"])
+            dakara_server_http = DakaraServerHTTPConnection(
+                self.config["server"], endpoint_prefix="api/", mute_raise=True
+            )
             dakara_server_http.authenticate()
             token_header = dakara_server_http.get_token_header()
 
             # communication with the dakara WebSocket server
             dakara_server_websocket = stack.enter_context(
                 DakaraServerWebSocketConnection(
-                    self.stop, self.errors, self.config["server"], token_header
+                    self.stop,
+                    self.errors,
+                    self.config["server"],
+                    header=token_header,
+                    endpoint="ws/playlist/device/",
                 )
             )
 
@@ -149,65 +139,11 @@ class DakaraWorker(WorkerSafeThread):
             # leaving this method means leaving all the context managers and
             # stopping the program
 
-    @staticmethod
-    def load_config(config_path, debug):
-        """Load the config from config file
-
-        Args:
-            config_path (str): path to the config file.
-            debug (bool): run in debug mode.
-
-        Returns:
-            dict: dictionary of the config.
-        """
-        logger.info("Reading config file '{}'".format(config_path))
-
-        # check the config file is present
-        if not os.path.isfile(config_path):
-            raise IOError("No config file found")
-
-        # load and parse the file
-        with open(config_path) as file:
-            try:
-                config = yaml.load(file, Loader=yaml.Loader)
-
-            except yaml.parser.ParserError as error:
-                raise IOError("Unable to read config file") from error
-
-        # check file content
-        for key in ("player", "server"):
-            if key not in config:
-                raise ValueError("Invalid config file, missing '{}'".format(key))
-
-        # if debug is set as argument, override the config
-        if debug:
-            config["loglevel"] = "DEBUG"
-
-        return config
-
-    def configure_logger(self):
-        """Set the logger config
-
-        Set a validated logging level from configuration.
-        """
-        loglevel = self.config.get("loglevel")
-
-        # if no loglevel is provided, keep the default one (info)
-        if loglevel is None:
-            return
-
-        # otherwise check if it is valid and apply it
-        loglevel_numeric = getattr(logging, loglevel.upper(), None)
-        if not isinstance(loglevel_numeric, int):
-            raise ValueError("Invalid loglevel in config file: '{}'".format(loglevel))
-
-        coloredlogs.set_level(loglevel_numeric)
-
     def check_version(self):
         """Display version number and check if on release
         """
         # log player versio
-        logger.info("Dakara player {} ({})".format(__version__, __date__))
+        logger.info("Dakara player %s (%s)", __version__, __date__)
 
         # check version is a release
         version = parse_version(__version__)
