@@ -348,8 +348,7 @@ class VlcPlayerTestCase(TestCase):
         vlc_player.callbacks["started_song"].assert_not_called()
         mocked_create_thread.assert_not_called()
 
-    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_errmsg", autospec=True)
-    def test_handle_encountered_error(self, mocked_libvcl_errmsg):
+    def test_handle_encountered_error(self):
         """Test error callback
         """
         # create instance
@@ -357,7 +356,6 @@ class VlcPlayerTestCase(TestCase):
         vlc_player.load()
 
         # mock the call
-        mocked_libvcl_errmsg.return_value = b"error"
         vlc_player.set_callback("error", MagicMock())
         vlc_player.playing_id = 999
 
@@ -370,13 +368,14 @@ class VlcPlayerTestCase(TestCase):
             logger.output,
             [
                 "DEBUG:dakara_player_vlc.vlc_player:Error callback called",
-                "ERROR:dakara_player_vlc.vlc_player:error",
+                "ERROR:dakara_player_vlc.vlc_player:Unable to play current media",
             ],
         )
 
         # assert the call
-        mocked_libvcl_errmsg.assert_called_with()
-        vlc_player.callbacks["error"].assert_called_with(999, "error")
+        vlc_player.callbacks["error"].assert_called_with(
+            999, "Unable to play current media"
+        )
         self.assertIsNone(vlc_player.playing_id)
         self.assertFalse(vlc_player.in_transition)
 
