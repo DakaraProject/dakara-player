@@ -6,7 +6,7 @@ from dakara_base.exceptions import DakaraError
 from dakara_base.config import load_config, create_logger, set_loglevel
 from path import Path
 
-from dakara_player_vlc.dakara_player_vlc import DakaraPlayerVlc
+from dakara_player_vlc import DakaraPlayerVlc
 
 
 CONFIG_FILE_PATH = "config.yaml"
@@ -39,7 +39,7 @@ def get_parser():
     return parser
 
 
-def runplayer(args):
+def play(args):
     """Execute the player
 
     Args:
@@ -55,16 +55,12 @@ def runplayer(args):
     dakara.run()
 
 
-if __name__ == "__main__":
+def main():
     parser = get_parser()
     args = parser.parse_args()
 
     try:
-        runplayer(args)
-
-    except SystemExit:
-        logger.info("Quit by system")
-        exit(254)
+        play(args)
 
     except DakaraError as error:
         if args.debug:
@@ -85,3 +81,7 @@ if __name__ == "__main__":
         exit(128)
 
     exit(0)
+
+
+if __name__ == "__main__":
+    main()

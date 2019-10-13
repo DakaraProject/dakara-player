@@ -19,12 +19,16 @@ before_install:
 
 # command to install python dependencies
 install:
-  - pip install -r requirements.txt
+  # the features used in setup.cfg require at decent version of setuptools
+  - python -m pip install --upgrade "setuptools>=40.0"
+
+  # install dependencies for test
+  - python -m pip install -e ".[tests]"
 
 # command to run tests
 script:
   # run tests
-  - python -m coverage run --source dakara_player_vlc -m unittest -v
+  - python -m coverage run setup.py test
 
   # run code formatting tests
   - if [[ $TRAVIS_PYTHON_VERSION != 3.5 ]]; then black . --check; fi
