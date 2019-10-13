@@ -56,13 +56,7 @@ Activate the virtual environment, then start the player at the root level of the
 You can run the tests of the player. For that, activate the virtual environment, then type:
 
 ```sh
-./tests.py
-```
-
-You can execute a specific test by passing its name to the command (like `unittest`'s default command line argument):
-
-```sh
-./tests.py test_module_name
+python -m unittest
 ```
 
 #### Hooks

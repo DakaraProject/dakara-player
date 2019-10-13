@@ -1,11 +1,7 @@
-coloredlogs==10.0
-black==19.3b0; python_version >= '3.6'
-flake8==3.5.0
-Jinja2==2.10.1
-path.py==11.0.1
-pyaml==17.12.1
-python-vlc==1.1.2
-requests==2.21.0
-websocket-client==0.48.0
+black; python_version >= '3.6'
 coverage
 codecov
+dakarabase<1.2.0,>=1.1.0
+flake8
+Jinja2<2.11.0,>=2.10.1
+python-vlc<1.2.0,>=1.1.2

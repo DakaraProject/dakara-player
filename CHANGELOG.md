@@ -30,6 +30,10 @@
 
 ## Unreleased
 
+### Changed
+
+- In the config file, the `player.transition_duration` is moved to `player.durations.transition_duration`.
+
 ## 1.4.0 - 2019-05-03
 
 ### Changed

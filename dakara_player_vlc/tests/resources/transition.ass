@@ -18,17 +18,17 @@ Style: detail-icon,Roboto Light,50,&H00A01286,&H00191919,&H00333333,&H00000000,0
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:00.00,0:00:05.00,title,,0,0,0,,{\fad(500, 0)}{{ song.title }}
-{% for artist in song.artists %}
+Dialogue: 0,0:00:00.00,0:00:05.00,title,,0,0,0,,{\fad(500, 0)}Song title
+
 Dialogue: 0,0:00:00.10,0:00:05.00,detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome\fs40}{\r} 
-Dialogue: 0,0:00:00.10,0:00:05.00,detail-text,,0,0,0,,{\fad(500, 0)}{{ artist.name }}
-{% endfor %}
-{% for work in song.works %}
-Dialogue: 0,0:00:00.20,0:00:05.00,detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome\fs40}{{ work.work.work_type.icon_name|icon }}{\r} 
-Dialogue: 0,0:00:00.20,0:00:05.00,detail-text,,0,0,0,,{\fad(500, 0)}{{ work.work.title }}{% if work.work.subtitle %} {\alpha&H80&}{{ work.work.subtitle }}{\r}{% endif %} {{ work.link_type }}{{ work.link_type_number or '' }}
-{% endfor %}
-Dialogue: 0,0:00:00.10,0:00:05.00,detail-icon,,0,0,70,,{\fad(500, 0)}{\fnFontAwesome\fs40}{{ "user"|icon }}{\r} 
-Dialogue: 0,0:00:00.10,0:00:05.00,detail-text,,0,0,70,,{\fad(500, 0)}{{ owner.username }}
+Dialogue: 0,0:00:00.10,0:00:05.00,detail-text,,0,0,0,,{\fad(500, 0)}Artist name
+
+
+Dialogue: 0,0:00:00.20,0:00:05.00,detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome\fs40}{\r} 
+Dialogue: 0,0:00:00.20,0:00:05.00,detail-text,,0,0,0,,{\fad(500, 0)}Work title {\alpha&H80&}Subtitle of the work{\r} OP1
+
+Dialogue: 0,0:00:00.10,0:00:05.00,detail-icon,,0,0,70,,{\fad(500, 0)}{\fnFontAwesome\fs40}{\r} 
+Dialogue: 0,0:00:00.10,0:00:05.00,detail-text,,0,0,70,,{\fad(500, 0)}User
 
 ; DON'T TOUCH THIS FILE!
 ; Your modification will be lost during the next update.
@@ -95,4 +95,3 @@ Dialogue: 0,0:00:00.10,0:00:05.00,detail-text,,0,0,70,,{\fad(500, 0)}{{ owner.us
 ; For further information about the Jinja2 template engine and its abilities,
 ; please consult the documentation:
 ; http://jinja.pocoo.org/docs/latest/
-

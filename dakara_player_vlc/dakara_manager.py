@@ -31,21 +31,25 @@ class DakaraManager:
         self.dakara_server_websocket = dakara_server_websocket
 
         # set player callbacks
-        self.vlc_player.set_started_transition_callback(self.handle_started_transition)
-        self.vlc_player.set_started_song_callback(self.handle_started_song)
-        self.vlc_player.set_could_not_play_callback(self.handle_could_not_play)
-        self.vlc_player.set_finished_callback(self.handle_finished)
-        self.vlc_player.set_paused_callback(self.handle_paused)
-        self.vlc_player.set_resumed_callback(self.handle_resumed)
-        self.vlc_player.set_error_callback(self.handle_error)
+        self.vlc_player.set_callback(
+            "started_transition", self.handle_started_transition
+        )
+        self.vlc_player.set_callback("started_song", self.handle_started_song)
+        self.vlc_player.set_callback("could_not_play", self.handle_could_not_play)
+        self.vlc_player.set_callback("finished", self.handle_finished)
+        self.vlc_player.set_callback("paused", self.handle_paused)
+        self.vlc_player.set_callback("resumed", self.handle_resumed)
+        self.vlc_player.set_callback("error", self.handle_error)
 
         # set dakara server websocket callbacks
-        self.dakara_server_websocket.set_idle_callback(self.play_idle_screen)
-        self.dakara_server_websocket.set_playlist_entry_callback(
-            self.play_playlist_entry
+        self.dakara_server_websocket.set_callback("idle", self.play_idle_screen)
+        self.dakara_server_websocket.set_callback(
+            "playlist_entry", self.play_playlist_entry
         )
-        self.dakara_server_websocket.set_command_callback(self.do_command)
-        self.dakara_server_websocket.set_connection_lost_callback(self.play_idle_screen)
+        self.dakara_server_websocket.set_callback("command", self.do_command)
+        self.dakara_server_websocket.set_callback(
+            "connection_lost", self.play_idle_screen
+        )
 
     def handle_error(self, playlist_entry_id, message):
         """Callback when a VLC error occurs
@@ -126,10 +130,13 @@ class DakaraManager:
             command (str): name of the command to execute.
 
         Raises:
-            ValueError: if the command is not known.
+            AssertError: if the command is not known.
         """
-        if command not in ("pause", "play", "skip"):
-            raise ValueError("Unknown command requested: '{}'".format(command))
+        assert command in (
+            "pause",
+            "play",
+            "skip",
+        ), "Unknown command requested: '{}'".format(command)
 
         if command == "pause":
             self.vlc_player.set_pause(True)

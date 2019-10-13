@@ -10,11 +10,6 @@ player:
   # Enable or disable fullscreen mode
   fullscreen: false
 
-  # Duration of the transition screen between two songs in seconds, won't work
-  # if the background file is a video.
-  # Default is 2 seconds.
-  # transition_duration: 2
-
   # Parameters for VLC
   # You can pass extra options to VLC through the media and/or instance
   # parameters. Bellow are listed some common ones. For other options, consult
@@ -100,33 +95,44 @@ player:
     # The fallback directory is 'dakara_player_vlc/resources/backgrounds'. To
     # customize your backgrounds, you can copy this fallback directory to some places
     # and use the content as a starter.
-    # You have to set this parameter in order to set 'transitionBackgroundName' and
-    # 'idleBackgroundName'.
+    # You have to set this parameter in order to set 'transition_background_name' and
+    # 'idle_background_name'.
     # directory: path/to/backgrounds/directory
 
     # Name of the background file of the transition screen.
     # In case of a picture, it will be displayed during 'transitionDuration'
     # seconds.
     # Default is 'transition.png'.
-    # You have to set 'backgrounds_directory' to set this parameter.
+    # You have to set 'directory' to set this parameter.
     # transition_background_name: transition_background.file
 
     # Name of the background file of the idle screen.
     # Default is 'idle.png'.
-    # You have to set 'backgrounds_directory' to set this parameter.
+    # You have to set 'directory' to set this parameter.
     # idle_background_name: idle_background.file
+
+  # Parameters for durations
+  durations:
+    # Duration of the transition screen between two songs in seconds, won't work
+    # if the background file is a video.
+    # Default is 2 seconds.
+    # transition_duration: 2
 
 # Parameters for the server
 server:
-  # Server address
+  # Server address (host and port given at the same time)
   address: 127.0.0.1:8000
+
+  # Server host and port (given distinctly)
+  # host: 127.0.0.1
+  # port: 8000
+
+  # Use a secured connection
+  # ssl: false
 
   # Credentials for server authentication
   login: login
   password: pass
-
-  # Use a secured connection
-  # ssl: false
 
   # Interval to reconnect to the server if connection lost (in seconds)
   # reconnect_interval: 5
@@ -137,4 +143,4 @@ server:
 # For debug level, you can call `dakara.py` with the `−d` flag to show
 # traceback on exceptions.
 # Default is 'info'
-loglevel: info
+# loglevel: info
