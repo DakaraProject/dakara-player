@@ -1,6 +1,6 @@
 # Dakara VLC player
 
-[![Travis CI Build Status](https://travis-ci.org/DakaraProject/dakara-player-vlc.svg?branch=develop)](https://travis-ci.org/DakaraProject/dakara-player-vlc)
+[![Travis CI Build Status](https://travis-ci.com/DakaraProject/dakara-player-vlc.svg?branch=develop)](https://travis-ci.com/DakaraProject/dakara-player-vlc)
 [![Appveyor CI Build status](https://ci.appveyor.com/api/projects/status/gcgpwu2i8vdwhb7y?svg=true)](https://ci.appveyor.com/project/neraste/dakara-player-vlc)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
