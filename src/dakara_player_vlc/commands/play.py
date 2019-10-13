@@ -3,13 +3,19 @@ import logging
 from argparse import ArgumentParser
 
 from dakara_base.exceptions import DakaraError
-from dakara_base.config import load_config, create_logger, set_loglevel
+from dakara_base.config import (
+    load_config,
+    create_logger,
+    set_loglevel,
+    get_config_file,
+    create_config_file,
+)
 from path import Path
 
 from dakara_player_vlc import DakaraPlayerVlc
 
 
-CONFIG_FILE_PATH = "config.yaml"
+CONFIG_FILE = "player_vlc.yaml"
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +27,10 @@ def get_parser():
     Returns:
         argparse.ArgumentParser: parser.
     """
+    # main parser
     parser = ArgumentParser(description="VLC based player for the Dakara project")
+
+    parser.set_defaults(function=play)
 
     parser.add_argument(
         "-d",
@@ -32,8 +41,25 @@ def get_parser():
 
     parser.add_argument(
         "--config",
-        help="path to the config file, default: '{}'".format(CONFIG_FILE_PATH),
-        default=CONFIG_FILE_PATH,
+        help="path to the config file, default: '{}'".format(
+            get_config_file(CONFIG_FILE)
+        ),
+        default=get_config_file(CONFIG_FILE),
+    )
+
+    # subparsers
+    subparsers = parser.add_subparsers(title="subcommands")
+
+    # create config subparser
+    create_config_subparser = subparsers.add_parser(
+        "create-config", help="Create a new config file in user directory"
+    )
+    create_config_subparser.set_defaults(function=create_config)
+
+    create_config_subparser.add_argument(
+        "--force",
+        help="overwrite previous config file if it exists",
+        action="store_true",
     )
 
     return parser
@@ -55,19 +81,29 @@ def play(args):
     dakara.run()
 
 
+def create_config(args):
+    """Create the config
+
+    Args:
+        args (argparse.Namespace): arguments from command line.
+    """
+    create_config_file("dakara_player_vlc.resources", CONFIG_FILE, args.force)
+
+
 def main():
     parser = get_parser()
     args = parser.parse_args()
 
     try:
-        play(args)
+        args.function(args)
+        value = 0
 
     except DakaraError as error:
         if args.debug:
             raise
 
         logger.critical(error)
-        exit(1)
+        value = 1
 
     except BaseException as error:
         if args.debug:
@@ -78,9 +114,9 @@ def main():
             "Please fill a bug report at "
             "https://github.com/DakaraProject/dakara-playel-vlc/issues"
         )
-        exit(128)
+        value = 128
 
-    exit(0)
+    exit(value)
 
 
 if __name__ == "__main__":
