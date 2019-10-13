@@ -175,7 +175,7 @@ class VlcPlayerTestCase(TestCase):
         """Test to check if the kara folder exists
         """
         # create instance
-        vlc_player, _ = self.get_instance()
+        vlc_player, _ = self.get_instance({"kara_folder": "/path/to/kara/directory"})
 
         # pretend the directory exists
         mocked_exists.return_value = True
@@ -191,7 +191,7 @@ class VlcPlayerTestCase(TestCase):
         """Test to check if the kara folder does not exist
         """
         # create instance
-        vlc_player, _ = self.get_instance()
+        vlc_player, _ = self.get_instance({"kara_folder": "/path/to/kara/directory"})
 
         # pretend the directory does not exist
         mocked_exists.return_value = False
@@ -201,7 +201,10 @@ class VlcPlayerTestCase(TestCase):
             vlc_player.check_kara_folder_path()
 
         # assert the error
-        self.assertEqual(str(error.exception), 'Karaoke folder "" does not exist')
+        self.assertEqual(
+            str(error.exception),
+            'Karaoke folder "/path/to/kara/directory" does not exist',
+        )
 
     def test_set_default_callbacks(self):
         """Test to set the default callbacks
