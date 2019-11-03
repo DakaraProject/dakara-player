@@ -34,7 +34,7 @@ script:
   - python -m coverage run setup.py test
 
   # run commands
-  - python -m coverage run -m dakara_player_vlc --version
+  - python -m dakara_player_vlc --version
   - dakara-play-vlc --version
 
   # run code formatting tests
