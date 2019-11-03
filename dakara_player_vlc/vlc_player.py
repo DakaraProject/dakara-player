@@ -288,14 +288,7 @@ class VlcPlayer(Worker):
         """
         logger.debug("Error callback called")
 
-        # according to this post in the VLC forum
-        # (https://forum.videolan.org/viewtopic.php?t=90720), it is very
-        # unlikely that any error message will be caught this way
-        message = vlc.libvlc_errmsg() or "No details, consult player logs"
-
-        if isinstance(message, bytes):
-            message = message.decode()
-
+        message = "Unable to play current media"
         logger.error(message)
         self.callbacks["finished"](self.playing_id)
         self.callbacks["error"](self.playing_id, message)
