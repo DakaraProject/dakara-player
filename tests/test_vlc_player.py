@@ -14,6 +14,7 @@ from dakara_player_vlc.vlc_player import (
     mrl_to_path,
     TRANSITION_BG_NAME,
     VlcPlayer,
+    KaraFolderNotFound,
 )
 
 from dakara_player_vlc.resources_manager import get_background
@@ -169,6 +170,42 @@ class VlcPlayerTestCase(TestCase):
             vlc_player.media_parameters_text_screen, ["no-sub-autodetect-file"]
         )
 
+    @patch.object(Path, "exists")
+    def test_check_kara_folder_path(self, mocked_exists):
+        """Test to check if the kara folder exists
+        """
+        # create instance
+        vlc_player, _ = self.get_instance({"kara_folder": "/path/to/kara/directory"})
+
+        # pretend the directory exists
+        mocked_exists.return_value = True
+
+        # call the method
+        vlc_player.check_kara_folder_path()
+
+        # assert the call
+        mocked_exists.assert_called_with()
+
+    @patch.object(Path, "exists")
+    def test_check_kara_folder_path_does_not_exist(self, mocked_exists):
+        """Test to check if the kara folder does not exist
+        """
+        # create instance
+        vlc_player, _ = self.get_instance({"kara_folder": "/path/to/kara/directory"})
+
+        # pretend the directory does not exist
+        mocked_exists.return_value = False
+
+        # call the method
+        with self.assertRaises(KaraFolderNotFound) as error:
+            vlc_player.check_kara_folder_path()
+
+        # assert the error
+        self.assertEqual(
+            str(error.exception),
+            'Karaoke folder "/path/to/kara/directory" does not exist',
+        )
+
     def test_set_default_callbacks(self):
         """Test to set the default callbacks
         """
@@ -200,8 +237,9 @@ class VlcPlayerTestCase(TestCase):
             [EventType.MediaPlayerEndReached, EventType.MediaPlayerEncounteredError],
         )
 
+    @patch.object(VlcPlayer, "check_kara_folder_path")
     @patch.object(VlcPlayer, "check_vlc_version")
-    def test_load(self, mocked_check_vlc_version):
+    def test_load(self, mocked_check_vlc_version, mocked_check_kara_folder_path):
         """Test to load the instance
         """
         # create instance
@@ -212,6 +250,7 @@ class VlcPlayerTestCase(TestCase):
 
         # assert the calls
         mocked_check_vlc_version.assert_called_with()
+        mocked_check_kara_folder_path.assert_called_with()
         vlc_player.player.set_fullscreen.assert_called_with(False)
         vlc_player.background_loader.load.assert_called_with()
         vlc_player.text_generator.load.assert_called_with()
@@ -222,7 +261,6 @@ class VlcPlayerTestCase(TestCase):
         """
         # create instance
         vlc_player, _ = self.get_instance()
-        vlc_player.load()
 
         # mock the system call
         mocked_exists.return_value = False
@@ -266,7 +304,6 @@ class VlcPlayerTestCase(TestCase):
         """
         # create instance
         vlc_player, _ = self.get_instance()
-        vlc_player.load()
 
         # mock the call
         vlc_player.in_transition = True
@@ -308,7 +345,6 @@ class VlcPlayerTestCase(TestCase):
         """
         # create instance
         vlc_player, _ = self.get_instance()
-        vlc_player.load()
 
         # mock the call
         vlc_player.in_transition = False
@@ -331,7 +367,6 @@ class VlcPlayerTestCase(TestCase):
         """
         # create instance
         vlc_player, _ = self.get_instance()
-        vlc_player.load()
 
         # mock the call
         vlc_player.in_transition = False
@@ -348,16 +383,13 @@ class VlcPlayerTestCase(TestCase):
         vlc_player.callbacks["started_song"].assert_not_called()
         mocked_create_thread.assert_not_called()
 
-    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_errmsg", autospec=True)
-    def test_handle_encountered_error(self, mocked_libvcl_errmsg):
+    def test_handle_encountered_error(self):
         """Test error callback
         """
         # create instance
         vlc_player, _ = self.get_instance()
-        vlc_player.load()
 
         # mock the call
-        mocked_libvcl_errmsg.return_value = b"error"
         vlc_player.set_callback("error", MagicMock())
         vlc_player.playing_id = 999
 
@@ -370,13 +402,14 @@ class VlcPlayerTestCase(TestCase):
             logger.output,
             [
                 "DEBUG:dakara_player_vlc.vlc_player:Error callback called",
-                "ERROR:dakara_player_vlc.vlc_player:error",
+                "ERROR:dakara_player_vlc.vlc_player:Unable to play current media",
             ],
         )
 
         # assert the call
-        mocked_libvcl_errmsg.assert_called_with()
-        vlc_player.callbacks["error"].assert_called_with(999, "error")
+        vlc_player.callbacks["error"].assert_called_with(
+            999, "Unable to play current media"
+        )
         self.assertIsNone(vlc_player.playing_id)
         self.assertFalse(vlc_player.in_transition)
 
