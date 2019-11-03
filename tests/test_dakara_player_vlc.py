@@ -30,17 +30,21 @@ class DakaraWorkerTestCase(TestCase):
     """Test the `DakaraWorker` class
     """
 
-    def setUp(self):
-        # save config
-        self.config = CONFIG
-
-        # save instances
-        self.stop = Event()
-        self.errors = Queue()
+    def test_init(self):
+        """Test to create the object
+        """
+        stop = Event()
+        errors = Queue()
 
         # create Dakara worker
-        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
-            self.dakara_worker = DakaraWorker(self.stop, self.errors, self.config)
+        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG") as logger:
+            DakaraWorker(stop, errors, CONFIG)
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            ["DEBUG:dakara_player_vlc.dakara_player_vlc:Starting Dakara worker"],
+        )
 
     @patch("dakara_player_vlc.dakara_player_vlc.TemporaryDirectory", autospec=True)
     @patch("dakara_player_vlc.dakara_player_vlc.FontLoader", autospec=True)
@@ -75,29 +79,34 @@ class DakaraWorkerTestCase(TestCase):
             mocked_font_loader_class.return_value.__enter__.return_value
         )
 
+        # create safe worker control objects
+        stop = Event()
+        errors = Queue()
+
+        # create Dakara worker
+        dakara_worker = DakaraWorker(stop, errors, CONFIG)
+
         # set the stop event
-        self.stop.set()
+        stop.set()
 
         # call the method
-        self.dakara_worker.run()
+        dakara_worker.run()
 
         # assert the call
         mocked_temporary_directory_class.assert_called_with(suffix=".dakara")
         mocked_font_loader_class.assert_called_with()
         mocked_font_loader.load.assert_called_with()
-        mocked_vlc_player_class.assert_called_with(
-            self.stop, self.errors, self.config["player"], ANY
-        )
+        mocked_vlc_player_class.assert_called_with(stop, errors, CONFIG["player"], ANY)
         mocked_vlc_player.load.assert_called_with()
         mocked_dakara_server_http_class.assert_called_with(
-            self.config["server"], endpoint_prefix="api/", mute_raise=True
+            CONFIG["server"], endpoint_prefix="api/", mute_raise=True
         )
         mocked_dakara_server_http.authenticate.assert_called_with()
         mocked_dakara_server_http.get_token_header.assert_called_with()
         mocked_dakara_server_websocket_class.assert_called_with(
-            self.stop,
-            self.errors,
-            self.config["server"],
+            stop,
+            errors,
+            CONFIG["server"],
             header="token",
             endpoint="ws/playlist/device/",
         )

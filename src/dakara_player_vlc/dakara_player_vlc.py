@@ -69,10 +69,12 @@ class DakaraWorker(WorkerSafeThread):
             config (dict): configuration for the program.
         """
         self.config = config
-        logger.debug("Starting Dakara worker")
 
         # set thread
         self.thread = self.create_thread(target=self.run)
+
+        # inform the user
+        logger.debug("Starting Dakara worker")
 
     def run(self):
         """Worker main method
