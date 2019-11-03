@@ -11,6 +11,7 @@ from dakara_base.config import load_config, create_logger, set_loglevel
 from path import Path
 
 from dakara_player_vlc import DakaraPlayerVlc
+from dakara_player_vlc.version import __version__, __date__
 
 
 CONFIG_FILE = "player_vlc.yaml"
@@ -39,7 +40,9 @@ def get_parser():
         argparse.ArgumentParser: parser.
     """
     # main parser
-    parser = ArgumentParser(description="VLC based player for the Dakara project")
+    parser = ArgumentParser(
+        prog="vlc-play", description="VLC based player for the Dakara project"
+    )
 
     parser.set_defaults(function=play)
 
@@ -56,6 +59,12 @@ def get_parser():
             get_config_file(CONFIG_FILE)
         ),
         default=get_config_file(CONFIG_FILE),
+    )
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s {} ({})".format(__version__, __date__),
     )
 
     # subparsers
