@@ -91,6 +91,7 @@ def play(args):
 
     # run the player
     dakara = DakaraPlayerVlc(config)
+    dakara.load()
     dakara.run()
 
 

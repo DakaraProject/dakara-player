@@ -42,48 +42,6 @@ class DakaraWorkerTestCase(TestCase):
         with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
             self.dakara_worker = DakaraWorker(self.stop, self.errors, self.config)
 
-    def test_check_version_release(self):
-        """Test to display the version for a release
-        """
-        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG") as logger:
-            with patch.multiple(
-                "dakara_player_vlc.dakara_player_vlc",
-                __version__="0.0.0",
-                __date__="1970-01-01",
-            ):
-                self.dakara_worker.check_version()
-
-        # assert effect on logs
-        self.assertListEqual(
-            logger.output,
-            [
-                "INFO:dakara_player_vlc.dakara_player_vlc:"
-                "Dakara player 0.0.0 (1970-01-01)"
-            ],
-        )
-
-    def test_check_version_non_release(self):
-        """Test to display the version for a non release
-        """
-        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG") as logger:
-            with patch.multiple(
-                "dakara_player_vlc.dakara_player_vlc",
-                __version__="0.1.0-dev",
-                __date__="1970-01-01",
-            ):
-                self.dakara_worker.check_version()
-
-        # assert effect on logs
-        self.assertListEqual(
-            logger.output,
-            [
-                "INFO:dakara_player_vlc.dakara_player_vlc:"
-                "Dakara player 0.1.0-dev (1970-01-01)",
-                "WARNING:dakara_player_vlc.dakara_player_vlc:"
-                "You are running a dev version, use it at your own risks!",
-            ],
-        )
-
     @patch("dakara_player_vlc.dakara_player_vlc.TemporaryDirectory", autospec=True)
     @patch("dakara_player_vlc.dakara_player_vlc.FontLoader", autospec=True)
     @patch("dakara_player_vlc.dakara_player_vlc.VlcPlayer", autospec=True)
@@ -156,20 +114,33 @@ class DakaraPlayerVlcTestCase(TestCase):
     """Test the `DakaraPlayerVlc` class
     """
 
-    def setUp(self):
-        # save config
-        self.config = CONFIG
+    def test_init(self):
+        """Test to create the object
+        """
+        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG") as logger:
+            DakaraPlayerVlc(CONFIG)
 
-        # save instance
-        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG"):
-            self.dakara_player_vlc = DakaraPlayerVlc(self.config)
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output, ["DEBUG:dakara_player_vlc.dakara_player_vlc:Started main"]
+        )
+
+    @patch("dakara_player_vlc.dakara_player_vlc.check_version")
+    def test_load(self, mocked_check_version):
+        """Test to perform side-effect actions
+        """
+        dakara_player_vlc = DakaraPlayerVlc(CONFIG)
+        dakara_player_vlc.load()
+
+        # assert call
+        mocked_check_version.assert_called_with()
 
     @patch.object(DakaraPlayerVlc, "run_safe")
     def test_run(self, mocked_run_safe):
         """Test a dummy run
         """
-        # call the method
-        self.dakara_player_vlc.run()
+        dakara_player_vlc = DakaraPlayerVlc(CONFIG)
+        dakara_player_vlc.run()
 
         # assert the call
-        self.dakara_player_vlc.run_safe.assert_called_with(DakaraWorker, self.config)
+        mocked_run_safe.assert_called_with(DakaraWorker, CONFIG)

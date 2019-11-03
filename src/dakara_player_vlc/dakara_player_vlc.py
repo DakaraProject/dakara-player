@@ -1,6 +1,5 @@
 import logging
 from contextlib import ExitStack
-from pkg_resources import parse_version
 from tempfile import TemporaryDirectory
 
 from dakara_base.safe_workers import Runner, WorkerSafeThread
@@ -12,7 +11,7 @@ from dakara_player_vlc.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
 )
-from dakara_player_vlc.version import __date__, __version__
+from dakara_player_vlc.version import check_version
 from dakara_player_vlc.vlc_player import VlcPlayer
 
 FontLoader = get_font_loader_class()
@@ -39,7 +38,14 @@ class DakaraPlayerVlc(Runner):
         # store arguments
         self.config = config
 
+        # inform the user
         logger.debug("Started main")
+
+    def load(self):
+        """Execute side-effect actions
+        """
+        # check version
+        check_version()
 
     def run(self):
         """Launch the worker and wait for the end
@@ -67,9 +73,6 @@ class DakaraWorker(WorkerSafeThread):
 
         # set thread
         self.thread = self.create_thread(target=self.run)
-
-        # check version
-        self.check_version()
 
     def run(self):
         """Worker main method
@@ -138,14 +141,3 @@ class DakaraWorker(WorkerSafeThread):
 
             # leaving this method means leaving all the context managers and
             # stopping the program
-
-    def check_version(self):
-        """Display version number and check if on release
-        """
-        # log player versio
-        logger.info("Dakara player %s (%s)", __version__, __date__)
-
-        # check version is a release
-        version = parse_version(__version__)
-        if version.is_prerelease:
-            logger.warning("You are running a dev version, use it at your own risks!")

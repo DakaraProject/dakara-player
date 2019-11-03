@@ -44,12 +44,18 @@ class PlayTestCase(TestCase):
     """Test the play action
     """
 
+    @patch.object(DakaraPlayerVlc, "load")
     @patch.object(DakaraPlayerVlc, "run")
     @patch("dakara_player_vlc.commands.play.set_loglevel")
     @patch("dakara_player_vlc.commands.play.load_config")
     @patch("dakara_player_vlc.commands.play.create_logger")
     def test_play(
-        self, mocked_create_logger, mocked_load_config, mocked_set_loglevel, mocked_run
+        self,
+        mocked_create_logger,
+        mocked_load_config,
+        mocked_set_loglevel,
+        mocked_run,
+        mocked_load,
     ):
         """Test a simple play action
         """
@@ -73,6 +79,7 @@ class PlayTestCase(TestCase):
             Path("player_vlc.yaml"), False, mandatory_keys=["player", "server"]
         )
         mocked_set_loglevel.assert_called_with(config)
+        mocked_load.assert_called_with()
         mocked_run.assert_called_with()
 
 
