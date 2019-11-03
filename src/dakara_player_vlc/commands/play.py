@@ -41,7 +41,7 @@ def get_parser():
     """
     # main parser
     parser = ArgumentParser(
-        prog="vlc-play", description="VLC based player for the Dakara project"
+        prog="play-vlc", description="VLC based player for the Dakara project"
     )
 
     parser.set_defaults(function=play)
