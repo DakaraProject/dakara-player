@@ -52,7 +52,6 @@ test_script:
 
   # run commands
   - "py -%PYTHON_VERSION% -m coverage run -m dakara_player_vlc --version"
-  - "dakara-play-vlc.exe --version"
 
   # run code formatting tests
   - "if NOT %PYTHON_VERSION% == 3.5 (py -%PYTHON_VERSION% -m  black . --check)"
