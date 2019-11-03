@@ -25,10 +25,17 @@ install:
   # install dependencies for test
   - python -m pip install -e ".[tests]"
 
+  # install module for execution tests
+  - python setup.py install
+
 # command to run tests
 script:
   # run tests
   - python -m coverage run setup.py test
+
+  # run commands
+  - python -m coverage run -m dakara_player_vlc --version
+  - dakara-play-vlc --version
 
   # run code formatting tests
   - if [[ $TRAVIS_PYTHON_VERSION != 3.5 ]]; then black . --check; fi

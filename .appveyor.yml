@@ -42,10 +42,17 @@ install:
   # install dependencies for test
   - "py -%PYTHON_VERSION% -m pip install -e \".[tests]\""
 
+  # install module for execution tests
+  - "py -%PYTHON_VERSION% setup.py install"
+
 # command to run tests
 test_script:
   # run tests
   - "py -%PYTHON_VERSION% -m coverage run setup.py test"
+
+  # run commands
+  - "py -%PYTHON_VERSION% -m coverage run dakara_player_vlc --version"
+  - "dakara-play-vlc.exe --version"
 
   # run code formatting tests
   - "if NOT %PYTHON_VERSION% == 3.5 (py -%PYTHON_VERSION% -m  black . --check)"
