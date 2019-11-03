@@ -4,6 +4,7 @@ from pkg_resources import parse_version
 from threading import Timer
 
 import vlc
+from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
 from vlc import Instance
 from path import Path
@@ -146,6 +147,9 @@ class VlcPlayer(Worker):
         # check VLC
         self.check_vlc_version()
 
+        # check kara folder
+        self.check_kara_folder_path()
+
         # set VLC fullscreen
         self.player.set_fullscreen(self.fullscreen)
 
@@ -173,6 +177,14 @@ class VlcPlayer(Worker):
             # nearby the media played, not the ones explicitally added; this
             # option forces VLC to use the explicitally added files only
             self.media_parameters_text_screen.append("no-sub-autodetect-file")
+
+    def check_kara_folder_path(self):
+        """Check the kara folder is valid
+        """
+        if not self.kara_folder_path.exists():
+            raise KaraFolderNotFound(
+                'Karaoke folder "{}" does not exist'.format(self.kara_folder_path)
+            )
 
     def set_default_callbacks(self):
         """Set all the default callbacks
@@ -492,3 +504,8 @@ def mrl_to_path(file_mrl):
         path = path[1:]
 
     return Path(urllib.parse.unquote(path)).normpath()
+
+
+class KaraFolderNotFound(DakaraError):
+    """Error raised when the kara folder cannot be found
+    """
