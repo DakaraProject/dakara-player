@@ -4,10 +4,13 @@ from argparse import ArgumentParser
 
 from dakara_base.exceptions import DakaraError
 
-# TODO reactivate with dakarabase 1.2.0
-# get_config_file,
-# create_config_file,
-from dakara_base.config import load_config, create_logger, set_loglevel
+from dakara_base.config import (
+    load_config,
+    create_logger,
+    set_loglevel,
+    get_config_file,
+    create_config_file,
+)
 from path import Path
 
 from dakara_player_vlc import DakaraPlayerVlc
@@ -18,19 +21,6 @@ CONFIG_FILE = "player_vlc.yaml"
 
 
 logger = logging.getLogger(__name__)
-
-
-def get_config_file(filename):
-    """Temporary
-    """
-    # TODO remove with dakarabase 1.2.0
-    return Path(".") / filename
-
-
-def create_config_file(resource, filename, force=False):
-    """Temporary
-    """
-    # TODO remove with dakarabase 1.2.0
 
 
 def get_parser():
@@ -72,7 +62,9 @@ def get_parser():
 
     # create config subparser
     create_config_subparser = subparsers.add_parser(
-        "create-config", help="Create a new config file in user directory"
+        "create-config",
+        help="Create a new config file in user directory",
+        description="Create a new config file in user directory",
     )
     create_config_subparser.set_defaults(function=create_config)
 
