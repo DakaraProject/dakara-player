@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
+"""Entry point for the dakara-play-vlc command
+"""
+
+
 import logging
 from argparse import ArgumentParser
 
 from dakara_base.exceptions import DakaraError
-
 from dakara_base.config import (
-    load_config,
-    create_logger,
-    set_loglevel,
-    get_config_file,
+    ConfigNotFoundError,
     create_config_file,
+    create_logger,
+    get_config_file,
+    load_config,
+    set_loglevel,
 )
-from path import Path
 
 from dakara_player_vlc import DakaraPlayerVlc
 from dakara_player_vlc.version import __version__, __date__
@@ -44,14 +47,6 @@ def get_parser():
     )
 
     parser.add_argument(
-        "--config",
-        help="path to the config file, default: '{}'".format(
-            get_config_file(CONFIG_FILE)
-        ),
-        default=get_config_file(CONFIG_FILE),
-    )
-
-    parser.add_argument(
         "--version",
         action="version",
         version="%(prog)s {} ({})".format(__version__, __date__),
@@ -63,8 +58,8 @@ def get_parser():
     # create config subparser
     create_config_subparser = subparsers.add_parser(
         "create-config",
-        help="Create a new config file in user directory",
         description="Create a new config file in user directory",
+        help="Create a new config file in user directory",
     )
     create_config_subparser.set_defaults(function=create_config)
 
@@ -83,16 +78,37 @@ def play(args):
     Args:
         args (argparse.Namespace): arguments from command line.
     """
-    # prepare execution
     create_logger()
-    config = load_config(
-        Path(args.config), args.debug, mandatory_keys=["player", "server"]
-    )
+
+    # load the config, display help to create config if it fails
+    try:
+        config = load_config(
+            get_config_file(CONFIG_FILE),
+            args.debug,
+            mandatory_keys=["player", "server"],
+        )
+
+    except ConfigNotFoundError as error:
+        raise ConfigNotFoundError(
+            "{}, please run 'dakara-play-vlc create-config'".format(error)
+        ) from error
+
     set_loglevel(config)
+    dakara = DakaraPlayerVlc(config)
+
+    # load the feeder, consider that the config is incomplete if it fails
+    try:
+        dakara.load()
+
+    except DakaraError:
+        logger.warning(
+            "Config may be incomplete, please check '{}'".format(
+                get_config_file(CONFIG_FILE)
+            )
+        )
+        raise
 
     # run the player
-    dakara = DakaraPlayerVlc(config)
-    dakara.load()
     dakara.run()
 
 
@@ -102,10 +118,14 @@ def create_config(args):
     Args:
         args (argparse.Namespace): arguments from command line.
     """
+    create_logger(custom_log_format="%(message)s", custom_log_level="INFO")
     create_config_file("dakara_player_vlc.resources", CONFIG_FILE, args.force)
+    logger.info("Please edit this file")
 
 
 def main():
+    """Main command
+    """
     parser = get_parser()
     args = parser.parse_args()
 

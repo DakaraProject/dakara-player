@@ -54,6 +54,14 @@ The package provides the following command:
   dakara-play-vlc -h
   ```
 
+  Before calling the function, you should create a config file with:
+
+  ```sh
+  dakara-play-vlc create-config
+  ```
+
+  and complete it with your values.
+
 ## Development
 
 ### Install dependencies
