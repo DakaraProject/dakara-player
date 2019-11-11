@@ -44,23 +44,31 @@ python setup.py install
 
 ## Usage
 
-The package provides the following command:
+The package provides the `dakara-play-vlc` command which runs the player:
 
-- `dakara-play-vlc`: This runs the player in the current directory.
-  One instance of the Dakara server should be running.
-  For more help:
+```sh
+dakara-play-vlc
+# or
+python -m dakara_player_vlc
+```
 
-  ```sh
-  dakara-play-vlc -h
-  ```
+One instance of the Dakara server should be running. For more help:
 
-  Before calling the function, you should create a config file with:
+```sh
+dakara-play-vlc -h
+# or
+python -m dakara_player_vlc -h
+```
 
-  ```sh
-  dakara-play-vlc create-config
-  ```
+Before calling the command, you should create a config file with:
 
-  and complete it with your values.
+```sh
+dakara-play-vlc create-config
+# or
+python -m dakara_player_vlc create-config
+```
+
+and complete it with your values. The file is stored in your user space: `~/.config/dakara` on Linux or `$APPDATA\Dakara` on Windows.
 
 ## Development
 
