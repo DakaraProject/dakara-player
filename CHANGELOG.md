@@ -30,9 +30,15 @@
 
 ## Unreleased
 
+### Added
+
+- The project can be installed with `pip`.
+
 ### Changed
 
-- In the config file, the `player.transition_duration` is moved to `player.durations.transition_duration`.
+- In the config file, the `player.transition_duration` is moved to `player.durations.transition_duration`;
+- To run the player, invoke the command `dakara-play-vlc` or `python -m dakara_player_vlc`, instead of `dakara.py`;
+- Configuration is now stored in the user directory. You can create a new config file with the command `dakara-play-vlc create-config` or `python -m dakara_player_vlc create-config`.
 
 ## 1.4.0 - 2019-05-03
 
