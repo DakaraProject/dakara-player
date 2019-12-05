@@ -92,9 +92,7 @@ class TextGeneratorTestCase(TestCase):
         In that case, the templates come from this directory.
         """
         # create object
-        text_generator = TextGenerator(
-            {"directory": get_file("dakara_player_vlc.tests.resources", "")}
-        )
+        text_generator = TextGenerator({"directory": get_file("tests.resources", "")})
 
         # pre assert there are no templates
         self.assertIsNone(text_generator.idle_template)
@@ -106,11 +104,11 @@ class TextGeneratorTestCase(TestCase):
         # assert there are templates defined
         self.assertEqual(
             text_generator.idle_template.filename,
-            get_file("dakara_player_vlc.tests.resources", IDLE_TEMPLATE_NAME),
+            get_file("tests.resources", IDLE_TEMPLATE_NAME),
         )
         self.assertEqual(
             text_generator.transition_template.filename,
-            get_file("dakara_player_vlc.tests.resources", TRANSITION_TEMPLATE_NAME),
+            get_file("tests.resources", TRANSITION_TEMPLATE_NAME),
         )
 
     def test_load_templates_custom_directory_fail(self):
@@ -146,7 +144,7 @@ class TextGeneratorTestCase(TestCase):
         # create object
         text_generator = TextGenerator(
             {
-                "directory": get_file("dakara_player_vlc.tests.resources", ""),
+                "directory": get_file("tests.resources", ""),
                 "idle_template_name": "song.ass",
                 "transition_template_name": "song.ass",
             }
@@ -162,11 +160,11 @@ class TextGeneratorTestCase(TestCase):
         # assert there are templates defined
         self.assertEqual(
             text_generator.idle_template.filename,
-            get_file("dakara_player_vlc.tests.resources", "song.ass"),
+            get_file("tests.resources", "song.ass"),
         )
         self.assertEqual(
             text_generator.transition_template.filename,
-            get_file("dakara_player_vlc.tests.resources", "song.ass"),
+            get_file("tests.resources", "song.ass"),
         )
 
     def test_load_templates_custom_names_fail(self):
@@ -178,7 +176,7 @@ class TextGeneratorTestCase(TestCase):
         # create object
         text_generator = TextGenerator(
             {
-                "directory": get_file("dakara_player_vlc.tests.resources", ""),
+                "directory": get_file("tests.resources", ""),
                 "idle_template_name": "nothing",
                 "transition_template_name": "nothing",
             }
@@ -194,11 +192,11 @@ class TextGeneratorTestCase(TestCase):
         # assert there are templates defined
         self.assertEqual(
             text_generator.idle_template.filename,
-            get_file("dakara_player_vlc.tests.resources", IDLE_TEMPLATE_NAME),
+            get_file("tests.resources", IDLE_TEMPLATE_NAME),
         )
         self.assertEqual(
             text_generator.transition_template.filename,
-            get_file("dakara_player_vlc.tests.resources", TRANSITION_TEMPLATE_NAME),
+            get_file("tests.resources", TRANSITION_TEMPLATE_NAME),
         )
 
     def test_convert_icon(self):
@@ -274,12 +272,10 @@ class TextGeneratorIntegrationTestCase(TestCase):
         }
 
         # create idle text content
-        self.idle_text_path = get_file("dakara_player_vlc.tests.resources", "idle.ass")
+        self.idle_text_path = get_file("tests.resources", "idle.ass")
 
         # create transition text content
-        self.transition_text_path = get_file(
-            "dakara_player_vlc.tests.resources", "transition.ass"
-        )
+        self.transition_text_path = get_file("tests.resources", "transition.ass")
 
         # create text generator object
         self.text_generator = TextGenerator({})

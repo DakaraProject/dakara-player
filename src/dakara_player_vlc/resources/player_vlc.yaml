@@ -1,7 +1,3 @@
-# DON'T TOUCH THIS FILE!
-# Your modification will be lost during the next update. Copy it to
-# `config.yaml`, remove this header, modify the content and let it roll!
-
 # Parameters for the player
 player:
   # Path of the karaoke folder

@@ -489,7 +489,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
         self.fullscreen = True
 
         # create kara folder
-        self.kara_folder = get_file("dakara_player_vlc.tests.resources", "")
+        self.kara_folder = get_file("tests.resources", "")
 
         # create media parameter
         self.media_parameters = ["no-video"]
