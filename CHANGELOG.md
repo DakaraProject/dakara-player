@@ -30,6 +30,8 @@
 
 ## Unreleased
 
+## 1.5.0 - 2019-12-05
+
 ### Added
 
 - The project can be installed with `pip`.

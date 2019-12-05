@@ -5,7 +5,7 @@ import importlib_metadata
 
 
 __version__ = importlib_metadata.version("dakaraplayervlc")
-__date__ = "2019-05-03"
+__date__ = "2019-12-05"
 
 logger = logging.getLogger(__name__)
 
