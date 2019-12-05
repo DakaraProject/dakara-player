@@ -25,7 +25,7 @@ setup_file=setup.cfg
 sed -i "s/^version = .*$/version = $version_number/" $setup_file
 
 # patch version date in version file
-version_file=src/dakara_feeder/version.py
+version_file=src/dakara_player_vlc/version.py
 sed -i "s/^__date__ = .*$/__date__ = \"$version_date\"/" $version_file
 
 # change version in changelog
