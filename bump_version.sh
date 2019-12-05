@@ -53,7 +53,7 @@ sed -i "s/^version = .*$/version = $dev_version_number/" $setup_file
 sed -i "s/^version: .*-{build}$/version: $dev_version_number-{build}/" $appveyor_file
 
 # create commit
-git add $version_file $appveyor_file
+git add $setup_file $appveyor_file
 git commit -m "Dev version $dev_version_number" --no-verify
 
 # say something
