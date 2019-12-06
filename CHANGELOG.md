@@ -30,6 +30,8 @@
 
 ## Unreleased
 
+## 1.5.2 - 2019-12-06
+
 ### Fixed
 
 - Dead symbolic links to fonts in user font directory are now automatically removed to avoid crash.
