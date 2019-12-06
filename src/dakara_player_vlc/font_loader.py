@@ -175,7 +175,7 @@ class FontLoaderLinux(FontLoader):
     def unload(self):
         """Remove loaded fonts
         """
-        for font_path in self.fonts_loaded:
+        for font_path in self.fonts_loaded.copy():
             self.unload_font(font_path)
 
     def unload_font(self, font_path):

@@ -33,6 +33,7 @@
 ### Fixed
 
 - Dead symbolic links to fonts in user font directory are now automatically removed to avoid crash.
+- Some installed fonts could be left uninstalled, this problem has been fixed.
 
 ## 1.5.1 - 2019-12-05
 

@@ -344,18 +344,20 @@ class FontLoaderLinuxTestCase(TestCase):
         mocked_mkdir.assert_called_once_with(self.user_directory / ".fonts")
         mocked_load_from_resources_directory.assert_called_once_with()
 
-    @patch.object(FontLoaderLinux, "unload_font")
-    def test_unload(self, mocked_unload_font):
+    @patch("dakara_player_vlc.font_loader.os.unlink", autospec=True)
+    def test_unload(self, mocked_unlink):
         """Test to unload fonts
         """
         # set a font as loaded
-        self.font_loader.fonts_loaded = self.font_path_list
+        self.font_loader.fonts_loaded = ["font1", "font2"]
 
         # call the method
         self.font_loader.unload()
 
         # assert the call
-        mocked_unload_font.assert_called_once_with(self.font_path)
+        # especially check that the unload function does not alter the list of
+        # elements we are iterating on
+        mocked_unlink.assert_has_calls([call("font1"), call("font2")])
 
     @patch("dakara_player_vlc.font_loader.os.unlink", autospec=True)
     def test_unload_font(self, mocked_unlink):
