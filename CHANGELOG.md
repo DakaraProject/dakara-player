@@ -37,6 +37,10 @@
 
 ## 1.5.1 - 2019-12-05
 
+### Fixed
+
+- Installation directions in readme.
+
 ## 1.5.0 - 2019-12-05
 
 ### Added
