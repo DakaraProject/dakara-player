@@ -2,7 +2,7 @@ import logging
 import sys
 import os
 from abc import ABC, abstractmethod
-from os.path import isfile, islink
+from os.path import isfile, islink, exists
 
 from path import Path
 
@@ -138,9 +138,25 @@ class FontLoaderLinux(FontLoader):
         # check if the font is installed at user level
         font_file_user_path = self.FONT_DIR_USER.expanduser() / font_file_name
 
-        if isfile(font_file_user_path) or islink(font_file_user_path):
+        if isfile(font_file_user_path):
             logger.debug("Font '%s' found in user directory", font_file_name)
             return
+
+        # check if the font is installed as symlink at user level
+        if islink(font_file_user_path):
+            if exists(os.readlink(font_file_user_path)):
+                logger.debug(
+                    "Font '%s' found as symbolic link in user directory", font_file_name
+                )
+                return
+
+            # remove broken link and continue execution
+            logger.debug(
+                "Dead symbolic link found for font '%s' in user directory, "
+                "removing it",
+                font_file_name,
+            )
+            os.unlink(font_file_user_path)
 
         # then, if the font is not installed, load it
         font_file_target_path = self.FONT_DIR_USER.expanduser() / font_file_name
@@ -159,7 +175,7 @@ class FontLoaderLinux(FontLoader):
     def unload(self):
         """Remove loaded fonts
         """
-        for font_path in self.fonts_loaded:
+        for font_path in self.fonts_loaded.copy():
             self.unload_font(font_path)
 
     def unload_font(self, font_path):
