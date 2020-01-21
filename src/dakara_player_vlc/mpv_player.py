@@ -115,7 +115,9 @@ class VlcPlayer(Worker):
         config_vlc = config.get("vlc") or {}
         self.media_parameters = config_vlc.get("media_parameters") or []
         self.media_parameters_text_screen = []
-        self.player = mpv.MPV()
+
+        config_loglevel = config.get('loglevel') or 'info'
+        self.player = mpv.MPV(log_handler=self.handle_log_messages, loglevel=config_loglevel)
         self.player["force-window"] = "yes"
 
         # set path of ASS files for text screens
@@ -173,10 +175,6 @@ class VlcPlayer(Worker):
     def set_default_callbacks(self):
         """Set all the default callbacks
         """
-        # set VLC callbacks
-#        self.set_vlc_callback(
-#            vlc.EventType.MediaPlayerEncounteredError, self.handle_encountered_error
-#        )
 
         @self.player.event_callback('end_file')
         def end_file_callback(event):
@@ -244,7 +242,6 @@ class VlcPlayer(Worker):
             thread.start()
 
             # get file path
-#            file_path = mrl_to_path(self.media_pending.get_mrl())
             logger.info("Now playing '%s'", self.media_pending)
 
             # call the callback for when a song starts
@@ -263,25 +260,38 @@ class VlcPlayer(Worker):
         # so call the right callback
         self.callbacks["finished"](self.playing_id)
 
-#    def handle_encountered_error(self, event):
-#        """Callback called when error occurs
-#
-#        Try to get error message and then call the callbacks
-#        `callbackss["finished"]` and `callbacks["error"]`
-#
-#        Args:
-#            event (vlc.EventType): VLC event object.
-#        """
-#        logger.debug("Error callback called")
-#
-#        message = "Unable to play current media"
-#        logger.error(message)
-#        self.callbacks["finished"](self.playing_id)
-#        self.callbacks["error"](self.playing_id, message)
-#
-#        # reset current state
-#        self.playing_id = None
-#        self.in_transition = False
+    def handle_log_messages(self, loglevel, component, message):
+        """Callback called when error occurs
+
+        Try to get error message and then call the callbacks
+        `callbackss["finished"]` and `callbacks["error"]`
+
+        Args:
+            event (vlc.EventType): VLC event object.
+        """
+        if loglevel == 'fatal':
+            intlevel = logging.CRITICAL
+        elif loglevel == 'error':
+            intlevel = logging.ERROR
+        elif loglevel == 'warn':
+            intlevel = logging.WARNING
+        elif loglevel == 'info':
+            intlevel = logging.INFO
+        elif loglevel == 'debug':
+            intlevel = logging.DEBUG
+        else:
+            intlevel = logging.NOTSET
+
+        logger.log(intlevel, f"mpv: {component}: {message}")
+
+        if intlevel >= logging.ERROR:
+            message = "Unable to play current media"
+            logger.error(message)
+
+            self.in_transition = False
+
+            self.callbacks["finished"](self.playing_id)
+            self.callbacks["error"](self.playing_id, message)
 
     def play_media(self, media, sub_file=None):
         """Play the given media
@@ -327,13 +337,6 @@ class VlcPlayer(Worker):
 
         media_transition = str(self.background_loader.backgrounds["transition"])
 
-#        media_transition.add_options(
-#            *self.media_parameters_text_screen,
-#            *self.media_parameters,
-#            "sub-file={}".format(self.transition_text_path),
-#            "image-duration={}".format(self.durations["transition"]),
-#        )
-
         self.in_transition = True
 
         self.player.image_display_duration = int(self.durations["transition"])
@@ -363,13 +366,6 @@ class VlcPlayer(Worker):
                     }
                 )
             )
-
-#        media.add_options(
-#            *self.media_parameters_text_screen,
-#            *self.media_parameters,
-#            "image-duration={}".format(self.durations["idle"]),
-#            "sub-file={}".format(self.idle_text_path),
-#        )
 
         self.player.image_display_duration = "inf"
         self.play_media(media, self.idle_text_path)
@@ -472,24 +468,6 @@ class VlcPlayer(Worker):
         """Exit the worker
         """
         self.stop_player()
-
-
-def mrl_to_path(file_mrl):
-    """Convert a MRL to a classic path
-
-    File path is stored as MRL inside a media object, we have to bring it back
-    to a more classic looking path format.
-
-    Args:
-        file_mrl (str): path to the resource with MRL format.
-    """
-    path = urllib.parse.urlparse(file_mrl).path
-    # remove first '/' if a colon character is found like in '/C:/a/b'
-    if path[0] == "/" and path[2] == ":":
-        path = path[1:]
-
-    return Path(urllib.parse.unquote(path)).normpath()
-
 
 class KaraFolderNotFound(DakaraError):
     """Error raised when the kara folder cannot be found
