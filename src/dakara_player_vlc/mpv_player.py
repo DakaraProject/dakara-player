@@ -228,6 +228,9 @@ class VlcPlayer(Worker):
         Args:
             event (vlc.EventType): VLC event object.
         """
+        if (event['event']['reason'] != mpv.MpvEventEndFile.EOF):
+            return
+
         logger.debug("Song end callback called")
 
         if self.in_transition:
@@ -254,10 +257,6 @@ class VlcPlayer(Worker):
             thread = self.create_thread(target=self.play_idle_screen)
 
             thread.start()
-            return
-
-        if self.start_playing:
-            self.start_playing = False
             return
 
         # otherwise, the song has finished,
@@ -335,7 +334,6 @@ class VlcPlayer(Worker):
 #        )
 
         # Necessary to stop the idle screen
-        self.start_playing = True
         self.player.command("stop")
 
         self.in_transition = True
