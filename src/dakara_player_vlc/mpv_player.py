@@ -242,7 +242,7 @@ class VlcPlayer(Worker):
 
             # get file path
 #            file_path = mrl_to_path(self.media_pending.get_mrl())
-#            logger.info("Now playing '%s'", file_path)
+            logger.info("Now playing '%s'", self.media_pending)
 
             # call the callback for when a song starts
             self.callbacks["started_song"](self.playing_id)
@@ -254,6 +254,10 @@ class VlcPlayer(Worker):
             thread = self.create_thread(target=self.play_idle_screen)
 
             thread.start()
+            return
+
+        if self.start_playing:
+            self.start_playing = False
             return
 
         # otherwise, the song has finished,
@@ -329,10 +333,12 @@ class VlcPlayer(Worker):
 #            "sub-file={}".format(self.transition_text_path),
 #            "image-duration={}".format(self.durations["transition"]),
 #        )
-        self.in_transition = True
 
         # Necessary to stop the idle screen
+        self.start_playing = True
         self.player.command("stop")
+
+        self.in_transition = True
 
         self.player.image_display_duration = int(self.durations["transition"])
         self.play_media(media_transition)
