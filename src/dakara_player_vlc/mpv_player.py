@@ -323,7 +323,7 @@ class VlcPlayer(Worker):
 
         # create the transition screen
         with self.transition_text_path.open("w", encoding="utf8") as file:
-            file.write(self.text_generator.create_transition_text(playlist_entry))
+            file.write(self.text_generator.create_transition_text(playlist_entry, fade_in=False))
 
         media_transition = str(self.background_loader.backgrounds["transition"])
 
