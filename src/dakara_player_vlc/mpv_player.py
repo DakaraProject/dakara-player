@@ -1,4 +1,5 @@
 import logging
+import os
 import urllib
 from pkg_resources import parse_version
 from threading import Timer
@@ -235,8 +236,16 @@ class VlcPlayer(Worker):
             # if the transition screen has finished,
             # request to play the song itself
             self.in_transition = False
+
+            filename_without_ext = os.path.splitext(self.media_pending)[0]
+            sub_file = None
+            if os.path.exists(f'{filename_without_ext}.ass'):
+                sub_file = f'{filename_without_ext}.ass'
+            elif os.path.exists(f'{filename_without_ext}.ssa'):
+                sub_file = f'{filename_without_ext}.ssa'
+
             thread = self.create_thread(
-                target=self.play_media, args=(self.media_pending,)
+                target=self.play_media, args=(self.media_pending, sub_file)
             )
 
             thread.start()
