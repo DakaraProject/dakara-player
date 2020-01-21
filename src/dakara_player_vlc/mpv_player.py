@@ -116,6 +116,7 @@ class VlcPlayer(Worker):
         self.media_parameters = config_vlc.get("media_parameters") or []
         self.media_parameters_text_screen = []
         self.player = mpv.MPV()
+        self.player["force-window"] = "yes"
 
         # set path of ASS files for text screens
         self.idle_text_path = tempdir / IDLE_TEXT_NAME
@@ -222,7 +223,6 @@ class VlcPlayer(Worker):
             - A song ends, leading to calling the callback
                 `callbacks["finished"]`;
             - An idle screen ends, leading to reloop it.
-
         A new thread is created in any case.
 
         Args:
@@ -290,7 +290,7 @@ class VlcPlayer(Worker):
             media (vlc.Media): VLC media object.
         """
         self.player['sub-files'] = [sub_file] if sub_file else []
-        self.player.play(media)
+        self.player.loadfile(media)
 
     def play_playlist_entry(self, playlist_entry):
         """Play the specified playlist entry
@@ -333,9 +333,6 @@ class VlcPlayer(Worker):
 #            "sub-file={}".format(self.transition_text_path),
 #            "image-duration={}".format(self.durations["transition"]),
 #        )
-
-        # Necessary to stop the idle screen
-        self.player.command("stop")
 
         self.in_transition = True
 
