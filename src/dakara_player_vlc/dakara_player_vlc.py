@@ -12,7 +12,7 @@ from dakara_player_vlc.dakara_server import (
     DakaraServerWebSocketConnection,
 )
 from dakara_player_vlc.version import check_version
-from dakara_player_vlc.vlc_player import VlcPlayer
+from dakara_player_vlc.mpv_player import VlcPlayer
 
 FontLoader = get_font_loader_class()
 
