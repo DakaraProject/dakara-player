@@ -283,12 +283,13 @@ class VlcPlayer(Worker):
 #        self.playing_id = None
 #        self.in_transition = False
 
-    def play_media(self, media):
+    def play_media(self, media, sub_file=None):
         """Play the given media
 
         Args:
             media (vlc.Media): VLC media object.
         """
+        self.player['sub-files'] = [sub_file] if sub_file else []
         self.player.play(media)
 
     def play_playlist_entry(self, playlist_entry):
@@ -339,7 +340,7 @@ class VlcPlayer(Worker):
         self.in_transition = True
 
         self.player.image_display_duration = int(self.durations["transition"])
-        self.play_media(media_transition)
+        self.play_media(media_transition, self.transition_text_path)
         logger.info("Playing transition for '%s'", file_path)
         self.callbacks["started_transition"](playlist_entry["id"])
 
@@ -374,7 +375,7 @@ class VlcPlayer(Worker):
 #        )
 
         self.player.image_display_duration = "inf"
-        self.play_media(media)
+        self.play_media(media, self.idle_text_path)
         logger.debug("Playing idle screen")
 
     def is_idle(self):
@@ -404,7 +405,12 @@ class VlcPlayer(Worker):
         if self.is_idle() or self.in_transition:
             return 0
 
-        return int(self.player.time_pos)
+        timing = self.player.time_pos
+
+        if timing is None:
+            return 0
+
+        return int(timing)
 
     def is_paused(self):
         """Player pause status getter
