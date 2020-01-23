@@ -6,64 +6,29 @@ from threading import Timer
 
 import mpv
 from dakara_base.exceptions import DakaraError
-from dakara_base.safe_workers import Worker
 from path import Path
 
 from dakara_player_vlc.background_loader import BackgroundLoader
+from dakara_player_vlc.media_player import MediaPlayer
 from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
 from dakara_player_vlc.text_generator import TextGenerator
 from dakara_player_vlc.version import __version__
 
 
-TRANSITION_BG_NAME = "transition.png"
-TRANSITION_TEXT_NAME = "transition.ass"
-TRANSITION_DURATION = 2
-
-IDLE_BG_NAME = "idle.png"
-IDLE_TEXT_NAME = "idle.ass"
-IDLE_DURATION = 300
-
 logger = logging.getLogger(__name__)
 
 
-class VlcPlayer(Worker):
-    """Interface for the Python VLC wrapper
+class MpvPlayer(MediaPlayer):
+    """Interface for the Python mpv wrapper
 
-    This class allows to manipulate VLC for complex tasks. It manages the
-    display of idle/transition screens when playing, manages the VLC callbacks
-    and provides some accessors and mutators to get/set the status of the
-    player.
+    This class allows the usage of mpv as a player for Dakara.
 
     The playlist is virtually handled using song-end callbacks.
 
-    After being instanciated, the object must be loaded with `load`.
-
     Attributes:
-        text_generator (TextGenerator): generator of on-screen texts.
-        callbacks (dict): dictionary of external callbacs that are run by VLC
-            on certain events. They must be set with `set_callback`.
-        vlc_callback (dict): dictionary of callbacks associated to VLC events.
-            They must be set with `set_vlc_callback`.
-        durations (dict): dictionary of durations for screens.
-        fullscreen (bool): is the player running fullscreen flag.
-        kara_folder_path (path.Path): path to the root karaoke folder containing
-            songs.
-        media_parameters (list): list of parameters for VLC, applied for each
-            media.
-        media_parameters_text_screen (list): list of parameters for VLC,
-            applied for each text screen.
-        instance (vlc.Instance): instance of the VLC player.
-        player (vlc.MediaPlayer): instance of the VLC media player, attached to
-            the player.
-        event_manager (vlc.EventManager): instance of the VLC event manager,
-            attached to the media player.
-        vlc_version (str): version of VLC.
-        playing_id (int): playlist entry id of the current song if no songs are
-            playing, its value is None.
-        in_transition (bool): flag set to True is a transition screen is
-            playing.
-        media_pending (vlc.Media): media containing a song which will be played
-            after the transition screen.
+        player (mpv.Mpv): instance of mpv, attached to the actual player.
+        media_pending (str): path of a song which will be played after the transition
+            screen.
 
     Args:
         stop (Event): event to stop the program.
@@ -72,92 +37,32 @@ class VlcPlayer(Worker):
         tempdir (path.Path): path to a temporary directory.
     """
 
-    def init_worker(self, config, tempdir):
-        """Init the worker
-        """
-        # callbacks
-        self.callbacks = {}
-        self.vlc_callbacks = {}
-
-        # karaoke parameters
-        self.fullscreen = config.get("fullscreen", False)
-        self.kara_folder_path = Path(config.get("kara_folder", ""))
-
-        # set durations
-        config_durations = config.get("durations") or {}
-        self.durations = {
-            "transition": config_durations.get(
-                "transition_duration", TRANSITION_DURATION
-            ),
-            "idle": IDLE_DURATION,
-        }
-
-        # set text generator
-        config_texts = config.get("templates") or {}
-        self.text_generator = TextGenerator(config_texts)
-
-        # set background loader
-        # we need to make some adaptations here
-        config_backgrounds = config.get("backgrounds") or {}
-        self.background_loader = BackgroundLoader(
-            directory=Path(config_backgrounds.get("directory", "")),
-            default_directory=Path(PATH_BACKGROUNDS),
-            background_filenames={
-                "transition": config_backgrounds.get("transition_background_name"),
-                "idle": config_backgrounds.get("idle_background_name"),
-            },
-            default_background_filenames={
-                "transition": TRANSITION_BG_NAME,
-                "idle": IDLE_BG_NAME,
-            },
-        )
-
-        # set VLC objects
+    def init_player(self, config, tempdir):
+        # set mpv player options and logging
         config_vlc = config.get("vlc") or {}
         self.media_parameters = config_vlc.get("media_parameters") or []
         self.media_parameters_text_screen = []
 
-        config_loglevel = config.get('loglevel') or 'info'
-        self.player = mpv.MPV(log_handler=self.handle_log_messages, loglevel=config_loglevel)
-        self.player["force-window"] = "yes"
-
-        # set path of ASS files for text screens
-        self.idle_text_path = tempdir / IDLE_TEXT_NAME
-        self.transition_text_path = tempdir / TRANSITION_TEXT_NAME
-
-        # playlist entry id of the current song
-        # if no songs are playing, its value is None
-        self.playing_id = None
-
-        # flag set to True is a transition screen is playing
-        self.in_transition = False
+        config_loglevel = config.get("loglevel") or "info"
+        self.player = mpv.MPV(log_handler=self.handle_log_messages,
+                              loglevel=config_loglevel)
 
         # media containing a song which will be played after the transition
         # screen
         self.media_pending = None
 
-        # set default callbacks
-        self.set_default_callbacks()
+        # set mpv specifics callbacks
+        self.set_mpv_callbacks()
 
-    def load(self):
-        """Prepare the instance
-
-        Perform actions with side effects.
-        """
-        # check MPV version
+    def load_player(self):
+        # check mpv version
         self.check_mpv_version()
 
-        # check kara folder
-        self.check_kara_folder_path()
-
-        # set VLC fullscreen
+        # set mpv fullscreen
         self.player.fullscreen = self.fullscreen
 
-        # load text generator
-        self.text_generator.load()
-
-        # load backgrounds
-        self.background_loader.load()
+        # force a single window
+        self.player["force-window"] = "yes"
 
     def check_mpv_version(self):
         """Print the mpv version and perform some parameter adjustements
@@ -165,54 +70,14 @@ class VlcPlayer(Worker):
         # get and log version
         logger.info(self.player.mpv_version)
 
-    def check_kara_folder_path(self):
-        """Check the kara folder is valid
-        """
-        if not self.kara_folder_path.exists():
-            raise KaraFolderNotFound(
-                'Karaoke folder "{}" does not exist'.format(self.kara_folder_path)
-            )
-
-    def set_default_callbacks(self):
-        """Set all the default callbacks
+    def set_mpv_callbacks(self):
+        """Set the mpv player callbacks
         """
 
-        @self.player.event_callback('end_file')
+        # wrapper to use the event_callback decorator for setting handle_end_reached
+        @self.player.event_callback("end_file")
         def end_file_callback(event):
             self.handle_end_reached(event)
-
-        # set dummy callbacks that have to be defined externally
-        self.set_callback("started_transition", lambda playlist_entry_id: None)
-        self.set_callback("started_song", lambda playlist_entry_id: None)
-        self.set_callback("could_not_play", lambda playlist_entry_id: None)
-        self.set_callback("finished", lambda playlist_entry_id: None)
-        self.set_callback("paused", lambda playlist_entry_id, timing: None)
-        self.set_callback("resumed", lambda playlist_entry_id, timing: None)
-        self.set_callback("error", lambda playlist_entry_id, message: None)
-
-    def set_callback(self, name, callback):
-        """Assign an arbitrary callback
-
-        Callback is added to the `callbacks` dictionary.
-
-        Args:
-            name (str): name of the callback in the `callbacks` attribute.
-            callback (function): function to assign.
-        """
-        self.callbacks[name] = callback
-
-    def set_vlc_callback(self, event, callback):
-        """Assing an arbitrary callback to an VLC event
-
-        Callback is attached to the VLC event manager and added to the
-        `vlc_callbacks` dictionary.
-
-        Args:
-            event (vlc.EventType): VLC event to attach the callback to, name of
-                the callback in the `vlc_callbacks` attribute.
-            callback (function): function to assign.
-        """
-        pass
 
     def handle_end_reached(self, event):
         """Callback called when a media ends
@@ -225,9 +90,10 @@ class VlcPlayer(Worker):
         A new thread is created in any case.
 
         Args:
-            event (vlc.EventType): VLC event object.
+            event (mpv.MpvEventEndFile): mpv end fle event object.
         """
-        if (event['event']['reason'] != mpv.MpvEventEndFile.EOF):
+        # check that the reason is actually a file ending (could be a force stop)
+        if (event["event"]["reason"] != mpv.MpvEventEndFile.EOF):
             return
 
         logger.debug("Song end callback called")
@@ -237,12 +103,14 @@ class VlcPlayer(Worker):
             # request to play the song itself
             self.in_transition = False
 
+            # manually set the subtitles as a workaround for the matching of mpv being
+            # too permissive
             filename_without_ext = os.path.splitext(self.media_pending)[0]
             sub_file = None
-            if os.path.exists(f'{filename_without_ext}.ass'):
-                sub_file = f'{filename_without_ext}.ass'
-            elif os.path.exists(f'{filename_without_ext}.ssa'):
-                sub_file = f'{filename_without_ext}.ssa'
+            if os.path.exists(f"{filename_without_ext}.ass"):
+                sub_file = f"{filename_without_ext}.ass"
+            elif os.path.exists(f"{filename_without_ext}.ssa"):
+                sub_file = f"{filename_without_ext}.ssa"
 
             thread = self.create_thread(
                 target=self.play_media, args=(self.media_pending, sub_file)
@@ -270,23 +138,26 @@ class VlcPlayer(Worker):
         self.callbacks["finished"](self.playing_id)
 
     def handle_log_messages(self, loglevel, component, message):
-        """Callback called when error occurs
+        """Callback called when a log message occurs
 
-        Try to get error message and then call the callbacks
+        Direct the message to the logger for Dakara Player.
+        If the level is 'error' or higher, call the callbacks
         `callbackss["finished"]` and `callbacks["error"]`
 
         Args:
-            event (vlc.EventType): VLC event object.
+            loglevel (str): level of the log message
+            component (str): component of mpv that generated the message
+            message (str): actual log message
         """
-        if loglevel == 'fatal':
+        if loglevel == "fatal":
             intlevel = logging.CRITICAL
-        elif loglevel == 'error':
+        elif loglevel == "error":
             intlevel = logging.ERROR
-        elif loglevel == 'warn':
+        elif loglevel == "warn":
             intlevel = logging.WARNING
-        elif loglevel == 'info':
+        elif loglevel == "info":
             intlevel = logging.INFO
-        elif loglevel == 'debug':
+        elif loglevel == "debug":
             intlevel = logging.DEBUG
         else:
             intlevel = logging.NOTSET
@@ -306,23 +177,12 @@ class VlcPlayer(Worker):
         """Play the given media
 
         Args:
-            media (vlc.Media): VLC media object.
+            media (str): path to media
         """
-        self.player['sub-files'] = [sub_file] if sub_file else []
+        self.player["sub-files"] = [sub_file] if sub_file else []
         self.player.loadfile(media)
 
     def play_playlist_entry(self, playlist_entry):
-        """Play the specified playlist entry
-
-        Prepare the media containing the song to play and store it. Add a
-        transition screen and play it first. When the transition ends, the song
-        will be played.
-
-        Args:
-            playlist_entry (dict): dictionnary containing at least `id` and
-                `song` attributes. `song` is a dictionary containing at least
-                the key `file_path`.
-        """
         # file location
         file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
 
@@ -342,7 +202,8 @@ class VlcPlayer(Worker):
 
         # create the transition screen
         with self.transition_text_path.open("w", encoding="utf8") as file:
-            file.write(self.text_generator.create_transition_text(playlist_entry, fade_in=False))
+            file.write(self.text_generator.create_transition_text(playlist_entry,
+                fade_in=False))
 
         media_transition = str(self.background_loader.backgrounds["transition"])
 
@@ -354,8 +215,6 @@ class VlcPlayer(Worker):
         self.callbacks["started_transition"](playlist_entry["id"])
 
     def play_idle_screen(self):
-        """Play idle screen
-        """
         # set idle state
         self.playing_id = None
         self.in_transition = False
@@ -380,30 +239,7 @@ class VlcPlayer(Worker):
         self.play_media(media, self.idle_text_path)
         logger.debug("Playing idle screen")
 
-    def is_idle(self):
-        """Get player idling status
-
-        Returns:
-            bool: False when playing a song or a transition screen, True when
-                playing idle screen.
-        """
-        return self.playing_id is None
-
-    def get_playing_id(self):
-        """Playlist entry ID getter
-
-        Returns:
-            int: current playing ID or None when no song is playing.
-        """
-        return self.playing_id
-
     def get_timing(self):
-        """Player timing getter
-
-        Returns:
-            int: current song timing in seconds if a song is playing or 0 when
-                idle or during transition screen.
-        """
         if self.is_idle() or self.in_transition:
             return 0
 
@@ -415,21 +251,9 @@ class VlcPlayer(Worker):
         return int(timing)
 
     def is_paused(self):
-        """Player pause status getter
-
-        Returns:
-            bool: True when playing song is paused.
-        """
         return self.player.pause
 
     def set_pause(self, pause):
-        """Pause or unpause the player
-
-        Pause playing song when True unpause when False.
-
-        Args:
-            pause (bool): flag for pause state requested.
-        """
         if not self.is_idle():
             if pause:
                 if self.is_paused():
@@ -452,11 +276,9 @@ class VlcPlayer(Worker):
                 self.callbacks["resumed"](self.playing_id, self.get_timing())
 
     def stop_player(self):
-        """Stop playing music
-        """
         logger.info("Stopping player")
 
-        # send a warning within 3 seconds if VLC has not stopped already
+        # send a warning within 3 seconds if mpv has not stopped already
         timer_stop_player_too_long = Timer(3, self.warn_stop_player_too_long)
 
         timer_stop_player_too_long.start()
@@ -469,15 +291,7 @@ class VlcPlayer(Worker):
 
     @staticmethod
     def warn_stop_player_too_long():
-        """Notify the user that VLC takes too long to stop
+        """Notify the user that mpv takes too long to stop
         """
-        logger.warning("VLC takes too long to stop")
+        logger.warning("mpv takes too long to stop")
 
-    def exit_worker(self, exception_type, exception_value, traceback):
-        """Exit the worker
-        """
-        self.stop_player()
-
-class KaraFolderNotFound(DakaraError):
-    """Error raised when the kara folder cannot be found
-    """

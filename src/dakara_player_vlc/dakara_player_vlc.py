@@ -12,7 +12,7 @@ from dakara_player_vlc.dakara_server import (
     DakaraServerWebSocketConnection,
 )
 from dakara_player_vlc.version import check_version
-from dakara_player_vlc.mpv_player import VlcPlayer
+from dakara_player_vlc.mpv_player import MpvPlayer
 
 FontLoader = get_font_loader_class()
 
@@ -106,11 +106,11 @@ class DakaraWorker(WorkerSafeThread):
             font_loader = stack.enter_context(FontLoader())
             font_loader.load()
 
-            # vlc player
-            vlc_player = stack.enter_context(
-                VlcPlayer(self.stop, self.errors, self.config["player"], tempdir)
+            # media player
+            media_player = stack.enter_context(
+                MpvPlayer(self.stop, self.errors, self.config["player"], tempdir)
             )
-            vlc_player.load()
+            media_player.load()
 
             # communication with the dakara HTTP server
             dakara_server_http = DakaraServerHTTPConnection(
@@ -132,7 +132,7 @@ class DakaraWorker(WorkerSafeThread):
 
             # manager for the precedent workers
             dakara_manager = DakaraManager(  # noqa F841
-                font_loader, vlc_player, dakara_server_http, dakara_server_websocket
+                font_loader, media_player, dakara_server_http, dakara_server_websocket
             )
 
             # start the worker timer
