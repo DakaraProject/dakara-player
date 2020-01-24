@@ -11,8 +11,9 @@ from dakara_player_vlc.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
 )
-from dakara_player_vlc.version import check_version
 from dakara_player_vlc.mpv_player import MpvPlayer
+from dakara_player_vlc.version import check_version
+from dakara_player_vlc.vlc_player import VlcPlayer
 
 FontLoader = get_font_loader_class()
 
@@ -107,9 +108,19 @@ class DakaraWorker(WorkerSafeThread):
             font_loader.load()
 
             # media player
-            media_player = stack.enter_context(
-                MpvPlayer(self.stop, self.errors, self.config["player"], tempdir)
-            )
+            config_player_name = self.config["player"].get("player_name", "vlc")
+            if config_player_name == "vlc":
+                media_player = stack.enter_context(
+                    VlcPlayer(self.stop, self.errors, self.config["player"], tempdir)
+                )
+            elif config_player_name == "mpv":
+                media_player = stack.enter_context(
+                    MpvPlayer(self.stop, self.errors, self.config["player"], tempdir)
+                )
+            else:
+                logger.error(f"Unknown player name: {config_player_name}")
+                raise NotImplementedError
+
             media_player.load()
 
             # communication with the dakara HTTP server

@@ -1,17 +1,10 @@
 import logging
 import os
-import urllib
-from pkg_resources import parse_version
 from threading import Timer
 
 import mpv
-from dakara_base.exceptions import DakaraError
-from path import Path
 
-from dakara_player_vlc.background_loader import BackgroundLoader
 from dakara_player_vlc.media_player import MediaPlayer
-from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
-from dakara_player_vlc.text_generator import TextGenerator
 from dakara_player_vlc.version import __version__
 
 
@@ -29,12 +22,6 @@ class MpvPlayer(MediaPlayer):
         player (mpv.Mpv): instance of mpv, attached to the actual player.
         media_pending (str): path of a song which will be played after the transition
             screen.
-
-    Args:
-        stop (Event): event to stop the program.
-        errors (Queue): queue of errors.
-        config (dict): configuration.
-        tempdir (path.Path): path to a temporary directory.
     """
 
     def init_player(self, config, tempdir):
@@ -47,12 +34,12 @@ class MpvPlayer(MediaPlayer):
         self.player = mpv.MPV(log_handler=self.handle_log_messages,
                               loglevel=config_loglevel)
 
+        # set mpv callbacks
+        self.set_mpv_default_callbacks()
+
         # media containing a song which will be played after the transition
         # screen
         self.media_pending = None
-
-        # set mpv specifics callbacks
-        self.set_mpv_callbacks()
 
     def load_player(self):
         # check mpv version
@@ -65,15 +52,14 @@ class MpvPlayer(MediaPlayer):
         self.player["force-window"] = "yes"
 
     def check_mpv_version(self):
-        """Print the mpv version and perform some parameter adjustements
+        """Print the mpv version
         """
         # get and log version
         logger.info(self.player.mpv_version)
 
-    def set_mpv_callbacks(self):
-        """Set the mpv player callbacks
+    def set_mpv_default_callbacks(self):
+        """Set mpv player default callbacks
         """
-
         # wrapper to use the event_callback decorator for setting handle_end_reached
         @self.player.event_callback("end_file")
         def end_file_callback(event):

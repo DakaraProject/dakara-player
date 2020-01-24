@@ -10,19 +10,20 @@ from path import Path
 from vlc import State, EventType
 
 from dakara_player_vlc.vlc_player import (
-    IDLE_BG_NAME,
     mrl_to_path,
-    TRANSITION_BG_NAME,
     VlcPlayer,
-    KaraFolderNotFound,
 )
-
+from dakara_player_vlc.media_player import (
+    IDLE_BG_NAME,
+    KaraFolderNotFound,
+    TRANSITION_BG_NAME,
+)
 from dakara_player_vlc.resources_manager import get_background
 
 
-@patch("dakara_player_vlc.vlc_player.PATH_BACKGROUNDS", "bg")
-@patch("dakara_player_vlc.vlc_player.TRANSITION_DURATION", 10)
-@patch("dakara_player_vlc.vlc_player.IDLE_DURATION", 20)
+@patch("dakara_player_vlc.media_player.PATH_BACKGROUNDS", "bg")
+@patch("dakara_player_vlc.media_player.TRANSITION_DURATION", 10)
+@patch("dakara_player_vlc.media_player.IDLE_DURATION", 20)
 class VlcPlayerTestCase(TestCase):
     """Test the VLC player class unitary
     """
@@ -56,9 +57,9 @@ class VlcPlayerTestCase(TestCase):
                     unittest.mock.MagicMock: TextGenerator instance.
         """
         with patch(
-            "dakara_player_vlc.vlc_player.TextGenerator"
+            "dakara_player_vlc.media_player.TextGenerator"
         ) as mocked_instance_class, patch(
-            "dakara_player_vlc.vlc_player.BackgroundLoader"
+            "dakara_player_vlc.media_player.BackgroundLoader"
         ) as mocked_background_loader_class, patch(
             "dakara_player_vlc.vlc_player.Instance"
         ) as mocked_text_generator_class:
@@ -218,6 +219,7 @@ class VlcPlayerTestCase(TestCase):
 
         # call the method
         vlc_player.set_default_callbacks()
+        vlc_player.set_vlc_default_callbacks()
 
         # assert there are callbacks defined
         self.assertCountEqual(

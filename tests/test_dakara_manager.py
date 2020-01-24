@@ -13,7 +13,7 @@ class DakaraManagerTestCase(TestCase):
         self.font_loader = MagicMock()
 
         # create a mock VLC player
-        self.vlc_player = MagicMock()
+        self.media_player = MagicMock()
 
         # create a mock Dakara HTTP server
         self.dakara_server_http = MagicMock()
@@ -24,7 +24,7 @@ class DakaraManagerTestCase(TestCase):
         # create a Dakara manager
         self.dakara_manager = DakaraManager(
             self.font_loader,
-            self.vlc_player,
+            self.media_player,
             self.dakara_server_http,
             self.dakara_server_websocket,
         )
@@ -36,8 +36,8 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.play_idle_screen()
 
         # call assertions
-        self.vlc_player.play_idle_screen.assert_called_once_with()
-        self.vlc_player.play_playlist_entry.assert_not_called()
+        self.media_player.play_idle_screen.assert_called_once_with()
+        self.media_player.play_playlist_entry.assert_not_called()
 
     def test_start_play_playlist_entry(self):
         """Test to launch the dakara manager when there is something to play
@@ -48,8 +48,8 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.play_playlist_entry(playlist_entry)
 
         # call assertions
-        self.vlc_player.play_idle_screen.assert_not_called()
-        self.vlc_player.play_playlist_entry.assert_called_once_with(playlist_entry)
+        self.media_player.play_idle_screen.assert_not_called()
+        self.media_player.play_playlist_entry.assert_called_once_with(playlist_entry)
 
     def test_handle_error(self):
         """Test the callback called on error
@@ -120,29 +120,29 @@ class DakaraManagerTestCase(TestCase):
         """Test the command manager for valid commands
         """
         # mock the playlist entry ID
-        self.dakara_manager.vlc_player.playing_id = 42
+        self.dakara_manager.media_player.playing_id = 42
 
         # call the method for pause
         self.dakara_manager.do_command("pause")
 
         # assert the call
-        self.dakara_manager.vlc_player.set_pause.assert_called_with(True)
+        self.dakara_manager.media_player.set_pause.assert_called_with(True)
 
         # reset the mock
-        self.dakara_manager.vlc_player.set_pause.reset_mock()
+        self.dakara_manager.media_player.set_pause.reset_mock()
 
         # call the method for pause
         self.dakara_manager.do_command("play")
 
         # assert the call
-        self.dakara_manager.vlc_player.set_pause.assert_called_with(False)
+        self.dakara_manager.media_player.set_pause.assert_called_with(False)
 
         # call the method for skip
         self.dakara_manager.do_command("skip")
 
         # assert the call
         self.dakara_server_http.update_finished.assert_called_with(42)
-        self.vlc_player.play_idle_screen.assert_called_with()
+        self.media_player.play_idle_screen.assert_called_with()
 
     def test_do_command_error(self):
         """Test the command manager for an invalid command

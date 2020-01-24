@@ -1,9 +1,3 @@
-import logging
-import os
-import urllib
-from pkg_resources import parse_version
-from threading import Timer
-
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
 from path import Path
@@ -11,7 +5,6 @@ from path import Path
 from dakara_player_vlc.background_loader import BackgroundLoader
 from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
 from dakara_player_vlc.text_generator import TextGenerator
-from dakara_player_vlc.version import __version__
 
 
 TRANSITION_BG_NAME = "transition.png"
@@ -46,6 +39,12 @@ class MediaPlayer(Worker):
             playing, its value is None.
         in_transition (bool): flag set to True is a transition screen is
             playing.
+
+    Args:
+        stop (Event): event to stop the program.
+        errors (Queue): queue of errors.
+        config (dict): configuration.
+        tempdir (path.Path): path to a temporary directory.
     """
 
     def init_worker(self, config, tempdir):
@@ -235,6 +234,7 @@ class MediaPlayer(Worker):
         """Exit the worker
         """
         self.stop_player()
+
 
 class KaraFolderNotFound(DakaraError):
     """Error raised when the kara folder cannot be found

@@ -4,50 +4,26 @@ from pkg_resources import parse_version
 from threading import Timer
 
 import vlc
-from dakara_base.exceptions import DakaraError
-from dakara_base.safe_workers import Worker
 from vlc import Instance
 from path import Path
 
-from dakara_player_vlc.background_loader import BackgroundLoader
-from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
-from dakara_player_vlc.text_generator import TextGenerator
+from dakara_player_vlc.media_player import MediaPlayer
 from dakara_player_vlc.version import __version__
 
-
-TRANSITION_BG_NAME = "transition.png"
-TRANSITION_TEXT_NAME = "transition.ass"
-TRANSITION_DURATION = 2
-
-IDLE_BG_NAME = "idle.png"
-IDLE_TEXT_NAME = "idle.ass"
-IDLE_DURATION = 300
 
 logger = logging.getLogger(__name__)
 
 
-class VlcPlayer(Worker):
+class VlcPlayer(MediaPlayer):
     """Interface for the Python VLC wrapper
 
-    This class allows to manipulate VLC for complex tasks. It manages the
-    display of idle/transition screens when playing, manages the VLC callbacks
-    and provides some accessors and mutators to get/set the status of the
-    player.
+    This class allows to manipulate VLC for complex tasks.
 
     The playlist is virtually handled using song-end callbacks.
 
-    After being instanciated, the object must be loaded with `load`.
-
     Attributes:
-        text_generator (TextGenerator): generator of on-screen texts.
-        callbacks (dict): dictionary of external callbacs that are run by VLC
-            on certain events. They must be set with `set_callback`.
         vlc_callback (dict): dictionary of callbacks associated to VLC events.
             They must be set with `set_vlc_callback`.
-        durations (dict): dictionary of durations for screens.
-        fullscreen (bool): is the player running fullscreen flag.
-        kara_folder_path (path.Path): path to the root karaoke folder containing
-            songs.
         media_parameters (list): list of parameters for VLC, applied for each
             media.
         media_parameters_text_screen (list): list of parameters for VLC,
@@ -58,60 +34,11 @@ class VlcPlayer(Worker):
         event_manager (vlc.EventManager): instance of the VLC event manager,
             attached to the media player.
         vlc_version (str): version of VLC.
-        playing_id (int): playlist entry id of the current song if no songs are
-            playing, its value is None.
-        in_transition (bool): flag set to True is a transition screen is
-            playing.
         media_pending (vlc.Media): media containing a song which will be played
             after the transition screen.
-
-    Args:
-        stop (Event): event to stop the program.
-        errors (Queue): queue of errors.
-        config (dict): configuration.
-        tempdir (path.Path): path to a temporary directory.
     """
 
-    def init_worker(self, config, tempdir):
-        """Init the worker
-        """
-        # callbacks
-        self.callbacks = {}
-        self.vlc_callbacks = {}
-
-        # karaoke parameters
-        self.fullscreen = config.get("fullscreen", False)
-        self.kara_folder_path = Path(config.get("kara_folder", ""))
-
-        # set durations
-        config_durations = config.get("durations") or {}
-        self.durations = {
-            "transition": config_durations.get(
-                "transition_duration", TRANSITION_DURATION
-            ),
-            "idle": IDLE_DURATION,
-        }
-
-        # set text generator
-        config_texts = config.get("templates") or {}
-        self.text_generator = TextGenerator(config_texts)
-
-        # set background loader
-        # we need to make some adaptations here
-        config_backgrounds = config.get("backgrounds") or {}
-        self.background_loader = BackgroundLoader(
-            directory=Path(config_backgrounds.get("directory", "")),
-            default_directory=Path(PATH_BACKGROUNDS),
-            background_filenames={
-                "transition": config_backgrounds.get("transition_background_name"),
-                "idle": config_backgrounds.get("idle_background_name"),
-            },
-            default_background_filenames={
-                "transition": TRANSITION_BG_NAME,
-                "idle": IDLE_BG_NAME,
-            },
-        )
-
+    def init_player(self, config, tempdir):
         # set VLC objects
         config_vlc = config.get("vlc") or {}
         self.media_parameters = config_vlc.get("media_parameters") or []
@@ -121,43 +48,20 @@ class VlcPlayer(Worker):
         self.event_manager = self.player.event_manager()
         self.vlc_version = None
 
-        # set path of ASS files for text screens
-        self.idle_text_path = tempdir / IDLE_TEXT_NAME
-        self.transition_text_path = tempdir / TRANSITION_TEXT_NAME
-
-        # playlist entry id of the current song
-        # if no songs are playing, its value is None
-        self.playing_id = None
-
-        # flag set to True is a transition screen is playing
-        self.in_transition = False
+        # set vlc callbacks
+        self.vlc_callbacks = {}
+        self.set_vlc_default_callbacks()
 
         # media containing a song which will be played after the transition
         # screen
         self.media_pending = None
 
-        # set default callbacks
-        self.set_default_callbacks()
-
-    def load(self):
-        """Prepare the instance
-
-        Perform actions with side effects.
-        """
+    def load_player(self):
         # check VLC
         self.check_vlc_version()
 
-        # check kara folder
-        self.check_kara_folder_path()
-
         # set VLC fullscreen
         self.player.set_fullscreen(self.fullscreen)
-
-        # load text generator
-        self.text_generator.load()
-
-        # load backgrounds
-        self.background_loader.load()
 
     def check_vlc_version(self):
         """Print the VLC version and perform some parameter adjustements
@@ -178,16 +82,8 @@ class VlcPlayer(Worker):
             # option forces VLC to use the explicitally added files only
             self.media_parameters_text_screen.append("no-sub-autodetect-file")
 
-    def check_kara_folder_path(self):
-        """Check the kara folder is valid
-        """
-        if not self.kara_folder_path.exists():
-            raise KaraFolderNotFound(
-                'Karaoke folder "{}" does not exist'.format(self.kara_folder_path)
-            )
-
-    def set_default_callbacks(self):
-        """Set all the default callbacks
+    def set_vlc_default_callbacks(self):
+        """Set VLC player default callbacks
         """
         # set VLC callbacks
         self.set_vlc_callback(
@@ -196,26 +92,6 @@ class VlcPlayer(Worker):
         self.set_vlc_callback(
             vlc.EventType.MediaPlayerEncounteredError, self.handle_encountered_error
         )
-
-        # set dummy callbacks that have to be defined externally
-        self.set_callback("started_transition", lambda playlist_entry_id: None)
-        self.set_callback("started_song", lambda playlist_entry_id: None)
-        self.set_callback("could_not_play", lambda playlist_entry_id: None)
-        self.set_callback("finished", lambda playlist_entry_id: None)
-        self.set_callback("paused", lambda playlist_entry_id, timing: None)
-        self.set_callback("resumed", lambda playlist_entry_id, timing: None)
-        self.set_callback("error", lambda playlist_entry_id, message: None)
-
-    def set_callback(self, name, callback):
-        """Assign an arbitrary callback
-
-        Callback is added to the `callbacks` dictionary.
-
-        Args:
-            name (str): name of the callback in the `callbacks` attribute.
-            callback (function): function to assign.
-        """
-        self.callbacks[name] = callback
 
     def set_vlc_callback(self, event, callback):
         """Assing an arbitrary callback to an VLC event
@@ -307,17 +183,6 @@ class VlcPlayer(Worker):
         self.player.play()
 
     def play_playlist_entry(self, playlist_entry):
-        """Play the specified playlist entry
-
-        Prepare the media containing the song to play and store it. Add a
-        transition screen and play it first. When the transition ends, the song
-        will be played.
-
-        Args:
-            playlist_entry (dict): dictionnary containing at least `id` and
-                `song` attributes. `song` is a dictionary containing at least
-                the key `file_path`.
-        """
         # file location
         file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
 
@@ -357,8 +222,6 @@ class VlcPlayer(Worker):
         self.callbacks["started_transition"](playlist_entry["id"])
 
     def play_idle_screen(self):
-        """Play idle screen
-        """
         # set idle state
         self.playing_id = None
         self.in_transition = False
@@ -389,30 +252,7 @@ class VlcPlayer(Worker):
         self.play_media(media)
         logger.debug("Playing idle screen")
 
-    def is_idle(self):
-        """Get player idling status
-
-        Returns:
-            bool: False when playing a song or a transition screen, True when
-                playing idle screen.
-        """
-        return self.playing_id is None
-
-    def get_playing_id(self):
-        """Playlist entry ID getter
-
-        Returns:
-            int: current playing ID or None when no song is playing.
-        """
-        return self.playing_id
-
     def get_timing(self):
-        """Player timing getter
-
-        Returns:
-            int: current song timing in seconds if a song is playing or 0 when
-                idle or during transition screen.
-        """
         if self.is_idle() or self.in_transition:
             return 0
 
@@ -425,21 +265,9 @@ class VlcPlayer(Worker):
         return timing // 1000
 
     def is_paused(self):
-        """Player pause status getter
-
-        Returns:
-            bool: True when playing song is paused.
-        """
         return self.player.get_state() == vlc.State.Paused
 
     def set_pause(self, pause):
-        """Pause or unpause the player
-
-        Pause playing song when True unpause when False.
-
-        Args:
-            pause (bool): flag for pause state requested.
-        """
         if not self.is_idle():
             if pause:
                 if self.is_paused():
@@ -462,8 +290,6 @@ class VlcPlayer(Worker):
                 self.callbacks["resumed"](self.playing_id, self.get_timing())
 
     def stop_player(self):
-        """Stop playing music
-        """
         logger.info("Stopping player")
 
         # send a warning within 3 seconds if VLC has not stopped already
@@ -483,11 +309,6 @@ class VlcPlayer(Worker):
         """
         logger.warning("VLC takes too long to stop")
 
-    def exit_worker(self, exception_type, exception_value, traceback):
-        """Exit the worker
-        """
-        self.stop_player()
-
 
 def mrl_to_path(file_mrl):
     """Convert a MRL to a classic path
@@ -504,8 +325,3 @@ def mrl_to_path(file_mrl):
         path = path[1:]
 
     return Path(urllib.parse.unquote(path)).normpath()
-
-
-class KaraFolderNotFound(DakaraError):
-    """Error raised when the kara folder cannot be found
-    """
