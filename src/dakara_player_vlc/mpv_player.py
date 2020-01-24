@@ -26,13 +26,12 @@ class MpvPlayer(MediaPlayer):
 
     def init_player(self, config, tempdir):
         # set mpv player options and logging
-        config_vlc = config.get("vlc") or {}
-        self.media_parameters = config_vlc.get("media_parameters") or []
-        self.media_parameters_text_screen = []
-
         config_loglevel = config.get("loglevel") or "info"
         self.player = mpv.MPV(log_handler=self.handle_log_messages,
                               loglevel=config_loglevel)
+        config_mpv = config.get("mpv") or {}
+        for mpv_option in config_mpv:
+            self.player[mpv_option] = config_mpv[mpv_option]
 
         # set mpv callbacks
         self.set_mpv_default_callbacks()
@@ -49,7 +48,7 @@ class MpvPlayer(MediaPlayer):
         self.player.fullscreen = self.fullscreen
 
         # force a single window
-        self.player["force-window"] = "yes"
+        self.player.force_window = True
 
     def check_mpv_version(self):
         """Print the mpv version

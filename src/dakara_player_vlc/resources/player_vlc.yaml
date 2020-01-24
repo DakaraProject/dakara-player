@@ -1,5 +1,8 @@
 # Parameters for the player
 player:
+  # Name of the media player to use ('vlc' or 'mpv')
+  player_name: vlc
+
   # Path of the karaoke folder
   kara_folder: /path/to/folder
 
@@ -53,6 +56,19 @@ player:
       #
       # On Windows:
       # You should not have this problem.
+
+  # Parameters for mpv
+  # You can define specific options for mpv from here
+  # To get a complete list of the available options, consult mpv documentation:
+  #
+  # mpv --list-options
+  mpv:
+    # Enable the debanding algorithm.
+    # This greatly reduces the amount of visible banding, blocking and other
+    # quantization artifacts, at the expense of very slightly blurring some of the
+    # finest details. In practice, it's virtually always an improvement - the only
+    # reason to disable it would be for performance.
+    deband: yes
 
   # Parameters for templates
   # Templates are used to display some information on the idle or the
