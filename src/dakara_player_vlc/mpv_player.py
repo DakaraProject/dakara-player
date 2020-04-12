@@ -110,10 +110,10 @@ class MpvMediaPlayer(MediaPlayer):
             # too permissive
             filename_without_ext = os.path.splitext(self.media_pending)[0]
             sub_file = None
-            if os.path.exists(f"{filename_without_ext}.ass"):
-                sub_file = f"{filename_without_ext}.ass"
-            elif os.path.exists(f"{filename_without_ext}.ssa"):
-                sub_file = f"{filename_without_ext}.ssa"
+            if os.path.exists("{}.ass".format(filename_without_ext)):
+                sub_file = "{}.ass".format(filename_without_ext)
+            elif os.path.exists("{}.ssa".format(filename_without_ext)):
+                sub_file = "{}.ssa".format(filename_without_ext)
 
             thread = self.create_thread(
                 target=self.play_media, args=(self.media_pending, sub_file)
@@ -165,7 +165,7 @@ class MpvMediaPlayer(MediaPlayer):
         else:
             intlevel = logging.NOTSET
 
-        logger.log(intlevel, f"mpv: {component}: {message}")
+        logger.log(intlevel, "mpv: {}: {}".format(component, message))
 
         if intlevel >= logging.ERROR:
             message = "Unable to play current media"
