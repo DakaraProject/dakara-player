@@ -1,6 +1,5 @@
 import logging
 import os
-from threading import Timer
 
 try:
     import mpv
@@ -8,12 +7,16 @@ try:
 except OSError:
     mpv = None
 
-from dakara_player_vlc.media_player import MediaPlayer
+from dakara_player_vlc.media_player import MediaPlayer, MediaPlayerNotAvailableError
 from dakara_player_vlc.version import __version__
-from dakara_base.exceptions import DakaraError
 
 
 logger = logging.getLogger(__name__)
+
+
+class MpvNotAvailableError(MediaPlayerNotAvailableError):
+    """Error raised when trying to use the `MpvMediaPlayer` class if MPV cannot be found
+    """
 
 
 class MpvMediaPlayer(MediaPlayer):
@@ -29,6 +32,9 @@ class MpvMediaPlayer(MediaPlayer):
             screen.
     """
 
+    player_name = "MPV"
+    player_not_available_error_class = MpvNotAvailableError
+
     @staticmethod
     def is_available():
         """Check if MPV can be used
@@ -36,10 +42,6 @@ class MpvMediaPlayer(MediaPlayer):
         return mpv is not None
 
     def init_player(self, config, tempdir):
-        # check MPV is available
-        if not self.is_available():
-            raise MpvNotAvailableError("MPV is not available")
-
         # set mpv player options and logging
         config_loglevel = config.get("loglevel") or "info"
         self.player = mpv.MPV(
@@ -281,25 +283,5 @@ class MpvMediaPlayer(MediaPlayer):
 
     def stop_player(self):
         logger.info("Stopping player")
-
-        # send a warning within 3 seconds if mpv has not stopped already
-        timer_stop_player_too_long = Timer(3, self.warn_stop_player_too_long)
-
-        timer_stop_player_too_long.start()
         self.player.terminate()
-
-        # clear the warning
-        timer_stop_player_too_long.cancel()
-
         logger.debug("Stopped player")
-
-    @staticmethod
-    def warn_stop_player_too_long():
-        """Notify the user that mpv takes too long to stop
-        """
-        logger.warning("mpv takes too long to stop")
-
-
-class MpvNotAvailableError(DakaraError):
-    """Error raised when trying to use the `MpvMediaPlayer` class if MPV cannot be found
-    """

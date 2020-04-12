@@ -1,18 +1,21 @@
 import logging
 import urllib
 from pkg_resources import parse_version
-from threading import Timer
 
 import vlc
 from vlc import Instance
 from path import Path
 
-from dakara_player_vlc.media_player import MediaPlayer
+from dakara_player_vlc.media_player import MediaPlayer, MediaPlayerNotAvailableError
 from dakara_player_vlc.version import __version__
-from dakara_base.exceptions import DakaraError
 
 
 logger = logging.getLogger(__name__)
+
+
+class VlcNotAvailableError(MediaPlayerNotAvailableError):
+    """Error raised when trying to use the `VlcMediaPlayer` class if VLC cannot be found
+    """
 
 
 class VlcMediaPlayer(MediaPlayer):
@@ -39,6 +42,9 @@ class VlcMediaPlayer(MediaPlayer):
             after the transition screen.
     """
 
+    player_name = "VLC"
+    player_not_available_error_class = VlcNotAvailableError
+
     @staticmethod
     def is_available():
         """Check if VLC can be used
@@ -46,10 +52,6 @@ class VlcMediaPlayer(MediaPlayer):
         return Instance() is not None
 
     def init_player(self, config, tempdir):
-        # check VLC is available
-        if not self.is_available():
-            raise VlcNotAvailableError("VLC is not available")
-
         # set VLC objects
         config_vlc = config.get("vlc") or {}
         self.media_parameters = config_vlc.get("media_parameters") or []
@@ -302,23 +304,8 @@ class VlcMediaPlayer(MediaPlayer):
 
     def stop_player(self):
         logger.info("Stopping player")
-
-        # send a warning within 3 seconds if VLC has not stopped already
-        timer_stop_player_too_long = Timer(3, self.warn_stop_player_too_long)
-
-        timer_stop_player_too_long.start()
         self.player.stop()
-
-        # clear the warning
-        timer_stop_player_too_long.cancel()
-
         logger.debug("Stopped player")
-
-    @staticmethod
-    def warn_stop_player_too_long():
-        """Notify the user that VLC takes too long to stop
-        """
-        logger.warning("VLC takes too long to stop")
 
 
 def mrl_to_path(file_mrl):
@@ -336,8 +323,3 @@ def mrl_to_path(file_mrl):
         path = path[1:]
 
     return Path(urllib.parse.unquote(path)).normpath()
-
-
-class VlcNotAvailableError(DakaraError):
-    """Error raised when trying to use the `VlcMediaPlayer` class if VLC cannot be found
-    """

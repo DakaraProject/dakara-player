@@ -1,3 +1,7 @@
+import logging
+from abc import ABC, abstractmethod
+from threading import Timer
+
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
 from path import Path
@@ -15,8 +19,17 @@ IDLE_BG_NAME = "idle.png"
 IDLE_TEXT_NAME = "idle.ass"
 IDLE_DURATION = 300
 
+PLAYER_CLOSING_DURATION = 3
 
-class MediaPlayer(Worker):
+logger = logging.getLogger(__name__)
+
+
+class MediaPlayerNotAvailableError(DakaraError):
+    """Error raised when trying to use a target player that cannot be found
+    """
+
+
+class MediaPlayer(Worker, ABC):
     """Common operations for media players.
 
     This class should be subclassed by actual player implementations.
@@ -25,9 +38,15 @@ class MediaPlayer(Worker):
     logging of the messages of the actual player, and provides some accessors and
     mutators to get/set the status of the player.
 
-    After being instanciated, the object must be loaded with `load`.
+    Before being instanciated, one should check if the target player is
+    available with the static method `is_available`. If the return value is
+    False, the class cannot be instanciated. After instanciation, the object
+    must be loaded with `load` before being used.
 
     Attributes:
+        player_name (str): Name of the target player.
+        player_not_available_error_class (type): Exception raised if the target
+            player cannot be found.
         text_generator (TextGenerator): generator of on-screen texts.
         callbacks (dict): dictionary of external callbacks that are run by this player
             on certain events. They must be set with `set_callback`.
@@ -47,9 +66,27 @@ class MediaPlayer(Worker):
         tempdir (path.Path): path to a temporary directory.
     """
 
+    player_name = None
+    player_not_available_error_class = MediaPlayerNotAvailableError
+
+    @staticmethod
+    @abstractmethod
+    def is_available():
+        """Check if the target player can be used
+
+        Returns:
+            bool: True if the class can be instanciated.
+        """
+
     def init_worker(self, config, tempdir):
         """Init the worker
         """
+        # check the target player is available
+        if not self.is_available():
+            raise self.player_not_available_error_class(
+                "{} is not available".format(self.player_name)
+            )
+
         # callbacks
         self.callbacks = {}
 
@@ -102,10 +139,10 @@ class MediaPlayer(Worker):
 
         self.init_player(config, tempdir)
 
+    @abstractmethod
     def init_player(self, config, tempdir):
         """Init the actual player
         """
-        raise NotImplementedError
 
     def load(self):
         """Prepare the instance
@@ -123,12 +160,12 @@ class MediaPlayer(Worker):
 
         self.load_player()
 
+    @abstractmethod
     def load_player(self):
         """Prepare the player instance
 
         Perform actions with side effects.
         """
-        raise NotImplementedError
 
     def check_kara_folder_path(self):
         """Check the kara folder is valid
@@ -162,6 +199,7 @@ class MediaPlayer(Worker):
         """
         self.callbacks[name] = callback
 
+    @abstractmethod
     def play_playlist_entry(self, playlist_entry):
         """Play the specified playlist entry
 
@@ -174,12 +212,11 @@ class MediaPlayer(Worker):
                 `song` attributes. `song` is a dictionary containing at least
                 the key `file_path`.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def play_idle_screen(self):
         """Play idle screen
         """
-        raise NotImplementedError
 
     def is_idle(self):
         """Get player idling status
@@ -198,6 +235,7 @@ class MediaPlayer(Worker):
         """
         return self.playing_id
 
+    @abstractmethod
     def get_timing(self):
         """Player timing getter
 
@@ -205,16 +243,16 @@ class MediaPlayer(Worker):
             int: current song timing in seconds if a song is playing or 0 when
                 idle or during transition screen.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def is_paused(self):
         """Player pause status getter
 
         Returns:
             bool: True when playing song is paused.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def set_pause(self, pause):
         """Pause or unpause the player
 
@@ -223,17 +261,35 @@ class MediaPlayer(Worker):
         Args:
             pause (bool): flag for pause state requested.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def stop_player(self):
         """Stop playing music
         """
-        raise NotImplementedError
 
     def exit_worker(self, exception_type, exception_value, traceback):
         """Exit the worker
+
+        Send a warning after `PLAYER_CLOSING_DURATION` seconds if the worker is
+        not closed yet.
         """
+        # send a warning within if the player has not stopped already
+        timer_stop_player_too_long = Timer(
+            PLAYER_CLOSING_DURATION, self.warn_stop_player_too_long
+        )
+        timer_stop_player_too_long.start()
+
+        # stop player
         self.stop_player()
+
+        # clear the warning
+        timer_stop_player_too_long.cancel()
+
+    @classmethod
+    def warn_stop_player_too_long(cls):
+        """Notify the user that the player takes too long to stop
+        """
+        logger.warning("{} takes too long to stop".format(cls.player_name))
 
 
 class KaraFolderNotFound(DakaraError):
