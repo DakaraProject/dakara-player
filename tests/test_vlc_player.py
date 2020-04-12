@@ -11,7 +11,7 @@ from vlc import State, EventType
 
 from dakara_player_vlc.vlc_player import (
     mrl_to_path,
-    VlcPlayer,
+    VlcMediaPlayer,
 )
 from dakara_player_vlc.media_player import (
     IDLE_BG_NAME,
@@ -24,7 +24,7 @@ from dakara_player_vlc.resources_manager import get_background
 @patch("dakara_player_vlc.media_player.PATH_BACKGROUNDS", "bg")
 @patch("dakara_player_vlc.media_player.TRANSITION_DURATION", 10)
 @patch("dakara_player_vlc.media_player.IDLE_DURATION", 20)
-class VlcPlayerTestCase(TestCase):
+class VlcMediaPlayerTestCase(TestCase):
     """Test the VLC player class unitary
     """
 
@@ -43,14 +43,14 @@ class VlcPlayerTestCase(TestCase):
         }
 
     def get_instance(self, config={}):
-        """Get a heavily mocked instance of VlcPlayer
+        """Get a heavily mocked instance of VlcMediaPlayer
 
         Args:
             config (dict): configuration passed to the constructor.
 
         Returns:
             tuple: contains the following elements:
-                VlcPlayer: instance;
+                VlcMediaPlayer: instance;
                 tuple: contains the mocked objects, for checking:
                     unittest.mock.MagicMock: VLC Instance instance;
                     unittest.mock.MagicMock: BackgroundLoader instance;
@@ -64,7 +64,7 @@ class VlcPlayerTestCase(TestCase):
             "dakara_player_vlc.vlc_player.Instance"
         ) as mocked_text_generator_class:
             return (
-                VlcPlayer(Event(), Queue(), config, Path("temp")),
+                VlcMediaPlayer(Event(), Queue(), config, Path("temp")),
                 (
                     mocked_instance_class,
                     mocked_background_loader_class,
@@ -239,8 +239,8 @@ class VlcPlayerTestCase(TestCase):
             [EventType.MediaPlayerEndReached, EventType.MediaPlayerEncounteredError],
         )
 
-    @patch.object(VlcPlayer, "check_kara_folder_path")
-    @patch.object(VlcPlayer, "check_vlc_version")
+    @patch.object(VlcMediaPlayer, "check_kara_folder_path")
+    @patch.object(VlcMediaPlayer, "check_vlc_version")
     def test_load(self, mocked_check_vlc_version, mocked_check_kara_folder_path):
         """Test to load the instance
         """
@@ -300,7 +300,7 @@ class VlcPlayerTestCase(TestCase):
             ],
         )
 
-    @patch.object(VlcPlayer, "create_thread")
+    @patch.object(VlcMediaPlayer, "create_thread")
     def test_handle_end_reached_transition(self, mocked_create_thread):
         """Test song end callback for after a transition screen
         """
@@ -341,7 +341,7 @@ class VlcPlayerTestCase(TestCase):
             target=vlc_player.play_media, args=(media_pending,)
         )
 
-    @patch.object(VlcPlayer, "create_thread")
+    @patch.object(VlcMediaPlayer, "create_thread")
     def test_handle_end_reached_idle(self, mocked_create_thread):
         """Test song end callback for after an idle screen
         """
@@ -363,7 +363,7 @@ class VlcPlayerTestCase(TestCase):
         vlc_player.callbacks["started_song"].assert_not_called()
         mocked_create_thread.assert_called_with(target=vlc_player.play_idle_screen)
 
-    @patch.object(VlcPlayer, "create_thread")
+    @patch.object(VlcMediaPlayer, "create_thread")
     def test_handle_end_reached_finished(self, mocked_create_thread):
         """Test song end callback for after an actual song
         """
@@ -479,7 +479,7 @@ class VlcPlayerTestCase(TestCase):
         self.assertDictEqual(vlc_player.durations, {"transition": 5, "idle": 20})
 
 
-class VlcPlayerIntegrationTestCase(TestCase):
+class VlcMediaPlayerIntegrationTestCase(TestCase):
     """Test the VLC player class in real conditions
     """
 
@@ -524,7 +524,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
         self.temp = Path(tempfile.mkdtemp())
 
         # create vlc player and load it
-        self.vlc_player = VlcPlayer(
+        self.vlc_player = VlcMediaPlayer(
             Event(),
             Queue(),
             {

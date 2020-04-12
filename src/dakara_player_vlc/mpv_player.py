@@ -2,17 +2,22 @@ import logging
 import os
 from threading import Timer
 
-import mpv
+try:
+    import mpv
+
+except OSError:
+    mpv = None
 
 from dakara_player_vlc.media_player import MediaPlayer
 from dakara_player_vlc.version import __version__
+from dakara_base.exceptions import DakaraError
 
 
 logger = logging.getLogger(__name__)
 
 
-class MpvPlayer(MediaPlayer):
-    """Interface for the Python mpv wrapper
+class MpvMediaPlayer(MediaPlayer):
+    """Interface for the Python MPV wrapper
 
     This class allows the usage of mpv as a player for Dakara.
 
@@ -24,11 +29,22 @@ class MpvPlayer(MediaPlayer):
             screen.
     """
 
+    @staticmethod
+    def is_available():
+        """Check if MPV can be used
+        """
+        return mpv is not None
+
     def init_player(self, config, tempdir):
+        # check MPV is available
+        if not self.is_available():
+            raise MpvNotAvailableError("MPV is not available")
+
         # set mpv player options and logging
         config_loglevel = config.get("loglevel") or "info"
-        self.player = mpv.MPV(log_handler=self.handle_log_messages,
-                              loglevel=config_loglevel)
+        self.player = mpv.MPV(
+            log_handler=self.handle_log_messages, loglevel=config_loglevel
+        )
         config_mpv = config.get("mpv") or {}
         for mpv_option in config_mpv:
             self.player[mpv_option] = config_mpv[mpv_option]
@@ -78,7 +94,7 @@ class MpvPlayer(MediaPlayer):
             event (mpv.MpvEventEndFile): mpv end fle event object.
         """
         # check that the reason is actually a file ending (could be a force stop)
-        if (event["event"]["reason"] != mpv.MpvEventEndFile.EOF):
+        if event["event"]["reason"] != mpv.MpvEventEndFile.EOF:
             return
 
         logger.debug("Song end callback called")
@@ -187,8 +203,11 @@ class MpvPlayer(MediaPlayer):
 
         # create the transition screen
         with self.transition_text_path.open("w", encoding="utf8") as file:
-            file.write(self.text_generator.create_transition_text(playlist_entry,
-                fade_in=False))
+            file.write(
+                self.text_generator.create_transition_text(
+                    playlist_entry, fade_in=False
+                )
+            )
 
         media_transition = str(self.background_loader.backgrounds["transition"])
 
@@ -280,3 +299,7 @@ class MpvPlayer(MediaPlayer):
         """
         logger.warning("mpv takes too long to stop")
 
+
+class MpvNotAvailableError(DakaraError):
+    """Error raised when trying to use the `MpvMediaPlayer` class if MPV cannot be found
+    """

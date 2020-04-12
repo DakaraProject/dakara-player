@@ -48,7 +48,7 @@ class DakaraWorkerTestCase(TestCase):
 
     @patch("dakara_player_vlc.dakara_player_vlc.TemporaryDirectory", autospec=True)
     @patch("dakara_player_vlc.dakara_player_vlc.FontLoader", autospec=True)
-    @patch("dakara_player_vlc.dakara_player_vlc.VlcPlayer", autospec=True)
+    @patch("dakara_player_vlc.dakara_player_vlc.VlcMediaPlayer", autospec=True)
     @patch(
         "dakara_player_vlc.dakara_player_vlc.DakaraServerHTTPConnection", autospec=True
     )

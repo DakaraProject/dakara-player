@@ -222,7 +222,7 @@ class TextGenerator:
             str: text containing the transition screen content.
         """
         info = playlist_entry
-        info['fade_in'] = fade_in
+        info["fade_in"] = fade_in
         return self.transition_template.render(info)
 
 

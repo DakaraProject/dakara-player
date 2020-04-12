@@ -9,12 +9,13 @@ from path import Path
 
 from dakara_player_vlc.media_player import MediaPlayer
 from dakara_player_vlc.version import __version__
+from dakara_base.exceptions import DakaraError
 
 
 logger = logging.getLogger(__name__)
 
 
-class VlcPlayer(MediaPlayer):
+class VlcMediaPlayer(MediaPlayer):
     """Interface for the Python VLC wrapper
 
     This class allows to manipulate VLC for complex tasks.
@@ -38,7 +39,17 @@ class VlcPlayer(MediaPlayer):
             after the transition screen.
     """
 
+    @staticmethod
+    def is_available():
+        """Check if VLC can be used
+        """
+        return Instance() is not None
+
     def init_player(self, config, tempdir):
+        # check VLC is available
+        if not self.is_available():
+            raise VlcNotAvailableError("VLC is not available")
+
         # set VLC objects
         config_vlc = config.get("vlc") or {}
         self.media_parameters = config_vlc.get("media_parameters") or []
@@ -325,3 +336,8 @@ def mrl_to_path(file_mrl):
         path = path[1:]
 
     return Path(urllib.parse.unquote(path)).normpath()
+
+
+class VlcNotAvailableError(DakaraError):
+    """Error raised when trying to use the `VlcMediaPlayer` class if VLC cannot be found
+    """
