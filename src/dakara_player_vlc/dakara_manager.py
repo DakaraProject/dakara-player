@@ -13,7 +13,7 @@ class DakaraManager:
     Args:
         font_loader (font_loader.FontLoader): object for font
             installation/deinstallation.
-        vlc_player (vlc_player.VlcPlayer): interface to VLC.
+        media_player (media_player.MediaPlayer): interface to VLC.
         dakara_server_http (dakara_server.DakaraServerHTTPConnection):
             interface to the Dakara server for the HTTP protocol.
         dakara_server_websocket
@@ -22,24 +22,24 @@ class DakaraManager:
     """
 
     def __init__(
-        self, font_loader, vlc_player, dakara_server_http, dakara_server_websocket
+        self, font_loader, media_player, dakara_server_http, dakara_server_websocket
     ):
         # set modules up
         self.font_loader = font_loader
-        self.vlc_player = vlc_player
+        self.media_player = media_player
         self.dakara_server_http = dakara_server_http
         self.dakara_server_websocket = dakara_server_websocket
 
         # set player callbacks
-        self.vlc_player.set_callback(
+        self.media_player.set_callback(
             "started_transition", self.handle_started_transition
         )
-        self.vlc_player.set_callback("started_song", self.handle_started_song)
-        self.vlc_player.set_callback("could_not_play", self.handle_could_not_play)
-        self.vlc_player.set_callback("finished", self.handle_finished)
-        self.vlc_player.set_callback("paused", self.handle_paused)
-        self.vlc_player.set_callback("resumed", self.handle_resumed)
-        self.vlc_player.set_callback("error", self.handle_error)
+        self.media_player.set_callback("started_song", self.handle_started_song)
+        self.media_player.set_callback("could_not_play", self.handle_could_not_play)
+        self.media_player.set_callback("finished", self.handle_finished)
+        self.media_player.set_callback("paused", self.handle_paused)
+        self.media_player.set_callback("resumed", self.handle_resumed)
+        self.media_player.set_callback("error", self.handle_error)
 
         # set dakara server websocket callbacks
         self.dakara_server_websocket.set_callback("idle", self.play_idle_screen)
@@ -52,7 +52,7 @@ class DakaraManager:
         )
 
     def handle_error(self, playlist_entry_id, message):
-        """Callback when a VLC error occurs
+        """Callback when a media player error occurs
 
         Args:
             playlist_entry_id (int): playlist entry ID.
@@ -116,12 +116,12 @@ class DakaraManager:
         Args:
             playlist_entry (dict): dictionary of the playlist entry.
         """
-        self.vlc_player.play_playlist_entry(playlist_entry)
+        self.media_player.play_playlist_entry(playlist_entry)
 
     def play_idle_screen(self):
         """Play the idle screen
         """
-        self.vlc_player.play_idle_screen()
+        self.media_player.play_idle_screen()
 
     def do_command(self, command):
         """Execute a player command
@@ -139,13 +139,13 @@ class DakaraManager:
         ), "Unknown command requested: '{}'".format(command)
 
         if command == "pause":
-            self.vlc_player.set_pause(True)
+            self.media_player.set_pause(True)
             return
 
         if command == "play":
-            self.vlc_player.set_pause(False)
+            self.media_player.set_pause(False)
             return
 
         if command == "skip":
-            self.handle_finished(self.vlc_player.playing_id)
+            self.handle_finished(self.media_player.playing_id)
             self.play_idle_screen()

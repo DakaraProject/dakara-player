@@ -11,6 +11,7 @@ from dakara_player_vlc.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
 )
+from dakara_player_vlc.mpv_player import MpvPlayer
 from dakara_player_vlc.version import check_version
 from dakara_player_vlc.vlc_player import VlcPlayer
 
@@ -106,11 +107,21 @@ class DakaraWorker(WorkerSafeThread):
             font_loader = stack.enter_context(FontLoader())
             font_loader.load()
 
-            # vlc player
-            vlc_player = stack.enter_context(
-                VlcPlayer(self.stop, self.errors, self.config["player"], tempdir)
-            )
-            vlc_player.load()
+            # media player
+            config_player_name = self.config["player"].get("player_name", "vlc")
+            if config_player_name == "vlc":
+                media_player = stack.enter_context(
+                    VlcPlayer(self.stop, self.errors, self.config["player"], tempdir)
+                )
+            elif config_player_name == "mpv":
+                media_player = stack.enter_context(
+                    MpvPlayer(self.stop, self.errors, self.config["player"], tempdir)
+                )
+            else:
+                logger.error(f"Unknown player name: {config_player_name}")
+                raise NotImplementedError
+
+            media_player.load()
 
             # communication with the dakara HTTP server
             dakara_server_http = DakaraServerHTTPConnection(
@@ -132,7 +143,7 @@ class DakaraWorker(WorkerSafeThread):
 
             # manager for the precedent workers
             dakara_manager = DakaraManager(  # noqa F841
-                font_loader, vlc_player, dakara_server_http, dakara_server_websocket
+                font_loader, media_player, dakara_server_http, dakara_server_websocket
             )
 
             # start the worker timer
