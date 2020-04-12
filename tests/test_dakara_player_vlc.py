@@ -90,7 +90,11 @@ class DakaraWorkerTestCase(TestCase):
         stop.set()
 
         # call the method
-        dakara_worker.run()
+        with patch.dict(
+            "dakara_player_vlc.dakara_player_vlc.MEDIA_PLAYER_CLASSES",
+            {"vlc": mocked_vlc_player_class},
+        ):
+            dakara_worker.run()
 
         # assert the call
         mocked_temporary_directory_class.assert_called_with(suffix=".dakara")
