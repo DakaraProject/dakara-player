@@ -220,13 +220,10 @@ class BackgroundLoaderTestCase(TestCase):
         self.assertDictEqual(loader.backgrounds, {})
 
         # load the backgrounds
-        with self.assertRaises(BackgroundNotFoundError) as error:
+        with self.assertRaisesRegex(
+            BackgroundNotFoundError, "Unable to find a background file for background"
+        ):
             loader.load()
-
-        # assert the error
-        self.assertEqual(
-            str(error.exception), "Unable to find a background file for background"
-        )
 
         # assert the backgrounds
         self.assertDictEqual(loader.backgrounds, {})

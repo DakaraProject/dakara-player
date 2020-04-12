@@ -30,13 +30,11 @@ class GetFontLoaderClassTestCase(TestCase):
 
         # call for uniplemented OS
         with patch("dakara_player_vlc.font_loader.sys.platform", "other"):
-            with self.assertRaises(NotImplementedError) as error:
+            with self.assertRaisesRegex(
+                NotImplementedError,
+                r"This operating system \(other\) is not currently supported",
+            ):
                 get_font_loader_class()
-
-            self.assertEqual(
-                str(error.exception),
-                "This operating system (other) is not currently supported",
-            )
 
 
 @skipUnless(sys.platform.startswith("linux"), "Can be tested on Linux only")

@@ -65,14 +65,11 @@ class PlayTestCase(TestCase):
         mocked_load_config.side_effect = ConfigNotFoundError("Config file not found")
 
         # call the function
-        with self.assertRaises(ConfigNotFoundError) as error:
-            play.play(Namespace(debug=False, force=False, progress=True))
-
-        # assert the error
-        self.assertEqual(
-            str(error.exception),
+        with self.assertRaisesRegex(
+            ConfigNotFoundError,
             "Config file not found, please run 'dakara-play-vlc create-config'",
-        )
+        ):
+            play.play(Namespace(debug=False, force=False, progress=True))
 
         # assert the call
         mocked_load.assert_not_called()
@@ -109,12 +106,9 @@ class PlayTestCase(TestCase):
         mocked_load_config.return_value = config
 
         # call the function
-        with self.assertRaises(DakaraError) as error:
+        with self.assertRaisesRegex(DakaraError, "Config-related error"):
             with self.assertLogs("dakara_player_vlc.commands.play") as logger:
                 play.play(Namespace(debug=False, force=False, progress=True))
-
-        # assert the error
-        self.assertEqual(str(error.exception), "Config-related error")
 
         # assert the logs
         self.assertListEqual(
@@ -245,19 +239,16 @@ class MainTestCase(TestCase):
         """
         # create mocks
         def function(args):
-            raise DakaraError("error")
+            raise DakaraError("error message")
 
         mocked_parse_args.return_value = Namespace(function=function, debug=True)
 
         # call the function
-        with self.assertRaises(DakaraError) as error:
+        with self.assertRaisesRegex(DakaraError, "error message"):
             play.main()
 
         # assert the call
         mocked_exit.assert_not_called()
-
-        # assert the error
-        self.assertEqual(str(error.exception), "error")
 
     def test_unknown_error(self, mocked_parse_args, mocked_exit):
         """Test an unknown error exit
@@ -290,16 +281,13 @@ class MainTestCase(TestCase):
         """
         # create mocks
         def function(args):
-            raise Exception("error")
+            raise Exception("error message")
 
         mocked_parse_args.return_value = Namespace(function=function, debug=True)
 
         # call the function
-        with self.assertRaises(Exception) as error:
+        with self.assertRaisesRegex(Exception, "error message"):
             play.main()
 
         # assert the call
         mocked_exit.assert_not_called()
-
-        # assert the error
-        self.assertEqual(str(error.exception), "error")

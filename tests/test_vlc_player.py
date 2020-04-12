@@ -198,14 +198,11 @@ class VlcMediaPlayerTestCase(TestCase):
         mocked_exists.return_value = False
 
         # call the method
-        with self.assertRaises(KaraFolderNotFound) as error:
-            vlc_player.check_kara_folder_path()
-
-        # assert the error
-        self.assertEqual(
-            str(error.exception),
+        with self.assertRaisesRegex(
+            KaraFolderNotFound,
             'Karaoke folder "/path/to/kara/directory" does not exist',
-        )
+        ):
+            vlc_player.check_kara_folder_path()
 
     def test_set_default_callbacks(self):
         """Test to set the default callbacks
