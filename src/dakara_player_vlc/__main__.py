@@ -1,4 +1,5 @@
 from dakara_player_vlc.commands import play
 
 
-play.main()
+if __name__ == "__main__":
+    play.main()

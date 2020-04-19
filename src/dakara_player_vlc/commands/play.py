@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-"""Entry point for the dakara-play-vlc command
-"""
-
-
 import logging
 from argparse import ArgumentParser
 
@@ -152,7 +147,3 @@ def main():
         value = 128
 
     exit(value)
-
-
-if __name__ == "__main__":
-    main()

@@ -12,10 +12,12 @@ from vlc import State, EventType
 from dakara_player_vlc.vlc_player import (
     mrl_to_path,
     VlcMediaPlayer,
+    VlcNotAvailableError,
 )
 from dakara_player_vlc.media_player import (
     IDLE_BG_NAME,
     KaraFolderNotFound,
+    MediaPlayerNotAvailableError,
     TRANSITION_BG_NAME,
 )
 from dakara_player_vlc.resources_manager import get_background
@@ -71,6 +73,24 @@ class VlcMediaPlayerTestCase(TestCase):
                     mocked_text_generator_class,
                 ),
             )
+
+    def test_is_available(self):
+        """Test if VLC is available
+        """
+        self.assertTrue(VlcMediaPlayer.is_available())
+
+    @patch.object(VlcMediaPlayer, "is_available")
+    def test_init_unavailable(self, mocked_is_available):
+        """Test when VLC is not available
+        """
+        mocked_is_available.return_value = False
+
+        with self.assertRaisesRegex(
+            MediaPlayerNotAvailableError, "VLC is not available"
+        ) as error:
+            VlcMediaPlayer(Event(), Queue(), {}, Path("temp"))
+
+        self.assertIs(error.exception.__class__, VlcNotAvailableError)
 
     def test_set_callback(self):
         """Test the assignation of a callback
@@ -475,6 +495,42 @@ class VlcMediaPlayerTestCase(TestCase):
         # assert the instance
         self.assertDictEqual(vlc_player.durations, {"transition": 5, "idle": 20})
 
+    @patch("dakara_player_vlc.media_player.PLAYER_CLOSING_DURATION", 0)
+    @patch.object(VlcMediaPlayer, "warn_stop_player_too_long")
+    @patch.object(VlcMediaPlayer, "stop_player")
+    def test_exit_too_long(self, mocked_stop_player, mocked_warn_stop_player_too_long):
+        """Test to exit worker when and takes too long
+        """
+        event = Event()
+
+        def set_event():
+            event.set()
+
+        def wait_event():
+            event.wait()
+
+        mocked_warn_stop_player_too_long.side_effect = set_event
+        mocked_stop_player.side_effect = wait_event
+
+        vlc_player, _ = self.get_instance()
+        vlc_player.exit_worker(None, None, None)
+
+        mocked_warn_stop_player_too_long.assert_called_with()
+        mocked_stop_player.assert_called_with()
+
+    def test_warn_stop(self):
+        """Test the warning message when player is too long to close
+        """
+        vlc_player, _ = self.get_instance()
+
+        with self.assertLogs("dakara_player_vlc.media_player", "WARNING") as logger:
+            vlc_player.warn_stop_player_too_long()
+
+        self.assertListEqual(
+            logger.output,
+            ["WARNING:dakara_player_vlc.media_player:VLC takes too long to stop"],
+        )
+
 
 class VlcMediaPlayerIntegrationTestCase(TestCase):
     """Test the VLC player class in real conditions
@@ -491,7 +547,7 @@ class VlcMediaPlayerIntegrationTestCase(TestCase):
         self.kara_folder = get_file("tests.resources", "")
 
         # create media parameter
-        self.media_parameters = ["no-video"]
+        self.media_parameters = ["no-video", "no-audio"]
 
         # create idle background path
         self.idle_background_path = get_background(IDLE_BG_NAME)
@@ -584,6 +640,9 @@ class VlcMediaPlayerIntegrationTestCase(TestCase):
             self.assertEqual(file_path, self.idle_background_path)
             # TODO check which subtitle file is read
             # seems impossible to do for now
+
+            # check there is no timing
+            self.assertEqual(self.vlc_player.get_timing(), 0)
 
             # close the player
             self.vlc_player.stop_player()

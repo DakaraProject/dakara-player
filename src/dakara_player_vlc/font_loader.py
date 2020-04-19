@@ -205,9 +205,16 @@ class FontLoaderWindows(FontLoader):
     ...     loader.load() # prompts the user to install fonts manually
     ...     # do stuff while fonts are loaded
     >>> # fonts are not unloaded, as they were manually installed
+
+    Args:
+        output (io.BaseIO): Output stream. By default, stdout.
     """
 
     GREETINGS = "Font loader for Windows selected"
+
+    def __init__(self, output=None):
+        super().__init__()
+        self.output = output or sys.stdout
 
     def load(self):
         """Prompt the user to load the fonts
@@ -217,20 +224,18 @@ class FontLoaderWindows(FontLoader):
 
         # since there seems to be no workable way to load fonts on Windows
         # through Python, we ask the user to do it by themselve
-        print(
-            (
-                "Please install the following fonts located in the '{}' "
-                "folder and press Enter:"
-            ).format(PATH_FONTS)
+        self.output.write(
+            "Please install the following fonts located in the '{}' "
+            "folder and press Enter:\n".format(PATH_FONTS)
         )
 
         for font_file_path in font_file_path_list:
-            font_file_name = font_file_path_list.basename()
-            print(font_file_name)
+            font_file_name = font_file_path.basename()
+            self.output.write("{}\n".format(font_file_name))
 
         input()
 
     def unload(self):
         """Promt the user to remove the fonts
         """
-        print("You can now remove the installed fonts")
+        self.output.write("You can now remove the installed fonts\n")

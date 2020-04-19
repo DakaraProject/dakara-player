@@ -227,14 +227,6 @@ class MediaPlayer(Worker, ABC):
         """
         return self.playing_id is None
 
-    def get_playing_id(self):
-        """Playlist entry ID getter
-
-        Returns:
-            int: current playing ID or None when no song is playing.
-        """
-        return self.playing_id
-
     @abstractmethod
     def get_timing(self):
         """Player timing getter
