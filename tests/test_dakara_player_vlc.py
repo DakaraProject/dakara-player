@@ -1,9 +1,16 @@
+from copy import deepcopy
 from queue import Queue
 from threading import Event
 from unittest import TestCase
 from unittest.mock import ANY, patch
 
-from dakara_player_vlc.dakara_player_vlc import DakaraPlayerVlc, DakaraWorker
+from dakara_player_vlc.dakara_player_vlc import (
+    DakaraPlayerVlc,
+    DakaraWorker,
+    UnsupportedMediaPlayerError,
+)
+from dakara_player_vlc.vlc_player import VlcMediaPlayer
+from dakara_player_vlc.mpv_player import MpvMediaPlayer
 
 
 CONFIG = {
@@ -45,6 +52,58 @@ class DakaraWorkerTestCase(TestCase):
             logger.output,
             ["DEBUG:dakara_player_vlc.dakara_player_vlc:Starting Dakara worker"],
         )
+
+    def test_get_media_player_class_vlc(self):
+        """Test to get VLC as media player
+        """
+        stop = Event()
+        errors = Queue()
+        config = deepcopy(CONFIG)
+        config["player"]["player_name"] = "Vlc"
+
+        worker = DakaraWorker(stop, errors, config)
+        media_player_class = worker.get_media_player_class()
+
+        self.assertIs(media_player_class, VlcMediaPlayer)
+
+    def test_get_media_player_class_mpv(self):
+        """Test to get MPV as media player
+        """
+        stop = Event()
+        errors = Queue()
+        config = deepcopy(CONFIG)
+        config["player"]["player_name"] = "Mpv"
+
+        worker = DakaraWorker(stop, errors, config)
+        media_player_class = worker.get_media_player_class()
+
+        self.assertIs(media_player_class, MpvMediaPlayer)
+
+    def test_get_media_player_class_default(self):
+        """Test to get the default media player
+        """
+        stop = Event()
+        errors = Queue()
+
+        worker = DakaraWorker(stop, errors, CONFIG)
+        media_player_class = worker.get_media_player_class()
+
+        self.assertIs(media_player_class, VlcMediaPlayer)
+
+    def test_get_media_player_class_unsupported(self):
+        """Test to get an unsupported media player
+        """
+        stop = Event()
+        errors = Queue()
+        config = deepcopy(CONFIG)
+        config["player"]["player_name"] = "Unknown"
+
+        worker = DakaraWorker(stop, errors, config)
+
+        with self.assertRaisesRegex(
+            UnsupportedMediaPlayerError, "No media player for 'Unknown'"
+        ):
+            worker.get_media_player_class()
 
     @patch("dakara_player_vlc.dakara_player_vlc.TemporaryDirectory", autospec=True)
     @patch("dakara_player_vlc.dakara_player_vlc.FontLoader", autospec=True)

@@ -3,6 +3,7 @@ from contextlib import ExitStack
 from tempfile import TemporaryDirectory
 
 from dakara_base.safe_workers import Runner, WorkerSafeThread
+from dakara_base.exceptions import DakaraError
 from path import Path
 
 from dakara_player_vlc.font_loader import get_font_loader_class
@@ -81,6 +82,26 @@ class DakaraWorker(WorkerSafeThread):
         # inform the user
         logger.debug("Starting Dakara worker")
 
+    def get_media_player_class(self):
+        """Get the class of the requested media player
+
+        Fallback to VLC if none was provided in config. If the requested media
+        player is not known, raise an error.
+
+        Returns:
+            dakara_player_vlc.media_player.MediaPlayer: Specialized class of
+            the media player.
+        """
+        media_player_name = self.config["player"].get("player_name", "vlc")
+
+        try:
+            return MEDIA_PLAYER_CLASSES[media_player_name.lower()]
+
+        except KeyError as error:
+            raise UnsupportedMediaPlayerError(
+                "No media player for '{}'".format(media_player_name)
+            ) from error
+
     def run(self):
         """Worker main method
 
@@ -112,18 +133,8 @@ class DakaraWorker(WorkerSafeThread):
             font_loader.load()
 
             # media player
-            media_player_name = self.config["player"].get("player_name", "vlc")
-            try:
-                media_player_class = MEDIA_PLAYER_CLASSES[media_player_name.lower()]
-
-            except KeyError as error:
-                # TODO define proper error class
-                raise NotImplementedError(
-                    "No media player for {}".format(media_player_name)
-                ) from error
-
             media_player = stack.enter_context(
-                media_player_class(
+                self.get_media_player_class()(
                     self.stop, self.errors, self.config["player"], tempdir
                 )
             )
@@ -160,3 +171,8 @@ class DakaraWorker(WorkerSafeThread):
 
             # leaving this method means leaving all the context managers and
             # stopping the program
+
+
+class UnsupportedMediaPlayerError(DakaraError):
+    """Raised if an unknown media player is requested
+    """
