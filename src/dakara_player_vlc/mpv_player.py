@@ -1,5 +1,5 @@
 import logging
-import os
+from pkg_resources import parse_version
 
 try:
     import mpv
@@ -12,6 +12,11 @@ from dakara_player_vlc.version import __version__
 
 
 logger = logging.getLogger(__name__)
+
+SUBTITLE_EXTENSIONS = [
+    ".ass",
+    ".ssa",
+]
 
 
 class MpvNotAvailableError(MediaPlayerNotAvailableError):
@@ -43,13 +48,11 @@ class MpvMediaPlayer(MediaPlayer):
 
     def init_player(self, config, tempdir):
         # set mpv player options and logging
-        config_loglevel = config.get("loglevel") or "info"
-        self.player = mpv.MPV(
-            log_handler=self.handle_log_messages, loglevel=config_loglevel
-        )
+        loglevel = config.get("loglevel", "info")
+        self.player = mpv.MPV(log_handler=self.handle_log_messages, loglevel=loglevel)
         config_mpv = config.get("mpv") or {}
-        for mpv_option in config_mpv:
-            self.player[mpv_option] = config_mpv[mpv_option]
+        for key, value in config_mpv.items():
+            self.player[key] = value
 
         # set mpv callbacks
         self.set_mpv_default_callbacks()
@@ -60,7 +63,7 @@ class MpvMediaPlayer(MediaPlayer):
 
     def load_player(self):
         # check mpv version
-        self.check_mpv_version()
+        self.get_version()
 
         # set mpv fullscreen
         self.player.fullscreen = self.fullscreen
@@ -68,11 +71,16 @@ class MpvMediaPlayer(MediaPlayer):
         # force a single window
         self.player.force_window = True
 
-    def check_mpv_version(self):
+    def get_version(self):
         """Print the mpv version
+
+        MPV version is in the form "mpv x.y.z+git.w" where "w" is a timestamp.
         """
-        # get and log version
-        logger.info(self.player.mpv_version)
+        # and log version
+        # only keep semver values
+        version = parse_version(self.player.mpv_version.split()[1])
+        self.version = version.base_version
+        logger.info("mpv %s", self.version)
 
     def set_mpv_default_callbacks(self):
         """Set mpv player default callbacks
@@ -93,7 +101,7 @@ class MpvMediaPlayer(MediaPlayer):
         A new thread is created in any case.
 
         Args:
-            event (mpv.MpvEventEndFile): mpv end fle event object.
+            event (mpv.MpvEventEndFile): mpv end file event object.
         """
         # check that the reason is actually a file ending (could be a force stop)
         if event["event"]["reason"] != mpv.MpvEventEndFile.EOF:
@@ -108,15 +116,19 @@ class MpvMediaPlayer(MediaPlayer):
 
             # manually set the subtitles as a workaround for the matching of mpv being
             # too permissive
-            filename_without_ext = os.path.splitext(self.media_pending)[0]
-            sub_file = None
-            if os.path.exists("{}.ass".format(filename_without_ext)):
-                sub_file = "{}.ass".format(filename_without_ext)
-            elif os.path.exists("{}.ssa".format(filename_without_ext)):
-                sub_file = "{}.ssa".format(filename_without_ext)
+            filepath_without_ext = (
+                self.media_pending.dirname() / self.media_pending.stem
+            )
+            for subtitle_extension in SUBTITLE_EXTENSIONS:
+                sub_filepath = filepath_without_ext + subtitle_extension
+                if sub_filepath.exists():
+                    break
+
+            else:
+                sub_filepath = None
 
             thread = self.create_thread(
-                target=self.play_media, args=(self.media_pending, sub_file)
+                target=self.play_media, args=(self.media_pending, sub_filepath)
             )
 
             thread.start()
@@ -143,38 +155,31 @@ class MpvMediaPlayer(MediaPlayer):
     def handle_log_messages(self, loglevel, component, message):
         """Callback called when a log message occurs
 
-        Direct the message to the logger for Dakara Player.
-        If the level is 'error' or higher, call the callbacks
-        `callbackss["finished"]` and `callbacks["error"]`
+        Direct the message to the logger for Dakara Player. If the level is
+        "error" or higher, call the callbacks `callbackss["finished"]` and
+        `callbacks["error"]`.
 
         Args:
-            loglevel (str): level of the log message
-            component (str): component of mpv that generated the message
-            message (str): actual log message
+            loglevel (str): Level of the log message.
+            component (str): Component of mpv that generated the message.
+            message (str): Actual log message.
         """
-        if loglevel == "fatal":
-            intlevel = logging.CRITICAL
-        elif loglevel == "error":
-            intlevel = logging.ERROR
-        elif loglevel == "warn":
-            intlevel = logging.WARNING
-        elif loglevel == "info":
-            intlevel = logging.INFO
-        elif loglevel == "debug":
-            intlevel = logging.DEBUG
-        else:
-            intlevel = logging.NOTSET
-
+        logger.debug("Log message callback called")
+        intlevel = get_python_loglever(loglevel)
         logger.log(intlevel, "mpv: {}: {}".format(component, message))
 
+        # handle all errors here
         if intlevel >= logging.ERROR:
-            message = "Unable to play current media"
-            logger.error(message)
-
-            self.in_transition = False
-
+            generic_message = "Unable to play current media"
+            logger.error(generic_message)
             self.callbacks["finished"](self.playing_id)
-            self.callbacks["error"](self.playing_id, message)
+            self.callbacks["error"](
+                self.playing_id, "{}: {}".format(generic_message, message)
+            )
+
+            # reset current state
+            self.playing_id = None
+            self.in_transition = False
 
     def play_media(self, media, sub_file=None):
         """Play the given media
@@ -183,7 +188,7 @@ class MpvMediaPlayer(MediaPlayer):
             media (str): path to media
         """
         self.player["sub-files"] = [sub_file] if sub_file else []
-        self.player.loadfile(media)
+        self.player.loadfile(str(media))
 
     def play_playlist_entry(self, playlist_entry):
         # file location
@@ -191,17 +196,12 @@ class MpvMediaPlayer(MediaPlayer):
 
         # Check file exists
         if not file_path.exists():
-            logger.error("File not found '%s'", file_path)
-            self.callbacks["could_not_play"](playlist_entry["id"])
-            self.callbacks["error"](
-                playlist_entry["id"], "File not found '{}'".format(file_path)
-            )
-
+            self.handle_file_not_found(file_path, playlist_entry["id"])
             return
 
         # create the media
         self.playing_id = playlist_entry["id"]
-        self.media_pending = str(file_path)
+        self.media_pending = file_path
 
         # create the transition screen
         with self.transition_text_path.open("w", encoding="utf8") as file:
@@ -211,7 +211,7 @@ class MpvMediaPlayer(MediaPlayer):
                 )
             )
 
-        media_transition = str(self.background_loader.backgrounds["transition"])
+        media_transition = self.background_loader.backgrounds["transition"]
 
         self.in_transition = True
 
@@ -226,7 +226,7 @@ class MpvMediaPlayer(MediaPlayer):
         self.in_transition = False
 
         # create idle screen media
-        media = str(self.background_loader.backgrounds["idle"])
+        media = self.background_loader.backgrounds["idle"]
 
         # create the idle screen
         with self.idle_text_path.open("w", encoding="utf8") as file:
@@ -234,8 +234,8 @@ class MpvMediaPlayer(MediaPlayer):
                 self.text_generator.create_idle_text(
                     {
                         "notes": [
-                            self.player.mpv_version,
-                            "Dakara player " + __version__,
+                            "mpv {}".format(self.mpv_version),
+                            "Dakara player {}".format(__version__),
                         ]
                     }
                 )
@@ -285,3 +285,30 @@ class MpvMediaPlayer(MediaPlayer):
         logger.info("Stopping player")
         self.player.terminate()
         logger.debug("Stopped player")
+
+
+def get_python_loglever(loglevel):
+    """Convert MPV loglevel name to Python loglevel name
+
+    Args:
+        loglevel (str): Loglevel string used by MPV.
+
+    Returns:
+        str: Loglevel integer used by Python logging module.
+    """
+    if loglevel == "fatal":
+        return logging.CRITICAL
+
+    if loglevel == "error":
+        return logging.ERROR
+
+    if loglevel == "warn":
+        return logging.WARNING
+
+    if loglevel == "info":
+        return logging.INFO
+
+    if loglevel == "debug":
+        return logging.DEBUG
+
+    return logging.NOTSET

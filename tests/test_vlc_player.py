@@ -37,7 +37,7 @@ class VlcMediaPlayerTestCase(TestCase):
         # create playlist entry file path
         self.song_file_path = Path("path/to/file")
 
-        # create plàylist entry
+        # create playlist entry
         self.playlist_entry = {
             "id": self.id,
             "song": {"file_path": self.song_file_path},
@@ -54,17 +54,17 @@ class VlcMediaPlayerTestCase(TestCase):
             tuple: contains the following elements:
                 VlcMediaPlayer: instance;
                 tuple: contains the mocked objects, for checking:
-                    unittest.mock.MagicMock: VLC Instance instance;
-                    unittest.mock.MagicMock: BackgroundLoader instance;
-                    unittest.mock.MagicMock: TextGenerator instance.
+                    unittest.mock.MagicMock: VLC Instance class;
+                    unittest.mock.MagicMock: BackgroundLoader class;
+                    unittest.mock.MagicMock: TextGenerator class.
         """
         with patch(
             "dakara_player_vlc.media_player.TextGenerator"
-        ) as mocked_instance_class, patch(
+        ) as mocked_text_generator_class, patch(
             "dakara_player_vlc.media_player.BackgroundLoader"
         ) as mocked_background_loader_class, patch(
             "dakara_player_vlc.vlc_player.Instance"
-        ) as mocked_text_generator_class:
+        ) as mocked_instance_class:
             return (
                 VlcMediaPlayer(Event(), Queue(), config, Path("temp")),
                 (
@@ -145,8 +145,8 @@ class VlcMediaPlayerTestCase(TestCase):
         )
 
     @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version", autospec=True)
-    def test_check_vlc_version(self, mocked_libvlc_get_version):
-        """Test to check a VLC version
+    def test_get_version(self, mocked_libvlc_get_version):
+        """Test to get the VLC version
         """
         # create instance
         vlc_player, _ = self.get_instance()
@@ -159,7 +159,7 @@ class VlcMediaPlayerTestCase(TestCase):
 
         # call the method
         with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
-            vlc_player.check_vlc_version()
+            vlc_player.get_version()
 
         # assert the effect on logger
         self.assertListEqual(
@@ -170,7 +170,7 @@ class VlcMediaPlayerTestCase(TestCase):
         self.assertListEqual(vlc_player.media_parameters_text_screen, [])
 
     @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version", autospec=True)
-    def test_check_vlc_version_3(self, mocked_libvlc_get_version):
+    def test_get_version_3(self, mocked_libvlc_get_version):
         """Test to check VLC version 3
         """
         # create instance
@@ -184,7 +184,7 @@ class VlcMediaPlayerTestCase(TestCase):
 
         # call the method
         with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG"):
-            vlc_player.check_vlc_version()
+            vlc_player.get_version()
 
         # assert that test screen parameters are empty
         self.assertListEqual(
@@ -224,8 +224,8 @@ class VlcMediaPlayerTestCase(TestCase):
         ):
             vlc_player.check_kara_folder_path()
 
-    def test_set_default_callbacks(self):
-        """Test to set the default callbacks
+    def test_set_callbacks(self):
+        """Test to set callbacks
         """
         # create instance
         vlc_player, _ = self.get_instance()
@@ -257,8 +257,8 @@ class VlcMediaPlayerTestCase(TestCase):
         )
 
     @patch.object(VlcMediaPlayer, "check_kara_folder_path")
-    @patch.object(VlcMediaPlayer, "check_vlc_version")
-    def test_load(self, mocked_check_vlc_version, mocked_check_kara_folder_path):
+    @patch.object(VlcMediaPlayer, "get_version")
+    def test_load(self, mocked_get_version, mocked_check_kara_folder_path):
         """Test to load the instance
         """
         # create instance
@@ -268,7 +268,7 @@ class VlcMediaPlayerTestCase(TestCase):
         vlc_player.load()
 
         # assert the calls
-        mocked_check_vlc_version.assert_called_with()
+        mocked_get_version.assert_called_with()
         mocked_check_kara_folder_path.assert_called_with()
         vlc_player.player.set_fullscreen.assert_called_with(False)
         vlc_player.background_loader.load.assert_called_with()
@@ -293,7 +293,7 @@ class VlcMediaPlayerTestCase(TestCase):
         self.assertIsNone(vlc_player.playing_id)
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player_vlc.media_player", "DEBUG") as logger:
             vlc_player.play_playlist_entry(self.playlist_entry)
 
             # call assertions
@@ -311,7 +311,7 @@ class VlcMediaPlayerTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "ERROR:dakara_player_vlc.vlc_player:File not found '{}'".format(
+                "ERROR:dakara_player_vlc.media_player:File not found '{}'".format(
                     self.song_file_path
                 )
             ],
@@ -410,6 +410,7 @@ class VlcMediaPlayerTestCase(TestCase):
 
         # mock the call
         vlc_player.set_callback("error", MagicMock())
+        vlc_player.set_callback("finished", MagicMock())
         vlc_player.playing_id = 999
 
         # call the method

@@ -213,6 +213,19 @@ class MediaPlayer(Worker, ABC):
                 the key `file_path`.
         """
 
+    def handle_file_not_found(self, playlist_entry_file_path, playlist_entry_id):
+        """Call all the necessary callbacks when a file does not exist.
+
+        Args:
+            playlist_entry_file_path (path.Path): Path of the not found file.
+            playlist_entry_id (int): ID of the associated playlist entry.
+        """
+        logger.error("File not found '%s'", playlist_entry_file_path)
+        self.callbacks["could_not_play"](playlist_entry_id)
+        self.callbacks["error"](
+            playlist_entry_id, "File not found '{}'".format(playlist_entry_file_path)
+        )
+
     @abstractmethod
     def play_idle_screen(self):
         """Play idle screen

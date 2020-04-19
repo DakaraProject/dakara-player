@@ -71,20 +71,21 @@ class VlcMediaPlayer(MediaPlayer):
 
     def load_player(self):
         # check VLC
-        self.check_vlc_version()
+        self.get_version()
 
         # set VLC fullscreen
         self.player.set_fullscreen(self.fullscreen)
 
-    def check_vlc_version(self):
+    def get_version(self):
         """Print the VLC version and perform some parameter adjustements
+
+        VLC version is on the form "x.y.z CodeName" in bytes.
         """
         # get and log version
         self.vlc_version = vlc.libvlc_get_version().decode()
         logger.info("VLC %s", self.vlc_version)
 
-        # VLC version is on the form "x.y.z CodeName"
-        # so we split the string to have the version number only
+        # split the string to have the version number only
         version_str, _ = self.vlc_version.split()
         version = parse_version(version_str)
 
@@ -107,7 +108,7 @@ class VlcMediaPlayer(MediaPlayer):
         )
 
     def set_vlc_callback(self, event, callback):
-        """Assing an arbitrary callback to an VLC event
+        """Assing an arbitrary callback to a VLC event
 
         Callback is attached to the VLC event manager and added to the
         `vlc_callbacks` dictionary.
@@ -170,7 +171,7 @@ class VlcMediaPlayer(MediaPlayer):
         """Callback called when error occurs
 
         Try to get error message and then call the callbacks
-        `callbackss["finished"]` and `callbacks["error"]`
+        `callbackss["finished"]` and `callbacks["error"]`.
 
         Args:
             event (vlc.EventType): VLC event object.
@@ -201,17 +202,12 @@ class VlcMediaPlayer(MediaPlayer):
 
         # Check file exists
         if not file_path.exists():
-            logger.error("File not found '%s'", file_path)
-            self.callbacks["could_not_play"](playlist_entry["id"])
-            self.callbacks["error"](
-                playlist_entry["id"], "File not found '{}'".format(file_path)
-            )
-
+            self.handle_file_not_found(file_path, playlist_entry["id"])
             return
 
         # create the media
         self.playing_id = playlist_entry["id"]
-        self.media_pending = self.instance.media_new_path(str(file_path))
+        self.media_pending = self.instance.media_new_path(file_path)
         self.media_pending.add_options(*self.media_parameters)
 
         # create the transition screen
@@ -248,8 +244,8 @@ class VlcMediaPlayer(MediaPlayer):
                 self.text_generator.create_idle_text(
                     {
                         "notes": [
-                            "VLC " + self.vlc_version,
-                            "Dakara player " + __version__,
+                            "VLC {}".format(self.vlc_version),
+                            "Dakara player {}".format(__version__),
                         ]
                     }
                 )
