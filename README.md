@@ -20,7 +20,10 @@ Installation guidelines are provided over here:
 ### System requirements
 
 * Python3, for the magic to take place (supported versions: 3.5, 3.6);
-* [VLC](https://www.videolan.org/vlc/), duh.
+* [VLC](https://www.videolan.org/vlc/);
+* [mpv](https://mpv.io/), version higher than 0.27.
+
+Either VLC or mpv are requested.
 
 For 64 bits operating systems, you must install the equivalent version of the requirements.
 Linux and Windows are supported.
