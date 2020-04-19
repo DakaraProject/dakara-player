@@ -7,6 +7,7 @@ branches:
   only:
   - develop
   - master
+  - feature/mpv_support_ci #notice-me-senpai :'(
 
 # enable cache for Python dependencies
 cache:
@@ -34,7 +35,10 @@ init:
 # command to install system and python dependencies
 install:
   # install system dependencies
-  - "cinst vlc mpv"
+  - "cinst vlc"
+
+  # install libmpv
+  - ps: '& ".\.download_mpv.ps1"'
 
   # the features used in setup.cfg require at decent version of setuptools
   - "py -%PYTHON_VERSION% -m pip install --upgrade \"setuptools>=40.0\""
