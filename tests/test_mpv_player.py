@@ -3,7 +3,6 @@ from threading import Event
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
-import mpv
 from path import Path
 
 from dakara_player_vlc.mpv_player import (
@@ -14,7 +13,7 @@ from dakara_player_vlc.media_player import MediaPlayerNotAvailableError
 
 
 class MpvMediaPlayerTestCase(TestCase):
-    """Test the MPV player class unitary
+    """Test the mpv player class unitary
     """
 
     def setUp(self):
@@ -50,7 +49,7 @@ class MpvMediaPlayerTestCase(TestCase):
         ) as mocked_text_generator_class, patch(
             "dakara_player_vlc.media_player.BackgroundLoader"
         ) as mocked_background_loader_class, patch(
-            "dakara_player_vlc.mpv_player.mpv.MPV"
+            "dakara_player_vlc.mpv_player.MPV"
         ) as mocked_mpv_class:
             return (
                 MpvMediaPlayer(Event(), Queue(), config, Path("temp")),
@@ -62,30 +61,30 @@ class MpvMediaPlayerTestCase(TestCase):
             )
 
     def test_is_available(self):
-        """Test if MPV is available
+        """Test if mpv is available
         """
         self.assertTrue(MpvMediaPlayer.is_available())
 
     @patch.object(MpvMediaPlayer, "is_available")
     def test_init_unavailable(self, mocked_is_available):
-        """Test when MPV is not available
+        """Test when mpv is not available
         """
         mocked_is_available.return_value = False
 
         with self.assertRaisesRegex(
-            MediaPlayerNotAvailableError, "MPV is not available"
+            MediaPlayerNotAvailableError, "mpv is not available"
         ) as error:
             MpvMediaPlayer(Event(), Queue(), {}, Path("temp"))
 
         self.assertIs(error.exception.__class__, MpvNotAvailableError)
 
     def test_get_version(self):
-        """Test to get the MPV version
+        """Test to get the mpv version
         """
         # create instance
         mpv_player, (mpv_class, _, _) = self.get_instance()
 
-        # mock the version of MPV
+        # mock the version of mpv
         mpv_class.return_value.mpv_version = "mpv 0.32.0+git.20200402T120653.5824ac7d36"
 
         # call the method
@@ -131,7 +130,7 @@ class MpvMediaPlayerTestCase(TestCase):
         # call the method
         with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG") as logger:
             mpv_player.handle_end_reached(
-                {"event": {"reason": mpv.MpvEventEndFile.EOF}}
+                {"event": "idle"}
             )
 
         # assert effect on logs
@@ -175,7 +174,7 @@ class MpvMediaPlayerTestCase(TestCase):
         # call the method
         with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG") as logger:
             mpv_player.handle_end_reached(
-                {"event": {"reason": mpv.MpvEventEndFile.EOF}}
+                {"event": "idle"}
             )
 
         # assert effect on logs
@@ -213,7 +212,7 @@ class MpvMediaPlayerTestCase(TestCase):
         # call the method
         with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG"):
             mpv_player.handle_end_reached(
-                {"event": {"reason": mpv.MpvEventEndFile.EOF}}
+                {"event": "idle"}
             )
 
         # assert the call
@@ -237,32 +236,11 @@ class MpvMediaPlayerTestCase(TestCase):
         # call the method
         with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG"):
             mpv_player.handle_end_reached(
-                {"event": {"reason": mpv.MpvEventEndFile.EOF}}
+                {"event": "idle"}
             )
 
         # assert the call
         mpv_player.callbacks["finished"].assert_called_with(999)
-        mpv_player.callbacks["started_song"].assert_not_called()
-        mocked_create_thread.assert_not_called()
-
-    @patch.object(MpvMediaPlayer, "create_thread")
-    def test_handle_end_reached_other(self, mocked_create_thread):
-        """Test song end callback for another reason
-        """
-        # create instance
-        mpv_player, _ = self.get_instance()
-
-        # mock the call
-        mpv_player.in_transition = False
-        mpv_player.playing_id = 999
-        mpv_player.set_callback("finished", MagicMock())
-        mpv_player.set_callback("started_song", MagicMock())
-
-        # call the method
-        mpv_player.handle_end_reached({"event": {"reason": None}})
-
-        # assert the call
-        mpv_player.callbacks["finished"].assert_not_called()
         mpv_player.callbacks["started_song"].assert_not_called()
         mocked_create_thread.assert_not_called()
 
@@ -301,8 +279,8 @@ class MpvMediaPlayerTestCase(TestCase):
 
     @patch.object(MpvMediaPlayer, "set_mpv_default_callbacks")
     def test_init(self, mocked_set_mpv_defaul_callback):
-        """Test to initialize MPV player with custom config
+        """Test to initialize mpv player with custom config
         """
         mpv_player, (mpv_class, _, _) = self.get_instance({"mpv": {"key1": "value1"}})
-        mpv_class.return_value.__setitem__.assert_called_with("key1", "value1")
+        self.assertEquals(getattr(mpv_class.return_value, "key1"), "value1")
         mocked_set_mpv_defaul_callback.assert_called_with()
