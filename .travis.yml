@@ -18,7 +18,7 @@ branches:
 # command to install system dependencies
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y vlc libmpv-dev
+  - sudo apt-get install -y vlc mpv
 
 # command to install python dependencies
 install:
