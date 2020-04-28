@@ -282,5 +282,5 @@ class MpvMediaPlayerTestCase(TestCase):
         """Test to initialize mpv player with custom config
         """
         mpv_player, (mpv_class, _, _) = self.get_instance({"mpv": {"key1": "value1"}})
-        self.assertEquals(getattr(mpv_class.return_value, "key1"), "value1")
+        self.assertEqual(getattr(mpv_class.return_value, "key1"), "value1")
         mocked_set_mpv_defaul_callback.assert_called_with()
