@@ -37,9 +37,11 @@ class MpvMediaPlayer(MediaPlayer):
     player_name = "mpv"
     player_not_available_error_class = MpvNotAvailableError
 
-    if os.name == 'nt':
-        os.environ["PATH"] = f"{os.environ['PATH']};{os.getcwd()}"\
+    if os.name == "nt":
+        os.environ["PATH"] = (
+            f"{os.environ['PATH']};{os.getcwd()}"
             + ";C:\\ProgramData\\chocolatey\\lib\\mpv.install\\tools"
+        )
 
     @staticmethod
     def is_available():
@@ -49,7 +51,7 @@ class MpvMediaPlayer(MediaPlayer):
             mpv = MPV()
             mpv.terminate()
             return True
-        except(FileNotFoundError):
+        except (FileNotFoundError):
             return False
 
     def init_player(self, config, tempdir):
@@ -60,7 +62,7 @@ class MpvMediaPlayer(MediaPlayer):
         for key, value in config_mpv.items():
             try:
                 self.player.__setattr__(key, value)
-            except(MPVError):
+            except (MPVError):
                 logger.error(f"Unable to set mpv option '{key}' to value '{value}'")
 
         # set mpv callbacks
@@ -78,7 +80,7 @@ class MpvMediaPlayer(MediaPlayer):
         self.player.fullscreen = self.fullscreen
 
         # set mpv as a single non-interactive window
-        self.player.force_window = 'immediate'
+        self.player.force_window = "immediate"
         self.player.osc = False
         self.player.osd_level = 0
 

@@ -129,9 +129,7 @@ class MpvMediaPlayerTestCase(TestCase):
 
         # call the method
         with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG") as logger:
-            mpv_player.handle_end_reached(
-                {"event": "idle"}
-            )
+            mpv_player.handle_end_reached({"event": "idle"})
 
         # assert effect on logs
         self.assertListEqual(
@@ -173,9 +171,7 @@ class MpvMediaPlayerTestCase(TestCase):
 
         # call the method
         with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG") as logger:
-            mpv_player.handle_end_reached(
-                {"event": "idle"}
-            )
+            mpv_player.handle_end_reached({"event": "idle"})
 
         # assert effect on logs
         self.assertListEqual(
@@ -211,9 +207,7 @@ class MpvMediaPlayerTestCase(TestCase):
 
         # call the method
         with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG"):
-            mpv_player.handle_end_reached(
-                {"event": "idle"}
-            )
+            mpv_player.handle_end_reached({"event": "idle"})
 
         # assert the call
         mpv_player.callbacks["finished"].assert_not_called()
@@ -235,9 +229,7 @@ class MpvMediaPlayerTestCase(TestCase):
 
         # call the method
         with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG"):
-            mpv_player.handle_end_reached(
-                {"event": "idle"}
-            )
+            mpv_player.handle_end_reached({"event": "idle"})
 
         # assert the call
         mpv_player.callbacks["finished"].assert_called_with(999)
