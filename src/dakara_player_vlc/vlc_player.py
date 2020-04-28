@@ -1,12 +1,8 @@
 import logging
-import os
 import urllib
 from pkg_resources import parse_version
 
-# Required as of Pyton 3.8
-if hasattr(os, 'add_dll_directory'):
-    os.add_dll_directory('C:\\Program Files\\VideoLAN\\VLC')
-
+import vlc_helper # noqa
 import vlc
 from vlc import Instance
 from path import Path
