@@ -4,7 +4,7 @@ import urllib
 from pkg_resources import parse_version
 
 # Required as of Pyton 3.8
-if os.add_dll_directory:
+if hasattr(os, 'add_dll_directory'):
     os.add_dll_directory('C:\\Program Files\\VideoLAN\\VLC')
 
 import vlc
