@@ -2,7 +2,7 @@ import logging
 import urllib
 from pkg_resources import parse_version
 
-import vlc_helper # noqa
+import dakara_player_vlc.vlc_helper # noqa
 import vlc
 from vlc import Instance
 from path import Path
