@@ -1,4 +1,5 @@
 import logging
+import os
 from pkg_resources import parse_version
 
 from python_mpv_jsonipc import MPV, MPVError
@@ -35,6 +36,10 @@ class MpvMediaPlayer(MediaPlayer):
 
     player_name = "mpv"
     player_not_available_error_class = MpvNotAvailableError
+
+    if os.name == 'nt':
+        os.environ["PATH"] = f"{os.environ['PATH']};{os.getcwd()}"\
+                ";C:\\ProgramData\\chocolatey\\lib\\mpv.install\\tools"
 
     @staticmethod
     def is_available():
