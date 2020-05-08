@@ -2,13 +2,20 @@ import logging
 import urllib
 from pkg_resources import parse_version
 
-import dakara_player_vlc.vlc_helper  # noqa
-import vlc
-from vlc import Instance
-from path import Path
+# initialize before importing vlc
+from dakara_player_vlc.vlc_helper import init
 
-from dakara_player_vlc.media_player import MediaPlayer, MediaPlayerNotAvailableError
-from dakara_player_vlc.version import __version__
+init()
+
+import vlc  # noqa E402
+from vlc import Instance  # noqa E402
+from path import Path  # noqa E402
+
+from dakara_player_vlc.media_player import (
+    MediaPlayer,
+    MediaPlayerNotAvailableError,
+)  # noqa E402
+from dakara_player_vlc.version import __version__  # noqa E402
 
 
 logger = logging.getLogger(__name__)
