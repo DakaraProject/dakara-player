@@ -34,11 +34,12 @@ class VlcPlayerTestCase(TestCase):
         # create playlist entry file path
         self.song_file_path = Path("path/to/file")
 
-        # create plàylist entry
+        # create playlist entry
         self.playlist_entry = {
             "id": self.id,
             "song": {"file_path": self.song_file_path},
             "owner": "me",
+            "use_intrumental": False,
         }
 
     def get_instance(self, config={}):
@@ -234,7 +235,11 @@ class VlcPlayerTestCase(TestCase):
         )
         self.assertCountEqual(
             list(vlc_player.vlc_callbacks.keys()),
-            [EventType.MediaPlayerEndReached, EventType.MediaPlayerEncounteredError],
+            [
+                EventType.MediaPlayerEndReached,
+                EventType.MediaPlayerEncounteredError,
+                EventType.MediaPlayerPlaying,
+            ],
         )
 
     @patch.object(VlcPlayer, "check_kara_folder_path")
@@ -508,14 +513,17 @@ class VlcPlayerIntegrationTestCase(TestCase):
         self.subtitle_path = self.kara_folder / self.subtitle_name
 
         # create song path
-        self.song_file_name = "song.png"
+        self.song_file_name = "song.mkv"
         self.song_file_path = self.kara_folder / self.song_file_name
+        self.song2_file_name = "song2.mkv"
+        self.song2_file_path = self.kara_folder / self.song2_file_name
 
         # create playlist entry
         self.playlist_entry = {
             "id": 42,
             "song": {"file_path": self.song_file_path},
             "owner": "me",
+            "use_intrumental": False,
         }
 
         # temporary directory
@@ -544,14 +552,27 @@ class VlcPlayerIntegrationTestCase(TestCase):
         shutil.rmtree(self.temp)
 
     @staticmethod
-    def get_event_and_callback():
+    def get_event_and_callback(old_callback=None):
         """Get an event and a callback that sets this event
+
+        Args:
+            old_callback (function): If given, will call this callback as well.
+                This allows to combine existing callbacks with test callbacks
+                for the same VLC event type.
         """
         event = Event()
 
-        def callback(*args, **kwargs):
+        def callback(vlc_event):
             """Callback that sets the joined event
             """
+            # prevent callback to be called twice
+            if event.is_set():
+                return
+
+            # execute old callback if necessary
+            if old_callback:
+                old_callback(vlc_event)
+
             event.set()
 
         return event, callback
@@ -570,7 +591,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
         self.assertEqual(self.vlc_player.player.get_state(), State.NothingSpecial)
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG"):
             self.vlc_player.play_idle_screen()
 
             # wait for the player to start actually playing
@@ -589,16 +610,6 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # close the player
             self.vlc_player.stop_player()
 
-        # assert the effect on logs
-        self.assertListEqual(
-            logger.output,
-            [
-                "DEBUG:dakara_player_vlc.vlc_player:Playing idle screen",
-                "INFO:dakara_player_vlc.vlc_player:Stopping player",
-                "DEBUG:dakara_player_vlc.vlc_player:Stopped player",
-            ],
-        )
-
     def test_play_playlist_entry(self):
         """Test to play a playlist entry
 
@@ -609,7 +620,9 @@ class VlcPlayerIntegrationTestCase(TestCase):
         self.vlc_player.set_callback("started_song", MagicMock())
 
         # create an event for when the player starts to play
-        is_playing, callback_is_playing = self.get_event_and_callback()
+        is_playing, callback_is_playing = self.get_event_and_callback(
+            self.vlc_player.vlc_callbacks[EventType.MediaPlayerPlaying]
+        )
         self.vlc_player.set_vlc_callback(
             EventType.MediaPlayerPlaying, callback_is_playing
         )
@@ -621,7 +634,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
         self.assertEqual(self.vlc_player.player.get_state(), State.NothingSpecial)
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG"):
             self.vlc_player.play_playlist_entry(self.playlist_entry)
 
             # wait for the player to start actually playing the transition
@@ -635,10 +648,18 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.assertTrue(self.vlc_player.in_transition)
             self.assertEqual(self.vlc_player.player.get_state(), State.Playing)
 
-            self.assertIsNotNone(self.vlc_player.player.get_media())
+            # check media exists
             media = self.vlc_player.player.get_media()
+            self.assertIsNotNone(media)
+
+            # check media path
             file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.transition_background_path)
+
+            # check there is no audio track
+            track = self.vlc_player.player.audio_get_track()
+            self.assertEqual(track, -1)
+
             # TODO check which subtitle file is read
             # seems impossible to do for now
 
@@ -654,10 +675,17 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.assertFalse(self.vlc_player.in_transition)
             self.assertEqual(self.vlc_player.player.get_state(), State.Playing)
 
-            self.assertIsNotNone(self.vlc_player.player.get_media())
+            # check media exists
             media = self.vlc_player.player.get_media()
+            self.assertIsNotNone(media)
+
+            # check media path
             file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song_file_path)
+
+            # check audio track
+            track = self.vlc_player.player.audio_get_track()
+            self.assertEqual(track, 1)
 
             # assert the started song callback has been called
             self.vlc_player.callbacks["started_song"].assert_called_with(
@@ -667,21 +695,120 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # close the player
             self.vlc_player.stop_player()
 
-        # assert the effect on player
-        self.assertListEqual(
-            logger.output,
-            [
-                "INFO:dakara_player_vlc.vlc_player:Playing transition for '{}'".format(
-                    self.song_file_path
-                ),
-                "DEBUG:dakara_player_vlc.vlc_player:Song end callback called",
-                "INFO:dakara_player_vlc.vlc_player:Now playing '{}'".format(
-                    self.song_file_path
-                ),
-                "INFO:dakara_player_vlc.vlc_player:Stopping player",
-                "DEBUG:dakara_player_vlc.vlc_player:Stopped player",
-            ],
+    def test_play_playlist_entry_instrumental_track(self):
+        """Test to play a playlist entry using instrumental track
+        """
+        # mock the callbacks
+        self.vlc_player.set_callback("started_transition", MagicMock())
+        self.vlc_player.set_callback("started_song", MagicMock())
+
+        # create an event for when the player starts to play
+        is_playing, callback_is_playing = self.get_event_and_callback(
+            self.vlc_player.vlc_callbacks[EventType.MediaPlayerPlaying]
         )
+        self.vlc_player.set_vlc_callback(
+            EventType.MediaPlayerPlaying, callback_is_playing
+        )
+
+        # pre assertions
+        self.assertIsNone(self.vlc_player.playing_id)
+        self.assertFalse(self.vlc_player.in_transition)
+        self.assertIsNone(self.vlc_player.player.get_media())
+        self.assertEqual(self.vlc_player.player.get_state(), State.NothingSpecial)
+
+        # request to use instrumental track
+        self.playlist_entry["use_intrumental"] = True
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG"):
+            self.vlc_player.play_playlist_entry(self.playlist_entry)
+
+            # wait for the player to start actually playing the song
+            is_playing.wait()
+            is_playing.clear()
+            is_playing.wait()
+
+            # post assertions for song
+            self.assertFalse(self.vlc_player.in_transition)
+            self.assertEqual(self.vlc_player.player.get_state(), State.Playing)
+
+            # check media exists
+            media = self.vlc_player.player.get_media()
+            self.assertIsNotNone(media)
+
+            # check media path
+            file_path = mrl_to_path(media.get_mrl())
+            self.assertEqual(file_path, self.song_file_path)
+
+            # check audio track
+            track = self.vlc_player.player.audio_get_track()
+            self.assertEqual(track, 2)
+
+            # assert the started song callback has been called
+            self.vlc_player.callbacks["started_song"].assert_called_with(
+                self.playlist_entry["id"]
+            )
+
+            # close the player
+            self.vlc_player.stop_player()
+
+    def test_play_playlist_entry_instrumental_file(self):
+        """Test to play a playlist entry using instrumental file
+        """
+        # mock the callbacks
+        self.vlc_player.set_callback("started_transition", MagicMock())
+        self.vlc_player.set_callback("started_song", MagicMock())
+
+        # create an event for when the player starts to play
+        is_playing, callback_is_playing = self.get_event_and_callback(
+            self.vlc_player.vlc_callbacks[EventType.MediaPlayerPlaying]
+        )
+        self.vlc_player.set_vlc_callback(
+            EventType.MediaPlayerPlaying, callback_is_playing
+        )
+
+        # pre assertions
+        self.assertIsNone(self.vlc_player.playing_id)
+        self.assertFalse(self.vlc_player.in_transition)
+        self.assertIsNone(self.vlc_player.player.get_media())
+        self.assertEqual(self.vlc_player.player.get_state(), State.NothingSpecial)
+
+        # request to use instrumental file
+        self.playlist_entry["song"]["file_path"] = self.song2_file_path
+        self.playlist_entry["use_intrumental"] = True
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG"):
+            self.vlc_player.play_playlist_entry(self.playlist_entry)
+
+            # wait for the player to start actually playing the song
+            is_playing.wait()
+            is_playing.clear()
+            is_playing.wait()
+
+            # post assertions for song
+            self.assertFalse(self.vlc_player.in_transition)
+            self.assertEqual(self.vlc_player.player.get_state(), State.Playing)
+
+            # check media exists
+            media = self.vlc_player.player.get_media()
+            self.assertIsNotNone(media)
+
+            # check media path
+            file_path = mrl_to_path(media.get_mrl())
+            self.assertEqual(file_path, self.song2_file_path)
+
+            # check audio track
+            track = self.vlc_player.player.audio_get_track()
+            self.assertEqual(track, 4)
+
+            # assert the started song callback has been called
+            self.vlc_player.callbacks["started_song"].assert_called_with(
+                self.playlist_entry["id"]
+            )
+
+            # close the player
+            self.vlc_player.stop_player()
 
     def test_set_pause(self):
         """Test to pause and unpause the player
@@ -691,13 +818,21 @@ class VlcPlayerIntegrationTestCase(TestCase):
         self.vlc_player.set_callback("resumed", MagicMock())
 
         # create an event for when the player starts to play
-        is_playing, callback_is_playing = self.get_event_and_callback()
+        is_playing, callback_is_playing = self.get_event_and_callback(
+            self.vlc_player.vlc_callbacks[EventType.MediaPlayerPlaying]
+        )
         self.vlc_player.set_vlc_callback(
             EventType.MediaPlayerPlaying, callback_is_playing
         )
 
+        # create an event for when the player pauses
+        is_paused, callback_is_paused = self.get_event_and_callback()
+        self.vlc_player.set_vlc_callback(
+            EventType.MediaPlayerPaused, callback_is_paused
+        )
+
         # start the playlist entry
-        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG"):
             self.vlc_player.play_playlist_entry(self.playlist_entry)
 
             # wait for the player to start actually playing the song
@@ -713,6 +848,9 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.vlc_player.set_pause(True)
             timing = self.vlc_player.get_timing()
 
+            # wait for the player to be paused
+            is_paused.wait()
+
             # assert the call
             self.assertTrue(self.vlc_player.is_paused())
 
@@ -725,9 +863,13 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # reset the mocks
             self.vlc_player.callbacks["paused"].reset_mock()
             self.vlc_player.callbacks["resumed"].reset_mock()
+            is_playing.clear()
 
             # call the method to resume the player
             self.vlc_player.set_pause(False)
+
+            # wait for the player to play again
+            is_playing.wait()
 
             # assert the call
             self.assertFalse(self.vlc_player.is_paused())
@@ -742,26 +884,6 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # close the player
             self.vlc_player.stop_player()
 
-        # assert the effect on logs
-        self.assertListEqual(
-            logger.output,
-            [
-                "INFO:dakara_player_vlc.vlc_player:Playing transition for '{}'".format(
-                    self.song_file_path
-                ),
-                "DEBUG:dakara_player_vlc.vlc_player:Song end callback called",
-                "INFO:dakara_player_vlc.vlc_player:Now playing '{}'".format(
-                    self.song_file_path
-                ),
-                "INFO:dakara_player_vlc.vlc_player:Setting pause",
-                "DEBUG:dakara_player_vlc.vlc_player:Set pause",
-                "INFO:dakara_player_vlc.vlc_player:Resuming play",
-                "DEBUG:dakara_player_vlc.vlc_player:Resumed play",
-                "INFO:dakara_player_vlc.vlc_player:Stopping player",
-                "DEBUG:dakara_player_vlc.vlc_player:Stopped player",
-            ],
-        )
-
     def test_set_double_pause(self):
         """Test that double pause and double resume have no effects
         """
@@ -770,13 +892,21 @@ class VlcPlayerIntegrationTestCase(TestCase):
         self.vlc_player.set_callback("resumed", MagicMock())
 
         # create an event for when the player starts to play
-        is_playing, callback_is_playing = self.get_event_and_callback()
+        is_playing, callback_is_playing = self.get_event_and_callback(
+            self.vlc_player.vlc_callbacks[EventType.MediaPlayerPlaying]
+        )
         self.vlc_player.set_vlc_callback(
             EventType.MediaPlayerPlaying, callback_is_playing
         )
 
+        # create an event for when the player pauses
+        is_paused, callback_is_paused = self.get_event_and_callback()
+        self.vlc_player.set_vlc_callback(
+            EventType.MediaPlayerPaused, callback_is_paused
+        )
+
         # start the playlist entry
-        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG"):
             self.vlc_player.play_playlist_entry(self.playlist_entry)
 
             # wait for the player to start actually playing the song
@@ -791,6 +921,9 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # call the method to pause the player
             self.vlc_player.set_pause(True)
 
+            # wait for the player to be paused
+            is_paused.wait()
+
             # assert the call
             self.assertTrue(self.vlc_player.is_paused())
 
@@ -801,9 +934,14 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # reset the mocks
             self.vlc_player.callbacks["paused"].reset_mock()
             self.vlc_player.callbacks["resumed"].reset_mock()
+            is_playing.clear()
+            is_paused.clear()
 
             # re-call the method to pause the player
             self.vlc_player.set_pause(True)
+
+            # assert callback was not called
+            self.assertFalse(is_paused.is_set())
 
             # assert the call
             self.assertTrue(self.vlc_player.is_paused())
@@ -815,9 +953,14 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # reset the mocks
             self.vlc_player.callbacks["paused"].reset_mock()
             self.vlc_player.callbacks["resumed"].reset_mock()
+            is_playing.clear()
+            is_paused.clear()
 
             # call the method to resume the player
             self.vlc_player.set_pause(False)
+
+            # wait for the player to play again
+            is_playing.wait()
 
             # assert the call
             self.assertFalse(self.vlc_player.is_paused())
@@ -829,9 +972,14 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # reset the mocks
             self.vlc_player.callbacks["paused"].reset_mock()
             self.vlc_player.callbacks["resumed"].reset_mock()
+            is_playing.clear()
+            is_paused.clear()
 
             # re-call the method to resume the player
             self.vlc_player.set_pause(False)
+
+            # assert the callback was not called
+            self.assertFalse(is_playing.is_set())
 
             # assert the call
             self.assertFalse(self.vlc_player.is_paused())
@@ -842,25 +990,3 @@ class VlcPlayerIntegrationTestCase(TestCase):
 
             # close the player
             self.vlc_player.stop_player()
-
-        # assert the effects on logs
-        self.assertListEqual(
-            logger.output,
-            [
-                "INFO:dakara_player_vlc.vlc_player:Playing transition for '{}'".format(
-                    self.song_file_path
-                ),
-                "DEBUG:dakara_player_vlc.vlc_player:Song end callback called",
-                "INFO:dakara_player_vlc.vlc_player:Now playing '{}'".format(
-                    self.song_file_path
-                ),
-                "INFO:dakara_player_vlc.vlc_player:Setting pause",
-                "DEBUG:dakara_player_vlc.vlc_player:Set pause",
-                "DEBUG:dakara_player_vlc.vlc_player:Player already in pause",
-                "INFO:dakara_player_vlc.vlc_player:Resuming play",
-                "DEBUG:dakara_player_vlc.vlc_player:Resumed play",
-                "DEBUG:dakara_player_vlc.vlc_player:Player already playing",
-                "INFO:dakara_player_vlc.vlc_player:Stopping player",
-                "DEBUG:dakara_player_vlc.vlc_player:Stopped player",
-            ],
-        )

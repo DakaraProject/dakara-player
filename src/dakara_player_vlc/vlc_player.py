@@ -1,11 +1,12 @@
 import logging
-import urllib
+import mimetypes
 from pkg_resources import parse_version
 from threading import Timer
 
 import vlc
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
+from furl import furl
 from vlc import Instance
 from path import Path
 
@@ -136,6 +137,10 @@ class VlcPlayer(Worker):
         # screen
         self.media_pending = None
 
+        # ID of the audio track to play of media_pending
+        # start at 1
+        self.audio_track_id = 0
+
         # set default callbacks
         self.set_default_callbacks()
 
@@ -196,6 +201,7 @@ class VlcPlayer(Worker):
         self.set_vlc_callback(
             vlc.EventType.MediaPlayerEncounteredError, self.handle_encountered_error
         )
+        self.set_vlc_callback(vlc.EventType.MediaPlayerPlaying, self.handle_playing)
 
         # set dummy callbacks that have to be defined externally
         self.set_callback("started_transition", lambda playlist_entry_id: None)
@@ -297,6 +303,23 @@ class VlcPlayer(Worker):
         self.playing_id = None
         self.in_transition = False
 
+    def handle_playing(self, event):
+        """Callback called when playing has started
+
+        Request requested audio track to play.
+
+        Args:
+            event (vlc.EventType): VLC event object.
+        """
+        logger.debug("Playing callback called")
+
+        # return if not playing a song
+        if self.in_transition or self.is_idle():
+            return
+
+        logger.debug("Requesting to play track %i", self.audio_track_id)
+        self.player.audio_set_track(self.audio_track_id)
+
     def play_media(self, media):
         """Play the given media
 
@@ -352,9 +375,48 @@ class VlcPlayer(Worker):
         )
         self.in_transition = True
 
+        # play transition
         self.play_media(media_transition)
         logger.info("Playing transition for '%s'", file_path)
         self.callbacks["started_transition"](playlist_entry["id"])
+
+        # manage instrumental
+        if playlist_entry["use_intrumental"]:
+            number_tracks = self.get_number_tracks(self.media_pending)
+
+            # get instrumental file is possible
+            audio_path = self.get_instrumental_audio_file(file_path)
+
+            # if audio file is present, request to add the file to the media
+            # as a slave and register to play this extra track (which will be
+            # the last audio track of the media)
+            if audio_path:
+                logger.info(
+                    "Requesting to play instrumental file '%s' for '%s'",
+                    audio_path,
+                    file_path,
+                )
+                self.media_pending.slaves_add(
+                    vlc.MediaSlaveType.audio, 4, path_to_mrl(audio_path).encode()
+                )
+                self.audio_track_id = number_tracks
+                return
+
+            # get audio tracks
+            audio_tracks = self.get_audio_tracks_id(self.media_pending)
+
+            # if more than 1 audio track is present, register to play the 2nd one
+            if len(audio_tracks) > 1:
+                logger.info("Requesting to play instrumental track of '%s'", file_path)
+                self.audio_track_id = audio_tracks[1]
+                return
+
+            # otherwise, fallback to register to play the first track and log it
+            logger.warning(
+                "Cannot find instrumental file or track for file '%s'", file_path
+            )
+
+        self.audio_track_id = 0
 
     def play_idle_screen(self):
         """Play idle screen
@@ -488,22 +550,102 @@ class VlcPlayer(Worker):
         """
         self.stop_player()
 
+    def get_instrumental_audio_file(self, filepath):
+        """Get the external audio file of the media
+
+        Args:
+            filepath (path.Path): Path of the media.
+
+        Returns:
+            path.Path: Path of the external audio file. None if no or more than
+            one audio file is found.
+        """
+        # list files with similar stem
+        items = filepath.dirname().glob("{}.*".format(filepath.stem))
+        audio = [item for item in items if is_file_audio(item)]
+
+        # accept only one audio file
+        if len(audio) == 1:
+            return audio[0]
+
+        # otherwise return None
+        return None
+
+    def get_number_tracks(self, media):
+        """Get number of all tracks of the media
+
+        Args:
+            media (vlc.Media): Media to investigate.
+
+        Returns:
+            int: Number of tracks in the media.
+        """
+        # parse media to extract tracks
+        media.parse()
+
+        return len(list(media.tracks_get()))
+
+    def get_audio_tracks_id(self, media):
+        """Get ID of audio tracks of the media
+
+        Args:
+            media (vlc.Media): Media to investigate.
+
+        Returns:
+            list of int: ID of audio tracks in the media.
+        """
+        # parse media to extract tracks
+        media.parse()
+        audio = [
+            item.id for item in media.tracks_get() if item.type == vlc.TrackType.audio
+        ]
+
+        return audio
+
+
+def is_file_audio(file_name):
+    """Detect if a file is audio file based on standard mimetypes
+
+    Args:
+        file_name (str): Name of the file to investigate.
+
+    Returns:
+        bool: True if the file is an audio file, False otherwise.
+    """
+    mimetype, _ = mimetypes.guess_type(file_name)
+    if not mimetype:
+        return False
+
+    maintype, _ = mimetype.split("/")
+
+    return maintype == "audio"
+
 
 def mrl_to_path(file_mrl):
-    """Convert a MRL to a classic path
+    """Convert a MRL to a filesystem path
 
     File path is stored as MRL inside a media object, we have to bring it back
     to a more classic looking path format.
 
     Args:
-        file_mrl (str): path to the resource with MRL format.
-    """
-    path = urllib.parse.urlparse(file_mrl).path
-    # remove first '/' if a colon character is found like in '/C:/a/b'
-    if path[0] == "/" and path[2] == ":":
-        path = path[1:]
+        file_mrl (str): Path to the resource within MRL format.
 
-    return Path(urllib.parse.unquote(path)).normpath()
+    Returns:
+        path.Path: Path to the resource.
+    """
+    return Path(furl(file_mrl).path)
+
+
+def path_to_mrl(file_path):
+    """Convert a filesystem path to MRL
+
+    Args:
+        file_path (path.Path or str): Path to the resource.
+
+    Returns:
+        str: Path to the resource within MRL format.
+    """
+    return furl(scheme="file", path=file_path).url
 
 
 class KaraFolderNotFound(DakaraError):
