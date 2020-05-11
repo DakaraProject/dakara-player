@@ -633,7 +633,13 @@ def mrl_to_path(file_mrl):
     Returns:
         path.Path: Path to the resource.
     """
-    return Path(furl(file_mrl).path)
+    path_string = str(furl(file_mrl).path)
+
+    # remove first '/' if a colon character is found like in '/C:/a/b'
+    if path_string[0] == "/" and path_string[2] == ":":
+        path_string = path_string[1:]
+
+    return Path(path_string).normpath()
 
 
 def path_to_mrl(file_path):
@@ -645,7 +651,10 @@ def path_to_mrl(file_path):
     Returns:
         str: Path to the resource within MRL format.
     """
-    return furl(scheme="file", path=file_path).url
+    # convert windows \ by posix /
+    path_string = file_path.replace("\\", "/")
+
+    return furl(scheme="file", path=path_string).url
 
 
 class KaraFolderNotFound(DakaraError):

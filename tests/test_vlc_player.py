@@ -12,6 +12,7 @@ from vlc import State, EventType
 from dakara_player_vlc.vlc_player import (
     IDLE_BG_NAME,
     mrl_to_path,
+    path_to_mrl,
     TRANSITION_BG_NAME,
     VlcPlayer,
     KaraFolderNotFound,
@@ -990,3 +991,30 @@ class VlcPlayerIntegrationTestCase(TestCase):
 
             # close the player
             self.vlc_player.stop_player()
+
+
+class MrlFunctionsTestCase(TestCase):
+    """Test the MRL conversion functions
+    """
+
+    def test_mrl_to_path(self):
+        """Test to convert MRL to path
+        """
+        path = mrl_to_path("file:///home/username/directory/file.ext")
+        self.assertEqual(
+            path, Path("/") / "home" / "username" / "directory" / "file.ext"
+        )
+
+        path = mrl_to_path("file:///C:/Users/username/directory/file.ext")
+        self.assertEqual(
+            path, Path("C:") / "Users" / "username" / "directory" / "file.ext"
+        )
+
+    def test_path_to_mrl(self):
+        """Test to convert path to MRL
+        """
+        mrl = path_to_mrl(Path("/") / "home" / "username" / "directory" / "file.ext")
+        self.assertEqual(mrl, "file:///home/username/directory/file.ext")
+
+        mrl = path_to_mrl(Path("C:") / "Users" / "username" / "directory" / "file.ext")
+        self.assertEqual(mrl, "file:///C:/Users/username/directory/file.ext")
