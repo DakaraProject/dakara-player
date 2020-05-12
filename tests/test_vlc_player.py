@@ -1,8 +1,9 @@
 import shutil
+import sys
 import tempfile
 from queue import Queue
 from threading import Event
-from unittest import TestCase
+from unittest import skipIf, TestCase
 from unittest.mock import MagicMock, patch, ANY
 
 from dakara_base.resources_manager import get_file
@@ -550,7 +551,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
 
     def tearDown(self):
         # remove temporary directory
-        shutil.rmtree(self.temp)
+        shutil.rmtree(self.temp, ignore_errors=True)
 
     @staticmethod
     def get_event_and_callback(old_callback=None):
@@ -997,24 +998,41 @@ class MrlFunctionsTestCase(TestCase):
     """Test the MRL conversion functions
     """
 
-    def test_mrl_to_path(self):
-        """Test to convert MRL to path
+    is_windows = sys.platform.startswith("win")
+
+    @skipIf(is_windows, "Tested on POSIX")
+    def test_mrl_to_path_posix(self):
+        """Test to convert MRL to path for POSIX
         """
-        path = mrl_to_path("file:///home/username/directory/file.ext")
+        path = mrl_to_path("file:///home/username/directory/file%20name.ext")
         self.assertEqual(
-            path, Path("/") / "home" / "username" / "directory" / "file.ext"
+            path, Path("/home").normpath() / "username" / "directory" / "file name.ext"
         )
 
-        path = mrl_to_path("file:///C:/Users/username/directory/file.ext")
+    @skipIf(not is_windows, "Tested on Windows")
+    def test_mrl_to_path_windows(self):
+        """Test to convert MRL to path for Windows
+        """
+        path = mrl_to_path("file:///C:/Users/username/directory/file%20name.ext")
         self.assertEqual(
-            path, Path("C:") / "Users" / "username" / "directory" / "file.ext"
+            path,
+            Path("C:/Users").normpath() / "username" / "directory" / "file name.ext",
         )
 
-    def test_path_to_mrl(self):
-        """Test to convert path to MRL
+    @skipIf(is_windows, "Tested on POSIX")
+    def test_path_to_mrl_posix(self):
+        """Test to convert path to MRL for POSIX
         """
-        mrl = path_to_mrl(Path("/") / "home" / "username" / "directory" / "file.ext")
-        self.assertEqual(mrl, "file:///home/username/directory/file.ext")
+        mrl = path_to_mrl(
+            Path("/home").normpath() / "username" / "directory" / "file name.ext"
+        )
+        self.assertEqual(mrl, "file:///home/username/directory/file%20name.ext")
 
-        mrl = path_to_mrl(Path("C:") / "Users" / "username" / "directory" / "file.ext")
-        self.assertEqual(mrl, "file:///C:/Users/username/directory/file.ext")
+    @skipIf(not is_windows, "Tested on Windows")
+    def test_path_to_mrl_windows(self):
+        """Test to convert path to MRL for Windows
+        """
+        mrl = path_to_mrl(
+            Path("C:/Users").normpath() / "username" / "directory" / "file name.ext"
+        )
+        self.assertEqual(mrl, "file:///C:/Users/username/directory/file%20name.ext")

@@ -1,12 +1,13 @@
 import logging
 import mimetypes
+import pathlib
 from pkg_resources import parse_version
 from threading import Timer
+from urllib.parse import unquote, urlparse
 
 import vlc
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
-from furl import furl
 from vlc import Instance
 from path import Path
 
@@ -633,7 +634,7 @@ def mrl_to_path(file_mrl):
     Returns:
         path.Path: Path to the resource.
     """
-    path_string = str(furl(file_mrl).path)
+    path_string = unquote(urlparse(file_mrl).path)
 
     # remove first '/' if a colon character is found like in '/C:/a/b'
     if path_string[0] == "/" and path_string[2] == ":":
@@ -651,10 +652,7 @@ def path_to_mrl(file_path):
     Returns:
         str: Path to the resource within MRL format.
     """
-    # convert windows \ by posix /
-    path_string = file_path.replace("\\", "/")
-
-    return furl(scheme="file", path=path_string).url
+    return pathlib.Path(file_path).as_uri()
 
 
 class KaraFolderNotFound(DakaraError):
