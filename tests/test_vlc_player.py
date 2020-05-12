@@ -500,6 +500,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
 
         # create media parameter
         self.media_parameters = ["no-video"]
+        # self.media_parameters = ["no-video", "no-audio"]
 
         # create idle background path
         self.idle_background_path = get_background(IDLE_BG_NAME)
@@ -851,7 +852,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
             timing = self.vlc_player.get_timing()
 
             # wait for the player to be paused
-            is_paused.wait()
+            is_paused.wait(2)
 
             # assert the call
             self.assertTrue(self.vlc_player.is_paused())
@@ -924,7 +925,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.vlc_player.set_pause(True)
 
             # wait for the player to be paused
-            is_paused.wait()
+            is_paused.wait(2)
 
             # assert the call
             self.assertTrue(self.vlc_player.is_paused())
