@@ -3,6 +3,10 @@ python:
   - "3.5"
   - "3.6"
 
+
+# select Ubuntu version
+dist: bionic
+
 # enable cache for Python dependencies
 cache: pip
 
