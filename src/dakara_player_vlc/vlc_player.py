@@ -397,19 +397,30 @@ class VlcPlayer(Worker):
                     audio_path,
                     file_path,
                 )
-                self.media_pending.slaves_add(
-                    vlc.MediaSlaveType.audio, 4, path_to_mrl(audio_path).encode()
-                )
-                self.audio_track_id = number_tracks
-                return
+                try:
+                    # try to add the instrumental file
+                    self.media_pending.slaves_add(
+                        vlc.MediaSlaveType.audio, 4, path_to_mrl(audio_path).encode()
+                    )
+                    self.audio_track_id = number_tracks
+                    return
+
+                except NameError:
+                    # otherwise fallback to default
+                    logger.error(
+                        "This version of VLC does not support slaves, cannot add "
+                        "instrumental file"
+                    )
+                    self.audio_track_id = 0
+                    return
 
             # get audio tracks
-            audio_tracks = self.get_audio_tracks_id(self.media_pending)
+            audio_tracks_id = self.get_audio_tracks_id(self.media_pending)
 
             # if more than 1 audio track is present, register to play the 2nd one
-            if len(audio_tracks) > 1:
+            if len(audio_tracks_id) > 1:
                 logger.info("Requesting to play instrumental track of '%s'", file_path)
-                self.audio_track_id = audio_tracks[1]
+                self.audio_track_id = audio_tracks_id[1]
                 return
 
             # otherwise, fallback to register to play the first track and log it
