@@ -490,7 +490,11 @@ class VlcPlayerIntegrationTestCase(TestCase):
 
     def setUp(self):
         # create instance parameter
-        self.instance_parameters = ["--vout=vdummy", "--aout=adummy", "--text-renderer=tdummy"]
+        self.instance_parameters = [
+            "--vout=vdummy",
+            "--aout=adummy",
+            "--text-renderer=tdummy",
+        ]
 
         # create fullscreen flag
         self.fullscreen = True
@@ -642,6 +646,9 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # wait for the player to start actually playing the transition
             is_playing.wait()
 
+            # pause for tests
+            self.vlc_player.player.pause()
+
             # reset the event to catch when the player starts to play the song
             is_playing.clear()
 
@@ -670,8 +677,14 @@ class VlcPlayerIntegrationTestCase(TestCase):
                 self.playlist_entry["id"]
             )
 
+            # continue play
+            self.vlc_player.player.play()
+
             # wait for the player to start actually playing the song
             is_playing.wait()
+
+            # pause for tests
+            self.vlc_player.player.pause()
 
             # post assertions for song
             self.assertFalse(self.vlc_player.in_transition)
