@@ -756,7 +756,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.vlc_player.stop_player()
 
     @skipIf(
-        not hasattr(vlc, "libvlc_media_slave_add"), "VLC does not support slaves_add"
+        not hasattr(vlc, "libvlc_media_slaves_add"), "VLC does not support slaves_add"
     )
     def test_play_playlist_entry_instrumental_file(self):
         """Test to play a playlist entry using instrumental file
