@@ -490,7 +490,8 @@ class VlcPlayerIntegrationTestCase(TestCase):
 
     def setUp(self):
         # create instance parameter
-        self.instance_parameters = []
+        # self.instance_parameters = []
+        self.instance_parameters = ["vout vdummy", "aout adummy"]
 
         # create fullscreen flag
         self.fullscreen = True
@@ -499,8 +500,8 @@ class VlcPlayerIntegrationTestCase(TestCase):
         self.kara_folder = get_file("tests.resources", "")
 
         # create media parameter
-        self.media_parameters = ["no-video"]
-        # self.media_parameters = ["no-video", "no-audio"]
+        # self.media_parameters = []
+        self.media_parameters = ["vout vdummy", "aout adummy"]
 
         # create idle background path
         self.idle_background_path = get_background(IDLE_BG_NAME)
