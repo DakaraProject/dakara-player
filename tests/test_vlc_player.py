@@ -854,7 +854,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
             timing = self.vlc_player.get_timing()
 
             # wait for the player to be paused
-            is_paused.wait(2)
+            is_paused.wait()
 
             # assert the call
             self.assertTrue(self.vlc_player.is_paused())
@@ -927,7 +927,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.vlc_player.set_pause(True)
 
             # wait for the player to be paused
-            is_paused.wait(2)
+            is_paused.wait()
 
             # assert the call
             self.assertTrue(self.vlc_player.is_paused())
