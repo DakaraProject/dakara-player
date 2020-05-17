@@ -490,7 +490,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
 
     def setUp(self):
         # create instance parameter
-        self.instance_parameters = ["--vout=vdummy", "--aout=adummy"]
+        self.instance_parameters = ["--vout=vdummy", "--aout=adummy", "--text-renderer=tdummy"]
 
         # create fullscreen flag
         self.fullscreen = True
