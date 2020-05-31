@@ -140,7 +140,7 @@ class VlcPlayer(Worker):
 
         # ID of the audio track to play of media_pending
         # start at 1
-        self.audio_track_id = 0
+        self.audio_track_id = None
 
         # set default callbacks
         self.set_default_callbacks()
@@ -318,8 +318,9 @@ class VlcPlayer(Worker):
         if self.in_transition or self.is_idle():
             return
 
-        logger.debug("Requesting to play track %i", self.audio_track_id)
-        self.player.audio_set_track(self.audio_track_id)
+        if self.audio_track_id is not None:
+            logger.debug("Requesting to play track %i", self.audio_track_id)
+            self.player.audio_set_track(self.audio_track_id)
 
     def play_media(self, media):
         """Play the given media
@@ -383,8 +384,6 @@ class VlcPlayer(Worker):
 
         # manage instrumental
         if playlist_entry["use_intrumental"]:
-            number_tracks = self.get_number_tracks(self.media_pending)
-
             # get instrumental file is possible
             audio_path = self.get_instrumental_audio_file(file_path)
 
@@ -392,6 +391,7 @@ class VlcPlayer(Worker):
             # as a slave and register to play this extra track (which will be
             # the last audio track of the media)
             if audio_path:
+                number_tracks = self.get_number_tracks(self.media_pending)
                 logger.info(
                     "Requesting to play instrumental file '%s' for '%s'",
                     audio_path,
@@ -411,7 +411,7 @@ class VlcPlayer(Worker):
                         "This version of VLC does not support slaves, cannot add "
                         "instrumental file"
                     )
-                    self.audio_track_id = 0
+                    self.audio_track_id = None
                     return
 
             # get audio tracks
@@ -428,7 +428,7 @@ class VlcPlayer(Worker):
                 "Cannot find instrumental file or track for file '%s'", file_path
             )
 
-        self.audio_track_id = 0
+        self.audio_track_id = None
 
     def play_idle_screen(self):
         """Play idle screen
