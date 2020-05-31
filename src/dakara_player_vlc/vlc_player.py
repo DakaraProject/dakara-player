@@ -13,6 +13,7 @@ from path import Path
 
 from dakara_player_vlc.background_loader import BackgroundLoader
 from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
+from dakara_player_vlc.state_manager import State
 from dakara_player_vlc.text_generator import TextGenerator
 from dakara_player_vlc.version import __version__
 
@@ -62,8 +63,6 @@ class VlcPlayer(Worker):
         vlc_version (str): version of VLC.
         playing_id (int): playlist entry id of the current song if no songs are
             playing, its value is None.
-        in_transition (bool): flag set to True is a transition screen is
-            playing.
         media_pending (vlc.Media): media containing a song which will be played
             after the transition screen.
 
@@ -80,6 +79,10 @@ class VlcPlayer(Worker):
         # callbacks
         self.callbacks = {}
         self.vlc_callbacks = {}
+
+        # states
+        self.states = {}
+        self.vlc_states = {}
 
         # karaoke parameters
         self.fullscreen = config.get("fullscreen", False)
@@ -131,9 +134,6 @@ class VlcPlayer(Worker):
         # if no songs are playing, its value is None
         self.playing_id = None
 
-        # flag set to True is a transition screen is playing
-        self.in_transition = False
-
         # media containing a song which will be played after the transition
         # screen
         self.media_pending = None
@@ -144,6 +144,9 @@ class VlcPlayer(Worker):
 
         # set default callbacks
         self.set_default_callbacks()
+
+        # set default states
+        self.set_default_states()
 
     def load(self):
         """Prepare the instance
@@ -213,6 +216,17 @@ class VlcPlayer(Worker):
         self.set_callback("resumed", lambda playlist_entry_id, timing: None)
         self.set_callback("error", lambda playlist_entry_id, message: None)
 
+    def set_default_states(self):
+        # set VLC states
+        self.vlc_states["in_transition"] = State()
+        self.vlc_states["in_media"] = State()
+        self.vlc_states["in_idle"] = State()
+        self.vlc_states["in_pause"] = State()
+
+        # set states
+        self.states["in_song"] = State()
+        self.states["in_idle"] = State()
+
     def set_callback(self, name, callback):
         """Assign an arbitrary callback
 
@@ -254,35 +268,46 @@ class VlcPlayer(Worker):
         """
         logger.debug("Song end callback called")
 
-        if self.in_transition:
-            # if the transition screen has finished,
-            # request to play the song itself
-            self.in_transition = False
-            thread = self.create_thread(
-                target=self.play_media, args=(self.media_pending,)
-            )
+        if self.states["in_song"].is_active():
+            if self.vlc_states["in_transition"].is_active():
+                self.vlc_states["in_transition"].finish()
 
-            thread.start()
+                # the transition screen has finished, request to play the song
+                # itself
+                thread = self.create_thread(
+                    target=self.play_media, args=(self.media_pending,)
+                )
 
-            # get file path
-            file_path = mrl_to_path(self.media_pending.get_mrl())
-            logger.info("Now playing '%s'", file_path)
+                thread.start()
+                logger.debug(
+                    "Will play '%s'", mrl_to_path(self.media_pending.get_mrl())
+                )
 
-            # call the callback for when a song starts
-            self.callbacks["started_song"](self.playing_id)
+                return
 
-            return
+            if self.vlc_states["in_media"].is_active():
+                self.vlc_states["in_media"].finish()
 
-        if self.is_idle():
-            # if the idle screen has finished, restart it
+                # the media has finished, so call the according callback
+                self.callbacks["finished"](self.playing_id)
+
+                self.states["in_song"].finish()
+
+                return
+
+        if self.states["in_idle"].is_active():
+            self.vlc_states["in_idle"].finish()
+
+            # the idle screen has finished, simply restart it
             thread = self.create_thread(target=self.play_idle_screen)
 
             thread.start()
+            self.vlc_states["in_idle"].start()
+
             return
 
-        # otherwise, the song has finished,
-        # so call the right callback
-        self.callbacks["finished"](self.playing_id)
+        # if no state can be determined, raise an error
+        raise InvalidStateError("End reached on an undeterminated state")
 
     def handle_encountered_error(self, event):
         """Callback called when error occurs
@@ -295,32 +320,67 @@ class VlcPlayer(Worker):
         """
         logger.debug("Error callback called")
 
-        message = "Unable to play current media"
-        logger.error(message)
-        self.callbacks["finished"](self.playing_id)
-        self.callbacks["error"](self.playing_id, message)
+        if (
+            self.states["in_song"].is_active()
+            and self.vlc_states["in_media"].is_active()
+        ):
+            self.vlc_states["in_media"].finish()
 
-        # reset current state
-        self.playing_id = None
-        self.in_transition = False
+            # the current song media has an error, skip the song, log the
+            # error and call error callback
+            logger.error(
+                "Unable to play '%s'", mrl_to_path(self.media_pending.get_mrl())
+            )
+            self.callbacks["finished"](self.playing_id)
+            self.callbacks["error"](self.playing_id, "Unable to play current song")
+
+            # reset current state
+            self.playing_id = None
+            self.media_pending = None
+
+            self.states["in_song"].finish()
+
+            return
 
     def handle_playing(self, event):
         """Callback called when playing has started
 
-        Request requested audio track to play.
+        Set requested audio track to play.
 
         Args:
             event (vlc.EventType): VLC event object.
         """
         logger.debug("Playing callback called")
 
-        # return if not playing a song
-        if self.in_transition or self.is_idle():
+        if self.states["in_song"].is_active():
+            media_path = mrl_to_path(self.media_pending.get_mrl())
+            if self.vlc_states["in_transition"].has_finished():
+                # the media starts to play
+                logger.info("Now playing '%s'", media_path)
+                self.vlc_states["in_media"].start()
+
+                # call the callback for when a song starts
+                self.callbacks["started_song"](self.playing_id)
+
+                if self.audio_track_id is not None:
+                    logger.debug("Requesting to play track %i", self.audio_track_id)
+                    self.player.audio_set_track(self.audio_track_id)
+
+                return
+
+            # the transition starts to play
+            logger.info("Playing transition for '%s'", media_path)
+            self.vlc_states["in_transition"].start()
+
             return
 
-        if self.audio_track_id is not None:
-            logger.debug("Requesting to play track %i", self.audio_track_id)
-            self.player.audio_set_track(self.audio_track_id)
+        if self.states["in_idle"].is_active():
+            logger.debug("Playing idle screen")
+            self.vlc_states["in_idle"].start()
+
+            return
+
+        raise InvalidStateError("Encountered error on an undeterminated state")
 
     def play_media(self, media):
         """Play the given media
@@ -375,11 +435,12 @@ class VlcPlayer(Worker):
             "sub-file={}".format(self.transition_text_path),
             "image-duration={}".format(self.durations["transition"]),
         )
-        self.in_transition = True
+
+        self.states["in_song"].start()
 
         # play transition
         self.play_media(media_transition)
-        logger.info("Playing transition for '%s'", file_path)
+        logger.debug("Will play transition for '%s'", file_path)
         self.callbacks["started_transition"](playlist_entry["id"])
 
         # manage instrumental
@@ -460,17 +521,10 @@ class VlcPlayer(Worker):
             "sub-file={}".format(self.idle_text_path),
         )
 
+        self.states["in_idle"].start()
+
         self.play_media(media)
-        logger.debug("Playing idle screen")
-
-    def is_idle(self):
-        """Get player idling status
-
-        Returns:
-            bool: False when playing a song or a transition screen, True when
-                playing idle screen.
-        """
-        return self.playing_id is None
+        logger.debug("Will play idle screen")
 
     def get_playing_id(self):
         """Playlist entry ID getter
@@ -487,7 +541,10 @@ class VlcPlayer(Worker):
             int: current song timing in seconds if a song is playing or 0 when
                 idle or during transition screen.
         """
-        if self.is_idle() or self.in_transition:
+        if (
+            self.vlc_states["in_idle"].is_active()
+            or self.vlc_states["in_transition"].is_active()
+        ):
             return 0
 
         timing = self.player.get_time()
@@ -498,14 +555,6 @@ class VlcPlayer(Worker):
 
         return timing // 1000
 
-    def is_paused(self):
-        """Player pause status getter
-
-        Returns:
-            bool: True when playing song is paused.
-        """
-        return self.player.get_state() == vlc.State.Paused
-
     def set_pause(self, pause):
         """Pause or unpause the player
 
@@ -514,26 +563,31 @@ class VlcPlayer(Worker):
         Args:
             pause (bool): flag for pause state requested.
         """
-        if not self.is_idle():
-            if pause:
-                if self.is_paused():
-                    logger.debug("Player already in pause")
-                    return
+        if self.vlc_states["in_idle"].is_active():
+            return
 
-                logger.info("Setting pause")
-                self.player.pause()
-                logger.debug("Set pause")
-                self.callbacks["paused"](self.playing_id, self.get_timing())
+        if pause:
+            if self.vlc_states["in_pause"].is_active():
+                logger.debug("Player already in pause")
+                return
 
-            else:
-                if not self.is_paused():
-                    logger.debug("Player already playing")
-                    return
+            logger.info("Setting pause")
+            self.player.pause()
+            self.vlc_states["in_pause"].start()
+            logger.debug("Set pause")
+            self.callbacks["paused"](self.playing_id, self.get_timing())
 
-                logger.info("Resuming play")
-                self.player.play()
-                logger.debug("Resumed play")
-                self.callbacks["resumed"](self.playing_id, self.get_timing())
+            return
+
+        if not self.vlc_states["in_pause"].is_active():
+            logger.debug("Player already playing")
+            return
+
+        logger.info("Resuming play")
+        self.player.play()
+        self.vlc_states["in_pause"].finish()
+        logger.debug("Resumed play")
+        self.callbacks["resumed"](self.playing_id, self.get_timing())
 
     def stop_player(self):
         """Stop playing music
@@ -669,3 +723,7 @@ def path_to_mrl(file_path):
 class KaraFolderNotFound(DakaraError):
     """Error raised when the kara folder cannot be found
     """
+
+
+class InvalidStateError(RuntimeError):
+    pass
