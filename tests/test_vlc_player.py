@@ -646,9 +646,6 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # wait for the player to start actually playing the transition
             is_playing.wait()
 
-            # pause for tests
-            self.vlc_player.player.pause()
-
             # reset the event to catch when the player starts to play the song
             is_playing.clear()
 
@@ -677,11 +674,9 @@ class VlcPlayerIntegrationTestCase(TestCase):
                 self.playlist_entry["id"]
             )
 
-            # continue play
-            self.vlc_player.player.play()
-
             # wait for the player to start actually playing the song
             is_playing.wait()
+            self.assertTrue(is_playing.is_set())
 
             # pause for tests
             self.vlc_player.player.pause()
