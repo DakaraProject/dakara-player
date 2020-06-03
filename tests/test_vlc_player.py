@@ -872,6 +872,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
 
             # re-call the method to pause the player
             self.vlc_player.set_pause(True)
+            self.vlc_player.vlc_states["in_pause"].wait_start()
 
             # assert the callback
             self.vlc_player.callbacks["paused"].assert_not_called()
@@ -897,6 +898,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
 
             # re-call the method to resume the player
             self.vlc_player.set_pause(False)
+            self.vlc_player.vlc_states["in_pause"].wait_finish()
 
             # assert the callback
             self.vlc_player.callbacks["paused"].assert_not_called()

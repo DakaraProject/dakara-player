@@ -206,6 +206,7 @@ class VlcPlayer(Worker):
             vlc.EventType.MediaPlayerEncounteredError, self.handle_encountered_error
         )
         self.set_vlc_callback(vlc.EventType.MediaPlayerPlaying, self.handle_playing)
+        self.set_vlc_callback(vlc.EventType.MediaPlayerPaused, self.handle_paused)
 
         # set dummy callbacks that have to be defined externally
         self.set_callback("started_transition", lambda playlist_entry_id: None)
@@ -353,6 +354,17 @@ class VlcPlayer(Worker):
         logger.debug("Playing callback called")
 
         if self.states["in_song"].is_active():
+            if (
+                self.vlc_states["in_transition"].is_active()
+                or self.vlc_states["in_media"].is_active()
+            ) and self.vlc_states["in_pause"].is_active():
+                self.vlc_states["in_pause"].finish()
+                # the media or the transition is resuming from pause
+                logger.debug("Resumed play")
+                self.callbacks["resumed"](self.playing_id, self.get_timing())
+
+                return
+
             media_path = mrl_to_path(self.media_pending.get_mrl())
             if self.vlc_states["in_transition"].has_finished():
                 # the media starts to play
@@ -363,7 +375,9 @@ class VlcPlayer(Worker):
                 self.callbacks["started_song"](self.playing_id)
 
                 if self.audio_track_id is not None:
-                    logger.debug("Requesting to play track %i", self.audio_track_id)
+                    logger.debug(
+                        "Requesting to play audio track %i", self.audio_track_id
+                    )
                     self.player.audio_set_track(self.audio_track_id)
 
                 return
@@ -380,7 +394,21 @@ class VlcPlayer(Worker):
 
             return
 
-        raise InvalidStateError("Encountered error on an undeterminated state")
+        raise InvalidStateError("Playing on an undeterminated state")
+
+    def handle_paused(self, event):
+        """Callback called when pause is set
+
+        Args:
+            event (vlc.EventType): VLC event object.
+        """
+        logger.debug("Paused callback called")
+
+        self.vlc_states["in_pause"].start()
+        logger.debug("Set pause")
+
+        # call paused callback
+        self.callbacks["paused"](self.playing_id, self.get_timing())
 
     def play_media(self, media):
         """Play the given media
@@ -573,9 +601,6 @@ class VlcPlayer(Worker):
 
             logger.info("Setting pause")
             self.player.pause()
-            self.vlc_states["in_pause"].start()
-            logger.debug("Set pause")
-            self.callbacks["paused"](self.playing_id, self.get_timing())
 
             return
 
@@ -585,9 +610,6 @@ class VlcPlayer(Worker):
 
         logger.info("Resuming play")
         self.player.play()
-        self.vlc_states["in_pause"].finish()
-        logger.debug("Resumed play")
-        self.callbacks["resumed"](self.playing_id, self.get_timing())
 
     def stop_player(self):
         """Stop playing music
