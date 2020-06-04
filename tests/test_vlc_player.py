@@ -7,7 +7,7 @@ from unittest import skipIf, TestCase
 from unittest.mock import MagicMock, patch, ANY
 
 import vlc
-import timeout_decorator
+from func_timeout import func_set_timeout
 from dakara_base.resources_manager import get_file
 from path import Path
 
@@ -585,7 +585,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
         # remove temporary directory
         shutil.rmtree(self.temp, ignore_errors=True)
 
-    @timeout_decorator.timeout(TIMEOUT, use_signals=False)
+    @func_set_timeout(TIMEOUT)
     def test_play_idle_screen(self):
         """Test the display of the idle screen
         """
@@ -613,7 +613,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # close the player
             self.vlc_player.stop_player()
 
-    @timeout_decorator.timeout(TIMEOUT, use_signals=False)
+    @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry(self):
         """Test to play a playlist entry
 
@@ -687,7 +687,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # close the player
             self.vlc_player.stop_player()
 
-    @timeout_decorator.timeout(TIMEOUT, use_signals=False)
+    @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry_instrumental_track(self):
         """Test to play a playlist entry using instrumental track
         """
@@ -737,7 +737,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
     @skipIf(
         not hasattr(vlc, "libvlc_media_slaves_add"), "VLC does not support slaves_add"
     )
-    @timeout_decorator.timeout(TIMEOUT, use_signals=False)
+    @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry_instrumental_file(self):
         """Test to play a playlist entry using instrumental file
         """
@@ -785,7 +785,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # close the player
             self.vlc_player.stop_player()
 
-    @timeout_decorator.timeout(TIMEOUT, use_signals=False)
+    @func_set_timeout(TIMEOUT)
     def test_set_pause(self):
         """Test to pause and unpause the player
         """
@@ -837,7 +837,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # close the player
             self.vlc_player.stop_player()
 
-    @timeout_decorator.timeout(TIMEOUT, use_signals=False)
+    @func_set_timeout(TIMEOUT)
     def test_set_double_pause(self):
         """Test that double pause and double resume have no effects
         """
