@@ -139,7 +139,7 @@ class VlcPlayer(Worker):
         self.media_pending = None
 
         # ID of the audio track to play of media_pending
-        # start at 1
+        # start at 0
         self.audio_track_id = None
 
         # set default callbacks
@@ -271,39 +271,36 @@ class VlcPlayer(Worker):
 
         if self.states["in_song"].is_active():
             if self.vlc_states["in_transition"].is_active():
-                self.vlc_states["in_transition"].finish()
-
                 # the transition screen has finished, request to play the song
                 # itself
                 thread = self.create_thread(
                     target=self.play_media, args=(self.media_pending,)
                 )
 
-                thread.start()
                 logger.debug(
                     "Will play '%s'", mrl_to_path(self.media_pending.get_mrl())
                 )
 
+                self.vlc_states["in_transition"].finish()
+                thread.start()
+
                 return
 
             if self.vlc_states["in_media"].is_active():
-                self.vlc_states["in_media"].finish()
-
                 # the media has finished, so call the according callback
                 self.callbacks["finished"](self.playing_id)
 
+                self.vlc_states["in_media"].finish()
                 self.states["in_song"].finish()
 
                 return
 
         if self.states["in_idle"].is_active():
-            self.vlc_states["in_idle"].finish()
-
             # the idle screen has finished, simply restart it
             thread = self.create_thread(target=self.play_idle_screen)
 
+            self.vlc_states["in_idle"].finish()
             thread.start()
-            self.vlc_states["in_idle"].start()
 
             return
 
@@ -325,8 +322,6 @@ class VlcPlayer(Worker):
             self.states["in_song"].is_active()
             and self.vlc_states["in_media"].is_active()
         ):
-            self.vlc_states["in_media"].finish()
-
             # the current song media has an error, skip the song, log the
             # error and call error callback
             logger.error(
@@ -339,6 +334,7 @@ class VlcPlayer(Worker):
             self.playing_id = None
             self.media_pending = None
 
+            self.vlc_states["in_media"].finish()
             self.states["in_song"].finish()
 
             return
@@ -358,20 +354,17 @@ class VlcPlayer(Worker):
                 self.vlc_states["in_transition"].is_active()
                 or self.vlc_states["in_media"].is_active()
             ) and self.vlc_states["in_pause"].is_active():
-                self.vlc_states["in_pause"].finish()
                 # the media or the transition is resuming from pause
-                logger.debug("Resumed play")
                 self.callbacks["resumed"](self.playing_id, self.get_timing())
+
+                logger.debug("Resumed play")
+                self.vlc_states["in_pause"].finish()
 
                 return
 
             media_path = mrl_to_path(self.media_pending.get_mrl())
             if self.vlc_states["in_transition"].has_finished():
                 # the media starts to play
-                logger.info("Now playing '%s'", media_path)
-                self.vlc_states["in_media"].start()
-
-                # call the callback for when a song starts
                 self.callbacks["started_song"](self.playing_id)
 
                 if self.audio_track_id is not None:
@@ -380,15 +373,19 @@ class VlcPlayer(Worker):
                     )
                     self.player.audio_set_track(self.audio_track_id)
 
+                logger.info("Now playing '%s'", media_path)
+                self.vlc_states["in_media"].start()
+
                 return
 
-            # the transition starts to play
+            # the transition screen starts to play
             logger.info("Playing transition for '%s'", media_path)
             self.vlc_states["in_transition"].start()
 
             return
 
         if self.states["in_idle"].is_active():
+            # the idle screen starts to play
             logger.debug("Playing idle screen")
             self.vlc_states["in_idle"].start()
 
@@ -404,11 +401,11 @@ class VlcPlayer(Worker):
         """
         logger.debug("Paused callback called")
 
-        self.vlc_states["in_pause"].start()
-        logger.debug("Set pause")
-
         # call paused callback
         self.callbacks["paused"](self.playing_id, self.get_timing())
+
+        logger.debug("Set pause")
+        self.vlc_states["in_pause"].start()
 
     def play_media(self, media):
         """Play the given media
