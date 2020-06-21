@@ -4,7 +4,7 @@ import tempfile
 from queue import Queue
 from threading import Event
 from unittest import skipIf, TestCase
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, mock_open, patch, ANY
 
 import vlc
 from func_timeout import func_set_timeout
@@ -305,6 +305,81 @@ class VlcPlayerTestCase(TestCase):
                 "ERROR:dakara_player_vlc.vlc_player:File not found '{}'".format(
                     self.song_file_path
                 )
+            ],
+        )
+
+    maxDiff = None
+
+    @patch.object(VlcPlayer, "get_number_tracks")
+    @patch.object(VlcPlayer, "get_instrumental_audio_file")
+    @patch.object(Path, "open", create=mock_open)
+    @patch.object(Path, "exists")
+    def test_play_playlist_entry_error_slaves_add(
+        self,
+        mocked_exists,
+        mocked_open,
+        mocked_get_instrumental_audio_file,
+        mocked_get_number_tracks,
+    ):
+        """Test to be unable to add instrumental file
+        """
+        # create instance
+        vlc_player, (_, _, instance) = self.get_instance(
+            config={"kara_folder": get_file("tests.resources", "")}
+        )
+
+        # mock the system call
+        mocked_exists.return_value = True
+
+        # mock the callbacks
+        vlc_player.set_callback("started_transition", MagicMock())
+        vlc_player.set_callback("started_song", MagicMock())
+        vlc_player.set_callback("could_not_play", MagicMock())
+
+        # pre assertions
+        self.assertIsNone(vlc_player.playing_id)
+        self.assertIsNone(vlc_player.audio_track_id)
+
+        # set playlist entry to request instrumental
+        self.playlist_entry["use_intrumental"] = True
+
+        self.assertIsNotNone(vlc_player.kara_folder_path)
+
+        # mocks
+        mocked_get_instrumental_audio_file.return_value = (
+            get_file("tests.resources", "") / "path" / "to" / "audio"
+        )
+        mocked_get_number_tracks.return_value = 2
+
+        # make slaves_add method unavailable
+        mocked_media_pending = instance.return_value.media_new_path.return_value
+        mocked_media_pending.slaves_add.side_effect = NameError("no slaves_add")
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+            vlc_player.play_playlist_entry(self.playlist_entry)
+
+        # post assertions
+        self.assertIsNotNone(vlc_player.playing_id)
+        self.assertIsNone(vlc_player.audio_track_id)
+
+        # assert the effects on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.vlc_player:Will play transition "
+                "for '{}'".format(
+                    get_file("tests.resources", "")
+                    / self.playlist_entry["song"]["file_path"]
+                ),
+                "INFO:dakara_player_vlc.vlc_player:Requesting to play instrumental "
+                "file '{}' for '{}'".format(
+                    get_file("tests.resources", "") / "path" / "to" / "audio",
+                    get_file("tests.resources", "")
+                    / self.playlist_entry["song"]["file_path"],
+                ),
+                "ERROR:dakara_player_vlc.vlc_player:This version of VLC does "
+                "not support slaves, cannot add instrumental file",
             ],
         )
 
