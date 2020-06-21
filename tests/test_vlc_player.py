@@ -560,6 +560,13 @@ class VlcPlayerIntegrationTestCase(TestCase):
             "use_intrumental": False,
         }
 
+        self.playlist_entry2 = {
+            "id": 43,
+            "song": {"file_path": self.song2_file_path},
+            "owner": "me",
+            "use_intrumental": False,
+        }
+
         # temporary directory
         self.temp = Path(tempfile.mkdtemp())
 
@@ -903,6 +910,59 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # assert the callback
             self.vlc_player.callbacks["paused"].assert_not_called()
             self.vlc_player.callbacks["resumed"].assert_not_called()
+
+            # close the player
+            self.vlc_player.stop_player()
+
+    @func_set_timeout(TIMEOUT)
+    def test_skip(self):
+        """Test to skip a playlist entry by another one
+        """
+        # mock the callbacks
+        self.vlc_player.set_callback("started_transition", MagicMock())
+        self.vlc_player.set_callback("started_song", MagicMock())
+
+        # pre assertions
+        self.assertIsNone(self.vlc_player.playing_id)
+        self.assertFalse(self.vlc_player.vlc_states["in_transition"].is_active())
+        self.assertIsNone(self.vlc_player.player.get_media())
+        self.assertEqual(self.vlc_player.player.get_state(), vlc.State.NothingSpecial)
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG"):
+            # request initial playlist entry to play
+            self.vlc_player.play_playlist_entry(self.playlist_entry)
+
+            # wait for the media to start
+            self.vlc_player.vlc_states["in_media"].wait_start()
+
+            # post assertions for song
+            self.assertEqual(self.vlc_player.player.get_state(), vlc.State.Playing)
+
+            # check media exists
+            media = self.vlc_player.player.get_media()
+            self.assertIsNotNone(media)
+
+            # check media path
+            file_path = mrl_to_path(media.get_mrl())
+            self.assertEqual(file_path, self.song_file_path)
+
+            # request second playlist entry to play right now
+            self.vlc_player.play_playlist_entry(self.playlist_entry2)
+
+            # wait for the media to start
+            self.vlc_player.vlc_states["in_media"].wait_start()
+
+            # post assertions for song
+            self.assertEqual(self.vlc_player.player.get_state(), vlc.State.Playing)
+
+            # check media exists
+            media = self.vlc_player.player.get_media()
+            self.assertIsNotNone(media)
+
+            # check media path
+            file_path = mrl_to_path(media.get_mrl())
+            self.assertEqual(file_path, self.song2_file_path)
 
             # close the player
             self.vlc_player.stop_player()

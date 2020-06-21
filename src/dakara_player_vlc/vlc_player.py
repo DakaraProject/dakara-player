@@ -428,6 +428,12 @@ class VlcPlayer(Worker):
                 `song` attributes. `song` is a dictionary containing at least
                 the key `file_path`.
         """
+        # reset state for any other playlist entry currently playing
+        # we cannot use VLC events to capture when a media is interrupted by another one
+        self.states["in_song"].reset()
+        self.vlc_states["in_transition"].reset()
+        self.vlc_states["in_media"].reset()
+
         # file location
         file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
 
