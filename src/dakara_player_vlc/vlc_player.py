@@ -475,7 +475,7 @@ class VlcPlayer(Worker):
         self.callbacks["started_transition"](playlist_entry["id"])
 
         # manage instrumental
-        if playlist_entry["use_intrumental"]:
+        if playlist_entry["use_instrumental"]:
             # get instrumental file is possible
             audio_path = self.get_instrumental_audio_file(file_path)
 

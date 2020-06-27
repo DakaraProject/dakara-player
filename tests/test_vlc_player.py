@@ -43,7 +43,7 @@ class VlcPlayerTestCase(TestCase):
             "id": self.id,
             "song": {"file_path": self.song_file_path},
             "owner": "me",
-            "use_intrumental": False,
+            "use_instrumental": False,
         }
 
     def get_instance(self, config={}):
@@ -341,7 +341,7 @@ class VlcPlayerTestCase(TestCase):
         self.assertIsNone(vlc_player.audio_track_id)
 
         # set playlist entry to request instrumental
-        self.playlist_entry["use_intrumental"] = True
+        self.playlist_entry["use_instrumental"] = True
 
         self.assertIsNotNone(vlc_player.kara_folder_path)
 
@@ -632,14 +632,14 @@ class VlcPlayerIntegrationTestCase(TestCase):
             "id": 42,
             "song": {"file_path": self.song_file_path},
             "owner": "me",
-            "use_intrumental": False,
+            "use_instrumental": False,
         }
 
         self.playlist_entry2 = {
             "id": 43,
             "song": {"file_path": self.song2_file_path},
             "owner": "me",
-            "use_intrumental": False,
+            "use_instrumental": False,
         }
 
         # temporary directory
@@ -784,7 +784,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
         self.assertEqual(self.vlc_player.player.get_state(), vlc.State.NothingSpecial)
 
         # request to use instrumental track
-        self.playlist_entry["use_intrumental"] = True
+        self.playlist_entry["use_instrumental"] = True
 
         # call the method
         with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG"):
@@ -835,7 +835,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
 
         # request to use instrumental file
         self.playlist_entry["song"]["file_path"] = self.song2_file_path
-        self.playlist_entry["use_intrumental"] = True
+        self.playlist_entry["use_instrumental"] = True
 
         # call the method
         with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG"):
