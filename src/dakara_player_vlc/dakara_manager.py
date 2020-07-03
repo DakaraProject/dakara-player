@@ -147,5 +147,4 @@ class DakaraManager:
             return
 
         if command == "skip":
-            self.handle_finished(self.vlc_player.playing_id)
-            self.play_idle_screen()
+            self.vlc_player.skip()

@@ -428,12 +428,6 @@ class VlcPlayer(Worker):
                 `song` attributes. `song` is a dictionary containing at least
                 the key `file_path`.
         """
-        # reset state for any other playlist entry currently playing
-        # we cannot use VLC events to capture when a media is interrupted by another one
-        self.states["in_song"].reset()
-        self.vlc_states["in_transition"].reset()
-        self.vlc_states["in_media"].reset()
-
         # file location
         file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
 
@@ -613,6 +607,26 @@ class VlcPlayer(Worker):
 
         logger.info("Resuming play")
         self.player.play()
+
+    def skip(self):
+        """Skip the current song
+        """
+        if self.states["in_song"].is_active():
+            self.callbacks["finished"](self.playing_id)
+            media_path = mrl_to_path(self.media_pending.get_mrl())
+            logger.info("Skipping '%s'", media_path)
+
+            if self.vlc_states["in_transition"].is_active():
+                self.vlc_states["in_transition"].finish()
+                self.states["in_song"].finish()
+
+                return
+
+            if self.vlc_states["in_media"].is_active():
+                self.vlc_states["in_media"].finish()
+                self.states["in_song"].finish()
+
+                return
 
     def stop_player(self):
         """Stop playing music
