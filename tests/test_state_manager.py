@@ -4,7 +4,12 @@ from dakara_player_vlc.state_manager import State
 
 
 class StateTestCase(TestCase):
-    def test(self):
+    """Test the State class
+    """
+
+    def test_use(self):
+        """Test to use a state
+        """
         state = State()
 
         self.assertFalse(state.has_started())
@@ -28,3 +33,37 @@ class StateTestCase(TestCase):
         self.assertFalse(state.has_started())
         self.assertFalse(state.has_finished())
         self.assertFalse(state.is_active())
+
+    def test_repr(self):
+        """Test to stringify a state
+        """
+        state = State()
+
+        self.assertEqual(
+            repr(state), "<State started: False, finished: False, active: False>"
+        )
+
+        state.start()
+
+        self.assertEqual(
+            repr(state), "<State started: True, finished: False, active: True>"
+        )
+
+        state.finish()
+
+        self.assertEqual(
+            repr(state), "<State started: True, finished: True, active: False>"
+        )
+
+        state.reset()
+
+        self.assertEqual(
+            repr(state), "<State started: False, finished: False, active: False>"
+        )
+
+    def test_finished_too_early(self):
+        """Test to finish a state before starting it
+        """
+        state = State()
+        with self.assertRaisesRegex(AssertionError, "The state must have started"):
+            state.finish()

@@ -432,6 +432,7 @@ class VlcPlayerTestCase(TestCase):
 
         # mock the call
         vlc_player.states["in_idle"].start()
+        vlc_player.vlc_states["in_idle"].start()
         vlc_player.set_callback("finished", MagicMock())
 
         # call the method
