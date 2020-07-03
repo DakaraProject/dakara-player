@@ -996,6 +996,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
         # mock the callbacks
         self.vlc_player.set_callback("started_transition", MagicMock())
         self.vlc_player.set_callback("started_song", MagicMock())
+        self.vlc_player.set_callback("finished", MagicMock())
 
         # pre assertions
         self.assertIsNone(self.vlc_player.playing_id)
@@ -1022,10 +1023,27 @@ class VlcPlayerIntegrationTestCase(TestCase):
             file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song_file_path)
 
+            # request first playlist entry to stop
+            self.vlc_player.skip()
+
+            # check the song is stopped accordingly
+            self.vlc_player.callbacks["finished"].assert_called_with(
+                self.playlist_entry["id"]
+            )
+            self.assertFalse(self.vlc_player.vlc_states["in_media"].is_active())
+            self.assertFalse(self.vlc_player.vlc_states["in_transition"].is_active())
+            self.assertFalse(self.vlc_player.states["in_song"].is_active())
+
+            # reset states
+            self.vlc_player.vlc_states["in_media"].reset()
+            self.vlc_player.vlc_states["in_transition"].reset()
+            self.vlc_player.states["in_song"].reset()
+
             # request second playlist entry to play right now
             self.vlc_player.play_playlist_entry(self.playlist_entry2)
 
             # wait for the media to start
+            self.vlc_player.vlc_states["in_transition"].wait_finish()
             self.vlc_player.vlc_states["in_media"].wait_start()
 
             # post assertions for song
