@@ -120,6 +120,8 @@ If you're using git < 2.9 you can make a symlink instead:
 ln -s -f ../../hooks/pre-commit .git/hooks/pre-commit
 ```
 
+Note that pre-commit hook does not run integration tests.
+
 ### Code style
 
 The code follows the [PEP8](https://www.python.org/dev/peps/pep-0008/) style guide (88 chars per line).
