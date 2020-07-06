@@ -2,7 +2,7 @@ import sys
 from queue import Queue
 from threading import Event
 from unittest import skipIf, TestCase
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, patch
 
 import vlc
 from dakara_base.resources_manager import get_file
@@ -301,18 +301,60 @@ class VlcPlayerTestCase(TestCase):
             ],
         )
 
-    maxDiff = None
+    @patch.object(VlcPlayer, "get_audio_tracks_id")
+    @patch.object(VlcPlayer, "get_number_tracks")
+    @patch.object(VlcPlayer, "get_instrumental_audio_file")
+    def test_manage_instrumental_file(
+        self,
+        mocked_get_instrumental_audio_file,
+        mocked_get_number_tracks,
+        mocked_get_audio_tracks_id,
+    ):
+        """Test add instrumental file
+        """
+        # create instance
+        vlc_player, (_, _, instance) = self.get_instance(
+            config={"kara_folder": get_file("tests.resources", "")}
+        )
+        video_path = get_file("tests.resources", "") / "path" / "to" / "video"
+        audio_path = get_file("tests.resources", "") / "path" / "to" / "audio"
+
+        # pre assertions
+        self.assertIsNone(vlc_player.audio_track_id)
+        self.assertIsNotNone(vlc_player.kara_folder_path)
+
+        # set playlist entry to request instrumental
+        self.playlist_entry["use_instrumental"] = True
+
+        # mocks
+        mocked_get_instrumental_audio_file.return_value = audio_path
+        mocked_get_number_tracks.return_value = 2
+        mocked_media_pending = instance.return_value.media_new_path.return_value
+        vlc_player.media_pending = mocked_media_pending
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+            vlc_player.manage_instrumental(self.playlist_entry, video_path)
+
+        # post assertions
+        self.assertEqual(vlc_player.audio_track_id, 2)
+
+        # assert the effects on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "INFO:dakara_player_vlc.vlc_player:Requesting to play instrumental "
+                "file '{}' for '{}'".format(audio_path, video_path),
+            ],
+        )
+
+        # assert the call
+        mocked_get_audio_tracks_id.assert_not_called()
 
     @patch.object(VlcPlayer, "get_number_tracks")
     @patch.object(VlcPlayer, "get_instrumental_audio_file")
-    @patch.object(Path, "open", create=mock_open)
-    @patch.object(Path, "exists")
-    def test_play_playlist_entry_error_slaves_add(
-        self,
-        mocked_exists,
-        mocked_open,
-        mocked_get_instrumental_audio_file,
-        mocked_get_number_tracks,
+    def test_manage_instrumental_file_error_slaves_add(
+        self, mocked_get_instrumental_audio_file, mocked_get_number_tracks,
     ):
         """Test to be unable to add instrumental file
         """
@@ -320,61 +362,152 @@ class VlcPlayerTestCase(TestCase):
         vlc_player, (_, _, instance) = self.get_instance(
             config={"kara_folder": get_file("tests.resources", "")}
         )
-
-        # mock the system call
-        mocked_exists.return_value = True
-
-        # mock the callbacks
-        vlc_player.set_callback("started_transition", MagicMock())
-        vlc_player.set_callback("started_song", MagicMock())
-        vlc_player.set_callback("could_not_play", MagicMock())
+        video_path = get_file("tests.resources", "") / "path" / "to" / "video"
+        audio_path = get_file("tests.resources", "") / "path" / "to" / "audio"
 
         # pre assertions
-        self.assertIsNone(vlc_player.playing_id)
         self.assertIsNone(vlc_player.audio_track_id)
+        self.assertIsNotNone(vlc_player.kara_folder_path)
 
         # set playlist entry to request instrumental
         self.playlist_entry["use_instrumental"] = True
 
-        self.assertIsNotNone(vlc_player.kara_folder_path)
-
         # mocks
-        mocked_get_instrumental_audio_file.return_value = (
-            get_file("tests.resources", "") / "path" / "to" / "audio"
-        )
+        mocked_get_instrumental_audio_file.return_value = audio_path
         mocked_get_number_tracks.return_value = 2
 
         # make slaves_add method unavailable
         mocked_media_pending = instance.return_value.media_new_path.return_value
         mocked_media_pending.slaves_add.side_effect = NameError("no slaves_add")
+        vlc_player.media_pending = mocked_media_pending
 
         # call the method
         with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
-            vlc_player.play_playlist_entry(self.playlist_entry)
+            vlc_player.manage_instrumental(self.playlist_entry, video_path)
 
         # post assertions
-        self.assertIsNotNone(vlc_player.playing_id)
         self.assertIsNone(vlc_player.audio_track_id)
 
         # assert the effects on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.vlc_player:Will play transition "
-                "for '{}'".format(
-                    get_file("tests.resources", "")
-                    / self.playlist_entry["song"]["file_path"]
-                ),
                 "INFO:dakara_player_vlc.vlc_player:Requesting to play instrumental "
-                "file '{}' for '{}'".format(
-                    get_file("tests.resources", "") / "path" / "to" / "audio",
-                    get_file("tests.resources", "")
-                    / self.playlist_entry["song"]["file_path"],
-                ),
+                "file '{}' for '{}'".format(audio_path, video_path),
                 "ERROR:dakara_player_vlc.vlc_player:This version of VLC does "
                 "not support slaves, cannot add instrumental file",
             ],
         )
+
+    @patch.object(VlcPlayer, "get_audio_tracks_id")
+    @patch.object(VlcPlayer, "get_number_tracks")
+    @patch.object(VlcPlayer, "get_instrumental_audio_file")
+    def test_manage_instrumental_track(
+        self,
+        mocked_get_instrumental_audio_file,
+        mocked_get_number_tracks,
+        mocked_get_audio_tracks_id,
+    ):
+        """Test add instrumental track
+        """
+        # create instance
+        vlc_player, (_, _, instance) = self.get_instance(
+            config={"kara_folder": get_file("tests.resources", "")}
+        )
+        video_path = get_file("tests.resources", "") / "path" / "to" / "video"
+
+        # pre assertions
+        self.assertIsNone(vlc_player.audio_track_id)
+        self.assertIsNotNone(vlc_player.kara_folder_path)
+
+        # set playlist entry to request instrumental
+        self.playlist_entry["use_instrumental"] = True
+
+        # mocks
+        mocked_get_instrumental_audio_file.return_value = None
+        mocked_get_audio_tracks_id.return_value = [0, 99, 42]
+        mocked_media_pending = instance.return_value.media_new_path.return_value
+        vlc_player.media_pending = mocked_media_pending
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+            vlc_player.manage_instrumental(self.playlist_entry, video_path)
+
+        # post assertions
+        self.assertEqual(vlc_player.audio_track_id, 99)
+
+        # assert the effects on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "INFO:dakara_player_vlc.vlc_player:Requesting to play instrumental "
+                "track of '{}'".format(video_path),
+            ],
+        )
+
+        # assert the call
+        mocked_get_number_tracks.assert_not_called()
+
+    @patch.object(VlcPlayer, "get_audio_tracks_id")
+    @patch.object(VlcPlayer, "get_instrumental_audio_file")
+    def test_manage_instrumental_no_instrumental_found(
+        self, mocked_get_instrumental_audio_file, mocked_get_audio_tracks_id
+    ):
+        """Test to cannot find instrumental
+        """
+        # create instance
+        vlc_player, (_, _, instance) = self.get_instance(
+            config={"kara_folder": get_file("tests.resources", "")}
+        )
+        video_path = get_file("tests.resources", "") / "path" / "to" / "video"
+
+        # pre assertions
+        self.assertIsNone(vlc_player.audio_track_id)
+
+        # set playlist entry to request instrumental
+        self.playlist_entry["use_instrumental"] = True
+
+        # mocks
+        mocked_get_instrumental_audio_file.return_value = None
+        mocked_get_audio_tracks_id.return_value = [99]
+
+        # make slaves_add method unavailable
+        mocked_media_pending = instance.return_value.media_new_path.return_value
+        vlc_player.media_pending = mocked_media_pending
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+            vlc_player.manage_instrumental(self.playlist_entry, video_path)
+
+        # post assertions
+        self.assertIsNone(vlc_player.audio_track_id)
+
+        # assert the effects on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "WARNING:dakara_player_vlc.vlc_player:Cannot find instrumental "
+                "file or track for file '{}'".format(video_path)
+            ],
+        )
+
+    def test_set_pause_idle(self,):
+        """Test to set pause when the player is idle
+        """
+        # create instance
+        vlc_player, (_, _, instance_class) = self.get_instance(
+            config={"kara_folder": get_file("tests.resources", "")}
+        )
+        player = instance_class.return_value.media_player_new.return_value
+
+        # mock
+        vlc_player.vlc_states["in_idle"].start()
+
+        # call method
+        vlc_player.set_pause(True)
+
+        # assert call
+        player.pause.assert_not_called()
 
     @patch.object(VlcPlayer, "create_thread")
     def test_handle_end_reached_transition(self, mocked_create_thread):
@@ -514,6 +647,217 @@ class VlcPlayerTestCase(TestCase):
         self.assertFalse(vlc_player.states["in_song"].is_active())
         self.assertFalse(vlc_player.vlc_states["in_media"].is_active())
         self.assertIsNone(vlc_player.playing_id)
+
+    @patch.object(VlcPlayer, "get_timing")
+    def test_handle_playing_unpause(self, mocked_get_timing):
+        """Test playing callback when unpausing
+        """
+        # create instance
+        vlc_player, _ = self.get_instance()
+
+        # mock the call
+        vlc_player.set_callback("resumed", MagicMock())
+        vlc_player.states["in_song"].start()
+        vlc_player.vlc_states["in_media"].start()
+        vlc_player.vlc_states["in_pause"].start()
+        vlc_player.playing_id = 999
+        mocked_get_timing.return_value = 2.5
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+            vlc_player.handle_playing("event")
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.vlc_player:Playing callback called",
+                "DEBUG:dakara_player_vlc.vlc_player:Resumed play",
+            ],
+        )
+
+        # assert the call
+        vlc_player.callbacks["resumed"].assert_called_with(999, 2.5)
+        self.assertFalse(vlc_player.vlc_states["in_pause"].is_active())
+
+    def test_handle_playing_media_starts(self):
+        """Test playing callback when media starts
+        """
+        # create instance
+        vlc_player, _ = self.get_instance()
+
+        # mock the call
+        vlc_player.set_callback("started_song", MagicMock())
+        vlc_player.states["in_song"].start()
+        vlc_player.vlc_states["in_transition"].start()
+        vlc_player.vlc_states["in_transition"].finish()
+        vlc_player.playing_id = 999
+        vlc_player.audio_track_id = None
+        media_pending = MagicMock()
+        vlc_player.media_pending = media_pending
+        vlc_player.media_pending.get_mrl.return_value = "file:///test.mkv"
+        file_path = Path("/test.mkv")
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+            vlc_player.handle_playing("event")
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.vlc_player:Playing callback called",
+                "INFO:dakara_player_vlc.vlc_player:Now playing '{}'".format(
+                    file_path.normpath()
+                ),
+            ],
+        )
+
+        # assert the call
+        vlc_player.callbacks["started_song"].assert_called_with(999)
+        self.assertTrue(vlc_player.vlc_states["in_media"].is_active())
+
+    def test_handle_playing_media_starts_track_id(self):
+        """Test playing callback when media starts with requested track ID
+        """
+        # create instance
+        vlc_player, (_, _, instance_class) = self.get_instance()
+
+        # mock the call
+        vlc_player.set_callback("started_song", MagicMock())
+        vlc_player.states["in_song"].start()
+        vlc_player.vlc_states["in_transition"].start()
+        vlc_player.vlc_states["in_transition"].finish()
+        vlc_player.playing_id = 999
+        vlc_player.audio_track_id = 99
+        media_pending = MagicMock()
+        vlc_player.media_pending = media_pending
+        vlc_player.media_pending.get_mrl.return_value = "file:///test.mkv"
+        file_path = Path("/test.mkv")
+        player = instance_class.return_value.media_player_new.return_value
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+            vlc_player.handle_playing("event")
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.vlc_player:Playing callback called",
+                "DEBUG:dakara_player_vlc.vlc_player:Requesting to play audio track 99",
+                "INFO:dakara_player_vlc.vlc_player:Now playing '{}'".format(
+                    file_path.normpath()
+                ),
+            ],
+        )
+
+        # assert the call
+        vlc_player.callbacks["started_song"].assert_called_with(999)
+        player.audio_set_track.assert_called_with(99)
+        self.assertTrue(vlc_player.vlc_states["in_media"].is_active())
+
+    def test_handle_playing_transition_starts(self):
+        """Test playing callback when transition starts
+        """
+        # create instance
+        vlc_player, _ = self.get_instance()
+
+        # mock the call
+        vlc_player.set_callback("started_transition", MagicMock())
+        vlc_player.states["in_song"].start()
+        vlc_player.playing_id = 999
+        vlc_player.audio_track_id = None
+        media_pending = MagicMock()
+        vlc_player.media_pending = media_pending
+        vlc_player.media_pending.get_mrl.return_value = "file:///test.mkv"
+        file_path = Path("/test.mkv")
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+            vlc_player.handle_playing("event")
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.vlc_player:Playing callback called",
+                "INFO:dakara_player_vlc.vlc_player:Playing transition for '{}'".format(
+                    file_path.normpath()
+                ),
+            ],
+        )
+
+        # assert the call
+        vlc_player.callbacks["started_transition"].assert_called_with(999)
+        self.assertTrue(vlc_player.vlc_states["in_transition"].is_active())
+
+    def test_handle_playing_idle_starts(self):
+        """Test playing callback when idle screen starts
+        """
+        # create instance
+        vlc_player, _ = self.get_instance()
+
+        # mock the call
+        vlc_player.states["in_idle"].start()
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+            vlc_player.handle_playing("event")
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.vlc_player:Playing callback called",
+                "DEBUG:dakara_player_vlc.vlc_player:Playing idle screen",
+            ],
+        )
+
+        # assert the call
+        self.assertTrue(vlc_player.vlc_states["in_idle"].is_active())
+
+    def test_handle_playing_invalid(self):
+        """Test playing callback on invalid state
+        """
+        # create instance
+        vlc_player, _ = self.get_instance()
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG"):
+            with self.assertRaisesRegex(
+                InvalidStateError, "Playing on an undeterminated state"
+            ):
+                vlc_player.handle_playing("event")
+
+    @patch.object(VlcPlayer, "get_timing")
+    def test_handle_paused(self, mocked_get_timing):
+        """Test paused callback
+        """
+        # create instance
+        vlc_player, _ = self.get_instance()
+
+        # mock the call
+        vlc_player.set_callback("paused", MagicMock())
+        vlc_player.playing_id = 999
+        mocked_get_timing.return_value = 2.5
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
+            vlc_player.handle_paused("event")
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.vlc_player:Paused callback called",
+                "DEBUG:dakara_player_vlc.vlc_player:Set pause",
+            ],
+        )
+
+        # assert the call
+        vlc_player.callbacks["paused"].assert_called_with(999, 2.5)
+        self.assertTrue(vlc_player.vlc_states["in_pause"].is_active())
 
     def test_default_backgrounds(self):
         """Test to instanciate with default backgrounds

@@ -425,7 +425,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
 
     @func_set_timeout(TIMEOUT)
     def test_skip(self):
-        """Test to skip a playlist entry by another one
+        """Test to skip a playlist entry
         """
         # mock the callbacks
         self.vlc_player.set_callback("started_transition", MagicMock())
@@ -456,6 +456,66 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # check media path
             file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song_file_path)
+
+            # request first playlist entry to stop
+            self.vlc_player.skip()
+
+            # check the song is stopped accordingly
+            self.vlc_player.callbacks["finished"].assert_called_with(
+                self.playlist_entry["id"]
+            )
+            self.assertFalse(self.vlc_player.vlc_states["in_media"].is_active())
+            self.assertFalse(self.vlc_player.vlc_states["in_transition"].is_active())
+            self.assertFalse(self.vlc_player.states["in_song"].is_active())
+
+            # reset states
+            self.vlc_player.vlc_states["in_media"].reset()
+            self.vlc_player.vlc_states["in_transition"].reset()
+            self.vlc_player.states["in_song"].reset()
+
+            # request second playlist entry to play right now
+            self.vlc_player.play_playlist_entry(self.playlist_entry2)
+
+            # wait for the media to start
+            self.vlc_player.vlc_states["in_transition"].wait_finish()
+            self.vlc_player.vlc_states["in_media"].wait_start()
+
+            # post assertions for song
+            self.assertEqual(self.vlc_player.player.get_state(), vlc.State.Playing)
+
+            # check media exists
+            media = self.vlc_player.player.get_media()
+            self.assertIsNotNone(media)
+
+            # check media path
+            file_path = mrl_to_path(media.get_mrl())
+            self.assertEqual(file_path, self.song2_file_path)
+
+            # close the player
+            self.vlc_player.stop_player()
+
+    @func_set_timeout(TIMEOUT)
+    def test_skip_transition(self):
+        """Test to skip a playlist entry transition screen
+        """
+        # mock the callbacks
+        self.vlc_player.set_callback("started_transition", MagicMock())
+        self.vlc_player.set_callback("started_song", MagicMock())
+        self.vlc_player.set_callback("finished", MagicMock())
+
+        # pre assertions
+        self.assertIsNone(self.vlc_player.playing_id)
+        self.assertFalse(self.vlc_player.vlc_states["in_transition"].is_active())
+        self.assertIsNone(self.vlc_player.player.get_media())
+        self.assertEqual(self.vlc_player.player.get_state(), vlc.State.NothingSpecial)
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG"):
+            # request initial playlist entry to play
+            self.vlc_player.play_playlist_entry(self.playlist_entry)
+
+            # wait for the transition to start
+            self.vlc_player.vlc_states["in_transition"].wait_start()
 
             # request first playlist entry to stop
             self.vlc_player.skip()

@@ -342,7 +342,11 @@ class VlcPlayer(Worker):
     def handle_playing(self, event):
         """Callback called when playing has started
 
-        Set requested audio track to play.
+        This happens when:
+            - The player resumes from pause;
+            - A transition screen starts;
+            - A song starts, leading to set the requested audio track to play.
+            - An idle screen starts.
 
         Args:
             event (vlc.EventType): VLC event object.
@@ -379,6 +383,7 @@ class VlcPlayer(Worker):
                 return
 
             # the transition screen starts to play
+            self.callbacks["started_transition"](self.playing_id)
             logger.info("Playing transition for '%s'", media_path)
             self.vlc_states["in_transition"].start()
 
@@ -466,55 +471,62 @@ class VlcPlayer(Worker):
         # play transition
         self.play_media(media_transition)
         logger.debug("Will play transition for '%s'", file_path)
-        self.callbacks["started_transition"](playlist_entry["id"])
 
         # manage instrumental
-        if playlist_entry["use_instrumental"]:
-            # get instrumental file is possible
-            audio_path = self.get_instrumental_audio_file(file_path)
+        self.manage_instrumental(playlist_entry, file_path)
 
-            # if audio file is present, request to add the file to the media
-            # as a slave and register to play this extra track (which will be
-            # the last audio track of the media)
-            if audio_path:
-                number_tracks = self.get_number_tracks(self.media_pending)
-                logger.info(
-                    "Requesting to play instrumental file '%s' for '%s'",
-                    audio_path,
-                    file_path,
+    def manage_instrumental(self, playlist_entry, file_path):
+        """Manage the requested instrumental track
+        """
+        self.audio_track_id = None
+
+        # exit now if there is no instrumental track requested
+        if not playlist_entry["use_instrumental"]:
+            return
+
+        # get instrumental file is possible
+        audio_path = self.get_instrumental_audio_file(file_path)
+
+        # if audio file is present, request to add the file to the media
+        # as a slave and register to play this extra track (which will be
+        # the last audio track of the media)
+        if audio_path:
+            number_tracks = self.get_number_tracks(self.media_pending)
+            logger.info(
+                "Requesting to play instrumental file '%s' for '%s'",
+                audio_path,
+                file_path,
+            )
+            try:
+                # try to add the instrumental file
+                self.media_pending.slaves_add(
+                    vlc.MediaSlaveType.audio, 4, path_to_mrl(audio_path).encode()
                 )
-                try:
-                    # try to add the instrumental file
-                    self.media_pending.slaves_add(
-                        vlc.MediaSlaveType.audio, 4, path_to_mrl(audio_path).encode()
-                    )
-                    self.audio_track_id = number_tracks
-                    return
 
-                except NameError:
-                    # otherwise fallback to default
-                    logger.error(
-                        "This version of VLC does not support slaves, cannot add "
-                        "instrumental file"
-                    )
-                    self.audio_track_id = None
-                    return
-
-            # get audio tracks
-            audio_tracks_id = self.get_audio_tracks_id(self.media_pending)
-
-            # if more than 1 audio track is present, register to play the 2nd one
-            if len(audio_tracks_id) > 1:
-                logger.info("Requesting to play instrumental track of '%s'", file_path)
-                self.audio_track_id = audio_tracks_id[1]
+            except NameError:
+                # otherwise fallback to default
+                logger.error(
+                    "This version of VLC does not support slaves, cannot add "
+                    "instrumental file"
+                )
                 return
 
-            # otherwise, fallback to register to play the first track and log it
-            logger.warning(
-                "Cannot find instrumental file or track for file '%s'", file_path
-            )
+            self.audio_track_id = number_tracks
+            return
 
-        self.audio_track_id = None
+        # get audio tracks
+        audio_tracks_id = self.get_audio_tracks_id(self.media_pending)
+
+        # if more than 1 audio track is present, register to play the 2nd one
+        if len(audio_tracks_id) > 1:
+            logger.info("Requesting to play instrumental track of '%s'", file_path)
+            self.audio_track_id = audio_tracks_id[1]
+            return
+
+        # otherwise, fallback to register to play the first track and log it
+        logger.warning(
+            "Cannot find instrumental file or track for file '%s'", file_path
+        )
 
     def play_idle_screen(self):
         """Play idle screen
@@ -765,4 +777,7 @@ class KaraFolderNotFound(DakaraError):
 
 
 class InvalidStateError(RuntimeError):
+    """Error raised when the state of the application cannot be understood
+    """
+
     pass
