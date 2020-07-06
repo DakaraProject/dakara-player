@@ -47,6 +47,11 @@ class VlcPlayer(Worker):
             on certain events. They must be set with `set_callback`.
         vlc_callback (dict): dictionary of callbacks associated to VLC events.
             They must be set with `set_vlc_callback`.
+        states (dict): Stores the high level states of the program (i.e.
+            idling, playing a playlist entry) and is updated a priori;
+        vlc_states (dict): Stores the low level states of the player (i.e.
+            playing a transition screen, playing a song, paused, etc.) and is
+            updated a posteriori, using VLC callbacks.
         durations (dict): dictionary of durations for screens.
         fullscreen (bool): is the player running fullscreen flag.
         kara_folder_path (path.Path): path to the root karaoke folder containing
@@ -218,6 +223,8 @@ class VlcPlayer(Worker):
         self.set_callback("error", lambda playlist_entry_id, message: None)
 
     def set_default_states(self):
+        """Set all the default states
+        """
         # set VLC states
         self.vlc_states["in_transition"] = State()
         self.vlc_states["in_media"] = State()
@@ -310,8 +317,9 @@ class VlcPlayer(Worker):
     def handle_encountered_error(self, event):
         """Callback called when error occurs
 
-        Try to get error message and then call the callbacks
-        `callbackss["finished"]` and `callbacks["error"]`
+        There is no way to capture error message, so only a generic error
+        message is provided. Call the callbacks `callbackss["finished"]` and
+        `callbacks["error"]`
 
         Args:
             event (vlc.EventType): VLC event object.
@@ -477,6 +485,11 @@ class VlcPlayer(Worker):
 
     def manage_instrumental(self, playlist_entry, file_path):
         """Manage the requested instrumental track
+
+        Args:
+            playlist_entry (dict): Playlist entry data. Must contain the key
+                `use_instrumental`.
+            file_path (path.Path): Path of the song file.
         """
         self.audio_track_id = None
 
@@ -628,12 +641,14 @@ class VlcPlayer(Worker):
             media_path = mrl_to_path(self.media_pending.get_mrl())
             logger.info("Skipping '%s'", media_path)
 
+            # if transition is playing
             if self.vlc_states["in_transition"].is_active():
                 self.vlc_states["in_transition"].finish()
                 self.states["in_song"].finish()
 
                 return
 
+            # if song is playing
             if self.vlc_states["in_media"].is_active():
                 self.vlc_states["in_media"].finish()
                 self.states["in_song"].finish()

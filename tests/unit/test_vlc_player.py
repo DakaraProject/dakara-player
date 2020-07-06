@@ -661,7 +661,7 @@ class VlcPlayerTestCase(TestCase):
         vlc_player.vlc_states["in_media"].start()
         vlc_player.vlc_states["in_pause"].start()
         vlc_player.playing_id = 999
-        mocked_get_timing.return_value = 2.5
+        mocked_get_timing.return_value = 25
 
         # call the method
         with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
@@ -677,7 +677,7 @@ class VlcPlayerTestCase(TestCase):
         )
 
         # assert the call
-        vlc_player.callbacks["resumed"].assert_called_with(999, 2.5)
+        vlc_player.callbacks["resumed"].assert_called_with(999, 25)
         self.assertFalse(vlc_player.vlc_states["in_pause"].is_active())
 
     def test_handle_playing_media_starts(self):
@@ -840,7 +840,7 @@ class VlcPlayerTestCase(TestCase):
         # mock the call
         vlc_player.set_callback("paused", MagicMock())
         vlc_player.playing_id = 999
-        mocked_get_timing.return_value = 2.5
+        mocked_get_timing.return_value = 25
 
         # call the method
         with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as logger:
@@ -856,7 +856,7 @@ class VlcPlayerTestCase(TestCase):
         )
 
         # assert the call
-        vlc_player.callbacks["paused"].assert_called_with(999, 2.5)
+        vlc_player.callbacks["paused"].assert_called_with(999, 25)
         self.assertTrue(vlc_player.vlc_states["in_pause"].is_active())
 
     def test_default_backgrounds(self):

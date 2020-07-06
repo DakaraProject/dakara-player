@@ -7,7 +7,8 @@ class State:
     The State object consists in two events: when the state starts and when it
     finishes. When the state has neither started, nor finished, it is not
     active, when it has started but not finished, it is active, and when it has
-    started, and finished, it is not active.
+    started, and finished, it is not active. A state cannot finish before it
+    started.
 
     The start and finish events can be waited.
 
