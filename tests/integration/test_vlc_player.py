@@ -98,6 +98,9 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.vlc_player.load()
 
     def tearDown(self):
+        # stop player
+        self.vlc_player.player.stop()
+
         # remove temporary directory
         shutil.rmtree(self.temp, ignore_errors=True)
 
@@ -125,9 +128,6 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.assertEqual(file_path, self.idle_background_path)
             # TODO check which subtitle file is read
             # seems impossible to do for now
-
-            # close the player
-            self.vlc_player.stop_player()
 
     @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry(self):
@@ -200,9 +200,6 @@ class VlcPlayerIntegrationTestCase(TestCase):
                 self.playlist_entry["id"]
             )
 
-            # close the player
-            self.vlc_player.stop_player()
-
     @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry_instrumental_track(self):
         """Test to play a playlist entry using instrumental track
@@ -246,9 +243,6 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.vlc_player.callbacks["started_song"].assert_called_with(
                 self.playlist_entry["id"]
             )
-
-            # close the player
-            self.vlc_player.stop_player()
 
     @skipIf(
         not hasattr(vlc, "libvlc_media_slaves_add"), "VLC does not support slaves_add"
@@ -298,9 +292,6 @@ class VlcPlayerIntegrationTestCase(TestCase):
                 self.playlist_entry["id"]
             )
 
-            # close the player
-            self.vlc_player.stop_player()
-
     @func_set_timeout(TIMEOUT)
     def test_set_pause(self):
         """Test to pause and unpause the player
@@ -349,9 +340,6 @@ class VlcPlayerIntegrationTestCase(TestCase):
                 self.playlist_entry["id"],
                 timing,  # on a slow computer, the timing may be inaccurate
             )
-
-            # close the player
-            self.vlc_player.stop_player()
 
     @func_set_timeout(TIMEOUT)
     def test_set_double_pause(self):
@@ -419,9 +407,6 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # assert the callback
             self.vlc_player.callbacks["paused"].assert_not_called()
             self.vlc_player.callbacks["resumed"].assert_not_called()
-
-            # close the player
-            self.vlc_player.stop_player()
 
     @func_set_timeout(TIMEOUT)
     def test_skip(self):
@@ -491,9 +476,6 @@ class VlcPlayerIntegrationTestCase(TestCase):
             file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song2_file_path)
 
-            # close the player
-            self.vlc_player.stop_player()
-
     @func_set_timeout(TIMEOUT)
     def test_skip_transition(self):
         """Test to skip a playlist entry transition screen
@@ -550,6 +532,3 @@ class VlcPlayerIntegrationTestCase(TestCase):
             # check media path
             file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song2_file_path)
-
-            # close the player
-            self.vlc_player.stop_player()
