@@ -1,10 +1,10 @@
 import logging
-import mimetypes
 import pathlib
 from pkg_resources import parse_version
 from threading import Timer
 from urllib.parse import unquote, urlparse
 
+import filetype
 import vlc
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
@@ -694,7 +694,7 @@ class VlcPlayer(Worker):
         """
         # list files with similar stem
         items = filepath.dirname().glob("{}.*".format(filepath.stem))
-        audio = [item for item in items if is_file_audio(item)]
+        audio = [item for item in items if item != filepath and is_file_audio(item)]
 
         # accept only one audio file
         if len(audio) == 1:
@@ -735,20 +735,20 @@ class VlcPlayer(Worker):
         return audio
 
 
-def is_file_audio(file_name):
-    """Detect if a file is audio file based on standard mimetypes
+def is_file_audio(file_path):
+    """Detect if a file is audio file based on standard magic number
 
     Args:
-        file_name (str): Name of the file to investigate.
+        file_path (path.Path): Path of the file to investigate.
 
     Returns:
         bool: True if the file is an audio file, False otherwise.
     """
-    mimetype, _ = mimetypes.guess_type(file_name)
-    if not mimetype:
+    kind = filetype.guess(str(file_path))
+    if not kind:
         return False
 
-    maintype, _ = mimetype.split("/")
+    maintype, _ = kind.mime.split("/")
 
     return maintype == "audio"
 
