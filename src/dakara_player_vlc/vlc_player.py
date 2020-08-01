@@ -445,9 +445,11 @@ class VlcPlayer(Worker):
         file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
 
         # reset states
+        self.states["in_idle"].reset()
         self.states["in_song"].reset()
         self.vlc_states["in_transition"].reset()
         self.vlc_states["in_media"].reset()
+        self.vlc_states["in_idle"].reset()
 
         # Check file exists
         if not file_path.exists():
@@ -554,6 +556,9 @@ class VlcPlayer(Worker):
 
         # reset states
         self.states["in_idle"].reset()
+        self.states["in_song"].reset()
+        self.vlc_states["in_transition"].reset()
+        self.vlc_states["in_media"].reset()
         self.vlc_states["in_idle"].reset()
 
         # create idle screen media
