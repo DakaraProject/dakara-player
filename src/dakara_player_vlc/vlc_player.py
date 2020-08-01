@@ -24,7 +24,7 @@ TRANSITION_DURATION = 2
 
 IDLE_BG_NAME = "idle.png"
 IDLE_TEXT_NAME = "idle.ass"
-IDLE_DURATION = 300
+IDLE_DURATION = 10
 
 logger = logging.getLogger(__name__)
 
@@ -444,6 +444,11 @@ class VlcPlayer(Worker):
         # file location
         file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
 
+        # reset states
+        self.states["in_song"].reset()
+        self.vlc_states["in_transition"].reset()
+        self.vlc_states["in_media"].reset()
+
         # Check file exists
         if not file_path.exists():
             logger.error("File not found '%s'", file_path)
@@ -546,7 +551,10 @@ class VlcPlayer(Worker):
         """
         # set idle state
         self.playing_id = None
-        self.in_transition = False
+
+        # reset states
+        self.states["in_idle"].reset()
+        self.vlc_states["in_idle"].reset()
 
         # create idle screen media
         media = self.instance.media_new_path(self.background_loader.backgrounds["idle"])

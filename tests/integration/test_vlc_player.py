@@ -453,12 +453,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.assertFalse(self.vlc_player.vlc_states["in_transition"].is_active())
             self.assertFalse(self.vlc_player.states["in_song"].is_active())
 
-            # reset states
-            self.vlc_player.vlc_states["in_media"].reset()
-            self.vlc_player.vlc_states["in_transition"].reset()
-            self.vlc_player.states["in_song"].reset()
-
-            # request second playlist entry to play right now
+            # request second playlist entry to play
             self.vlc_player.play_playlist_entry(self.playlist_entry2)
 
             # wait for the media to start
@@ -510,12 +505,7 @@ class VlcPlayerIntegrationTestCase(TestCase):
             self.assertFalse(self.vlc_player.vlc_states["in_transition"].is_active())
             self.assertFalse(self.vlc_player.states["in_song"].is_active())
 
-            # reset states
-            self.vlc_player.vlc_states["in_media"].reset()
-            self.vlc_player.vlc_states["in_transition"].reset()
-            self.vlc_player.states["in_song"].reset()
-
-            # request second playlist entry to play right now
+            # request second playlist entry to play
             self.vlc_player.play_playlist_entry(self.playlist_entry2)
 
             # wait for the media to start
