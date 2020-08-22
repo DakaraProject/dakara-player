@@ -3,6 +3,10 @@ python:
   - "3.5"
   - "3.6"
 
+
+# select Ubuntu version
+dist: bionic
+
 # enable cache for Python dependencies
 cache: pip
 
@@ -12,10 +16,14 @@ branches:
     - master
     - develop
 
-# command to install system dependencies
+# commands to install system dependencies
 before_install:
+  # install system dependencies
   - sudo apt-get -qq update
   - sudo apt-get install -y vlc
+
+  # check dependencies version
+  - vlc --version
 
 # command to install python dependencies
 install:

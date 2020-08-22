@@ -268,6 +268,7 @@ class TextGeneratorIntegrationTestCase(TestCase):
                 "file_path": "path/of/the/file",
             },
             "owner": {"username": "User"},
+            "use_instrumental": True,
             "date_created": "1970-01-01T00:00:00.00",
         }
 
