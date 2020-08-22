@@ -24,7 +24,7 @@ TRANSITION_DURATION = 2
 
 IDLE_BG_NAME = "idle.png"
 IDLE_TEXT_NAME = "idle.ass"
-IDLE_DURATION = 10
+IDLE_DURATION = 300
 
 logger = logging.getLogger(__name__)
 
@@ -294,11 +294,12 @@ class VlcPlayer(Worker):
                 return
 
             if self.vlc_states["in_media"].is_active():
-                # the media has finished, so call the according callback
-                self.callbacks["finished"](self.playing_id)
-
+                # the media has finished
                 self.vlc_states["in_media"].finish()
                 self.states["in_song"].finish()
+
+                # call the according callback
+                self.callbacks["finished"](self.playing_id)
 
                 return
 
@@ -330,20 +331,21 @@ class VlcPlayer(Worker):
             self.states["in_song"].is_active()
             and self.vlc_states["in_media"].is_active()
         ):
-            # the current song media has an error, skip the song, log the
-            # error and call error callback
+            # the current song media has an error
             logger.error(
                 "Unable to play '%s'", mrl_to_path(self.media_pending.get_mrl())
             )
+
+            self.vlc_states["in_media"].finish()
+            self.states["in_song"].finish()
+
+            # skip the song, call error callback
             self.callbacks["finished"](self.playing_id)
             self.callbacks["error"](self.playing_id, "Unable to play current song")
 
             # reset current state
             self.playing_id = None
             self.media_pending = None
-
-            self.vlc_states["in_media"].finish()
-            self.states["in_song"].finish()
 
             return
 
@@ -367,10 +369,11 @@ class VlcPlayer(Worker):
                 or self.vlc_states["in_media"].is_active()
             ) and self.vlc_states["in_pause"].is_active():
                 # the media or the transition is resuming from pause
+                self.vlc_states["in_pause"].finish()
+
                 self.callbacks["resumed"](self.playing_id, self.get_timing())
 
                 logger.debug("Resumed play")
-                self.vlc_states["in_pause"].finish()
 
                 return
 
@@ -386,6 +389,7 @@ class VlcPlayer(Worker):
                     self.player.audio_set_track(self.audio_track_id)
 
                 logger.info("Now playing '%s'", media_path)
+
                 self.vlc_states["in_media"].start()
 
                 return
