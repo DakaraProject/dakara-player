@@ -24,7 +24,7 @@ TRANSITION_DURATION = 2
 
 IDLE_BG_NAME = "idle.png"
 IDLE_TEXT_NAME = "idle.ass"
-IDLE_DURATION = 10
+IDLE_DURATION = 300
 
 logger = logging.getLogger(__name__)
 
