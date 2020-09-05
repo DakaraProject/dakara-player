@@ -61,9 +61,9 @@ class StateTestCase(TestCase):
             repr(state), "<State started: False, finished: False, active: False>"
         )
 
-    def test_finished_too_early(self):
-        """Test to finish a state before starting it
-        """
-        state = State()
-        with self.assertRaisesRegex(AssertionError, "The state must have started"):
-            state.finish()
+    # def test_finished_too_early(self):
+    #     """Test to finish a state before starting it
+    #     """
+    #     state = State()
+    #     with self.assertRaisesRegex(AssertionError, "The state must have started"):
+    #         state.finish()

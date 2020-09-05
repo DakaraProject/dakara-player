@@ -40,7 +40,7 @@ class State:
     def finish(self):
         """Finish the state
         """
-        assert self.has_started(), "The state must have started"
+        # assert self.has_started(), "The state must have started"
         self.finished.set()
 
     def reset(self):
