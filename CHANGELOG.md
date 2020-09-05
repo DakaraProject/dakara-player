@@ -30,6 +30,8 @@
 
 ## Unreleased
 
+- Manage instrumental tracks.
+
 ## 1.5.2 - 2019-12-06
 
 ### Fixed
