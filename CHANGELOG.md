@@ -32,6 +32,8 @@
 
 ## 1.6.0 - 2020-09-05
 
+### Added
+
 - Manage instrumental tracks.
 
 ## 1.5.2 - 2019-12-06
