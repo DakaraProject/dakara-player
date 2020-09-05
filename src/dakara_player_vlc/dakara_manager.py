@@ -147,5 +147,4 @@ class DakaraManager:
             return
 
         if command == "skip":
-            self.handle_finished(self.media_player.playing_id)
-            self.play_idle_screen()
+            self.media_player.skip()

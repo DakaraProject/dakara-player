@@ -141,8 +141,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.do_command("skip")
 
         # assert the call
-        self.dakara_server_http.update_finished.assert_called_with(42)
-        self.media_player.play_idle_screen.assert_called_with()
+        self.media_player.skip.assert_called_with()
 
     def test_do_command_error(self):
         """Test the command manager for an invalid command

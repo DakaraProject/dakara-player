@@ -6,8 +6,10 @@ from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
 from path import Path
 
+import filetype
 from dakara_player_vlc.background_loader import BackgroundLoader
 from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
+from dakara_player_vlc.state_manager import State
 from dakara_player_vlc.text_generator import TextGenerator
 
 
@@ -50,6 +52,8 @@ class MediaPlayer(Worker, ABC):
         text_generator (TextGenerator): generator of on-screen texts.
         callbacks (dict): dictionary of external callbacks that are run by this player
             on certain events. They must be set with `set_callback`.
+        states (dict): Stores the high level states of the program (i.e.
+            idling, playing a playlist entry) and is updated a priori;
         durations (dict): dictionary of durations for screens.
         fullscreen (bool): is the player running fullscreen flag.
         kara_folder_path (path.Path): path to the root karaoke folder containing
@@ -81,6 +85,9 @@ class MediaPlayer(Worker, ABC):
     def init_worker(self, config, tempdir):
         """Init the worker
         """
+        # states
+        self.states = {}
+
         # check the target player is available
         if not self.is_available():
             raise self.player_not_available_error_class(
@@ -136,6 +143,7 @@ class MediaPlayer(Worker, ABC):
 
         # set default callbacks
         self.set_default_callbacks()
+        self.set_default_states()
 
         self.init_player(config, tempdir)
 
@@ -187,6 +195,12 @@ class MediaPlayer(Worker, ABC):
         self.set_callback("paused", lambda playlist_entry_id, timing: None)
         self.set_callback("resumed", lambda playlist_entry_id, timing: None)
         self.set_callback("error", lambda playlist_entry_id, message: None)
+
+    def set_default_states(self):
+        """Set all the default states
+        """
+        self.states["in_song"] = State()
+        self.states["in_idle"] = State()
 
     def set_callback(self, name, callback):
         """Assign an arbitrary callback
@@ -250,14 +264,6 @@ class MediaPlayer(Worker, ABC):
         """
 
     @abstractmethod
-    def is_paused(self):
-        """Player pause status getter
-
-        Returns:
-            bool: True when playing song is paused.
-        """
-
-    @abstractmethod
     def set_pause(self, pause):
         """Pause or unpause the player
 
@@ -295,6 +301,46 @@ class MediaPlayer(Worker, ABC):
         """Notify the user that the player takes too long to stop
         """
         logger.warning("{} takes too long to stop".format(cls.player_name))
+
+    @staticmethod
+    def get_instrumental_audio_file(filepath):
+        """Get the external audio file of the media
+
+        Args:
+            filepath (path.Path): Path of the media.
+
+        Returns:
+            path.Path: Path of the external audio file. None if no or more than
+            one audio file is found.
+        """
+        # list files with similar stem
+        items = filepath.dirname().glob("{}.*".format(filepath.stem))
+        audio = [item for item in items if item != filepath and is_file_audio(item)]
+
+        # accept only one audio file
+        if len(audio) == 1:
+            return audio[0]
+
+        # otherwise return None
+        return None
+
+
+def is_file_audio(file_path):
+    """Detect if a file is audio file based on standard magic number
+
+    Args:
+        file_path (path.Path): Path of the file to investigate.
+
+    Returns:
+        bool: True if the file is an audio file, False otherwise.
+    """
+    kind = filetype.guess(str(file_path))
+    if not kind:
+        return False
+
+    maintype, _ = kind.mime.split("/")
+
+    return maintype == "audio"
 
 
 class KaraFolderNotFound(DakaraError):
