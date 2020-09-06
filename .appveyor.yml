@@ -5,9 +5,8 @@ build: false
 # restrict to branches
 branches:
   only:
-  - develop
   - master
-  - feature/mpv_support_ci #notice-me-senpai :'(
+  - develop
 
 # enable cache for Python dependencies
 cache:
@@ -57,7 +56,7 @@ test_script:
   - "%PYTHON%\\Scripts\\dakara-play-vlc.exe --version"
 
   # run code formatting tests
-  - "if NOT %PYTHON_VERSION% == 3.5 (py -%PYTHON_VERSION% -m  black . --check)"
+  - "py -%PYTHON_VERSION% -m black . --check"
   - "py -%PYTHON_VERSION% -m flake8"
 
 # commands to manage tests results

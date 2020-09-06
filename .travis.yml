@@ -1,7 +1,8 @@
 language: python
 python:
-  - "3.5"
   - "3.6"
+  - "3.7"
+  - "3.8"
 
 # select Ubuntu version
 dist: bionic
@@ -45,8 +46,8 @@ script:
   - dakara-play-vlc --version
 
   # run code formatting tests
-  - if [[ $TRAVIS_PYTHON_VERSION != 3.5 ]]; then black . --check; fi
-  - flake8
+  - python -m black . --check
+  - python -m flake8
 
 # commands to manage tests results
 after_script:

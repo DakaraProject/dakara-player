@@ -7,7 +7,7 @@
 [![PyPI version](https://badge.fury.io/py/dakaraplayervlc.svg)](https://pypi.python.org/pypi/dakaraplayervlc/)
 [![PyPI Python versions](https://img.shields.io/pypi/pyversions/dakaraplayervlc.svg)](https://pypi.python.org/pypi/dakaraplayervlc/)
 
-Interface between the Dakara server and VLC, for the Dakara project.
+Interface between the Dakara server and a media player, for the Dakara project.
 
 ## Installation
 
@@ -19,11 +19,12 @@ Installation guidelines are provided over here:
 
 ### System requirements
 
-* Python3, for the magic to take place (supported versions: 3.5, 3.6);
-* [VLC](https://www.videolan.org/vlc/);
-* [mpv](https://mpv.io/), version higher than 0.27.
+* Python3, for the magic to take place (supported versions: 3.6, 3.7 and 3.8).
 
-Either VLC or mpv are requested.
+At least one of there players:
+
+* [VLC](https://www.videolan.org/vlc/) (supported version: 3.0.0 and higher);
+* [mpv](https://mpv.io/) (supported version: 0.27 and higher).
 
 For 64 bits operating systems, you must install the equivalent version of the requirements.
 Linux and Windows are supported.
