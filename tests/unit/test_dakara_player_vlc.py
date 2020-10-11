@@ -9,7 +9,7 @@ from dakara_player_vlc.dakara_player_vlc import (
     DakaraWorker,
     UnsupportedMediaPlayerError,
 )
-from dakara_player_vlc.vlc_player import VlcMediaPlayer
+from dakara_player_vlc.vlc_player import MediaPlayerVlc
 from dakara_player_vlc.mpv_player import MpvMediaPlayer
 
 
@@ -64,7 +64,7 @@ class DakaraWorkerTestCase(TestCase):
         worker = DakaraWorker(stop, errors, config)
         media_player_class = worker.get_media_player_class()
 
-        self.assertIs(media_player_class, VlcMediaPlayer)
+        self.assertIs(media_player_class, MediaPlayerVlc)
 
     def test_get_media_player_class_mpv(self):
         """Test to get MPV as media player
@@ -88,7 +88,7 @@ class DakaraWorkerTestCase(TestCase):
         worker = DakaraWorker(stop, errors, CONFIG)
         media_player_class = worker.get_media_player_class()
 
-        self.assertIs(media_player_class, VlcMediaPlayer)
+        self.assertIs(media_player_class, MediaPlayerVlc)
 
     def test_get_media_player_class_unsupported(self):
         """Test to get an unsupported media player
@@ -107,7 +107,7 @@ class DakaraWorkerTestCase(TestCase):
 
     @patch("dakara_player_vlc.dakara_player_vlc.TemporaryDirectory", autospec=True)
     @patch("dakara_player_vlc.dakara_player_vlc.FontLoader", autospec=True)
-    @patch("dakara_player_vlc.dakara_player_vlc.VlcMediaPlayer", autospec=True)
+    @patch("dakara_player_vlc.dakara_player_vlc.MediaPlayerVlc", autospec=True)
     @patch(
         "dakara_player_vlc.dakara_player_vlc.DakaraServerHTTPConnection", autospec=True
     )

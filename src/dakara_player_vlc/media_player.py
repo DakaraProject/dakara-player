@@ -6,11 +6,11 @@ from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
 from path import Path
 
-import filetype
 from dakara_player_vlc.background_loader import BackgroundLoader
 from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
-from dakara_player_vlc.state_manager import State
+from dakara_player_vlc.audio import get_audio_files
 from dakara_player_vlc.text_generator import TextGenerator
+from dakara_player_vlc.version import __version__
 
 
 TRANSITION_BG_NAME = "transition.png"
@@ -23,91 +23,42 @@ IDLE_DURATION = 300
 
 PLAYER_CLOSING_DURATION = 3
 
+
 logger = logging.getLogger(__name__)
 
 
-class MediaPlayerNotAvailableError(DakaraError):
-    """Error raised when trying to use a target player that cannot be found
-    """
-
-
 class MediaPlayer(Worker, ABC):
-    """Common operations for media players.
-
-    This class should be subclassed by actual player implementations.
-
-    A media player manages the display of idle/transition screens when playing,
-    logging of the messages of the actual player, and provides some accessors and
-    mutators to get/set the status of the player.
-
-    Before being instanciated, one should check if the target player is
-    available with the static method `is_available`. If the return value is
-    False, the class cannot be instanciated. After instanciation, the object
-    must be loaded with `load` before being used.
-
-    Attributes:
-        player_name (str): Name of the target player.
-        player_not_available_error_class (type): Exception raised if the target
-            player cannot be found.
-        text_generator (TextGenerator): generator of on-screen texts.
-        callbacks (dict): dictionary of external callbacks that are run by this player
-            on certain events. They must be set with `set_callback`.
-        states (dict): Stores the high level states of the program (i.e.
-            idling, playing a playlist entry) and is updated a priori;
-        durations (dict): dictionary of durations for screens.
-        fullscreen (bool): is the player running fullscreen flag.
-        kara_folder_path (path.Path): path to the root karaoke folder containing
-            songs.
-        playing_id (int): playlist entry id of the current song if no songs are
-            playing, its value is None.
-        in_transition (bool): flag set to True is a transition screen is
-            playing.
-
-    Args:
-        stop (Event): event to stop the program.
-        errors (Queue): queue of errors.
-        config (dict): configuration.
-        tempdir (path.Path): path to a temporary directory.
-    """
-
     player_name = None
-    player_not_available_error_class = MediaPlayerNotAvailableError
 
     @staticmethod
     @abstractmethod
     def is_available():
-        """Check if the target player can be used
-
-        Returns:
-            bool: True if the class can be instanciated.
-        """
+        """Indicate if the implementation is available """
 
     def init_worker(self, config, tempdir):
-        """Init the worker
-        """
-        # states
-        self.states = {}
-
-        # check the target player is available
-        if not self.is_available():
-            raise self.player_not_available_error_class(
-                "{} is not available".format(self.player_name)
-            )
-
-        # callbacks
-        self.callbacks = {}
+        self.check_is_available()
 
         # karaoke parameters
         self.fullscreen = config.get("fullscreen", False)
         self.kara_folder_path = Path(config.get("kara_folder", ""))
 
+        # inner objects
+        self.playlist_entry = None
+        self.callbacks = {}
+
         # set durations
         config_durations = config.get("durations") or {}
         self.durations = {
+            "idle": IDLE_DURATION,
             "transition": config_durations.get(
                 "transition_duration", TRANSITION_DURATION
             ),
-            "idle": IDLE_DURATION,
+        }
+
+        # set text paths
+        self.text_paths = {
+            "idle": tempdir / IDLE_TEXT_NAME,
+            "transition": tempdir / TRANSITION_TEXT_NAME,
         }
 
         # set text generator
@@ -115,7 +66,6 @@ class MediaPlayer(Worker, ABC):
         self.text_generator = TextGenerator(config_texts)
 
         # set background loader
-        # we need to make some adaptations here
         config_backgrounds = config.get("backgrounds") or {}
         self.background_loader = BackgroundLoader(
             directory=Path(config_backgrounds.get("directory", "")),
@@ -130,33 +80,16 @@ class MediaPlayer(Worker, ABC):
             },
         )
 
-        # set path of ASS files for text screens
-        self.idle_text_path = tempdir / IDLE_TEXT_NAME
-        self.transition_text_path = tempdir / TRANSITION_TEXT_NAME
-
-        # playlist entry id of the current song
-        # if no songs are playing, its value is None
-        self.playing_id = None
-
-        # flag set to True is a transition screen is playing
-        self.in_transition = False
-
         # set default callbacks
         self.set_default_callbacks()
-        self.set_default_states()
 
+        # call specialized constructor
         self.init_player(config, tempdir)
 
-    @abstractmethod
     def init_player(self, config, tempdir):
-        """Init the actual player
-        """
+        pass
 
     def load(self):
-        """Prepare the instance
-
-        Perform actions with side effects.
-        """
         # check kara folder
         self.check_kara_folder_path()
 
@@ -168,25 +101,93 @@ class MediaPlayer(Worker, ABC):
 
         self.load_player()
 
-    @abstractmethod
     def load_player(self):
-        """Prepare the player instance
+        pass
 
-        Perform actions with side effects.
-        """
+    @abstractmethod
+    def get_timing(self):
+        pass
+
+    @abstractmethod
+    def get_version(self):
+        pass
+
+    @abstractmethod
+    def is_playing(self, what):
+        pass
+
+    @abstractmethod
+    def is_paused(self):
+        pass
+
+    @abstractmethod
+    def play(self, what):
+        pass
+
+    @abstractmethod
+    def pause(self, paused):
+        pass
+
+    @abstractmethod
+    def skip(self):
+        pass
+
+    @abstractmethod
+    def stop():
+        pass
+
+    def set_playlist_entry(self, playlist_entry, autoplay=True):
+        file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
+
+        if not file_path.exists():
+            logger.error("File not found '%s'", file_path)
+            self.callbacks["error"](playlist_entry["id"], "File not found")
+            self.callbacks["could_not_play"](playlist_entry["id"])
+            return
+
+        self.playlist_entry = playlist_entry
+
+        self.set_playlist_entry_player(playlist_entry, file_path, autoplay)
+
+    def set_playlist_entry_player(self, playlist_entry, file_path, autoplay):
+        return
+
+    def clear_playlist_entry(self):
+        self.playlist_entry = None
+
+        self.clear_playlist_entry_player()
+
+    def clear_playlist_entry_player(self):
+        return
+
+    def set_callback(self, name, callback):
+        self.callbacks[name] = callback
+
+    @staticmethod
+    def get_instrumental_file(filepath):
+        audio_files = get_audio_files(filepath)
+
+        # accept only one audio file
+        if len(audio_files) == 1:
+            return audio_files[0]
+
+        # otherwise return None
+        return None
 
     def check_kara_folder_path(self):
-        """Check the kara folder is valid
-        """
         if not self.kara_folder_path.exists():
             raise KaraFolderNotFound(
                 'Karaoke folder "{}" does not exist'.format(self.kara_folder_path)
             )
 
-    def set_default_callbacks(self):
-        """Set all the default callbacks
-        """
+    def check_is_available(self):
+        # check the target player is available
+        if not self.is_available():
+            raise MediaPlayerNotAvailableError(
+                "{} is not available".format(self.player_name)
+            )
 
+    def set_default_callbacks(self):
         # set dummy callbacks that have to be defined externally
         self.set_callback("started_transition", lambda playlist_entry_id: None)
         self.set_callback("started_song", lambda playlist_entry_id: None)
@@ -195,88 +196,6 @@ class MediaPlayer(Worker, ABC):
         self.set_callback("paused", lambda playlist_entry_id, timing: None)
         self.set_callback("resumed", lambda playlist_entry_id, timing: None)
         self.set_callback("error", lambda playlist_entry_id, message: None)
-
-    def set_default_states(self):
-        """Set all the default states
-        """
-        self.states["in_song"] = State()
-        self.states["in_idle"] = State()
-
-    def set_callback(self, name, callback):
-        """Assign an arbitrary callback
-
-        Callback is added to the `callbacks` dictionary.
-
-        Args:
-            name (str): name of the callback in the `callbacks` attribute.
-            callback (function): function to assign.
-        """
-        self.callbacks[name] = callback
-
-    @abstractmethod
-    def play_playlist_entry(self, playlist_entry):
-        """Play the specified playlist entry
-
-        Prepare the media containing the song to play and store it. Add a
-        transition screen and play it first. When the transition ends, the song
-        will be played.
-
-        Args:
-            playlist_entry (dict): dictionnary containing at least `id` and
-                `song` attributes. `song` is a dictionary containing at least
-                the key `file_path`.
-        """
-
-    def handle_file_not_found(self, playlist_entry_file_path, playlist_entry_id):
-        """Call all the necessary callbacks when a file does not exist.
-
-        Args:
-            playlist_entry_file_path (path.Path): Path of the not found file.
-            playlist_entry_id (int): ID of the associated playlist entry.
-        """
-        logger.error("File not found '%s'", playlist_entry_file_path)
-        self.callbacks["could_not_play"](playlist_entry_id)
-        self.callbacks["error"](
-            playlist_entry_id, "File not found '{}'".format(playlist_entry_file_path)
-        )
-
-    @abstractmethod
-    def play_idle_screen(self):
-        """Play idle screen
-        """
-
-    def is_idle(self):
-        """Get player idling status
-
-        Returns:
-            bool: False when playing a song or a transition screen, True when
-                playing idle screen.
-        """
-        return self.playing_id is None
-
-    @abstractmethod
-    def get_timing(self):
-        """Player timing getter
-
-        Returns:
-            int: current song timing in seconds if a song is playing or 0 when
-                idle or during transition screen.
-        """
-
-    @abstractmethod
-    def set_pause(self, pause):
-        """Pause or unpause the player
-
-        Pause playing song when True unpause when False.
-
-        Args:
-            pause (bool): flag for pause state requested.
-        """
-
-    @abstractmethod
-    def stop_player(self):
-        """Stop playing music
-        """
 
     def exit_worker(self, exception_type, exception_value, traceback):
         """Exit the worker
@@ -291,7 +210,7 @@ class MediaPlayer(Worker, ABC):
         timer_stop_player_too_long.start()
 
         # stop player
-        self.stop_player()
+        self.stop()
 
         # clear the warning
         timer_stop_player_too_long.cancel()
@@ -302,47 +221,37 @@ class MediaPlayer(Worker, ABC):
         """
         logger.warning("{} takes too long to stop".format(cls.player_name))
 
-    @staticmethod
-    def get_instrumental_audio_file(filepath):
-        """Get the external audio file of the media
+    def generate_text(self, what, *args, **kwargs):
+        if what == "idle":
+            text = self.text_generator.create_idle_text(
+                {
+                    "notes": [
+                        "VLC {}".format(self.get_version()),
+                        "Dakara player {}".format(__version__),
+                    ]
+                },
+                *args,
+                **kwargs
+            )
 
-        Args:
-            filepath (path.Path): Path of the media.
+        elif what == "transition":
+            text = self.text_generator.create_idle_text(
+                self.playlist_entry, *args, **kwargs
+            )
 
-        Returns:
-            path.Path: Path of the external audio file. None if no or more than
-            one audio file is found.
-        """
-        # list files with similar stem
-        items = filepath.dirname().glob("{}.*".format(filepath.stem))
-        audio = [item for item in items if item != filepath and is_file_audio(item)]
+        else:
+            raise ValueError("Unexpected action to generate text to: {}".format(what))
 
-        # accept only one audio file
-        if len(audio) == 1:
-            return audio[0]
+        self.text_paths[what].write_text(text, "utf-8")
 
-        # otherwise return None
-        return None
-
-
-def is_file_audio(file_path):
-    """Detect if a file is audio file based on standard magic number
-
-    Args:
-        file_path (path.Path): Path of the file to investigate.
-
-    Returns:
-        bool: True if the file is an audio file, False otherwise.
-    """
-    kind = filetype.guess(str(file_path))
-    if not kind:
-        return False
-
-    maintype, _ = kind.mime.split("/")
-
-    return maintype == "audio"
+        return self.text_paths[what]
 
 
 class KaraFolderNotFound(DakaraError):
     """Error raised when the kara folder cannot be found
+    """
+
+
+class MediaPlayerNotAvailableError(DakaraError):
+    """Error raised when trying to use a target player that cannot be found
     """
