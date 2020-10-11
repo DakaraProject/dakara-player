@@ -1,4 +1,4 @@
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from queue import Queue
 from tempfile import TemporaryDirectory
 from threading import Event
@@ -102,16 +102,17 @@ class MediaPlayerVlcIntegrationTestCase(TestCase):
                 },
             }
 
-        with TemporaryDirectory() as temp:
-            vlc_player = MediaPlayerVlc(Event(), Queue(), config, Path(temp),)
+        with ExitStack() as stack:
+            temp = Path(stack.enter_context(TemporaryDirectory()))
+            vlc_player = stack.enter_context(
+                MediaPlayerVlc(Event(), Queue(), config, temp, warn_long_exit=False)
+            )
+            output = stack.enter_context(
+                self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG")
+            )
+            vlc_player.load()
 
-            try:
-                with self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG") as output:
-                    vlc_player.load()
-                    yield vlc_player, temp, output
-
-            finally:
-                vlc_player.player.stop()
+            yield vlc_player, temp, output
 
     @classmethod
     def wait_is_playing(cls, vlc_player, what=None):
@@ -155,7 +156,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCase):
 
     @func_set_timeout(TIMEOUT)
     def test_play_idle_screen(self):
-        """Test the display of the idle screen
+        """Test to display the idle screen
         """
         with self.get_instance() as (vlc_player, _, _):
             # pre assertions

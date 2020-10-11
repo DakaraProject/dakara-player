@@ -35,7 +35,7 @@ class MediaPlayer(Worker, ABC):
     def is_available():
         """Indicate if the implementation is available """
 
-    def init_worker(self, config, tempdir):
+    def init_worker(self, config, tempdir, warn_long_exit=True):
         self.check_is_available()
 
         # karaoke parameters
@@ -45,6 +45,7 @@ class MediaPlayer(Worker, ABC):
         # inner objects
         self.playlist_entry = None
         self.callbacks = {}
+        self.warn_long_exit = warn_long_exit
 
         # set durations
         config_durations = config.get("durations") or {}
@@ -133,7 +134,7 @@ class MediaPlayer(Worker, ABC):
         pass
 
     @abstractmethod
-    def stop():
+    def stop_player():
         pass
 
     def set_playlist_entry(self, playlist_entry, autoplay=True):
@@ -203,17 +204,19 @@ class MediaPlayer(Worker, ABC):
         Send a warning after `PLAYER_CLOSING_DURATION` seconds if the worker is
         not closed yet.
         """
-        # send a warning within if the player has not stopped already
-        timer_stop_player_too_long = Timer(
-            PLAYER_CLOSING_DURATION, self.warn_stop_player_too_long
-        )
-        timer_stop_player_too_long.start()
+        if self.warn_long_exit:
+            # send a warning within if the player has not stopped already
+            timer_stop_player_too_long = Timer(
+                PLAYER_CLOSING_DURATION, self.warn_stop_player_too_long
+            )
+            timer_stop_player_too_long.start()
 
         # stop player
-        self.stop()
+        self.stop_player()
 
-        # clear the warning
-        timer_stop_player_too_long.cancel()
+        if self.warn_long_exit:
+            # clear the warning
+            timer_stop_player_too_long.cancel()
 
     @classmethod
     def warn_stop_player_too_long(cls):
@@ -226,7 +229,7 @@ class MediaPlayer(Worker, ABC):
             text = self.text_generator.create_idle_text(
                 {
                     "notes": [
-                        "VLC {}".format(self.get_version()),
+                        "{} {}".format(self.player_name, self.get_version()),
                         "Dakara player {}".format(__version__),
                     ]
                 },

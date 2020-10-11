@@ -192,7 +192,7 @@ class MediaPlayerVlc(MediaPlayer):
             logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
             self.clear_playlist_entry()
 
-    def stop(self):
+    def stop_player(self):
         logger.info("Stopping player")
         self.player.stop()
         logger.debug("Stopped player")
@@ -347,7 +347,7 @@ class MediaPlayerVlc(MediaPlayer):
         Args:
             event (vlc.EventType): VLC event object.
         """
-        logger.debug("Song end callback called")
+        logger.debug("End reached callback called")
 
         # the transition screen has finished, request to play the song itself
         if self.is_playing("transition"):
@@ -483,7 +483,7 @@ class MediaPlayerVlc(MediaPlayer):
         # call paused callback
         self.callbacks["paused"](self.playlist_entry["id"], self.get_timing())
 
-        logger.debug("Set pause")
+        logger.debug("Paused")
 
 
 def set_metadata(media, metadata):
