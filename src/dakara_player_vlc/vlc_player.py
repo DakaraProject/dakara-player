@@ -2,7 +2,7 @@ import json
 import logging
 
 from dakara_base.exceptions import DakaraError
-from packaging.version import parse
+from pkg_resources import parse_version
 
 try:
     import vlc
