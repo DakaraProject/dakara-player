@@ -87,7 +87,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             config = {
                 "kara_folder": self.kara_folder,
                 "fullscreen": self.fullscreen,
-                "mpv": {},
+                "mpv": {"vo": "null", "ao": "null"},
             }
 
         with ExitStack() as stack:
