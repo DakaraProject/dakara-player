@@ -24,6 +24,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
     """
 
     TIMEOUT = 30
+    DELAY = 0.2
 
     def setUp(self):
         # create fullscreen flag
