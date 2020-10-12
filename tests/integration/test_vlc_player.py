@@ -2,8 +2,7 @@ from contextlib import ExitStack, contextmanager
 from queue import Queue
 from tempfile import TemporaryDirectory
 from threading import Event
-from time import sleep
-from unittest import skipIf, TestCase
+from unittest import skipIf
 from unittest.mock import ANY, MagicMock
 
 import vlc
@@ -18,14 +17,14 @@ from dakara_player_vlc.media_player import (
     TRANSITION_BG_NAME,
 )
 from dakara_player_vlc.resources_manager import get_background
+from tests.integration.base import TestCasePoller
 
 
-class MediaPlayerVlcIntegrationTestCase(TestCase):
+class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
     """Test the VLC player class in real conditions
     """
 
     TIMEOUT = 30
-    DELAY = 0.01
 
     def setUp(self):
         # create instance parameter
@@ -113,46 +112,6 @@ class MediaPlayerVlcIntegrationTestCase(TestCase):
             vlc_player.load()
 
             yield vlc_player, temp, output
-
-    @classmethod
-    def wait_is_playing(cls, vlc_player, what=None):
-        """Wait for the player to be playing or to play something specifically
-
-        Use a polling loop. Note that after the condition is fulfilled, the
-        function waits a little bit more.
-
-        Args:
-            vlc_player (dakara_player_vlc.media_player.MediaPlayerVlc): VLC player.
-            what (str): Action to wait for. If not provided, wait for the
-                player to be actually playing.
-        """
-        if what:
-            while not (vlc_player.is_playing() and vlc_player.is_playing(what)):
-                sleep(cls.DELAY)
-
-            sleep(cls.DELAY)
-
-            return
-
-        while not vlc_player.is_playing():
-            sleep(cls.DELAY)
-
-        sleep(cls.DELAY)
-
-    @classmethod
-    def wait_is_paused(cls, vlc_player):
-        """Wait for the player to be paused
-
-        Use a polling loop. Note that after the condition is fulfilled, the
-        function waits a little bit more.
-
-        Args:
-            vlc_player (dakara_player_vlc.media_player.MediaPlayerVlc): VLC player.
-        """
-        while not vlc_player.is_paused():
-            sleep(cls.DELAY)
-
-        sleep(cls.DELAY)
 
     @func_set_timeout(TIMEOUT)
     def test_play_idle_screen(self):

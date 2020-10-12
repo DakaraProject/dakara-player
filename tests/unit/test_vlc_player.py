@@ -144,6 +144,7 @@ class MediaPlayerVlcTestCase(TestCase):
             player = vlc_player.instance.media_player_new.return_value
             player.get_media.return_value = vlc_player.playlist_entry_data["song"].media
             vlc_player.playlist_entry_data["transition"].started = True
+            vlc_player.playlist_entry_data["song"].started = True
 
     def test_set_callback(self):
         """Test the assignation of a callback
@@ -620,6 +621,7 @@ class MediaPlayerVlcTestCase(TestCase):
         # create instance
         vlc_player, _, _ = self.get_instance()
         self.set_playlist_entry(vlc_player)
+        vlc_player.playlist_entry_data["song"].started = False
 
         # mock the call
         mocked_is_playing.return_value = True
@@ -633,7 +635,7 @@ class MediaPlayerVlcTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.vlc_player:Song end callback called",
+                "DEBUG:dakara_player_vlc.vlc_player:End reached callback called",
                 "DEBUG:dakara_player_vlc.vlc_player:Will play '{}'".format(
                     Path(gettempdir()) / self.song_file_path
                 ),
@@ -827,6 +829,7 @@ class MediaPlayerVlcTestCase(TestCase):
         # create instance
         vlc_player, _, _ = self.get_instance()
         self.set_playlist_entry(vlc_player)
+        vlc_player.playlist_entry_data["song"].started = False
 
         # mock the call
         vlc_player.set_callback("started_song", MagicMock())
@@ -965,7 +968,7 @@ class MediaPlayerVlcTestCase(TestCase):
             logger.output,
             [
                 "DEBUG:dakara_player_vlc.vlc_player:Paused callback called",
-                "DEBUG:dakara_player_vlc.vlc_player:Set pause",
+                "DEBUG:dakara_player_vlc.vlc_player:Paused",
             ],
         )
 

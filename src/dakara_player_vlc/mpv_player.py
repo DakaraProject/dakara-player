@@ -1,11 +1,13 @@
 import logging
 import os
-from pkg_resources import parse_version
 
-from python_mpv_jsonipc import MPV, MPVError
+try:
+    import python_mpv_jsonipc as mpv
 
-from dakara_player_vlc.media_player import MediaPlayer, MediaPlayerNotAvailableError
-from dakara_player_vlc.version import __version__
+except ImportError:
+    mpv = None
+
+from dakara_player_vlc.media_player import MediaPlayer
 
 
 logger = logging.getLogger(__name__)
@@ -16,27 +18,22 @@ SUBTITLE_EXTENSIONS = [
 ]
 
 
-class MpvNotAvailableError(MediaPlayerNotAvailableError):
-    """Error raised when trying to use the `MpvMediaPlayer` class if mpv cannot be found
-    """
-
-
-class MpvMediaPlayer(MediaPlayer):
+class MediaPlayerMpv(MediaPlayer):
     """Interface for the Python mpv wrapper
 
     This class allows the usage of mpv as a player for Dakara.
 
-    The playlist is virtually handled using song-end callbacks.
+    The playlist is virtually handled using callbacks.
 
     Attributes:
-        player (python_mpv_jsonipc.MPV): instance of mpv, attached to the actual player.
+        player (mpv.MPV): instance of mpv, attached to the actual player.
         media_pending (str): path of a song which will be played after the transition
             screen.
     """
 
     player_name = "mpv"
-    player_not_available_error_class = MpvNotAvailableError
 
+    # TODO remove that monstruosity
     if os.name == "nt":
         os.environ["PATH"] = (
             f"{os.environ['PATH']};{os.getcwd()}"
@@ -47,61 +44,199 @@ class MpvMediaPlayer(MediaPlayer):
     def is_available():
         """Check if mpv can be used
         """
+        if mpv is None:
+            return False
+
         try:
-            mpv = MPV()
-            mpv.terminate()
+            player = mpv.MPV()
+            player.terminate()
             return True
-        except (FileNotFoundError):
+
+        except FileNotFoundError:
             return False
 
     def init_player(self, config, tempdir):
         # set mpv player options and logging
         loglevel = config.get("loglevel", "info")
-        self.player = MPV(log_handler=self.handle_log_messages, loglevel=loglevel)
+        self.player = mpv.MPV(log_handler=self.handle_log_messages, loglevel=loglevel)
         config_mpv = config.get("mpv") or {}
+
         for key, value in config_mpv.items():
             try:
                 self.player.__setattr__(key, value)
-            except (MPVError):
+
+            except mpv.MPVError:
                 logger.error(f"Unable to set mpv option '{key}' to value '{value}'")
 
+        # playlist entry objects
+        self.playlist_entry_data = {}
+        self.clear_playlist_entry_player()
+
+    def load_player(self):
         # set mpv callbacks
         self.set_mpv_default_callbacks()
 
-        # media containing a song which will be played after the transition
-        # screen
-        self.media_pending = None
-
-    def load_player(self):
-        # check mpv version
-        self.get_version()
-
         # set mpv fullscreen
         self.player.fullscreen = self.fullscreen
+
+        # log mpv version
+        logger.info("mpv %s", self.get_version())
 
         # set mpv as a single non-interactive window
         self.player.force_window = "immediate"
         self.player.osc = False
         self.player.osd_level = 0
 
+    def get_timing(self):
+        if self.is_playing("idle") or self.is_playing("transition"):
+            return 0
+
+        timing = self.player.time_pos or 0
+
+        return int(timing)
+
     def get_version(self):
-        """Print the mpv version
+        """Get the mpv version
 
         mpv version is in the form "mpv x.y.z+git.w" where "w" is a timestamp.
         """
-        # and log version
-        # only keep semver values
-        version = parse_version(self.player.mpv_version.split()[1])
-        self.version = version.base_version
-        logger.info("mpv %s", self.version)
+        return self.player.mpv_version.split()[1].split("+")[0]
 
     def set_mpv_default_callbacks(self):
         """Set mpv player default callbacks
         """
-        # mpv will switch to idle mode when there is nothing to play
-        self.player.bind_event("idle", self.handle_end_reached)
+        self.player.bind_event("end-file", self.handle_end_file)
+        self.player.bind_event("start-file", self.handle_start_file)
+        self.player.bind_event("pause", self.handle_pause)
+        self.player.bind_event("unpause", self.handle_unpause)
 
-    def handle_end_reached(self, event):
+    def is_playing(self, what=None, media_path=None):
+        if what:
+            media_path = media_path or self.player.path
+
+            if what == "idle":
+                return media_path == self.background_loader.backgrounds["idle"]
+
+            return media_path == self.playlist_entry_data[what].path
+
+        # query if the player is currently playing
+        if self.is_paused():
+            return False
+
+        current_entries = [e for e in self.player.playlist if e["playing"]]
+        return bool(len(current_entries))
+
+    def was_playing(self, what, id):
+        # extract entry from playlist
+        entries = [e for e in self.player.playlist if e["id"] == id]
+
+        if len(entries) > 1:
+            raise RuntimeError("There are more than one media that was playing")
+
+        if len(entries) == 0:
+            raise RuntimeError("No media was playing")
+
+        return self.is_playing(what, entries[0]["filename"])
+
+    def is_paused(self):
+        return self.player.pause
+
+    def play(self, what):
+        """Play the given media
+        """
+        # reset player
+        self.player.image_display_duration = 0
+        self.player.sub_files = []
+        self.player.pause = False
+
+        if what == "idle":
+            path_media = self.background_loader.backgrounds["idle"]
+            path_subtitle = self.text_paths["idle"]
+
+            self.player.image_display_duration = "inf"
+
+            self.generate_text("idle")
+
+        elif what == "transition":
+            path_media = self.playlist_entry_data["transition"].path
+            path_subtitle = self.text_paths["transition"]
+
+            self.player.image_display_duration = int(self.durations["transition"])
+
+        elif what == "song":
+            path_media = self.playlist_entry_data["song"].path
+            path_subtitle = self.playlist_entry_data["song"].path_subtitle
+
+        else:
+            raise ValueError("Unexpected action to play: {}".format(what))
+
+        self.player.sub_files = [str(path_subtitle)]
+        self.player.play(str(path_media))
+
+    def pause(self, pause):
+        if self.is_playing("idle"):
+            return
+
+        if pause:
+            if self.is_paused():
+                logger.debug("Player already in pause")
+                return
+
+            logger.info("Setting pause")
+            self.player.pause = True
+            return
+
+        if not self.is_paused():
+            logger.debug("Player already playing")
+            return
+
+        logger.info("Resuming play")
+        self.player.pause = False
+
+    def skip(self):
+        if self.is_playing("transition") or self.is_playing("song"):
+            self.callbacks["finished"](self.playlist_entry["id"])
+            logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
+            self.clear_playlist_entry()
+
+    def stop_player(self):
+        logger.info("Stopping player")
+        self.player.terminate()
+        logger.debug("Stopped player")
+
+    def set_playlist_entry_player(self, playlist_entry, file_path, autoplay):
+        # set transition
+        self.playlist_entry_data[
+            "transition"
+        ].path = self.background_loader.backgrounds["transition"]
+        self.generate_text("transition")
+
+        if autoplay:
+            self.play("transition")
+
+        # set song
+        self.playlist_entry_data["song"].path = file_path
+
+        # manually set the subtitles as a workaround for the matching of
+        # mpv being too permissive
+        path_without_ext = file_path.dirname() / file_path.stem
+        for subtitle_extension in SUBTITLE_EXTENSIONS:
+            path_subtitle = path_without_ext + subtitle_extension
+            if path_subtitle.exists():
+                break
+
+        else:
+            path_subtitle = None
+
+        self.playlist_entry_data["song"].path_subtitle = path_subtitle
+
+    def clear_playlist_entry_player(self):
+        self.playlist_entry_data = {
+            "transition": Media(),
+            "song": MediaSong(),
+        }
+
+    def handle_end_file(self, event):
         """Callback called when a media ends
 
         This happens when:
@@ -109,56 +244,33 @@ class MpvMediaPlayer(MediaPlayer):
             - A song ends, leading to calling the callback
                 `callbacks["finished"]`;
             - An idle screen ends, leading to reloop it.
-        A new thread is created in any case.
 
         Args:
             event (dict): mpv event.
         """
+        logger.debug("File end callback called")
+        id = event["playlist_entry_id"]
 
-        logger.debug("Song end callback called")
+        # only handle when a file naturally ends
+        if event["reason"] != "eof":
+            return
 
-        if self.in_transition:
-            # if the transition screen has finished,
-            # request to play the song itself
-            self.in_transition = False
-
-            # manually set the subtitles as a workaround for the matching of mpv being
-            # too permissive
-            filepath_without_ext = (
-                self.media_pending.dirname() / self.media_pending.stem
-            )
-            for subtitle_extension in SUBTITLE_EXTENSIONS:
-                sub_filepath = filepath_without_ext + subtitle_extension
-                if sub_filepath.exists():
-                    break
-
-            else:
-                sub_filepath = None
-
-            thread = self.create_thread(
-                target=self.play_media, args=(self.media_pending, sub_filepath)
-            )
-
-            thread.start()
-
-            # get file path
-            logger.info("Now playing '%s'", self.media_pending)
-
-            # call the callback for when a song starts
-            self.callbacks["started_song"](self.playing_id)
+        # the transition screen has finished, request to play the song itself
+        if self.was_playing("transition", id):
+            logger.debug("Will play '{}'".format(self.playlist_entry_data["song"].path))
+            self.play("song")
 
             return
 
-        if self.is_idle():
-            # if the idle screen has finished, restart it
-            thread = self.create_thread(target=self.play_idle_screen)
+        # the media has finished, so call the according callback and clean memory
+        if self.was_playing("song", id):
+            self.callbacks["finished"](self.playlist_entry["id"])
+            self.clear_playlist_entry()
 
-            thread.start()
             return
 
-        # otherwise, the song has finished,
-        # so call the right callback
-        self.callbacks["finished"](self.playing_id)
+        # if no state can be determined, raise an error
+        raise InvalidStateError("End reached on an undeterminated state")
 
     def handle_log_messages(self, loglevel, component, message):
         """Callback called when a log message occurs
@@ -174,126 +286,63 @@ class MpvMediaPlayer(MediaPlayer):
         """
         logger.debug("Log message callback called")
         intlevel = get_python_loglever(loglevel)
-        logger.log(intlevel, "mpv: {}: {}".format(component, message))
+        logger.log(intlevel, "mpv: %s: %s", component, message)
 
         # handle all errors here
         if intlevel >= logging.ERROR:
-            generic_message = "Unable to play current media"
-            logger.error(generic_message)
-            self.callbacks["finished"](self.playing_id)
-            self.callbacks["error"](
-                self.playing_id, "{}: {}".format(generic_message, message)
+            if self.is_playing("song"):
+                logger.error("Unable to play '%s'", self.player.path)
+                self.callbacks["error"](
+                    self.playlist_entry["id"],
+                    "Unable to play current song: {}".format(message),
+                )
+                self.skip()
+
+    def handle_start_file(self, event):
+        logger.debug("Start file callback called")
+
+        # the transition screen starts to play
+        if self.is_playing("transition"):
+            self.callbacks["started_transition"](self.playlist_entry["id"])
+            logger.info(
+                "Playing transition for '%s'", self.playlist_entry["song"]["title"]
             )
 
-            # reset current state
-            self.playing_id = None
-            self.in_transition = False
-
-    def play_media(self, media, sub_file=None):
-        """Play the given media
-
-        Args:
-            media (str): path to media
-        """
-        self.player.sub_files = [sub_file] if sub_file else []
-        self.player.loadfile(str(media))
-        self.player.pause = False
-
-    def play_playlist_entry(self, playlist_entry):
-        # file location
-        file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
-
-        # Check file exists
-        if not file_path.exists():
-            self.handle_file_not_found(file_path, playlist_entry["id"])
             return
 
-        # create the media
-        self.playing_id = playlist_entry["id"]
-        self.media_pending = file_path
-
-        # create the transition screen
-        with self.transition_text_path.open("w", encoding="utf8") as file:
-            file.write(
-                self.text_generator.create_transition_text(
-                    playlist_entry, fade_in=False
-                )
+        # the song starts to play
+        if self.is_playing("song"):
+            self.callbacks["started_song"](self.playlist_entry["id"])
+            logger.info(
+                "Now playing '%s' ('%s')",
+                self.playlist_entry["song"]["title"],
+                self.player.path,
             )
 
-        media_transition = self.background_loader.backgrounds["transition"]
+            return
 
-        self.in_transition = True
+        # the idle screen starts to play
+        if self.is_playing("idle"):
+            logger.debug("Playing idle screen")
 
-        self.player.image_display_duration = int(self.durations["transition"])
-        self.play_media(media_transition, self.transition_text_path)
-        logger.info("Playing transition for '%s'", file_path)
-        self.callbacks["started_transition"](playlist_entry["id"])
+            return
 
-    def play_idle_screen(self):
-        # set idle state
-        self.playing_id = None
-        self.in_transition = False
+        raise InvalidStateError("Playing on an undeterminated state")
 
-        # create idle screen media
-        media = self.background_loader.backgrounds["idle"]
+    def handle_pause(self, event):
+        logger.debug("Pause callback called")
 
-        # create the idle screen
-        with self.idle_text_path.open("w", encoding="utf8") as file:
-            file.write(
-                self.text_generator.create_idle_text(
-                    {
-                        "notes": [
-                            "mpv {}".format(self.version),
-                            "Dakara player {}".format(__version__),
-                        ]
-                    }
-                )
-            )
+        # call paused callback
+        self.callbacks["paused"](self.playlist_entry["id"], self.get_timing())
 
-        self.player.image_display_duration = "inf"
-        self.play_media(media, self.idle_text_path)
-        logger.debug("Playing idle screen")
+        logger.debug("Paused")
 
-    def get_timing(self):
-        if self.is_idle() or self.in_transition:
-            return 0
+    def handle_unpause(self, event):
+        logger.debug("Unpause callback called")
 
-        timing = self.player.time_pos
+        self.callbacks["resumed"](self.playlist_entry["id"], self.get_timing())
 
-        if timing is None:
-            return 0
-
-        return int(timing)
-
-    def is_paused(self):
-        return self.player.pause
-
-    def set_pause(self, pause):
-        if not self.is_idle():
-            if pause:
-                if self.is_paused():
-                    logger.debug("Player already in pause")
-                    return
-
-                logger.info("Setting pause")
-                self.player.pause = True
-                logger.debug("Set pause")
-                self.callbacks["paused"](self.playing_id, self.get_timing())
-
-            else:
-                if not self.is_paused():
-                    logger.debug("Player already playing")
-                    return
-
-                logger.info("Resuming play")
-                self.player.pause = False
-                logger.debug("Resumed play")
-                self.callbacks["resumed"](self.playing_id, self.get_timing())
-
-    def stop_player(self):
-        logger.info("Stopping player")
-        self.player.terminate()
-        logger.debug("Stopped player")
+        logger.debug("Resumed play")
 
 
 def get_python_loglever(loglevel):
@@ -321,3 +370,18 @@ def get_python_loglever(loglevel):
         return logging.DEBUG
 
     return logging.NOTSET
+
+
+class Media:
+    def __init__(self, path=None):
+        self.path = path
+
+
+class MediaSong(Media):
+    def __init__(self, *args, path_subtitle=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        path_subtitle = path_subtitle
+
+
+class InvalidStateError(RuntimeError):
+    pass
