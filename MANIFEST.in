@@ -1,9 +1,11 @@
 recursive-include tests *.py
-recursive-include tests/resources/ *.ass
-recursive-include tests/resources/ *.png
+recursive-include tests/resources *.ass
+recursive-include tests/resources *.png
+recursive-include tests/resources *.mkv
+recursive-include tests/resources *.mp3
 include src/dakara_player_vlc/resources/font-awesome.json
 include src/dakara_player_vlc/resources/player_vlc.yaml
-recursive-include src/dakara_player_vlc/resources/ *.ass
-recursive-include src/dakara_player_vlc/resources/ *.png
-recursive-include src/dakara_player_vlc/resources/ *.ttf
+recursive-include src/dakara_player_vlc/resources *.ass
+recursive-include src/dakara_player_vlc/resources *.png
+recursive-include src/dakara_player_vlc/resources *.ttf
 include LICENSE
