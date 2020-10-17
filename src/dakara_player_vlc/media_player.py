@@ -258,3 +258,13 @@ class KaraFolderNotFound(DakaraError):
 class MediaPlayerNotAvailableError(DakaraError):
     """Error raised when trying to use a target player that cannot be found
     """
+
+
+class InvalidStateError(RuntimeError):
+    """Error raised when the state of the player is invalid
+    """
+
+
+class VersionNotFoundError(Exception):
+    """Error raised when the version of the player cannot be found
+    """

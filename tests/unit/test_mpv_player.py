@@ -5,10 +5,15 @@ from threading import Event
 from unittest import TestCase
 from unittest.mock import MagicMock, patch, call
 
+from packaging.version import parse
 from path import Path
 
-from dakara_player_vlc.mpv_player import MediaPlayerMpv, InvalidStateError
-from dakara_player_vlc.media_player import MediaPlayerNotAvailableError
+from dakara_player_vlc.mpv_player import MediaPlayerMpv
+from dakara_player_vlc.media_player import (
+    MediaPlayerNotAvailableError,
+    InvalidStateError,
+    VersionNotFoundError,
+)
 
 
 class MediaPlayerMpvTestCase(TestCase):
@@ -160,8 +165,8 @@ class MediaPlayerMpvTestCase(TestCase):
         ):
             MediaPlayerMpv(Event(), Queue(), {}, Path("temp"))
 
-    def test_get_version(self):
-        """Test to get the mpv version
+    def test_get_version_long(self):
+        """Test to get the mpv version when it is long
         """
         # create instance
         mpv_player, (mocked_mpv, _, _), _ = self.get_instance()
@@ -173,7 +178,35 @@ class MediaPlayerMpvTestCase(TestCase):
         version = mpv_player.get_version()
 
         # assert the result
-        self.assertEqual(version, "0.32.0")
+        self.assertEqual(version, parse("0.32.0"))
+
+    def test_get_version_short(self):
+        """Test to get the mpv version when it is short
+        """
+        # create instance
+        mpv_player, (mocked_mpv, _, _), _ = self.get_instance()
+
+        # mock the version of mpv
+        mocked_mpv.mpv_version = "mpv 0.32.0"
+
+        # call the method
+        version = mpv_player.get_version()
+
+        # assert the result
+        self.assertEqual(version, parse("0.32.0"))
+
+    def test_get_version_not_found(self):
+        """Test to get the mpv version when it is not available
+        """
+        # create instance
+        mpv_player, (mocked_mpv, _, _), _ = self.get_instance()
+
+        # mock the version of mpv
+        mocked_mpv.mpv_version = "none"
+
+        # call the method
+        with self.assertRaisesRegex(VersionNotFoundError, "Unable to get mpv version"):
+            mpv_player.get_version()
 
     @patch.object(MediaPlayerMpv, "is_playing")
     def test_get_timing(self, mocked_is_playing):

@@ -6,14 +6,18 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch, call
 
 import vlc
+from packaging.version import parse
 from path import Path
 
 from dakara_player_vlc.vlc_player import (
-    InvalidStateError,
     MediaPlayerVlc,
     VlcTooOldError,
 )
-from dakara_player_vlc.media_player import KaraFolderNotFound
+from dakara_player_vlc.media_player import (
+    KaraFolderNotFound,
+    InvalidStateError,
+    VersionNotFoundError,
+)
 from dakara_player_vlc.mrl import mrl_to_path, path_to_mrl
 
 
@@ -199,17 +203,28 @@ class MediaPlayerVlcTestCase(TestCase):
         )
 
     @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version", autospec=True)
-    def test_get_version(self, mocked_libvlc_get_version):
-        """Test to get the VLC version
+    def test_get_version_long(self, mocked_libvlc_get_version):
+        """Test to get the VLC version when it is long
         """
         # mock the version of VLC
-        mocked_libvlc_get_version.return_value = b"0.0.0 NoName"
+        mocked_libvlc_get_version.return_value = b"3.0.11.1 Vetinari"
 
         # call the method
         version = MediaPlayerVlc.get_version()
 
         # assert the result
-        self.assertEqual(version, "0.0.0 NoName")
+        self.assertEqual(version, parse("3.0.11.1"))
+
+    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version", autospec=True)
+    def test_get_version_not_found(self, mocked_libvlc_get_version):
+        """Test to get the VLC version when it is not available
+        """
+        # mock the version of VLC
+        mocked_libvlc_get_version.return_value = b"none"
+
+        # call the method
+        with self.assertRaisesRegex(VersionNotFoundError, "Unable to get VLC version"):
+            MediaPlayerVlc.get_version()
 
     @patch.object(MediaPlayerVlc, "get_version")
     def test_check_version(self, mocked_get_version):
@@ -219,7 +234,7 @@ class MediaPlayerVlcTestCase(TestCase):
         vlc_player, _, _ = self.get_instance()
 
         # mock the version of VLC
-        mocked_get_version.return_value = "3.0.0 NoName"
+        mocked_get_version.return_value = parse("3.0.0")
 
         # call the method
         vlc_player.check_version()
@@ -232,7 +247,7 @@ class MediaPlayerVlcTestCase(TestCase):
         vlc_player, _, _ = self.get_instance()
 
         # mock the version of VLC
-        mocked_get_version.return_value = "2.0.0 NoName"
+        mocked_get_version.return_value = parse("2.0.0")
 
         # call the method
         with self.assertRaisesRegex(VlcTooOldError, "VLC is too old"):

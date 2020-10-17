@@ -1,5 +1,8 @@
 import logging
 import os
+import re
+
+from packaging.version import parse
 
 try:
     import python_mpv_jsonipc as mpv
@@ -7,7 +10,11 @@ try:
 except ImportError:
     mpv = None
 
-from dakara_player_vlc.media_player import MediaPlayer
+from dakara_player_vlc.media_player import (
+    InvalidStateError,
+    MediaPlayer,
+    VersionNotFoundError,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -101,9 +108,14 @@ class MediaPlayerMpv(MediaPlayer):
     def get_version(self):
         """Get the mpv version
 
-        mpv version is in the form "mpv x.y.z+git.w" where "w" is a timestamp.
+        mpv version is in the form "mpv x.y.z+git.w" where "w" is a timestamp,
+        or "mpv x.y.z" in text.
         """
-        return self.player.mpv_version.split()[1].split("+")[0]
+        match = re.search(r"mpv (\d+\.\d+\.\d+)", self.player.mpv_version)
+        if match:
+            return parse(match.group(1))
+
+        raise VersionNotFoundError("Unable to get mpv version")
 
     def set_mpv_default_callbacks(self):
         """Set mpv player default callbacks
@@ -382,7 +394,3 @@ class MediaSong(Media):
     def __init__(self, *args, path_subtitle=None, **kwargs):
         super().__init__(*args, **kwargs)
         path_subtitle = path_subtitle
-
-
-class InvalidStateError(RuntimeError):
-    pass

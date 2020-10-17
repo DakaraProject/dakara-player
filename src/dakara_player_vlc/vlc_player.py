@@ -1,5 +1,6 @@
-import json
 import logging
+import json
+import re
 
 from dakara_base.exceptions import DakaraError
 from packaging.version import parse
@@ -10,7 +11,11 @@ try:
 except ImportError:
     vlc = None
 
-from dakara_player_vlc.media_player import MediaPlayer
+from dakara_player_vlc.media_player import (
+    MediaPlayer,
+    InvalidStateError,
+    VersionNotFoundError,
+)
 from dakara_player_vlc.mrl import path_to_mrl, mrl_to_path
 
 
@@ -87,15 +92,20 @@ class MediaPlayerVlc(MediaPlayer):
 
     @staticmethod
     def get_version():
-        """Print the VLC version and perform some parameter adjustements
+        """Get the VLC version
 
         VLC version given by the lib is on the form "x.y.z CodeName" in bytes.
         """
-        return vlc.libvlc_get_version().decode()
+        match = re.search(
+            r"(\d+\.\d+\.\d+(?:\.\d+)+)", vlc.libvlc_get_version().decode()
+        )
+        if match:
+            return parse(match.group(1))
+
+        raise VersionNotFoundError("Unable to get VLC version")
 
     def check_version(self):
-        version_str, _ = self.get_version().split()
-        version = parse(version_str)
+        version = self.get_version()
 
         if version.major < 3:
             raise VlcTooOldError("VLC is too old (version 3 and higher supported)")
@@ -504,7 +514,3 @@ class MediaSong(Media):
     def __init__(self, *args, audio_track_id=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.audio_track_id = audio_track_id
-
-
-class InvalidStateError(RuntimeError):
-    pass
