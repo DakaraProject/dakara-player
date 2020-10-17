@@ -203,8 +203,8 @@ class MediaPlayerVlcTestCase(TestCase):
         )
 
     @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version", autospec=True)
-    def test_get_version_long(self, mocked_libvlc_get_version):
-        """Test to get the VLC version when it is long
+    def test_get_version_long_4_digits(self, mocked_libvlc_get_version):
+        """Test to get the VLC version when it is long and contains 4 digits
         """
         # mock the version of VLC
         mocked_libvlc_get_version.return_value = b"3.0.11.1 Vetinari"
@@ -214,6 +214,19 @@ class MediaPlayerVlcTestCase(TestCase):
 
         # assert the result
         self.assertEqual(version, parse("3.0.11.1"))
+
+    @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version", autospec=True)
+    def test_get_version_long(self, mocked_libvlc_get_version):
+        """Test to get the VLC version when it is long
+        """
+        # mock the version of VLC
+        mocked_libvlc_get_version.return_value = b"3.0.11 Vetinari"
+
+        # call the method
+        version = MediaPlayerVlc.get_version()
+
+        # assert the result
+        self.assertEqual(version, parse("3.0.11"))
 
     @patch("dakara_player_vlc.vlc_player.vlc.libvlc_get_version", autospec=True)
     def test_get_version_not_found(self, mocked_libvlc_get_version):

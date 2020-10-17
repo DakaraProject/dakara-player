@@ -97,7 +97,7 @@ class MediaPlayerVlc(MediaPlayer):
         VLC version given by the lib is on the form "x.y.z CodeName" in bytes.
         """
         match = re.search(
-            r"(\d+\.\d+\.\d+(?:\.\d+)+)", vlc.libvlc_get_version().decode()
+            r"(\d+\.\d+\.\d+(?:\.\d+)?)", vlc.libvlc_get_version().decode()
         )
         if match:
             return parse(match.group(1))
