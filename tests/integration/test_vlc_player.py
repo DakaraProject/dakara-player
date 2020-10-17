@@ -114,7 +114,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
             yield vlc_player, temp, output
 
     @func_set_timeout(TIMEOUT)
-    def test_play_idle_screen(self):
+    def test_play_idle(self):
         """Test to display the idle screen
         """
         with self.get_instance() as (vlc_player, _, _):
@@ -314,7 +314,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
             )
 
     @func_set_timeout(TIMEOUT)
-    def test_set_pause(self):
+    def test_pause(self):
         """Test to pause and unpause the player
         """
         with self.get_instance() as (vlc_player, _, _):
@@ -360,7 +360,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
             )
 
     @func_set_timeout(TIMEOUT)
-    def test_set_double_pause(self):
+    def test_double_pause(self):
         """Test that double pause and double resume have no effects
         """
         with self.get_instance() as (vlc_player, _, _):
@@ -423,7 +423,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
             vlc_player.callbacks["resumed"].assert_not_called()
 
     @func_set_timeout(TIMEOUT)
-    def test_skip(self):
+    def test_skip_song(self):
         """Test to skip a playlist entry
         """
         with self.get_instance() as (vlc_player, _, _):
