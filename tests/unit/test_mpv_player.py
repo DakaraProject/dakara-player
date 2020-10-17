@@ -299,7 +299,7 @@ class MediaPlayerMpvTestCase(TestCase):
         # call the method
         with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG"):
             with self.assertRaisesRegex(
-                InvalidStateError, "End reached on an undeterminated state"
+                InvalidStateError, "End file on an undeterminated state"
             ):
                 mpv_player.handle_end_file({"event": "end-file"})
 

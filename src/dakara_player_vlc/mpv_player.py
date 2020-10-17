@@ -72,6 +72,9 @@ class MediaPlayerMpv(MediaPlayer):
         self.playlist_entry_data = {}
         self.clear_playlist_entry_player()
 
+        # player objects
+        self.player_data = {"skip": False}
+
     def load_player(self):
         # set mpv callbacks
         self.set_mpv_default_callbacks()
@@ -131,7 +134,7 @@ class MediaPlayerMpv(MediaPlayer):
         if self.is_paused():
             return False
 
-        return media.get("current", False)
+        return media.get("playing", False)
 
     def is_paused(self):
         return self.player.pause
@@ -190,9 +193,10 @@ class MediaPlayerMpv(MediaPlayer):
 
     def skip(self):
         if self.is_playing("transition") or self.is_playing("song"):
-            self.callbacks["finished"](self.playlist_entry["id"])
             logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
             self.clear_playlist_entry()
+            self.player_data["skip"] = True
+            self.callbacks["finished"](self.playlist_entry["id"])
 
     def stop_player(self):
         logger.info("Stopping player")
@@ -245,9 +249,11 @@ class MediaPlayerMpv(MediaPlayer):
         """
         logger.debug("File end callback called")
 
-        # only handle when a file naturally ends
-        # mpv does not always put the reason of the end-file event
-        if "reason" in event and event["reason"] != "eof":
+        # only handle when a file naturally ends (i.e. is not skipped)
+        # i know this strategy is risky, but it is not possible to not capture
+        # end-file for EOF only
+        if self.player_data["skip"]:
+            self.player_data["skip"] = False
             return
 
         # the transition screen has finished, request to play the song itself
@@ -265,7 +271,7 @@ class MediaPlayerMpv(MediaPlayer):
             return
 
         # if no state can be determined, raise an error
-        raise InvalidStateError("End reached on an undeterminated state")
+        raise InvalidStateError("End file on an undeterminated state")
 
     def handle_log_messages(self, loglevel, component, message):
         """Callback called when a log message occurs
@@ -322,7 +328,7 @@ class MediaPlayerMpv(MediaPlayer):
 
             return
 
-        raise InvalidStateError("Playing on an undeterminated state")
+        raise InvalidStateError("Start file on an undeterminated state")
 
     def handle_pause(self, event):
         logger.debug("Pause callback called")
