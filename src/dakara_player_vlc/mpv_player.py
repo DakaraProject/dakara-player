@@ -206,9 +206,9 @@ class MediaPlayerMpv(MediaPlayer):
     def skip(self):
         if self.is_playing("transition") or self.is_playing("song"):
             logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
-            self.clear_playlist_entry()
             self.player_data["skip"] = True
             self.callbacks["finished"](self.playlist_entry["id"])
+            self.clear_playlist_entry()
 
     def stop_player(self):
         logger.info("Stopping player")
