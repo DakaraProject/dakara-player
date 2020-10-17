@@ -1,3 +1,4 @@
+import re
 from tempfile import gettempdir
 from contextlib import ExitStack
 from queue import Queue
@@ -295,7 +296,7 @@ class MediaPlayerVlcTestCase(TestCase):
         # call the method
         with self.assertRaisesRegex(
             KaraFolderNotFound,
-            'Karaoke folder "{}" does not exist'.format(gettempdir()),
+            'Karaoke folder "{}" does not exist'.format(re.escape(gettempdir())),
         ):
             vlc_player.check_kara_folder_path()
 
