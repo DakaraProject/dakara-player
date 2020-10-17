@@ -110,33 +110,28 @@ class MediaPlayerMpv(MediaPlayer):
         self.player.bind_event("pause", self.handle_pause)
         self.player.bind_event("unpause", self.handle_unpause)
 
-    def is_playing(self, what=None, media_path=None):
+    def is_playing(self, what=None):
+        playlist = self.player.playlist
+
+        if len(playlist) == 0:
+            return False
+
+        assert len(playlist) == 1, "Too many entries in mpv internal playlist"
+
+        media = playlist[0]
+        path = media.get("filename")
+
         if what:
-            media_path = media_path or self.player.path
-
             if what == "idle":
-                return media_path == self.background_loader.backgrounds["idle"]
+                return path == self.background_loader.backgrounds["idle"]
 
-            return media_path == self.playlist_entry_data[what].path
+            return path == self.playlist_entry_data[what].path
 
         # query if the player is currently playing
         if self.is_paused():
             return False
 
-        current_entries = [e for e in self.player.playlist if e["playing"]]
-        return bool(len(current_entries))
-
-    def was_playing(self, what, id):
-        # extract entry from playlist
-        entries = [e for e in self.player.playlist if e["id"] == id]
-
-        if len(entries) > 1:
-            raise RuntimeError("There are more than one media that was playing")
-
-        if len(entries) == 0:
-            raise RuntimeError("No media was playing")
-
-        return self.is_playing(what, entries[0]["filename"])
+        return media.get("current", False)
 
     def is_paused(self):
         return self.player.pause
@@ -249,21 +244,21 @@ class MediaPlayerMpv(MediaPlayer):
             event (dict): mpv event.
         """
         logger.debug("File end callback called")
-        id = event["playlist_entry_id"]
 
         # only handle when a file naturally ends
-        if event["reason"] != "eof":
+        # mpv does not always put the reason of the end-file event
+        if "reason" in event and event["reason"] != "eof":
             return
 
         # the transition screen has finished, request to play the song itself
-        if self.was_playing("transition", id):
+        if self.is_playing("transition"):
             logger.debug("Will play '{}'".format(self.playlist_entry_data["song"].path))
             self.play("song")
 
             return
 
         # the media has finished, so call the according callback and clean memory
-        if self.was_playing("song", id):
+        if self.is_playing("song"):
             self.callbacks["finished"](self.playlist_entry["id"])
             self.clear_playlist_entry()
 

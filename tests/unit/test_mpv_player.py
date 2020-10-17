@@ -229,37 +229,6 @@ class MediaPlayerMpvTestCase(TestCase):
             logger.output, ["INFO:dakara_player_vlc.mpv_player:mpv 0.32.0"]
         )
 
-    def test_was_playing(self):
-        """Test to check if the requested media was playing
-        """
-        mpv_player, _, _ = self.get_instance()
-        self.set_playlist_entry(mpv_player)
-
-        self.assertFalse(mpv_player.was_playing("transition", 1))
-        self.assertTrue(mpv_player.was_playing("song", 1))
-
-    def test_was_playing_too_much(self):
-        """Test when there are too much media playing
-        """
-        mpv_player, (mocked_player, _, _), _ = self.get_instance()
-        self.set_playlist_entry(mpv_player)
-        mocked_player.playlist.append({"filename": "aaa", "id": 1})
-
-        with self.assertRaisesRegex(
-            RuntimeError, "There are more than one media that was playing"
-        ):
-            mpv_player.was_playing("song", 1)
-
-    def test_was_playing_too_few(self):
-        """Test when there are too few media playing
-        """
-        mpv_player, (mocked_player, _, _), _ = self.get_instance()
-        self.set_playlist_entry(mpv_player)
-        mocked_player.playlist = []
-
-        with self.assertRaisesRegex(RuntimeError, "No media was playing"):
-            mpv_player.was_playing("song", 1)
-
     @patch.object(MediaPlayerMpv, "clear_playlist_entry")
     @patch.object(MediaPlayerMpv, "play")
     def test_handle_end_file_transition(self, mocked_play, mocked_clear_playlist_entry):
@@ -273,7 +242,7 @@ class MediaPlayerMpvTestCase(TestCase):
 
         # call the method
         with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG") as logger:
-            mpv_player.handle_end_file({"reason": "eof", "playlist_entry_id": 1})
+            mpv_player.handle_end_file({"event": "end-file"})
 
         # assert effect on logs
         self.assertListEqual(
@@ -303,7 +272,7 @@ class MediaPlayerMpvTestCase(TestCase):
 
         # call the method
         with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG") as logger:
-            mpv_player.handle_end_file({"reason": "eof", "playlist_entry_id": 1})
+            mpv_player.handle_end_file({"event": "end-file"})
 
         # assert effect on logs
         self.assertListEqual(
@@ -332,7 +301,7 @@ class MediaPlayerMpvTestCase(TestCase):
             with self.assertRaisesRegex(
                 InvalidStateError, "End reached on an undeterminated state"
             ):
-                mpv_player.handle_end_file({"reason": "eof", "playlist_entry_id": 1})
+                mpv_player.handle_end_file({"event": "end-file"})
 
         # assert the call
         mocked_play.assert_not_called()
