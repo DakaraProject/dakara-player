@@ -541,3 +541,13 @@ class MediaPlayerMpvTestCase(TestCase):
             {"mpv": {"key1": "value1"}}
         )
         self.assertEqual(getattr(mocked_player, "key1"), "value1")
+
+    def test_play_invalid(self):
+        """Test to play invalid action
+        """
+        mpv_player, _, _ = self.get_instance()
+
+        with self.assertRaisesRegex(ValueError, "Unexpected action to play: none"):
+            mpv_player.play("none")
+
+        mpv_player.player.play.assert_not_called()

@@ -28,14 +28,66 @@ logger = logging.getLogger(__name__)
 
 
 class MediaPlayer(Worker, ABC):
+    """Abstract class to manipulate a media player.
+
+    The class can be used as a context manager that closes the media player
+    automatically on exit.
+
+    Args:
+        stop (threading.Event): Stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): Error queue to communicate the exception to the
+            main thread.
+        config (dict): Dictionary of configuration.
+        tempdir (path.Path): Path of the temporary directory.
+
+    Attributes:
+        stop (threading.Event): Stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): Error queue to communicate the exception to the
+            main thread.
+        player_name (str): Name of the media player.
+        fullscreen (bool): If True, the media player will be fullscreen.
+        kara_folder_path (path.Path): Path to the karaoke folder.
+        playlist_entry (dict): Playlist entyr object.
+        callbacks (dict): High level callbacks associated with the media
+            player.
+        warn_long_exit (bool): If True, display a warning message if the media
+            player takes too long to stop.
+        durations (dict of int): Duration of the different screens in seconds.
+        text_paths (dict of path.Path): Path of the different text screens.
+        text_generator (dakara_player_vlc.text_generator.TextGenerator): Text
+            generator instance.
+        background_loader
+        (dakara_player_vlc.background_loader.BackgroundLoader): Background
+            loader instance.
+    """
+
     player_name = None
 
     @staticmethod
     @abstractmethod
     def is_available():
-        """Indicate if the implementation is available """
+        """Indicate if the implementation is available.
+
+        Must be overriden.
+
+        Returns:
+            bool: True if the media player is useable.
+        """
 
     def init_worker(self, config, tempdir, warn_long_exit=True):
+        """Initialize the base objects of the media player.
+
+        Actions performed in this method should not have any side effects
+        (query file system, etc.).
+
+        Args:
+            config (dict): Dictionary of configuration.
+            tempdir (path.Path): Path of the temporary directory.
+            warn_long_exit (bool): If True, the class will display a warning
+                message if the media player takes too long to stop.
+        """
         self.check_is_available()
 
         # karaoke parameters
@@ -88,9 +140,21 @@ class MediaPlayer(Worker, ABC):
         self.init_player(config, tempdir)
 
     def init_player(self, config, tempdir):
-        pass
+        """Initialize the objects of the specific media player.
+
+        Actions performed in this method should not have any side effects
+        (query file system, etc.).
+
+        Can be overriden.
+
+        Args:
+            config (dict): Dictionary of configuration.
+            tempdir (path.Path): Path of the temporary directory.
+        """
 
     def load(self):
+        """Perform base actions with side effects for media player initialization.
+        """
         # check kara folder
         self.check_kara_folder_path()
 
@@ -103,41 +167,113 @@ class MediaPlayer(Worker, ABC):
         self.load_player()
 
     def load_player(self):
-        pass
+        """Perform actions with side effects for specialized media player initialization.
+
+        Can be overriden.
+        """
 
     @abstractmethod
     def get_timing(self):
-        pass
+        """Get media player timing.
+
+        Must be overriden.
+
+        Returns:
+            int: Current song timing in seconds if a song is playing, or 0 when
+                idle or during transition screen.
+        """
 
     @abstractmethod
     def get_version(self):
-        pass
+        """Get media player version.
+
+        Must be overriden.
+
+        Returns:
+            packaging.version.Version: Parsed version of the media player.
+        """
 
     @abstractmethod
     def is_playing(self, what):
-        pass
+        """Query if the media player is playing something.
+
+        Must be overriden.
+
+        Args:
+            what (str): If provided, tell if the media player current track is
+                of the requested type, but not if it is actually playing it (it
+                can be in paused). If not provided, tell if the media player is
+                actually playing anything.
+
+        Returns:
+            bool: True if the media player is playing something.
+        """
 
     @abstractmethod
     def is_paused(self):
-        pass
+        """Query if the media player is paused.
+
+        Must be overriden.
+
+        Returns:
+            bool: True if the media player is paused.
+        """
 
     @abstractmethod
     def play(self, what):
-        pass
+        """Request the media player to play something.
+
+        No preparation should be done by this function, i.e. the media track
+        should have been prepared already by `set_playlist_entry`.
+
+        Must be overriden.
+
+        Args:
+            what (str): What media to play.
+        """
 
     @abstractmethod
     def pause(self, paused):
-        pass
+        """Request the media player to pause or unpause.
+
+        Can only work on transition screens or songs. Pausing should have no
+        effect if the media player is already paused, unpausing should have no
+        effect if the media player is already unpaused.
+
+        Must be overriden.
+
+        Args:
+            paused (bool): If True, pause the media player.
+        """
 
     @abstractmethod
     def skip(self):
-        pass
+        """Request to skip the current media.
+
+        Can only work on transition screens or songs. The media player should
+        continue playing, but media has to be considered already finished.
+
+        Must be overriden.
+        """
 
     @abstractmethod
     def stop_player():
-        pass
+        """Request to stop the media player.
+
+        Must be overriden.
+        """
 
     def set_playlist_entry(self, playlist_entry, autoplay=True):
+        """Prepare playlist entry base data to be played.
+
+        Check if the song file exists, otherwise consider the song cannot be
+        played.
+
+        Args:
+            playlist_entry (dict): Playlist entry object.
+            autoplay (bool): If True, start to play transition screen as soon
+                as possible.
+        """
         file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
 
         if not file_path.exists():
@@ -150,22 +286,57 @@ class MediaPlayer(Worker, ABC):
 
         self.set_playlist_entry_player(playlist_entry, file_path, autoplay)
 
+    @abstractmethod
     def set_playlist_entry_player(self, playlist_entry, file_path, autoplay):
-        return
+        """Prepare playlist entry data to be played.
+
+        Prepare all media objects, subtitles, etc. for being played, for the
+        transition screen and the song. Such data should be stored on a
+        dedicated object, like `playlist_entry_data`.
+
+        Must be overriden.
+
+        Args:
+            playlist_entry (dict): Playlist entry object.
+            file_path (path.Path): Absolute path to the song file.
+            autoplay (bool): If True, start to play transition screen as soon
+                as possible (i.e. as soon as the transition screen media is
+                ready). The song media is prepared when the transition screen
+                is playing.
+        """
 
     def clear_playlist_entry(self):
+        """Clean playlist entry base data after being played.
+        """
         self.playlist_entry = None
 
         self.clear_playlist_entry_player()
 
+    @abstractmethod
     def clear_playlist_entry_player(self):
-        return
+        """Clean playlist entry data after being played.
+
+        Must be overriden.
+        """
 
     def set_callback(self, name, callback):
+        """Set callback to the media player.
+
+        Args:
+            name (str): Name of the callback.
+            callback (function): Callback.
+        """
         self.callbacks[name] = callback
 
     @staticmethod
     def get_instrumental_file(filepath):
+        """Get the instrumental audio file associated to a given song file.
+
+        Consider that this instrumental file should be the only one audio file found.
+
+        Returns:
+            path.Path: Path to the instrumental file. None if not found.
+        """
         audio_files = get_audio_files(filepath)
 
         # accept only one audio file
@@ -176,12 +347,16 @@ class MediaPlayer(Worker, ABC):
         return None
 
     def check_kara_folder_path(self):
+        """Check if the karaoke folder exists.
+        """
         if not self.kara_folder_path.exists():
             raise KaraFolderNotFound(
                 'Karaoke folder "{}" does not exist'.format(self.kara_folder_path)
             )
 
     def check_is_available(self):
+        """Check if the media player is installed and useable.
+        """
         # check the target player is available
         if not self.is_available():
             raise MediaPlayerNotAvailableError(
@@ -189,7 +364,8 @@ class MediaPlayer(Worker, ABC):
             )
 
     def set_default_callbacks(self):
-        # set dummy callbacks that have to be defined externally
+        """Set dummy callbacks that have to be defined externally.
+        """
         self.set_callback("started_transition", lambda playlist_entry_id: None)
         self.set_callback("started_song", lambda playlist_entry_id: None)
         self.set_callback("could_not_play", lambda playlist_entry_id: None)
@@ -198,11 +374,12 @@ class MediaPlayer(Worker, ABC):
         self.set_callback("resumed", lambda playlist_entry_id, timing: None)
         self.set_callback("error", lambda playlist_entry_id, message: None)
 
-    def exit_worker(self, exception_type, exception_value, traceback):
-        """Exit the worker
+    def exit_worker(self, *args, **kwargs):
+        """Exit the worker.
 
-        Send a warning after `PLAYER_CLOSING_DURATION` seconds if the worker is
-        not closed yet.
+        If `warn_long_exit` was True during initialization, send a warning
+        after `PLAYER_CLOSING_DURATION` seconds if the worker is not closed
+        yet.
         """
         if self.warn_long_exit:
             # send a warning within if the player has not stopped already
@@ -220,11 +397,21 @@ class MediaPlayer(Worker, ABC):
 
     @classmethod
     def warn_stop_player_too_long(cls):
-        """Notify the user that the player takes too long to stop
+        """Notify the user that the player takes too long to stop.
         """
         logger.warning("{} takes too long to stop".format(cls.player_name))
 
     def generate_text(self, what, *args, **kwargs):
+        """Generate text screens for the requested action.
+
+        Extra arguments are passed to `TextGenerator.create_*_text`.
+
+        Args:
+            what (str): What text screen to generate.
+
+        Returns:
+            path.Path: Path of the text screen.
+        """
         if what == "idle":
             text = self.text_generator.create_idle_text(
                 {
@@ -238,7 +425,7 @@ class MediaPlayer(Worker, ABC):
             )
 
         elif what == "transition":
-            text = self.text_generator.create_idle_text(
+            text = self.text_generator.create_transition_text(
                 self.playlist_entry, *args, **kwargs
             )
 

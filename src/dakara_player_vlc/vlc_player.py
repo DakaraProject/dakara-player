@@ -28,18 +28,69 @@ except AttributeError:
 logger = logging.getLogger(__name__)
 
 
-class VlcTooOldError(DakaraError):
-    pass
-
-
 class MediaPlayerVlc(MediaPlayer):
+    """Abstract class to manipulate VLC.
+
+    The class can be used as a context manager that closes VLC
+    automatically on exit.
+
+    Args:
+        stop (threading.Event): Stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): Error queue to communicate the exception to the
+            main thread.
+        config (dict): Dictionary of configuration.
+        tempdir (path.Path): Path of the temporary directory.
+
+    Attributes:
+        stop (threading.Event): Stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): Error queue to communicate the exception to the
+            main thread.
+        player_name (str): Name of VLC.
+        fullscreen (bool): If True, VLC will be fullscreen.
+        kara_folder_path (path.Path): Path to the karaoke folder.
+        playlist_entry (dict): Playlist entyr object.
+        callbacks (dict): High level callbacks associated with the media
+            player.
+        warn_long_exit (bool): If True, display a warning message if the media
+            player takes too long to stop.
+        durations (dict of int): Duration of the different screens in seconds.
+        text_paths (dict of path.Path): Path of the different text screens.
+        text_generator (dakara_player_vlc.text_generator.TextGenerator): Text
+            generator instance.
+        background_loader
+        (dakara_player_vlc.background_loader.BackgroundLoader): Background
+            loader instance.
+        media_parameters (list of str): Extra parameters passed to the media.
+        instance (vlc.Instance): Instance of VLC.
+        player (vlc.MediaPlayer): VLC player.
+        event_manager (vlc.EventManager): VLC event manager.
+        vlc_callbacks (dict): Low level callbacks associated with VLC.
+        playlist_entry_data (dict): Extra data of the playlist entry.
+    """
+
     player_name = "VLC"
 
     @staticmethod
     def is_available():
+        """Indicate if VLC is available.
+
+        Returns:
+            bool: True if VLC is useable.
+        """
         return vlc is not None and vlc.Instance() is not None
 
     def init_player(self, config, tempdir):
+        """Initialize the objects of VLC.
+
+        Actions performed in this method should not have any side effects
+        (query file system, etc.).
+
+        Args:
+            config (dict): Dictionary of configuration.
+            tempdir (path.Path): Path of the temporary directory.
+        """
         # parameters
         config_vlc = config.get("vlc") or {}
         self.media_parameters = config_vlc.get("media_parameters") or []
@@ -57,6 +108,8 @@ class MediaPlayerVlc(MediaPlayer):
         self.clear_playlist_entry_player()
 
     def load_player(self):
+        """Perform actions with side effects for VLC initialization.
+        """
         # check VLC version
         self.check_version()
 
@@ -73,10 +126,10 @@ class MediaPlayerVlc(MediaPlayer):
         self.media_parameters.append("no-sub-autodetect-file")
 
     def get_timing(self):
-        """Player timing getter
+        """Get VLC timing.
 
         Returns:
-            int: current song timing in seconds if a song is playing or 0 when
+            int: Current song timing in seconds if a song is playing, or 0 when
                 idle or during transition screen.
         """
         if self.is_playing("idle") or self.is_playing("transition"):
@@ -92,12 +145,15 @@ class MediaPlayerVlc(MediaPlayer):
 
     @staticmethod
     def get_version():
-        """Get the VLC version
+        """Get VLC version.
 
         VLC version given by the lib is on the form "x.y.z CodeName" in bytes.
+
+        Returns:
+            packaging.version.Version: Parsed version of VLC.
         """
         match = re.search(
-            r"(\d+\.\d+\.\d+(?:\.\d+)?)", vlc.libvlc_get_version().decode()
+            r"(\d+\.\d+\.\d+(?:\.\d+)*)", vlc.libvlc_get_version().decode()
         )
         if match:
             return parse(match.group(1))
@@ -105,13 +161,15 @@ class MediaPlayerVlc(MediaPlayer):
         raise VersionNotFoundError("Unable to get VLC version")
 
     def check_version(self):
+        """Check that VLC is at least version 3.
+        """
         version = self.get_version()
 
         if version.major < 3:
             raise VlcTooOldError("VLC is too old (version 3 and higher supported)")
 
     def set_vlc_default_callbacks(self):
-        """Set VLC player default callbacks
+        """Set VLC default callbacks.
         """
         self.set_vlc_callback(
             vlc.EventType.MediaPlayerEndReached, self.handle_end_reached
@@ -123,7 +181,7 @@ class MediaPlayerVlc(MediaPlayer):
         self.set_vlc_callback(vlc.EventType.MediaPlayerPaused, self.handle_paused)
 
     def set_vlc_callback(self, event, callback):
-        """Assing an arbitrary callback to a VLC event
+        """Assing an arbitrary callback to a VLC event.
 
         Callback is attached to the VLC event manager and added to the
         `vlc_callbacks` dictionary.
@@ -131,21 +189,45 @@ class MediaPlayerVlc(MediaPlayer):
         Args:
             event (vlc.EventType): VLC event to attach the callback to, name of
                 the callback in the `vlc_callbacks` attribute.
-            callback (function): function to assign.
+            callback (function): Function to assign.
         """
         self.vlc_callbacks[event] = callback
         self.event_manager.event_attach(event, callback)
 
     def is_playing(self, what=None):
+        """Query if VLC is playing something.
+
+        Args:
+            what (str): If provided, tell if VLC current track is
+                of the requested type, but not if it is actually playing it (it
+                can be in paused). If not provided, tell if VLC is
+                actually playing anything.
+
+        Returns:
+            bool: True if VLC is playing something.
+        """
         if what:
             return get_metadata(self.player.get_media())["type"] == what
 
         return self.player.get_state() == vlc.State.Playing
 
     def is_paused(self):
+        """Query if VLC is paused.
+
+        Returns:
+            bool: True if VLC is paused.
+        """
         return self.player.get_state() == vlc.State.Paused
 
     def play(self, what):
+        """Request VLC to play something.
+
+        No preparation should be done by this function, i.e. the media track
+        should have been prepared already by `set_playlist_entry_player`.
+
+        Args:
+            what (str): What media to play.
+        """
         if what == "idle":
             # create idle screen media
             media = self.instance.media_new_path(
@@ -175,6 +257,17 @@ class MediaPlayerVlc(MediaPlayer):
         self.player.play()
 
     def pause(self, paused):
+        """Request VLC to pause or unpause.
+
+        Can only work on transition screens or songs. Pausing should have no
+        effect if VLC is already paused, unpausing should have no
+        effect if VLC is already unpaused.
+
+        Must be overriden.
+
+        Args:
+            paused (bool): If True, pause VLC.
+        """
         if self.is_playing("idle"):
             return
 
@@ -195,7 +288,10 @@ class MediaPlayerVlc(MediaPlayer):
         self.player.play()
 
     def skip(self):
-        """Skip the current song
+        """Request to skip the current media.
+
+        Can only work on transition screens or songs. VLC should continue
+        playing, but media has to be considered already finished.
         """
         if self.is_playing("transition") or self.is_playing("song"):
             self.callbacks["finished"](self.playlist_entry["id"])
@@ -203,11 +299,27 @@ class MediaPlayerVlc(MediaPlayer):
             self.clear_playlist_entry()
 
     def stop_player(self):
+        """Request to stop VLC.
+        """
         logger.info("Stopping player")
         self.player.stop()
         logger.debug("Stopped player")
 
     def set_playlist_entry_player(self, playlist_entry, file_path, autoplay):
+        """Prepare playlist entry data to be played.
+
+        Prepare all media objects, subtitles, etc. for being played, for the
+        transition screen and the song. Such data should be stored on a
+        dedicated object, like `playlist_entry_data`.
+
+        Args:
+            playlist_entry (dict): Playlist entry object.
+            file_path (path.Path): Absolute path to the song file.
+            autoplay (bool): If True, start to play transition screen as soon
+                as possible (i.e. as soon as the transition screen media is
+                ready). The song media is prepared when the transition screen
+                is playing.
+        """
         # create transition screen media
         media_transition = self.instance.media_new_path(
             self.background_loader.backgrounds["transition"]
@@ -246,7 +358,7 @@ class MediaPlayerVlc(MediaPlayer):
             self.manage_instrumental(playlist_entry, file_path)
 
     def manage_instrumental(self, playlist_entry, file_path):
-        """Manage the requested instrumental track
+        """Manage the requested instrumental track.
 
         Instrumental track is searched first in audio files having the same as
         the video file, then in extra audio tracks of the video file.
@@ -305,6 +417,8 @@ class MediaPlayerVlc(MediaPlayer):
         )
 
     def clear_playlist_entry_player(self):
+        """Clean playlist entry data after being played.
+        """
         self.playlist_entry_data = {
             "transition": Media(),
             "song": MediaSong(),
@@ -312,7 +426,7 @@ class MediaPlayerVlc(MediaPlayer):
 
     @staticmethod
     def get_number_tracks(media):
-        """Get number of all tracks of the media
+        """Get number of all tracks of the media.
 
         Args:
             media (vlc.Media): Media to investigate.
@@ -327,7 +441,7 @@ class MediaPlayerVlc(MediaPlayer):
 
     @staticmethod
     def get_audio_tracks_id(media):
-        """Get ID of audio tracks of the media
+        """Get ID of audio tracks of the media.
 
         Args:
             media (vlc.Media): Media to investigate.
@@ -344,11 +458,11 @@ class MediaPlayerVlc(MediaPlayer):
         return audio
 
     def handle_end_reached(self, event):
-        """Callback called when a media ends
+        """Callback called when a media ends.
 
         This happens when:
             - A transition screen ends, leading to playing the actual song;
-            - A song ends, leading to calling the callback
+            - A song ends normally, leading to calling the callback
                 `callbacks["finished"]`;
             - An idle screen ends, leading to reloop it.
 
@@ -392,7 +506,7 @@ class MediaPlayerVlc(MediaPlayer):
         """Callback called when error occurs
 
         There is no way to capture error message, so only a generic error
-        message is provided. Call the callbacks `callbackss["finished"]` and
+        message is provided. Call the callbacks `callbacks["finished"]` and
         `callbacks["error"]`
 
         Args:
@@ -416,7 +530,7 @@ class MediaPlayerVlc(MediaPlayer):
         # do not assess other errors
 
     def handle_playing(self, event):
-        """Callback called when playing has started
+        """Callback called when playing has started.
 
         This happens when:
             - The player resumes from pause;
@@ -483,7 +597,7 @@ class MediaPlayerVlc(MediaPlayer):
         raise InvalidStateError("Playing on an undeterminated state")
 
     def handle_paused(self, event):
-        """Callback called when pause is set
+        """Callback called when pause is set.
 
         Args:
             event (vlc.EventType): VLC event object.
@@ -497,20 +611,49 @@ class MediaPlayerVlc(MediaPlayer):
 
 
 def set_metadata(media, metadata):
+    """Set metadata to media.
+
+    Use the `METADATA_KEY` for storage. The metadata can be extracted after.
+
+    Args:
+        media (vlc.Media): Media to set metadata in.
+        metadata (any): JSON representable data.
+    """
     media.set_meta(METADATA_KEY, json.dumps(metadata))
 
 
 def get_metadata(media):
+    """Get metadata from media.
+
+    Use the `METADATA_KEY` for storage.
+
+    Args:
+        media (vlc.Media): Media to get metadata from.
+
+    Returns:
+        any: JSON representable data.
+    """
     return json.loads(media.get_meta(METADATA_KEY))
 
 
 class Media:
+    """Media object.
+    """
+
     def __init__(self, media=None):
         self.media = media
         self.started = False
 
 
 class MediaSong(Media):
+    """Song object.
+    """
+
     def __init__(self, *args, audio_track_id=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.audio_track_id = audio_track_id
+
+
+class VlcTooOldError(DakaraError):
+    """Error raised if VLC is too old.
+    """

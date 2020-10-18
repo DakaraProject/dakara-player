@@ -3,6 +3,7 @@ from tempfile import gettempdir
 from contextlib import ExitStack
 from queue import Queue
 from threading import Event
+from time import sleep
 from unittest import TestCase
 from unittest.mock import MagicMock, patch, call
 
@@ -20,6 +21,7 @@ from dakara_player_vlc.media_player import (
     VersionNotFoundError,
 )
 from dakara_player_vlc.mrl import mrl_to_path, path_to_mrl
+from dakara_player_vlc.text_generator import TextGenerator
 
 
 @patch("dakara_player_vlc.media_player.PATH_BACKGROUNDS", "bg")
@@ -1066,3 +1068,46 @@ class MediaPlayerVlcTestCase(TestCase):
 
         # assert the instance
         self.assertDictEqual(vlc_player.durations, {"transition": 5, "idle": 20})
+
+    @patch("dakara_player_vlc.media_player.PLAYER_CLOSING_DURATION", 0)
+    @patch.object(MediaPlayerVlc, "stop_player")
+    def test_slow_close(self, mocked_stop_player):
+        """Test to close VLC when it takes a lot of time
+        """
+        vlc_player, _, _ = self.get_instance()
+        mocked_stop_player.side_effect = lambda: sleep(1)
+
+        with self.assertLogs("dakara_player_vlc.media_player", "DEBUG") as logger:
+            vlc_player.exit_worker()
+
+        self.assertListEqual(
+            logger.output,
+            ["WARNING:dakara_player_vlc.media_player:VLC takes too long to stop"],
+        )
+
+    @patch.object(TextGenerator, "create_transition_text")
+    @patch.object(TextGenerator, "create_idle_text")
+    def test_generate_text_invalid(
+        self, mocked_create_idle_text, mocked_create_transition_text
+    ):
+        """Test to generate invalid text screen
+        """
+        vlc_player, _, _ = self.get_instance()
+
+        with self.assertRaisesRegex(
+            ValueError, "Unexpected action to generate text to: none"
+        ):
+            vlc_player.generate_text("none")
+
+        mocked_create_idle_text.assert_not_called()
+        mocked_create_transition_text.assert_not_called()
+
+    def test_play_invalid(self):
+        """Test to play invalid action
+        """
+        vlc_player, _, _ = self.get_instance()
+
+        with self.assertRaisesRegex(ValueError, "Unexpected action to play: none"):
+            vlc_player.play("none")
+
+        vlc_player.player.play.assert_not_called()
