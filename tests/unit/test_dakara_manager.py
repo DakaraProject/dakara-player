@@ -36,8 +36,8 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.play_idle_screen()
 
         # call assertions
-        self.media_player.play_idle_screen.assert_called_once_with()
-        self.media_player.play_playlist_entry.assert_not_called()
+        self.media_player.play.assert_called_once_with("idle")
+        self.media_player.set_playlist_entry.assert_not_called()
 
     def test_start_play_playlist_entry(self):
         """Test to launch the dakara manager when there is something to play
@@ -48,8 +48,8 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.play_playlist_entry(playlist_entry)
 
         # call assertions
-        self.media_player.play_idle_screen.assert_not_called()
-        self.media_player.play_playlist_entry.assert_called_once_with(playlist_entry)
+        self.media_player.play.assert_not_called()
+        self.media_player.set_playlist_entry.assert_called_once_with(playlist_entry)
 
     def test_handle_error(self):
         """Test the callback called on error
@@ -126,16 +126,16 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.do_command("pause")
 
         # assert the call
-        self.dakara_manager.media_player.set_pause.assert_called_with(True)
+        self.dakara_manager.media_player.pause.assert_called_with(True)
 
         # reset the mock
-        self.dakara_manager.media_player.set_pause.reset_mock()
+        self.dakara_manager.media_player.pause.reset_mock()
 
         # call the method for pause
         self.dakara_manager.do_command("play")
 
         # assert the call
-        self.dakara_manager.media_player.set_pause.assert_called_with(False)
+        self.dakara_manager.media_player.pause.assert_called_with(False)
 
         # call the method for skip
         self.dakara_manager.do_command("skip")

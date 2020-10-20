@@ -116,12 +116,12 @@ class DakaraManager:
         Args:
             playlist_entry (dict): dictionary of the playlist entry.
         """
-        self.media_player.play_playlist_entry(playlist_entry)
+        self.media_player.set_playlist_entry(playlist_entry)
 
     def play_idle_screen(self):
         """Play the idle screen
         """
-        self.media_player.play_idle_screen()
+        self.media_player.play("idle")
 
     def do_command(self, command):
         """Execute a player command
@@ -139,11 +139,11 @@ class DakaraManager:
         ), "Unknown command requested: '{}'".format(command)
 
         if command == "pause":
-            self.media_player.set_pause(True)
+            self.media_player.pause(True)
             return
 
         if command == "play":
-            self.media_player.set_pause(False)
+            self.media_player.pause(False)
             return
 
         if command == "skip":
