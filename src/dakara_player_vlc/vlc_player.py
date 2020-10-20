@@ -122,9 +122,6 @@ class MediaPlayerVlc(MediaPlayer):
         # print VLC version
         logger.info("VLC %s", self.get_version())
 
-        # force VLC to use the explicitally added files only
-        self.media_parameters.append("no-sub-autodetect-file")
-
     def get_timing(self):
         """Get VLC timing.
 
@@ -238,6 +235,7 @@ class MediaPlayerVlc(MediaPlayer):
                 *self.media_parameters,
                 "image-duration={}".format(self.durations["idle"]),
                 "sub-file={}".format(self.text_paths["idle"]),
+                "no-sub-autodetect-file",
             )
 
             set_metadata(media, {"type": "idle"})
@@ -329,6 +327,7 @@ class MediaPlayerVlc(MediaPlayer):
             *self.media_parameters,
             "image-duration={}".format(self.durations["transition"]),
             "sub-file={}".format(self.text_paths["transition"]),
+            "no-sub-autodetect-file",
         )
 
         set_metadata(

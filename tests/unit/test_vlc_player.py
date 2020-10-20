@@ -325,9 +325,6 @@ class MediaPlayerVlcTestCase(TestCase):
         # setup mocks
         mocked_get_version.return_value = "3.0.0 NoName"
 
-        # pre assert
-        self.assertListEqual(vlc_player.media_parameters, [])
-
         # call the method
         with self.assertLogs("dakara_player_vlc.vlc_player", "INFO") as logger:
             vlc_player.load()
@@ -344,9 +341,6 @@ class MediaPlayerVlcTestCase(TestCase):
         self.assertListEqual(
             logger.output, ["INFO:dakara_player_vlc.vlc_player:VLC 3.0.0 NoName"]
         )
-
-        # post assert
-        self.assertListEqual(vlc_player.media_parameters, ["no-sub-autodetect-file"])
 
     @patch.object(Path, "exists")
     def test_set_playlist_entry_error_file(self, mocked_exists):
