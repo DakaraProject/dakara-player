@@ -32,7 +32,7 @@ Dialogue: 0,0:00:00.20,0:00:05.00,song-detail-text,,0,0,0,,{\fad(500, 0)}Work ti
 Dialogue: 0,0:00:00.10,0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome\fs40}{\r} 
 Dialogue: 0,0:00:00.10,0:00:05.00,playlist-entry-detail-text,,0,0,0,,{\fad(500, 0)}User
 
-Dialogue: 0,0:00:00.02,0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome\fs40}{\r} 
+Dialogue: 0,0:00:00.20,0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome\fs40}{\r} 
 
 
 ; DON'T TOUCH THIS FILE!
