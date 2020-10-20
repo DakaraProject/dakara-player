@@ -142,6 +142,9 @@ class MediaPlayerMpv(MediaPlayer):
         self.player.osc = False
         self.player.osd_level = 0
 
+        # set window title
+        self.player.title = "Dakara player mpv"
+
     def get_timing(self):
         """Get mpv timing.
 
