@@ -353,7 +353,9 @@ class MediaPlayerMpvTestCase(TestCase):
         mpv_player.set_callback("error", MagicMock())
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG") as logger:
+        with self.assertLogs(
+            "dakara_player_vlc.mpv_player", "DEBUG"
+        ) as logger, self.assertLogs("mpv", "DEBUG") as logger_mpv:
             mpv_player.handle_log_messages("error", "mpv.component", "error message")
 
         # assert effect on logs
@@ -361,11 +363,13 @@ class MediaPlayerMpvTestCase(TestCase):
             logger.output,
             [
                 "DEBUG:dakara_player_vlc.mpv_player:Log message callback called",
-                "ERROR:dakara_player_vlc.mpv_player:mpv: mpv.component: error message",
                 "ERROR:dakara_player_vlc.mpv_player:Unable to play '{}'".format(
                     Path(gettempdir()) / self.song_file_path
                 ),
             ],
+        )
+        self.assertListEqual(
+            logger_mpv.output, ["ERROR:mpv:mpv.component: error message"]
         )
 
         # assert the call

@@ -18,6 +18,7 @@ from dakara_player_vlc.media_player import (
 
 
 logger = logging.getLogger(__name__)
+mpv_logger = logging.getLogger("mpv")
 
 SUBTITLE_EXTENSIONS = [
     ".ass",
@@ -326,6 +327,10 @@ class MediaPlayerMpv(MediaPlayer):
                 ready). The song media is prepared when the transition screen
                 is playing.
         """
+        # if the player is playing the idle screen, mark to skip it
+        if self.is_playing("idle"):
+            self.player_data["skip"] = True
+
         # set transition
         self.playlist_entry_data[
             "transition"
@@ -378,6 +383,7 @@ class MediaPlayerMpv(MediaPlayer):
         # end-file for EOF only
         if self.player_data["skip"]:
             self.player_data["skip"] = False
+            logger.debug("File has been skipped")
             return
 
         # the transition screen has finished, request to play the song itself
@@ -411,7 +417,9 @@ class MediaPlayerMpv(MediaPlayer):
         """
         logger.debug("Log message callback called")
         intlevel = get_python_loglever(loglevel)
-        logger.log(intlevel, "mpv: %s: %s", component, message)
+
+        # use a proper logger for mpv logs
+        mpv_logger.log(intlevel, "%s: %s", component, message)
 
         # handle all errors here
         if intlevel >= logging.ERROR:

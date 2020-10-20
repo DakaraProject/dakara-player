@@ -475,3 +475,39 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             # check media
             self.assertIsNotNone(mpv_player.player.path)
             self.assertEqual(mpv_player.player.path, self.song2_file_path)
+
+    @func_set_timeout(TIMEOUT)
+    def test_skip_idle(self):
+        """Test to play a playlist entry after idle screen
+        """
+        with self.get_instance() as (mpv_player, _, _):
+            # mock the callbacks
+            mpv_player.set_callback("started_transition", MagicMock())
+            mpv_player.set_callback("started_song", MagicMock())
+            mpv_player.set_callback("finished", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.player.path)
+
+            # request idle screen
+            mpv_player.play("idle")
+
+            # wait for the media to start
+            self.wait_is_playing(mpv_player, "idle")
+
+            # post assertions for song
+            self.assertIsNone(mpv_player.playlist_entry)
+
+            # request second playlist entry to play
+            mpv_player.set_playlist_entry(self.playlist_entry)
+
+            # wait for the media to start
+            self.wait_is_playing(mpv_player, "song")
+
+            # post assertions for song
+            self.assertIsNotNone(mpv_player.playlist_entry)
+
+            # check media
+            self.assertIsNotNone(mpv_player.player.path)
+            self.assertEqual(mpv_player.player.path, self.song_file_path)
