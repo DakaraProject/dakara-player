@@ -359,6 +359,42 @@ class MediaPlayerMpv(MediaPlayer):
 
         self.playlist_entry_data["song"].path_subtitle = path_subtitle
 
+        # manage instrumental
+        if playlist_entry["use_instrumental"]:
+            self.manage_instrumental(playlist_entry, file_path)
+
+    def manage_instrumental(self, playlist_entry, file_path):
+        """Manage the requested instrumental track.
+
+        Instrumental track is searched first in audio files having the same
+        name as the video file, then in extra audio tracks of the video file.
+
+        As mpv cannot fetch information of a media in advance, we have to
+        discover and set the instrumental track when the media starts.
+
+        Args:
+            playlist_entry (dict): Playlist entry data. Must contain the key
+                `use_instrumental`.
+            file_path (path.Path): Path of the song file.
+        """
+        # get instrumental file if possible
+        audio_path = self.get_instrumental_file(file_path)
+
+        if audio_path:
+            self.playlist_entry_data["song"].path_audio = audio_path
+            logger.info(
+                "Requesting to play instrumental file '%s' for '%s'",
+                audio_path,
+                file_path,
+            )
+
+            return
+
+        # otherwise mark to look for instrumental track in internal tracks when
+        # starting to read the media
+        self.playlist_entry_data["song"].path_audio = "self"
+        logger.info("Requesting to play instrumental track of '%s'", file_path)
+
     def clear_playlist_entry_player(self):
         """Clean playlist entry data after being played.
         """
@@ -459,6 +495,33 @@ class MediaPlayerMpv(MediaPlayer):
         # the song starts to play
         if self.is_playing("song"):
             self.callbacks["started_song"](self.playlist_entry["id"])
+
+            # set instrumental track if necessary
+            path_audio = self.playlist_entry_data["song"].path_audio
+            if path_audio:
+                if path_audio == "self":
+                    # audio track is internal
+                    # get audio tracks
+                    audio_tracks_id = self.get_audio_tracks_id()
+
+                    # if more than 1 audio track is present, play the 2nd one
+                    if len(audio_tracks_id) > 1:
+                        logger.debug(
+                            "Requesting to play audio track %i", audio_tracks_id[1]
+                        )
+                        self.player.audio = audio_tracks_id[1]
+
+                    else:
+                        logger.warning(
+                            "Cannot find instrumental track for file '%s'",
+                            self.playlist_entry_data["song"].path,
+                        )
+
+                else:
+                    # otherwise it is external
+                    logger.debug("Requesting to play audio file %s", path_audio)
+                    self.player.audio_add(path_audio)
+
             logger.info(
                 "Now playing '%s' ('%s')",
                 self.playlist_entry["song"]["title"],
@@ -474,6 +537,18 @@ class MediaPlayerMpv(MediaPlayer):
             return
 
         raise InvalidStateError("Start file on an undeterminated state")
+
+    def get_audio_tracks_id(self):
+        """Get ID of audio tracks for the current media.
+
+        Returns:
+            list of int: ID of audio tracks in the media.
+        """
+        audio = [
+            item["id"] for item in self.player.track_list if item["type"] == "audio"
+        ]
+
+        return audio
 
     def handle_pause(self, event):
         """Callback called when paused.
@@ -540,6 +615,7 @@ class MediaSong(Media):
     """Song class.
     """
 
-    def __init__(self, *args, path_subtitle=None, **kwargs):
+    def __init__(self, *args, path_subtitle=None, path_audio=None, **kwargs):
         super().__init__(*args, **kwargs)
-        path_subtitle = path_subtitle
+        self.path_subtitle = path_subtitle
+        self.path_audio = path_audio

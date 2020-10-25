@@ -359,8 +359,8 @@ class MediaPlayerVlc(MediaPlayer):
     def manage_instrumental(self, playlist_entry, file_path):
         """Manage the requested instrumental track.
 
-        Instrumental track is searched first in audio files having the same as
-        the video file, then in extra audio tracks of the video file.
+        Instrumental track is searched first in audio files having the same
+        name as the video file, then in extra audio tracks of the video file.
 
         Args:
             playlist_entry (dict): Playlist entry data. Must contain the key

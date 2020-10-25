@@ -445,6 +445,47 @@ class MediaPlayerMpvTestCase(TestCase):
         )
         mocked_is_playing.assert_has_calls([call("transition"), call("song")])
 
+    @patch.object(MediaPlayerMpv, "get_audio_tracks_id")
+    @patch.object(MediaPlayerMpv, "is_playing")
+    def test_handle_start_file_song_instrumental_wrong(
+        self, mocked_is_playing, mocked_get_audio_tracks_id
+    ):
+        """Test start file callback for a song with a inexisting instrumental track
+        """
+        # create instance
+        mpv_player, (mocked_player, _, _), _ = self.get_instance()
+        mpv_player.set_callback("started_transition", MagicMock())
+        mpv_player.set_callback("started_song", MagicMock())
+        self.set_playlist_entry(mpv_player)
+        mpv_player.playlist_entry_data["song"].path_audio = "self"
+        mocked_get_audio_tracks_id.return_value[1]
+
+        # create mocks
+        mocked_is_playing.side_effect = [False, True]
+
+        # call the method
+        with self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG") as logger:
+            mpv_player.handle_start_file({})
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player_vlc.mpv_player:Start file callback called",
+                "WARNING:dakara_player_vlc.mpv_player:Cannot find instrumental "
+                "track for file '{}'".format(Path(gettempdir()) / self.song_file_path),
+                "INFO:dakara_player_vlc.mpv_player:Now playing 'Song title' "
+                "('{}')".format(Path(gettempdir()) / self.song_file_path),
+            ],
+        )
+
+        # assert the call
+        mpv_player.callbacks["started_transition"].assert_not_called()
+        mpv_player.callbacks["started_song"].assert_called_with(
+            self.playlist_entry["id"]
+        )
+        mocked_is_playing.assert_has_calls([call("transition"), call("song")])
+
     @patch.object(MediaPlayerMpv, "is_playing")
     def test_handle_start_file_idle(self, mocked_is_playing):
         """Test start file callback for a idle

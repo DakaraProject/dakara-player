@@ -193,92 +193,74 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
                 self.playlist_entry["id"]
             )
 
-    # @func_set_timeout(TIMEOUT)
-    # def test_play_playlist_entry_instrumental_track(self):
-    #     """Test to play a playlist entry using instrumental track
-    #     """
-    #     # request to use instrumental track
-    #     self.playlist_entry["use_instrumental"] = True
-    #
-    #     with self.get_instance() as (mpv_player, _, _):
-    #         # mock the callbacks
-    #         mpv_player.set_callback("started_transition", MagicMock())
-    #         mpv_player.set_callback("started_song", MagicMock())
-    #
-    #         # pre assertions
-    #         self.assertIsNone(mpv_player.playlist_entry)
-    #         self.assertIsNone(mpv_player.player.get_media())
-    #         self.assertEqual(mpv_player.player.get_state(), vlc.State.NothingSpecial)
-    #
-    #         # call the method
-    #         mpv_player.set_playlist_entry(self.playlist_entry)
-    #
-    #         # wait for the song to start
-    #         self.wait_is_playing(mpv_player, "song")
-    #
-    #         # post assertions for song
-    #         self.assertEqual(mpv_player.player.get_state(), vlc.State.Playing)
-    #
-    #         # check media exists
-    #         media = mpv_player.player.get_media()
-    #         self.assertIsNotNone(media)
-    #
-    #         # check media path
-    #         file_path = mrl_to_path(media.get_mrl())
-    #         self.assertEqual(file_path, self.song_file_path)
-    #
-    #         # check audio track
-    #         track = mpv_player.player.audio_get_track()
-    #         self.assertEqual(track, 2)
-    #
-    #         # assert the started song callback has been called
-    #         mpv_player.callbacks["started_song"].assert_called_with(
-    #             self.playlist_entry["id"]
-    #         )
-    #
-    # @func_set_timeout(TIMEOUT)
-    # def test_play_playlist_entry_instrumental_file(self):
-    #     """Test to play a playlist entry using instrumental file
-    #     """
-    #     # request to use instrumental file
-    #     self.playlist_entry["song"]["file_path"] = self.song2_file_path
-    #     self.playlist_entry["use_instrumental"] = True
-    #
-    #     with self.get_instance() as (mpv_player, _, _):
-    #         # mock the callbacks
-    #         mpv_player.set_callback("started_transition", MagicMock())
-    #         mpv_player.set_callback("started_song", MagicMock())
-    #
-    #         # pre assertions
-    #         self.assertIsNone(mpv_player.playlist_entry)
-    #         self.assertIsNone(mpv_player.player.get_media())
-    #         self.assertEqual(mpv_player.player.get_state(), vlc.State.NothingSpecial)
-    #
-    #         # call the method
-    #         mpv_player.set_playlist_entry(self.playlist_entry)
-    #
-    #         # wait for the song to start
-    #         self.wait_is_playing(mpv_player, "song")
-    #
-    #         # post assertions for song
-    #         self.assertEqual(mpv_player.player.get_state(), vlc.State.Playing)
-    #
-    #         # check media exists
-    #         media = mpv_player.player.get_media()
-    #         self.assertIsNotNone(media)
-    #
-    #         # check media path
-    #         file_path = mrl_to_path(media.get_mrl())
-    #         self.assertEqual(file_path, self.song2_file_path)
-    #
-    #         # check audio track
-    #         track = mpv_player.player.audio_get_track()
-    #         self.assertEqual(track, 4)
-    #
-    #         # assert the started song callback has been called
-    #         mpv_player.callbacks["started_song"].assert_called_with(
-    #             self.playlist_entry["id"]
-    #         )
+    @func_set_timeout(TIMEOUT)
+    def test_play_playlist_entry_instrumental_track(self):
+        """Test to play a playlist entry using instrumental track
+        """
+        # request to use instrumental track
+        self.playlist_entry["use_instrumental"] = True
+
+        with self.get_instance() as (mpv_player, _, _):
+            # mock the callbacks
+            mpv_player.set_callback("started_transition", MagicMock())
+            mpv_player.set_callback("started_song", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.player.path)
+
+            # call the method
+            mpv_player.set_playlist_entry(self.playlist_entry)
+
+            # wait for the song to start
+            self.wait_is_playing(mpv_player, "song")
+
+            # check media exists
+            self.assertIsNotNone(mpv_player.player.path)
+            self.assertEqual(mpv_player.player.path, self.song_file_path)
+
+            # check audio track
+            self.assertEqual(mpv_player.player.audio, 2)
+
+            # assert the started song callback has been called
+            mpv_player.callbacks["started_song"].assert_called_with(
+                self.playlist_entry["id"]
+            )
+
+    @func_set_timeout(TIMEOUT)
+    def test_play_playlist_entry_instrumental_file(self):
+        """Test to play a playlist entry using instrumental file
+        """
+        # request to use instrumental file
+        self.playlist_entry["song"]["file_path"] = self.song2_file_path
+        self.playlist_entry["use_instrumental"] = True
+
+        with self.get_instance() as (mpv_player, _, _):
+            # mock the callbacks
+            mpv_player.set_callback("started_transition", MagicMock())
+            mpv_player.set_callback("started_song", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.player.path)
+
+            # call the method
+            mpv_player.set_playlist_entry(self.playlist_entry)
+
+            # wait for the song to start
+            self.wait_is_playing(mpv_player, "song")
+
+            # check media exists
+            self.assertIsNotNone(mpv_player.player.path)
+            self.assertEqual(mpv_player.player.path, self.song2_file_path)
+
+            # check audio track
+            self.assertEqual(mpv_player.player.audio, 3)
+
+            # assert the started song callback has been called
+            mpv_player.callbacks["started_song"].assert_called_with(
+                self.playlist_entry["id"]
+            )
 
     @func_set_timeout(TIMEOUT)
     def test_pause(self):
