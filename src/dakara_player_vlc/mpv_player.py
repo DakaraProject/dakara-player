@@ -25,6 +25,14 @@ SUBTITLE_EXTENSIONS = [
     ".ssa",
 ]
 
+MPV_ERROR_LEVELS = {
+    "fatal": logging.CRITICAL,
+    "error": logging.ERROR,
+    "warn": logging.WARNING,
+    "info": logging.INFO,
+    "debug": logging.DEBUG,
+}
+
 
 class MediaPlayerMpv(MediaPlayer):
     """Class to manipulate mpv.
@@ -455,13 +463,13 @@ class MediaPlayerMpv(MediaPlayer):
             message (str): Actual log message.
         """
         logger.debug("Log message callback called")
-        intlevel = get_python_loglever(loglevel)
+        intlevel = MPV_ERROR_LEVELS.get(loglevel, logging.NOTSET)
 
         # use a proper logger for mpv logs
         mpv_logger.log(intlevel, "%s: %s", component, message)
 
         # handle all errors here
-        if intlevel >= logging.ERROR:
+        if intlevel == logging.CRITICAL:
             if self.is_playing("song"):
                 logger.error("Unable to play '%s'", self.player.path)
                 self.callbacks["error"](
@@ -574,33 +582,6 @@ class MediaPlayerMpv(MediaPlayer):
         self.callbacks["resumed"](self.playlist_entry["id"], self.get_timing())
 
         logger.debug("Resumed play")
-
-
-def get_python_loglever(loglevel):
-    """Convert mpv loglevel name to Python loglevel name.
-
-    Args:
-        loglevel (str): Loglevel string used by mpv.
-
-    Returns:
-        str: Loglevel integer used by Python logging module.
-    """
-    if loglevel == "fatal":
-        return logging.CRITICAL
-
-    if loglevel == "error":
-        return logging.ERROR
-
-    if loglevel == "warn":
-        return logging.WARNING
-
-    if loglevel == "info":
-        return logging.INFO
-
-    if loglevel == "debug":
-        return logging.DEBUG
-
-    return logging.NOTSET
 
 
 class Media:

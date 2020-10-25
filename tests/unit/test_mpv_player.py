@@ -356,7 +356,7 @@ class MediaPlayerMpvTestCase(TestCase):
         with self.assertLogs(
             "dakara_player_vlc.mpv_player", "DEBUG"
         ) as logger, self.assertLogs("mpv", "DEBUG") as logger_mpv:
-            mpv_player.handle_log_messages("error", "mpv.component", "error message")
+            mpv_player.handle_log_messages("fatal", "mpv.component", "error message")
 
         # assert effect on logs
         self.assertListEqual(
@@ -369,7 +369,7 @@ class MediaPlayerMpvTestCase(TestCase):
             ],
         )
         self.assertListEqual(
-            logger_mpv.output, ["ERROR:mpv:mpv.component: error message"]
+            logger_mpv.output, ["CRITICAL:mpv:mpv.component: error message"]
         )
 
         # assert the call
@@ -518,6 +518,29 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_is_playing.assert_has_calls(
             [call("transition"), call("song"), call("idle")]
         )
+
+    @patch.object(MediaPlayerMpv, "is_playing")
+    def test_handle_start_file_unknown(self, mocked_is_playing):
+        """Test start file callback for an unknown state
+        """
+        # create instance
+        mpv_player, (mocked_player, _, _), _ = self.get_instance()
+        mpv_player.set_callback("started_transition", MagicMock())
+        mpv_player.set_callback("started_song", MagicMock())
+        self.set_playlist_entry(mpv_player)
+
+        # create mocks
+        mocked_is_playing.return_value = False
+
+        # call the method
+        with self.assertRaisesRegex(
+            InvalidStateError, "Start file on an undeterminated state"
+        ):
+            mpv_player.handle_start_file({})
+
+        # assert the call
+        mpv_player.callbacks["started_transition"].assert_not_called()
+        mpv_player.callbacks["started_song"].assert_not_called()
 
     @patch.object(MediaPlayerMpv, "get_timing")
     def test_handle_pause(self, mocked_get_timing):
