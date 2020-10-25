@@ -86,8 +86,6 @@ class MediaPlayerMpv(MediaPlayer):
     def is_available():
         """Indicate if mpv is available.
 
-        Must be overriden.
-
         Returns:
             bool: True if mpv is useable.
         """
@@ -107,8 +105,6 @@ class MediaPlayerMpv(MediaPlayer):
 
         Actions performed in this method should not have any side effects
         (query file system, etc.).
-
-        Can be overriden.
 
         Args:
             config (dict): Dictionary of configuration.
@@ -193,10 +189,12 @@ class MediaPlayerMpv(MediaPlayer):
     def is_playing(self, what=None):
         """Query if mpv is playing something.
 
-        It is pretty difficult to get what mpv is playing, as it does not have
-        a media object, but only a path to the media file, and as this path is
-        destroyed when the media ends. We can only rely on the path, and this
-        is pretty weak. I don't have any better solution for now.
+        It is pretty difficult to get what mpv is/was playing, as it does not
+        have a media object, but only a path to the current media file (that
+        disappear when the said file ends), and a playlist that contains the
+        path of the latest media file (that disappear when another file is set
+        to play). We can only rely on the playlist path, and this is pretty
+        weak. I don't have any better solution for now.
 
         Args:
             what (str): If provided, tell if mpv current track is
@@ -327,8 +325,8 @@ class MediaPlayerMpv(MediaPlayer):
         """Prepare playlist entry data to be played.
 
         Prepare all media objects, subtitles, etc. for being played, for the
-        transition screen and the song. Such data are stored on a dedicated
-        object, like `playlist_entry_data`.
+        transition screen and the song. Such data are stored on the dedicated
+        object `playlist_entry_data`.
 
         Args:
             playlist_entry (dict): Playlist entry object.
@@ -427,7 +425,7 @@ class MediaPlayerMpv(MediaPlayer):
 
         # only handle when a file naturally ends (i.e. is not skipped)
         # i know this strategy is risky, but it is not possible to not capture
-        # end-file for EOF only
+        # end-file for EOF only with the stable version of mpv (0.32.0)
         if self.player_data["skip"]:
             self.player_data["skip"] = False
             logger.debug("File has been skipped")
@@ -454,7 +452,7 @@ class MediaPlayerMpv(MediaPlayer):
         """Callback called when a log message occurs.
 
         Direct the message to the logger for Dakara Player. If the level is
-        "error" or higher, call the callback `callbacks["error"]` and skip the
+        "fatal" or higher, call the callback `callbacks["error"]` and skip the
         media.
 
         Args:
