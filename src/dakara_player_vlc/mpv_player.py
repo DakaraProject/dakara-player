@@ -247,11 +247,13 @@ class MediaPlayerMpv(MediaPlayer):
         # reset player
         self.player.image_display_duration = 0
         self.player.sub_files = []
+        self.player.audio_files = []
         self.player.pause = False
 
         if what == "idle":
             path_media = self.background_loader.backgrounds["idle"]
             path_subtitle = self.text_paths["idle"]
+            path_audio = None
 
             self.player.image_display_duration = "inf"
 
@@ -260,17 +262,26 @@ class MediaPlayerMpv(MediaPlayer):
         elif what == "transition":
             path_media = self.playlist_entry_data["transition"].path
             path_subtitle = self.text_paths["transition"]
+            path_audio = None
 
             self.player.image_display_duration = int(self.durations["transition"])
 
         elif what == "song":
             path_media = self.playlist_entry_data["song"].path
             path_subtitle = self.playlist_entry_data["song"].path_subtitle
+            path_audio_candidate = self.playlist_entry_data["song"].path_audio
+            if not path_audio_candidate or path_audio_candidate == "self":
+                path_audio = None
+
+            else:
+                path_audio = path_audio_candidate
+                logger.debug("Requesting to play audio file %s", path_audio)
 
         else:
             raise ValueError("Unexpected action to play: {}".format(what))
 
-        self.player.sub_files = [str(path_subtitle)]
+        self.player.sub_files = [str(path_subtitle)] if path_subtitle else []
+        self.player.audio_files = [str(path_audio)] if path_audio else []
         self.player.play(str(path_media))
 
     def pause(self, pause):
@@ -504,29 +515,23 @@ class MediaPlayerMpv(MediaPlayer):
 
             # set instrumental track if necessary
             path_audio = self.playlist_entry_data["song"].path_audio
-            if path_audio:
-                if path_audio == "self":
-                    # audio track is internal
-                    # get audio tracks
-                    audio_tracks_id = self.get_audio_tracks_id()
+            if path_audio == "self":
+                # audio track is internal
+                # get audio tracks
+                audio_tracks_id = self.get_audio_tracks_id()
 
-                    # if more than 1 audio track is present, play the 2nd one
-                    if len(audio_tracks_id) > 1:
-                        logger.debug(
-                            "Requesting to play audio track %i", audio_tracks_id[1]
-                        )
-                        self.player.audio = audio_tracks_id[1]
-
-                    else:
-                        logger.warning(
-                            "Cannot find instrumental track for file '%s'",
-                            self.playlist_entry_data["song"].path,
-                        )
+                # if more than 1 audio track is present, play the 2nd one
+                if len(audio_tracks_id) > 1:
+                    logger.debug(
+                        "Requesting to play audio track %i", audio_tracks_id[1]
+                    )
+                    self.player.audio = audio_tracks_id[1]
 
                 else:
-                    # otherwise it is external
-                    logger.debug("Requesting to play audio file %s", path_audio)
-                    self.player.audio_add(path_audio)
+                    logger.warning(
+                        "Cannot find instrumental track for file '%s'",
+                        self.playlist_entry_data["song"].path,
+                    )
 
             logger.info(
                 "Now playing '%s' ('%s')",
