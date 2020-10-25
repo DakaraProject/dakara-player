@@ -1,4 +1,5 @@
 from contextlib import ExitStack, contextmanager
+from time import sleep
 from queue import Queue
 from tempfile import TemporaryDirectory
 from threading import Event
@@ -221,6 +222,10 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             # check media exists
             self.assertIsNotNone(mpv_player.player.path)
             self.assertEqual(mpv_player.player.path, self.song_file_path)
+
+            # force wait the instrumental track to be playing
+            while not mpv_player.player.audio == 2:
+                sleep(0.2)
 
             # check audio track
             self.assertEqual(mpv_player.player.audio, 2)
