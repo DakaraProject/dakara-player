@@ -166,14 +166,24 @@ class MediaPlayerMpv(MediaPlayer):
     def get_version(self):
         """Get media player version.
 
-        mpv version is in the form "mpv x.y.z+git.w" where "w" is a timestamp,
-        or "mpv x.y.z" in text.
+        mpv version is in the form "mpv x.y.z+git.v.w" where "v" is a timestamp
+        and "w" a commit hash for post releases, or "mpv x.y.z" for releases.
+
+        In case of post release, as the version given by mpv does not respect
+        semantic versionning, the sub-version is the concatenation of the day
+        part and the time part of "v".
 
         Returns:
             packaging.version.Version: Parsed version of mpv.
         """
-        match = re.search(r"mpv (\d+\.\d+\.\d+)", self.player.mpv_version)
+        match = re.search(
+            r"mpv (\d+\.\d+\.\d+)(?:\+git\.(\d{8})T(\d{6})\..*)?",
+            self.player.mpv_version,
+        )
         if match:
+            if match.group(2) and match.group(3):
+                return parse(match.group(1) + "-post" + match.group(2) + match.group(3))
+
             return parse(match.group(1))
 
         raise VersionNotFoundError("Unable to get mpv version")

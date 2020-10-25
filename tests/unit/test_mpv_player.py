@@ -5,7 +5,6 @@ from threading import Event
 from unittest import TestCase
 from unittest.mock import MagicMock, patch, call
 
-from packaging.version import parse
 from path import Path
 
 from dakara_player_vlc.mpv_player import MediaPlayerMpv
@@ -165,8 +164,8 @@ class MediaPlayerMpvTestCase(TestCase):
         ):
             MediaPlayerMpv(Event(), Queue(), {}, Path("temp"))
 
-    def test_get_version_long(self):
-        """Test to get the mpv version when it is long
+    def test_get_version_postrelease(self):
+        """Test to get the mpv post release version
         """
         # create instance
         mpv_player, (mocked_mpv, _, _), _ = self.get_instance()
@@ -178,10 +177,11 @@ class MediaPlayerMpvTestCase(TestCase):
         version = mpv_player.get_version()
 
         # assert the result
-        self.assertEqual(version, parse("0.32.0"))
+        self.assertEqual(version.base_version, "0.32.0")
+        self.assertTrue(version.is_postrelease)
 
-    def test_get_version_short(self):
-        """Test to get the mpv version when it is short
+    def test_get_version(self):
+        """Test to get the mpv stable version
         """
         # create instance
         mpv_player, (mocked_mpv, _, _), _ = self.get_instance()
@@ -193,7 +193,8 @@ class MediaPlayerMpvTestCase(TestCase):
         version = mpv_player.get_version()
 
         # assert the result
-        self.assertEqual(version, parse("0.32.0"))
+        self.assertEqual(version.base_version, "0.32.0")
+        self.assertFalse(version.is_postrelease)
 
     def test_get_version_not_found(self):
         """Test to get the mpv version when it is not available
