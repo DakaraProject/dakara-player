@@ -214,7 +214,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             mpv_player.set_playlist_entry(self.playlist_entry)
 
             # wait for the song to start
-            self.wait_is_playing(mpv_player, "song", 1)
+            self.wait_is_playing(mpv_player, "song")
 
             # check the current media has 2 audio tracks
             self.assertListEqual(mpv_player.get_audio_tracks_id(), [1, 2])
@@ -252,7 +252,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             mpv_player.set_playlist_entry(self.playlist_entry)
 
             # wait for the song to start
-            self.wait_is_playing(mpv_player, "song", 1)
+            self.wait_is_playing(mpv_player, "song")
 
             # check media exists
             self.assertIsNotNone(mpv_player.player.path)
