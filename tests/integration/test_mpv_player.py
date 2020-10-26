@@ -1,5 +1,4 @@
 from contextlib import ExitStack, contextmanager
-from time import sleep
 from queue import Queue
 from tempfile import TemporaryDirectory
 from threading import Event
