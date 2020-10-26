@@ -19,12 +19,10 @@ class TestCasePoller(TestCase):
             wait_extra (float): Time to wait at the end of the function.
         """
         if what:
-            while not (player.is_playing() and player.is_playing(what)):
-                sleep(cls.DELAY)
+            cls.wait(lambda: player.is_playing() and player.is_playing(what))
 
         else:
-            while not player.is_playing():
-                sleep(cls.DELAY)
+            cls.wait(lambda: player.is_playing())
 
         sleep(wait_extra)
 
@@ -39,7 +37,24 @@ class TestCasePoller(TestCase):
             player (dakara_player_mpv.media_player.MediaPlayer): Player.
             wait_extra (float): Time to wait at the end of the function.
         """
-        while not player.is_paused():
-            sleep(cls.DELAY)
+        cls.wait(lambda: player.is_paused())
 
         sleep(wait_extra)
+
+    @classmethod
+    def wait(cls, condition_method):
+        """Wait for a condition to be true safely
+
+        Args:
+            condition_method (function): Function to call in loop in a try/except
+                structure, so as to not break the loop in cause of error.
+        """
+        while True:
+            try:
+                if condition_method():
+                    return
+
+            except OSError:
+                pass
+
+            sleep(cls.DELAY)
