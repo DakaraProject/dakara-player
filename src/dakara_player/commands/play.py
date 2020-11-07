@@ -29,7 +29,7 @@ def get_parser():
     """
     # main parser
     parser = ArgumentParser(
-        prog="play-vlc", description="VLC based player for the Dakara project"
+        prog="dakara-play", description="Player for the Dakara project"
     )
 
     parser.set_defaults(function=play)
@@ -85,7 +85,7 @@ def play(args):
 
     except ConfigNotFoundError as error:
         raise ConfigNotFoundError(
-            "{}, please run 'dakara-play-vlc create-config'".format(error)
+            "{}, please run 'dakara-play create-config'".format(error)
         ) from error
 
     set_loglevel(config)

@@ -67,7 +67,7 @@ class PlayTestCase(TestCase):
         # call the function
         with self.assertRaisesRegex(
             ConfigNotFoundError,
-            "Config file not found, please run 'dakara-play-vlc create-config'",
+            "Config file not found, please run 'dakara-play create-config'",
         ):
             play.play(Namespace(debug=False, force=False, progress=True))
 

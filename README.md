@@ -49,10 +49,10 @@ python setup.py install
 
 ## Usage
 
-The package provides the `dakara-play-vlc` command which runs the player:
+The package provides the `dakara-play` command which runs the player:
 
 ```sh
-dakara-play-vlc
+dakara-play
 # or
 python -m dakara_player
 ```
@@ -60,7 +60,7 @@ python -m dakara_player
 One instance of the Dakara server should be running. For more help:
 
 ```sh
-dakara-play-vlc -h
+dakara-play -h
 # or
 python -m dakara_player -h
 ```
@@ -68,7 +68,7 @@ python -m dakara_player -h
 Before calling the command, you should create a config file with:
 
 ```sh
-dakara-play-vlc create-config
+dakara-play create-config
 # or
 python -m dakara_player create-config
 ```
