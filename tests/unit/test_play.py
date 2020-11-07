@@ -6,8 +6,8 @@ from dakara_base.config import ConfigNotFoundError
 from dakara_base.exceptions import DakaraError
 from path import Path
 
-from dakara_player_vlc import DakaraPlayerVlc
-from dakara_player_vlc.commands import play
+from dakara_player import DakaraPlayer
+from dakara_player.commands import play
 
 
 class GetParserTestCase(TestCase):
@@ -45,11 +45,11 @@ class PlayTestCase(TestCase):
     """Test the play action
     """
 
-    @patch.object(DakaraPlayerVlc, "run")
-    @patch.object(DakaraPlayerVlc, "load")
-    @patch("dakara_player_vlc.commands.play.load_config")
-    @patch("dakara_player_vlc.commands.play.get_config_file")
-    @patch("dakara_player_vlc.commands.play.create_logger")
+    @patch.object(DakaraPlayer, "run")
+    @patch.object(DakaraPlayer, "load")
+    @patch("dakara_player.commands.play.load_config")
+    @patch("dakara_player.commands.play.get_config_file")
+    @patch("dakara_player.commands.play.create_logger")
     def test_play_config_not_found(
         self,
         mocked_create_logger,
@@ -75,12 +75,12 @@ class PlayTestCase(TestCase):
         mocked_load.assert_not_called()
         mocked_run.assert_not_called()
 
-    @patch.object(DakaraPlayerVlc, "run")
-    @patch.object(DakaraPlayerVlc, "load")
-    @patch("dakara_player_vlc.commands.play.set_loglevel")
-    @patch("dakara_player_vlc.commands.play.load_config")
-    @patch("dakara_player_vlc.commands.play.get_config_file")
-    @patch("dakara_player_vlc.commands.play.create_logger")
+    @patch.object(DakaraPlayer, "run")
+    @patch.object(DakaraPlayer, "load")
+    @patch("dakara_player.commands.play.set_loglevel")
+    @patch("dakara_player.commands.play.load_config")
+    @patch("dakara_player.commands.play.get_config_file")
+    @patch("dakara_player.commands.play.create_logger")
     def test_play_config_incomplete(
         self,
         mocked_create_logger,
@@ -107,14 +107,14 @@ class PlayTestCase(TestCase):
 
         # call the function
         with self.assertRaisesRegex(DakaraError, "Config-related error"):
-            with self.assertLogs("dakara_player_vlc.commands.play") as logger:
+            with self.assertLogs("dakara_player.commands.play") as logger:
                 play.play(Namespace(debug=False, force=False, progress=True))
 
         # assert the logs
         self.assertListEqual(
             logger.output,
             [
-                "WARNING:dakara_player_vlc.commands.play:Config may be incomplete, "
+                "WARNING:dakara_player.commands.play:Config may be incomplete, "
                 "please check '{}'".format(Path("path") / "to" / "config")
             ],
         )
@@ -123,12 +123,12 @@ class PlayTestCase(TestCase):
         mocked_load.assert_called_with()
         mocked_run.assert_not_called()
 
-    @patch.object(DakaraPlayerVlc, "load")
-    @patch.object(DakaraPlayerVlc, "run")
-    @patch("dakara_player_vlc.commands.play.set_loglevel")
-    @patch("dakara_player_vlc.commands.play.load_config")
-    @patch("dakara_player_vlc.commands.play.get_config_file")
-    @patch("dakara_player_vlc.commands.play.create_logger")
+    @patch.object(DakaraPlayer, "load")
+    @patch.object(DakaraPlayer, "run")
+    @patch("dakara_player.commands.play.set_loglevel")
+    @patch("dakara_player.commands.play.load_config")
+    @patch("dakara_player.commands.play.get_config_file")
+    @patch("dakara_player.commands.play.create_logger")
     def test_play(
         self,
         mocked_create_logger,
@@ -169,19 +169,18 @@ class CreateConfigTestCase(TestCase):
     """Test the create-config action
     """
 
-    @patch("dakara_player_vlc.commands.play.create_logger")
-    @patch("dakara_player_vlc.commands.play.create_config_file")
+    @patch("dakara_player.commands.play.create_logger")
+    @patch("dakara_player.commands.play.create_config_file")
     def test_create_config(self, mocked_create_config_file, mocked_create_logger):
         """Test a simple create-config action
         """
         # call the function
-        with self.assertLogs("dakara_player_vlc.commands.play") as logger:
+        with self.assertLogs("dakara_player.commands.play") as logger:
             play.create_config(Namespace(force=False))
 
         # assert the logs
         self.assertListEqual(
-            logger.output,
-            ["INFO:dakara_player_vlc.commands.play:Please edit this file"],
+            logger.output, ["INFO:dakara_player.commands.play:Please edit this file"],
         )
 
         # assert the call
@@ -189,11 +188,11 @@ class CreateConfigTestCase(TestCase):
             custom_log_format=ANY, custom_log_level=ANY
         )
         mocked_create_config_file.assert_called_with(
-            "dakara_player_vlc.resources", "player_vlc.yaml", False
+            "dakara_player.resources", "player_vlc.yaml", False
         )
 
 
-@patch("dakara_player_vlc.commands.play.exit")
+@patch("dakara_player.commands.play.exit")
 @patch.object(ArgumentParser, "parse_args")
 class MainTestCase(TestCase):
     """Test the main action
@@ -223,7 +222,7 @@ class MainTestCase(TestCase):
         mocked_parse_args.return_value = Namespace(function=function, debug=False)
 
         # call the function
-        with self.assertLogs("dakara_player_vlc.commands.play", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.commands.play", "DEBUG") as logger:
             play.main()
 
         # assert the call
@@ -231,7 +230,7 @@ class MainTestCase(TestCase):
 
         # assert the logs
         self.assertListEqual(
-            logger.output, ["CRITICAL:dakara_player_vlc.commands.play:error"]
+            logger.output, ["CRITICAL:dakara_player.commands.play:error"]
         )
 
     def test_known_error_debug(self, mocked_parse_args, mocked_exit):
@@ -260,7 +259,7 @@ class MainTestCase(TestCase):
         mocked_parse_args.return_value = Namespace(function=function, debug=False)
 
         # call the function
-        with self.assertLogs("dakara_player_vlc.commands.play", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.commands.play", "DEBUG") as logger:
             play.main()
 
         # assert the call
@@ -271,7 +270,7 @@ class MainTestCase(TestCase):
             logger.output,
             [
                 ANY,
-                "CRITICAL:dakara_player_vlc.commands.play:Please fill a bug report at "
+                "CRITICAL:dakara_player.commands.play:Please fill a bug report at "
                 "https://github.com/DakaraProject/dakara-player-vlc/issues",
             ],
         )

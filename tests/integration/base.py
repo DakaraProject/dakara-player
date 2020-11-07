@@ -13,7 +13,7 @@ class TestCasePoller(TestCase):
         function waits a little bit more.
 
         Args:
-            player (dakara_player_vlc.media_player.MediaPlayer): Player.
+            player (dakara_player.media_player.MediaPlayer): Player.
             what (str): Action to wait for. If not provided, wait for the
                 player to be actually playing.
             wait_extra (float): Time to wait at the end of the function.

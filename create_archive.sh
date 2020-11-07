@@ -5,7 +5,7 @@ set -eu
 
 # getting version of the package
 version=$(python setup.py --version)
-echo "Creating archive for dakara_player_vlc v$version"
+echo "Creating archive for dakara_player v$version"
 
 # install twine
 pip install --upgrade twine

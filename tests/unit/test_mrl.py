@@ -3,7 +3,7 @@ from unittest import TestCase, skipIf
 
 from path import Path
 
-from dakara_player_vlc.mrl import mrl_to_path, path_to_mrl
+from dakara_player.mrl import mrl_to_path, path_to_mrl
 
 
 class MrlFunctionsTestCase(TestCase):

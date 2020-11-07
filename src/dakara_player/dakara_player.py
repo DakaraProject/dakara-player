@@ -6,15 +6,15 @@ from dakara_base.safe_workers import Runner, WorkerSafeThread
 from dakara_base.exceptions import DakaraError
 from path import Path
 
-from dakara_player_vlc.font_loader import get_font_loader_class
-from dakara_player_vlc.dakara_manager import DakaraManager
-from dakara_player_vlc.dakara_server import (
+from dakara_player.font_loader import get_font_loader_class
+from dakara_player.dakara_manager import DakaraManager
+from dakara_player.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
 )
-from dakara_player_vlc.mpv_player import MediaPlayerMpv
-from dakara_player_vlc.version import check_version
-from dakara_player_vlc.vlc_player import MediaPlayerVlc
+from dakara_player.mpv_player import MediaPlayerMpv
+from dakara_player.version import check_version
+from dakara_player.vlc_player import MediaPlayerVlc
 
 FontLoader = get_font_loader_class()
 
@@ -26,7 +26,7 @@ MEDIA_PLAYER_CLASSES = {
 logger = logging.getLogger(__name__)
 
 
-class DakaraPlayerVlc(Runner):
+class DakaraPlayer(Runner):
     """Class associated with the main thread
 
     It simply starts, launchs the worker and waits for it to terminate or for a
@@ -89,7 +89,7 @@ class DakaraWorker(WorkerSafeThread):
         player is not known, raise an error.
 
         Returns:
-            dakara_player_vlc.media_player.MediaPlayer: Specialized class of
+            dakara_player.media_player.MediaPlayer: Specialized class of
             the media player.
         """
         media_player_name = self.config["player"].get("player_name", "vlc")

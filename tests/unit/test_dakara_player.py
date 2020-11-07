@@ -4,13 +4,13 @@ from threading import Event
 from unittest import TestCase
 from unittest.mock import ANY, patch
 
-from dakara_player_vlc.dakara_player_vlc import (
-    DakaraPlayerVlc,
+from dakara_player.dakara_player import (
+    DakaraPlayer,
     DakaraWorker,
     UnsupportedMediaPlayerError,
 )
-from dakara_player_vlc.vlc_player import MediaPlayerVlc
-from dakara_player_vlc.mpv_player import MediaPlayerMpv
+from dakara_player.vlc_player import MediaPlayerVlc
+from dakara_player.mpv_player import MediaPlayerMpv
 
 
 CONFIG = {
@@ -44,13 +44,12 @@ class DakaraWorkerTestCase(TestCase):
         errors = Queue()
 
         # create Dakara worker
-        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.dakara_player", "DEBUG") as logger:
             DakaraWorker(stop, errors, CONFIG)
 
         # assert effect on logs
         self.assertListEqual(
-            logger.output,
-            ["DEBUG:dakara_player_vlc.dakara_player_vlc:Starting Dakara worker"],
+            logger.output, ["DEBUG:dakara_player.dakara_player:Starting Dakara worker"],
         )
 
     def test_get_media_player_class_vlc(self):
@@ -105,17 +104,14 @@ class DakaraWorkerTestCase(TestCase):
         ):
             worker.get_media_player_class()
 
-    @patch("dakara_player_vlc.dakara_player_vlc.TemporaryDirectory", autospec=True)
-    @patch("dakara_player_vlc.dakara_player_vlc.FontLoader", autospec=True)
-    @patch("dakara_player_vlc.dakara_player_vlc.MediaPlayerVlc", autospec=True)
+    @patch("dakara_player.dakara_player.TemporaryDirectory", autospec=True)
+    @patch("dakara_player.dakara_player.FontLoader", autospec=True)
+    @patch("dakara_player.dakara_player.MediaPlayerVlc", autospec=True)
+    @patch("dakara_player.dakara_player.DakaraServerHTTPConnection", autospec=True)
     @patch(
-        "dakara_player_vlc.dakara_player_vlc.DakaraServerHTTPConnection", autospec=True
+        "dakara_player.dakara_player.DakaraServerWebSocketConnection", autospec=True,
     )
-    @patch(
-        "dakara_player_vlc.dakara_player_vlc.DakaraServerWebSocketConnection",
-        autospec=True,
-    )
-    @patch("dakara_player_vlc.dakara_player_vlc.DakaraManager", autospec=True)
+    @patch("dakara_player.dakara_player.DakaraManager", autospec=True)
     def test_run(
         self,
         mocked_dakara_manager_class,
@@ -150,7 +146,7 @@ class DakaraWorkerTestCase(TestCase):
 
         # call the method
         with patch.dict(
-            "dakara_player_vlc.dakara_player_vlc.MEDIA_PLAYER_CLASSES",
+            "dakara_player.dakara_player.MEDIA_PLAYER_CLASSES",
             {"vlc": mocked_vlc_player_class},
         ):
             dakara_worker.run()
@@ -182,37 +178,37 @@ class DakaraWorkerTestCase(TestCase):
         mocked_dakara_server_websocket.timer.start.assert_called_with()
 
 
-class DakaraPlayerVlcTestCase(TestCase):
-    """Test the `DakaraPlayerVlc` class
+class DakaraPlayerTestCase(TestCase):
+    """Test the `DakaraPlayer` class
     """
 
     def test_init(self):
         """Test to create the object
         """
-        with self.assertLogs("dakara_player_vlc.dakara_player_vlc", "DEBUG") as logger:
-            DakaraPlayerVlc(CONFIG)
+        with self.assertLogs("dakara_player.dakara_player", "DEBUG") as logger:
+            DakaraPlayer(CONFIG)
 
         # assert effect on logs
         self.assertListEqual(
-            logger.output, ["DEBUG:dakara_player_vlc.dakara_player_vlc:Started main"]
+            logger.output, ["DEBUG:dakara_player.dakara_player:Started main"]
         )
 
-    @patch("dakara_player_vlc.dakara_player_vlc.check_version")
+    @patch("dakara_player.dakara_player.check_version")
     def test_load(self, mocked_check_version):
         """Test to perform side-effect actions
         """
-        dakara_player_vlc = DakaraPlayerVlc(CONFIG)
-        dakara_player_vlc.load()
+        dakara_player = DakaraPlayer(CONFIG)
+        dakara_player.load()
 
         # assert call
         mocked_check_version.assert_called_with()
 
-    @patch.object(DakaraPlayerVlc, "run_safe")
+    @patch.object(DakaraPlayer, "run_safe")
     def test_run(self, mocked_run_safe):
         """Test a dummy run
         """
-        dakara_player_vlc = DakaraPlayerVlc(CONFIG)
-        dakara_player_vlc.run()
+        dakara_player = DakaraPlayer(CONFIG)
+        dakara_player.run()
 
         # assert the call
         mocked_run_safe.assert_called_with(DakaraWorker, CONFIG)

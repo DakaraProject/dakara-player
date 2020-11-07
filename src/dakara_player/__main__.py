@@ -1,4 +1,4 @@
-from dakara_player_vlc.commands import play
+from dakara_player.commands import play
 
 
 if __name__ == "__main__":

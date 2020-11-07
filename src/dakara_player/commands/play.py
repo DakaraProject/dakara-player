@@ -11,8 +11,8 @@ from dakara_base.config import (
     set_loglevel,
 )
 
-from dakara_player_vlc import DakaraPlayerVlc
-from dakara_player_vlc.version import __version__, __date__
+from dakara_player import DakaraPlayer
+from dakara_player.version import __version__, __date__
 
 
 CONFIG_FILE = "player_vlc.yaml"
@@ -89,7 +89,7 @@ def play(args):
         ) from error
 
     set_loglevel(config)
-    dakara = DakaraPlayerVlc(config)
+    dakara = DakaraPlayer(config)
 
     # load the feeder, consider that the config is incomplete if it fails
     try:
@@ -114,7 +114,7 @@ def create_config(args):
         args (argparse.Namespace): arguments from command line.
     """
     create_logger(custom_log_format="%(message)s", custom_log_level="INFO")
-    create_config_file("dakara_player_vlc.resources", CONFIG_FILE, args.force)
+    create_config_file("dakara_player.resources", CONFIG_FILE, args.force)
     logger.info("Please edit this file")
 
 

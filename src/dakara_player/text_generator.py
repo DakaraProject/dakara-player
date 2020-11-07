@@ -6,7 +6,7 @@ from dakara_base.resources_manager import get_file
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader
 from path import Path
 
-from dakara_player_vlc.resources_manager import PATH_TEMPLATES
+from dakara_player.resources_manager import PATH_TEMPLATES
 
 
 TRANSITION_TEMPLATE_NAME = "transition.ass"
@@ -86,7 +86,7 @@ class TextGenerator:
     def load_icon_map(self):
         """Load the icon map
         """
-        icon_map_path = get_file("dakara_player_vlc.resources", ICON_MAP_FILE)
+        icon_map_path = get_file("dakara_player.resources", ICON_MAP_FILE)
         with icon_map_path.open() as file:
             self.icon_map = json.load(file)
 

@@ -11,12 +11,12 @@ try:
 except ImportError:
     vlc = None
 
-from dakara_player_vlc.media_player import (
+from dakara_player.media_player import (
     MediaPlayer,
     InvalidStateError,
     VersionNotFoundError,
 )
-from dakara_player_vlc.mrl import path_to_mrl, mrl_to_path
+from dakara_player.mrl import path_to_mrl, mrl_to_path
 
 
 try:
@@ -57,10 +57,10 @@ class MediaPlayerVlc(MediaPlayer):
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
         text_paths (dict of path.Path): Path of the different text screens.
-        text_generator (dakara_player_vlc.text_generator.TextGenerator): Text
+        text_generator (dakara_player.text_generator.TextGenerator): Text
             generator instance.
         background_loader
-        (dakara_player_vlc.background_loader.BackgroundLoader): Background
+        (dakara_player.background_loader.BackgroundLoader): Background
             loader instance.
         media_parameters (list of str): Extra parameters passed to the media.
         instance (vlc.Instance): Instance of VLC.

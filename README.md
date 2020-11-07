@@ -54,7 +54,7 @@ The package provides the `dakara-play-vlc` command which runs the player:
 ```sh
 dakara-play-vlc
 # or
-python -m dakara_player_vlc
+python -m dakara_player
 ```
 
 One instance of the Dakara server should be running. For more help:
@@ -62,7 +62,7 @@ One instance of the Dakara server should be running. For more help:
 ```sh
 dakara-play-vlc -h
 # or
-python -m dakara_player_vlc -h
+python -m dakara_player -h
 ```
 
 Before calling the command, you should create a config file with:
@@ -70,7 +70,7 @@ Before calling the command, you should create a config file with:
 ```sh
 dakara-play-vlc create-config
 # or
-python -m dakara_player_vlc create-config
+python -m dakara_player create-config
 ```
 
 and complete it with your values. The file is stored in your user space: `~/.config/dakara` on Linux or `$APPDATA\Dakara` on Windows.

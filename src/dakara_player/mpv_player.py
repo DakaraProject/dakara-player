@@ -10,7 +10,7 @@ try:
 except ImportError:
     mpv = None
 
-from dakara_player_vlc.media_player import (
+from dakara_player.media_player import (
     InvalidStateError,
     MediaPlayer,
     VersionNotFoundError,
@@ -63,10 +63,10 @@ class MediaPlayerMpv(MediaPlayer):
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
         text_paths (dict of path.Path): Path of the different text screens.
-        text_generator (dakara_player_vlc.text_generator.TextGenerator): Text
+        text_generator (dakara_player.text_generator.TextGenerator): Text
             generator instance.
         background_loader
-        (dakara_player_vlc.background_loader.BackgroundLoader): Background
+        (dakara_player.background_loader.BackgroundLoader): Background
             loader instance.
         player (mpv.MPV): Instance of mpv.
         playlist_entry_data (dict): Extra data of the playlist entry.

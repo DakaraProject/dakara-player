@@ -6,7 +6,7 @@ from os.path import isfile, islink, exists
 
 from path import Path
 
-from dakara_player_vlc.resources_manager import get_all_fonts, PATH_FONTS
+from dakara_player.resources_manager import get_all_fonts, PATH_FONTS
 
 
 logger = logging.getLogger(__name__)

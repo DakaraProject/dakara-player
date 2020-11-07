@@ -10,13 +10,13 @@ from dakara_base.resources_manager import get_file
 from func_timeout import func_set_timeout
 from path import Path
 
-from dakara_player_vlc.vlc_player import MediaPlayerVlc
-from dakara_player_vlc.mrl import mrl_to_path
-from dakara_player_vlc.media_player import (
+from dakara_player.vlc_player import MediaPlayerVlc
+from dakara_player.mrl import mrl_to_path
+from dakara_player.media_player import (
     IDLE_BG_NAME,
     TRANSITION_BG_NAME,
 )
-from dakara_player_vlc.resources_manager import get_background
+from dakara_player.resources_manager import get_background
 from tests.integration.base import TestCasePoller
 
 
@@ -107,7 +107,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
                 MediaPlayerVlc(Event(), Queue(), config, temp, warn_long_exit=False)
             )
             output = stack.enter_context(
-                self.assertLogs("dakara_player_vlc.vlc_player", "DEBUG")
+                self.assertLogs("dakara_player.vlc_player", "DEBUG")
             )
             vlc_player.load()
 

@@ -6,11 +6,11 @@ from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
 from path import Path
 
-from dakara_player_vlc.background_loader import BackgroundLoader
-from dakara_player_vlc.resources_manager import PATH_BACKGROUNDS
-from dakara_player_vlc.audio import get_audio_files
-from dakara_player_vlc.text_generator import TextGenerator
-from dakara_player_vlc.version import __version__
+from dakara_player.background_loader import BackgroundLoader
+from dakara_player.resources_manager import PATH_BACKGROUNDS
+from dakara_player.audio import get_audio_files
+from dakara_player.text_generator import TextGenerator
+from dakara_player.version import __version__
 
 
 TRANSITION_BG_NAME = "transition.png"
@@ -56,10 +56,10 @@ class MediaPlayer(Worker, ABC):
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
         text_paths (dict of path.Path): Path of the different text screens.
-        text_generator (dakara_player_vlc.text_generator.TextGenerator): Text
+        text_generator (dakara_player.text_generator.TextGenerator): Text
             generator instance.
         background_loader
-        (dakara_player_vlc.background_loader.BackgroundLoader): Background
+        (dakara_player.background_loader.BackgroundLoader): Background
             loader instance.
     """
 

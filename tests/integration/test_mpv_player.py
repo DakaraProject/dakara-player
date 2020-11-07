@@ -8,14 +8,14 @@ from dakara_base.resources_manager import get_file
 from func_timeout import func_set_timeout
 from path import Path
 
-from dakara_player_vlc.mpv_player import MediaPlayerMpv
-from dakara_player_vlc.media_player import (
+from dakara_player.mpv_player import MediaPlayerMpv
+from dakara_player.media_player import (
     IDLE_BG_NAME,
     IDLE_TEXT_NAME,
     TRANSITION_BG_NAME,
     TRANSITION_TEXT_NAME,
 )
-from dakara_player_vlc.resources_manager import get_background
+from dakara_player.resources_manager import get_background
 from tests.integration.base import TestCasePoller
 
 
@@ -97,7 +97,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
                 MediaPlayerMpv(Event(), Queue(), config, temp, warn_long_exit=False)
             )
             output = stack.enter_context(
-                self.assertLogs("dakara_player_vlc.mpv_player", "DEBUG")
+                self.assertLogs("dakara_player.mpv_player", "DEBUG")
             )
             mpv_player.load()
 
