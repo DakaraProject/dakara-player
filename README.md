@@ -4,8 +4,8 @@
 [![Appveyor CI Build status](https://ci.appveyor.com/api/projects/status/gcgpwu2i8vdwhb7y?svg=true)](https://ci.appveyor.com/project/neraste/dakara-player-vlc)
 [![Codecov coverage analysis](https://codecov.io/gh/DakaraProject/dakara-player-vlc/branch/develop/graph/badge.svg)](https://codecov.io/gh/DakaraProject/dakara-player-vlc)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-[![PyPI version](https://badge.fury.io/py/dakaraplayervlc.svg)](https://pypi.python.org/pypi/dakaraplayervlc/)
-[![PyPI Python versions](https://img.shields.io/pypi/pyversions/dakaraplayervlc.svg)](https://pypi.python.org/pypi/dakaraplayervlc/)
+[![PyPI version](https://badge.fury.io/py/dakaraplayer.svg)](https://pypi.python.org/pypi/dakaraplayer/)
+[![PyPI Python versions](https://img.shields.io/pypi/pyversions/dakaraplayer.svg)](https://pypi.python.org/pypi/dakaraplayer/)
 
 Interface between the Dakara server and a media player, for the Dakara project.
 
@@ -38,7 +38,7 @@ It is strongly recommended to use the Dakara VLC player within a virtual environ
 Install the package with:
 
 ```sh
-pip install dakaraplayervlc
+pip install dakaraplayer
 ```
 
 If you have downloaded the repo, you can install the package directly with:
