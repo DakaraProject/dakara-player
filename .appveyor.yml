@@ -45,6 +45,9 @@ install:
 
   # install dependencies for test
   - "py -%PYTHON_VERSION% -m pip install -e \".[tests]\""
+  
+  # refresh console
+  - "refreshenv"
 
 # command to run tests
 test_script:
