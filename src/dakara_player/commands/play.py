@@ -15,7 +15,7 @@ from dakara_player import DakaraPlayer
 from dakara_player.version import __version__, __date__
 
 
-CONFIG_FILE = "player_vlc.yaml"
+CONFIG_FILE = "player.yaml"
 
 
 logger = logging.getLogger(__name__)

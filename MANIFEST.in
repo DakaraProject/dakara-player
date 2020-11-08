@@ -4,7 +4,7 @@ recursive-include tests/resources *.png
 recursive-include tests/resources *.mkv
 recursive-include tests/resources *.mp3
 include src/dakara_player/resources/font-awesome.json
-include src/dakara_player/resources/player_vlc.yaml
+include src/dakara_player/resources/player.yaml
 recursive-include src/dakara_player/resources *.ass
 recursive-include src/dakara_player/resources *.png
 recursive-include src/dakara_player/resources *.ttf

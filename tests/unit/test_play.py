@@ -188,7 +188,7 @@ class CreateConfigTestCase(TestCase):
             custom_log_format=ANY, custom_log_level=ANY
         )
         mocked_create_config_file.assert_called_with(
-            "dakara_player.resources", "player_vlc.yaml", False
+            "dakara_player.resources", "player.yaml", False
         )
 
 
