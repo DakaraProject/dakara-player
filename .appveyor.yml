@@ -52,8 +52,8 @@ test_script:
   - "py -%PYTHON_VERSION% -m coverage run setup.py test"
 
   # run commands
-  - "py -%PYTHON_VERSION% -m dakara_player_vlc --version"
-  - "%PYTHON%\\Scripts\\dakara-play-vlc.exe --version"
+  - "py -%PYTHON_VERSION% -m dakara_player --version"
+  - "%PYTHON%\\Scripts\\dakara-play.exe --version"
 
   # run code formatting tests
   - "py -%PYTHON_VERSION% -m black . --check"
