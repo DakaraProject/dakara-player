@@ -142,7 +142,7 @@ def main():
         logger.exception("Unexpected error: %s", str(error))
         logger.critical(
             "Please fill a bug report at "
-            "https://github.com/DakaraProject/dakara-player-vlc/issues"
+            "https://github.com/DakaraProject/dakara-player/issues"
         )
         value = 128
 

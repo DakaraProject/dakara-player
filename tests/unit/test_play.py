@@ -271,7 +271,7 @@ class MainTestCase(TestCase):
             [
                 ANY,
                 "CRITICAL:dakara_player.commands.play:Please fill a bug report at "
-                "https://github.com/DakaraProject/dakara-player-vlc/issues",
+                "https://github.com/DakaraProject/dakara-player/issues",
             ],
         )
 

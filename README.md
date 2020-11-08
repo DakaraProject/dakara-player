@@ -1,8 +1,8 @@
-# Dakara VLC player
+# Dakara player
 
-[![Travis CI Build Status](https://travis-ci.com/DakaraProject/dakara-player-vlc.svg?branch=develop)](https://travis-ci.com/DakaraProject/dakara-player-vlc)
-[![Appveyor CI Build status](https://ci.appveyor.com/api/projects/status/gcgpwu2i8vdwhb7y?svg=true)](https://ci.appveyor.com/project/neraste/dakara-player-vlc)
-[![Codecov coverage analysis](https://codecov.io/gh/DakaraProject/dakara-player-vlc/branch/develop/graph/badge.svg)](https://codecov.io/gh/DakaraProject/dakara-player-vlc)
+[![Travis CI Build Status](https://travis-ci.com/DakaraProject/dakara-player.svg?branch=develop)](https://travis-ci.com/DakaraProject/dakara-player)
+[![Appveyor CI Build status](https://ci.appveyor.com/api/projects/status/gcgpwu2i8vdwhb7y?svg=true)](https://ci.appveyor.com/project/neraste/dakara-player)
+[![Codecov coverage analysis](https://codecov.io/gh/DakaraProject/dakara-player/branch/develop/graph/badge.svg)](https://codecov.io/gh/DakaraProject/dakara-player)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 [![PyPI version](https://badge.fury.io/py/dakaraplayer.svg)](https://pypi.python.org/pypi/dakaraplayer/)
 [![PyPI Python versions](https://img.shields.io/pypi/pyversions/dakaraplayer.svg)](https://pypi.python.org/pypi/dakaraplayer/)
@@ -15,7 +15,7 @@ To install Dakara completely, you have to get all the parts of the project.
 Installation guidelines are provided over here:
 
 * [Dakara server](https://github.com/DakaraProject/dakara-server/);
-- [Dakara feeder](https:://github.com/DakaraProject/dakara-feeder).
+* [Dakara feeder](https:://github.com/DakaraProject/dakara-feeder).
 
 ### System requirements
 
@@ -31,7 +31,7 @@ Linux and Windows are supported.
 
 ### Virtual environment
 
-It is strongly recommended to use the Dakara VLC player within a virtual environment.
+It is strongly recommended to use the Dakara player within a virtual environment.
 
 ### Install
 
