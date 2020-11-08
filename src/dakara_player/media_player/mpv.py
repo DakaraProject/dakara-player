@@ -10,7 +10,7 @@ try:
 except ImportError:
     mpv = None
 
-from dakara_player.media_player import (
+from dakara_player.media_player.base import (
     InvalidStateError,
     MediaPlayer,
     VersionNotFoundError,

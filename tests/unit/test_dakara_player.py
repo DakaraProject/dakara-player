@@ -9,8 +9,8 @@ from dakara_player.dakara_player import (
     DakaraWorker,
     UnsupportedMediaPlayerError,
 )
-from dakara_player.vlc_player import MediaPlayerVlc
-from dakara_player.mpv_player import MediaPlayerMpv
+from dakara_player.media_player.vlc import MediaPlayerVlc
+from dakara_player.media_player.mpv import MediaPlayerMpv
 
 
 CONFIG = {

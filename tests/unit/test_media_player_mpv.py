@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch, call
 
 from path import Path
 
-from dakara_player.mpv_player import MediaPlayerMpv
-from dakara_player.media_player import (
+from dakara_player.media_player.mpv import MediaPlayerMpv
+from dakara_player.media_player.base import (
     MediaPlayerNotAvailableError,
     InvalidStateError,
     VersionNotFoundError,
@@ -74,21 +74,23 @@ class MediaPlayerMpvTestCase(TestCase):
 
         with ExitStack() as stack:
             mocked_instance_class = (
-                stack.enter_context(patch("dakara_player.mpv_player.mpv.MPV"))
+                stack.enter_context(patch("dakara_player.media_player.mpv.mpv.MPV"))
                 if mock_instance
                 else None
             )
 
             mocked_background_loader_class = (
                 stack.enter_context(
-                    patch("dakara_player.media_player.BackgroundLoader")
+                    patch("dakara_player.media_player.base.BackgroundLoader")
                 )
                 if mock_background_loader
                 else None
             )
 
             mocked_text_generator_class = (
-                stack.enter_context(patch("dakara_player.media_player.TextGenerator"))
+                stack.enter_context(
+                    patch("dakara_player.media_player.base.TextGenerator")
+                )
                 if mock_text_generator
                 else None
             )
@@ -250,7 +252,7 @@ class MediaPlayerMpvTestCase(TestCase):
         mpv_player, _, _ = self.get_instance()
 
         # call the method
-        with self.assertLogs("dakara_player.mpv_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.load_player()
 
         # assert the calls
@@ -258,7 +260,7 @@ class MediaPlayerMpvTestCase(TestCase):
 
         # assert the logs
         self.assertListEqual(
-            logger.output, ["INFO:dakara_player.mpv_player:mpv 0.32.0"]
+            logger.output, ["INFO:dakara_player.media_player.mpv:mpv 0.32.0"]
         )
 
     @patch.object(MediaPlayerMpv, "clear_playlist_entry")
@@ -273,15 +275,15 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "transition.png"
 
         # call the method
-        with self.assertLogs("dakara_player.mpv_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_end_file({"event": "end-file"})
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.mpv_player:File end callback called",
-                "DEBUG:dakara_player.mpv_player:Will play '{}'".format(
+                "DEBUG:dakara_player.media_player.mpv:File end callback called",
+                "DEBUG:dakara_player.media_player.mpv:Will play '{}'".format(
                     Path(gettempdir()) / self.song_file_path
                 ),
             ],
@@ -303,12 +305,13 @@ class MediaPlayerMpvTestCase(TestCase):
         self.set_playlist_entry(mpv_player)
 
         # call the method
-        with self.assertLogs("dakara_player.mpv_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_end_file({"event": "end-file"})
 
         # assert effect on logs
         self.assertListEqual(
-            logger.output, ["DEBUG:dakara_player.mpv_player:File end callback called"],
+            logger.output,
+            ["DEBUG:dakara_player.media_player.mpv:File end callback called"],
         )
 
         # assert the call
@@ -328,7 +331,7 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "other"
 
         # call the method
-        with self.assertLogs("dakara_player.mpv_player", "DEBUG"):
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG"):
             with self.assertRaisesRegex(
                 InvalidStateError, "End file on an undeterminated state"
             ):
@@ -352,7 +355,7 @@ class MediaPlayerMpvTestCase(TestCase):
 
         # call the method
         with self.assertLogs(
-            "dakara_player.mpv_player", "DEBUG"
+            "dakara_player.media_player.mpv", "DEBUG"
         ) as logger, self.assertLogs("mpv", "DEBUG") as logger_mpv:
             mpv_player.handle_log_messages("fatal", "mpv.component", "error message")
 
@@ -360,8 +363,8 @@ class MediaPlayerMpvTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.mpv_player:Log message callback called",
-                "ERROR:dakara_player.mpv_player:Unable to play '{}'".format(
+                "DEBUG:dakara_player.media_player.mpv:Log message callback called",
+                "ERROR:dakara_player.media_player.mpv:Unable to play '{}'".format(
                     Path(gettempdir()) / self.song_file_path
                 ),
             ],
@@ -390,15 +393,16 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_is_playing.return_value = True
 
         # call the method
-        with self.assertLogs("dakara_player.mpv_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_start_file({})
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.mpv_player:Start file callback called",
-                "INFO:dakara_player.mpv_player:Playing transition for 'Song title'",
+                "DEBUG:dakara_player.media_player.mpv:Start file callback called",
+                "INFO:dakara_player.media_player.mpv:Playing transition for "
+                "'Song title'",
             ],
         )
 
@@ -423,15 +427,15 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_is_playing.side_effect = [False, True]
 
         # call the method
-        with self.assertLogs("dakara_player.mpv_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_start_file({})
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.mpv_player:Start file callback called",
-                "INFO:dakara_player.mpv_player:Now playing 'Song title' "
+                "DEBUG:dakara_player.media_player.mpv:Start file callback called",
+                "INFO:dakara_player.media_player.mpv:Now playing 'Song title' "
                 "('{}')".format(Path(gettempdir()) / self.song_file_path),
             ],
         )
@@ -463,15 +467,15 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_is_playing.side_effect = [False, False, True]
 
         # call the method
-        with self.assertLogs("dakara_player.mpv_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_start_file({})
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.mpv_player:Start file callback called",
-                "DEBUG:dakara_player.mpv_player:Playing idle screen",
+                "DEBUG:dakara_player.media_player.mpv:Start file callback called",
+                "DEBUG:dakara_player.media_player.mpv:Playing idle screen",
             ],
         )
 
@@ -518,15 +522,15 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_get_timing.return_value = 42
 
         # call the method
-        with self.assertLogs("dakara_player.mpv_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_pause({})
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.mpv_player:Pause callback called",
-                "DEBUG:dakara_player.mpv_player:Paused",
+                "DEBUG:dakara_player.media_player.mpv:Pause callback called",
+                "DEBUG:dakara_player.media_player.mpv:Paused",
             ],
         )
 
@@ -547,15 +551,15 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_get_timing.return_value = 42
 
         # call the method
-        with self.assertLogs("dakara_player.mpv_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_unpause({})
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.mpv_player:Unpause callback called",
-                "DEBUG:dakara_player.mpv_player:Resumed play",
+                "DEBUG:dakara_player.media_player.mpv:Unpause callback called",
+                "DEBUG:dakara_player.media_player.mpv:Resumed play",
             ],
         )
 

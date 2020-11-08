@@ -11,7 +11,7 @@ try:
 except ImportError:
     vlc = None
 
-from dakara_player.media_player import (
+from dakara_player.media_player.base import (
     MediaPlayer,
     InvalidStateError,
     VersionNotFoundError,

@@ -12,9 +12,9 @@ from dakara_player.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
 )
-from dakara_player.mpv_player import MediaPlayerMpv
+from dakara_player.media_player.mpv import MediaPlayerMpv
+from dakara_player.media_player.vlc import MediaPlayerVlc
 from dakara_player.version import check_version
-from dakara_player.vlc_player import MediaPlayerVlc
 
 FontLoader = get_font_loader_class()
 
@@ -89,7 +89,7 @@ class DakaraWorker(WorkerSafeThread):
         player is not known, raise an error.
 
         Returns:
-            dakara_player.media_player.MediaPlayer: Specialized class of
+            dakara_player.media_player.base.MediaPlayer: Specialized class of
             the media player.
         """
         media_player_name = self.config["player"].get("player_name", "vlc")
