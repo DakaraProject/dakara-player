@@ -75,13 +75,6 @@ class MediaPlayerMpv(MediaPlayer):
 
     player_name = "mpv"
 
-    # TODO remove that monstruosity
-    if os.name == "nt":
-        os.environ["PATH"] = (
-            f"{os.environ['PATH']};{os.getcwd()}"
-            + ";C:\\ProgramData\\chocolatey\\lib\\mpv.install\\tools"
-        )
-
     @staticmethod
     def is_available():
         """Indicate if mpv is available.
