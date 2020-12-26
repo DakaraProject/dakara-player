@@ -194,16 +194,10 @@ class MediaPlayer(Worker, ABC):
         """
 
     @abstractmethod
-    def is_playing(self, what):
+    def is_playing(self):
         """Query if the media player is playing something.
 
         Must be overriden.
-
-        Args:
-            what (str): If provided, tell if the media player current track is
-                of the requested type, but not if it is actually playing it (it
-                can be in paused). If not provided, tell if the media player is
-                actually playing anything.
 
         Returns:
             bool: True if the media player is playing something.
@@ -217,6 +211,21 @@ class MediaPlayer(Worker, ABC):
 
         Returns:
             bool: True if the media player is paused.
+        """
+
+    @abstractmethod
+    def is_playing_this(self, what):
+        """Query if the media player is playing the requested media type.
+
+        Must be overriden.
+
+        Args:
+            what (str): Tell if the media player current track is of the
+                requested type, but not if it is actually playing it (it can be
+                in pause).
+
+        Returns:
+            bool: True if the media player is playing the requested type.
         """
 
     @abstractmethod

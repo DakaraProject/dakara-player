@@ -19,7 +19,7 @@ class TestCasePoller(TestCase):
             wait_extra (float): Time to wait at the end of the function.
         """
         if what:
-            cls.wait(lambda: player.is_playing() and player.is_playing(what))
+            cls.wait(lambda: player.is_playing() and player.is_playing_this(what))
 
         else:
             cls.wait(lambda: player.is_playing())

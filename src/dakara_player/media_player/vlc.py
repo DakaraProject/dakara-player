@@ -129,7 +129,7 @@ class MediaPlayerVlc(MediaPlayer):
             int: Current song timing in seconds if a song is playing, or 0 when
                 idle or during transition screen.
         """
-        if self.is_playing("idle") or self.is_playing("transition"):
+        if self.is_playing_this("idle") or self.is_playing_this("transition"):
             return 0
 
         timing = self.player.get_time()
@@ -191,21 +191,12 @@ class MediaPlayerVlc(MediaPlayer):
         self.vlc_callbacks[event] = callback
         self.event_manager.event_attach(event, callback)
 
-    def is_playing(self, what=None):
+    def is_playing(self):
         """Query if VLC is playing something.
-
-        Args:
-            what (str): If provided, tell if VLC current track is
-                of the requested type, but not if it is actually playing it (it
-                can be in paused). If not provided, tell if VLC is
-                actually playing anything.
 
         Returns:
             bool: True if VLC is playing something.
         """
-        if what:
-            return get_metadata(self.player.get_media())["type"] == what
-
         return self.player.get_state() == vlc.State.Playing
 
     def is_paused(self):
@@ -215,6 +206,18 @@ class MediaPlayerVlc(MediaPlayer):
             bool: True if VLC is paused.
         """
         return self.player.get_state() == vlc.State.Paused
+
+    def is_playing_this(self, what):
+        """Query if VLC is playing the requested media type.
+
+        Args:
+            what (str): Tell if VLC current track is of the requested type, but
+                not if it is actually playing it (it can be in pause).
+
+        Returns:
+            bool: True if VLC is playing the requested type.
+        """
+        return get_metadata(self.player.get_media())["type"] == what
 
     def play(self, what):
         """Request VLC to play something.
@@ -266,7 +269,7 @@ class MediaPlayerVlc(MediaPlayer):
         Args:
             paused (bool): If True, pause VLC.
         """
-        if self.is_playing("idle"):
+        if self.is_playing_this("idle"):
             return
 
         if paused:
@@ -291,7 +294,7 @@ class MediaPlayerVlc(MediaPlayer):
         Can only work on transition screens or songs. VLC should continue
         playing, but media has to be considered already finished.
         """
-        if self.is_playing("transition") or self.is_playing("song"):
+        if self.is_playing_this("transition") or self.is_playing_this("song"):
             self.callbacks["finished"](self.playlist_entry["id"])
             logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
             self.clear_playlist_entry()
@@ -473,7 +476,7 @@ class MediaPlayerVlc(MediaPlayer):
         logger.debug("End reached callback called")
 
         # the transition screen has finished, request to play the song itself
-        if self.is_playing("transition"):
+        if self.is_playing_this("transition"):
             logger.debug(
                 "Will play '{}'".format(
                     mrl_to_path(self.playlist_entry_data["song"].media.get_mrl())
@@ -485,14 +488,14 @@ class MediaPlayerVlc(MediaPlayer):
             return
 
         # the media has finished, so call the according callback and clean memory
-        if self.is_playing("song"):
+        if self.is_playing_this("song"):
             self.callbacks["finished"](self.playlist_entry["id"])
             self.clear_playlist_entry()
 
             return
 
         # the idle screen has finished, simply restart it
-        if self.is_playing("idle"):
+        if self.is_playing_this("idle"):
             thread = self.create_thread(target=self.play, args=("idle",))
             thread.start()
 
@@ -515,7 +518,7 @@ class MediaPlayerVlc(MediaPlayer):
 
         # the current song media has an error, skip the song, log the error and
         # call error callback
-        if self.is_playing("song"):
+        if self.is_playing_this("song"):
             logger.error(
                 "Unable to play '%s'", mrl_to_path(self.player.get_media().get_mrl())
             )
@@ -548,9 +551,9 @@ class MediaPlayerVlc(MediaPlayer):
         # we rely on a specific flag stored in `playlist_entry_data` Media
         # objects which is set to True when the corresponding media starts
         if (
-            self.is_playing("transition")
+            self.is_playing_this("transition")
             and self.playlist_entry_data["transition"].started
-            or self.is_playing("song")
+            or self.is_playing_this("song")
             and self.playlist_entry_data["song"].started
         ):
             self.callbacks["resumed"](self.playlist_entry["id"], self.get_timing())
@@ -559,7 +562,7 @@ class MediaPlayerVlc(MediaPlayer):
             return
 
         # the transition screen starts to play
-        if self.is_playing("transition"):
+        if self.is_playing_this("transition"):
             self.callbacks["started_transition"](self.playlist_entry["id"])
             self.playlist_entry_data["transition"].started = True
             logger.info(
@@ -569,7 +572,7 @@ class MediaPlayerVlc(MediaPlayer):
             return
 
         # the song starts to play
-        if self.is_playing("song"):
+        if self.is_playing_this("song"):
             self.callbacks["started_song"](self.playlist_entry["id"])
 
             # set instrumental track if necessary
@@ -588,7 +591,7 @@ class MediaPlayerVlc(MediaPlayer):
             return
 
         # the idle screen starts to play
-        if self.is_playing("idle"):
+        if self.is_playing_this("idle"):
             logger.debug("Playing idle screen")
 
             return

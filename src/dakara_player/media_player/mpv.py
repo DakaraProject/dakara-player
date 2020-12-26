@@ -156,7 +156,7 @@ class MediaPlayerMpv(MediaPlayer):
             int: Current song timing in seconds if a song is playing, or 0 when
                 idle or during transition screen.
         """
-        if self.is_playing("idle") or self.is_playing("transition"):
+        if self.is_playing_this("idle") or self.is_playing_this("transition"):
             return 0
 
         timing = self.player.time_pos or 0
@@ -196,24 +196,50 @@ class MediaPlayerMpv(MediaPlayer):
         self.player.bind_event("pause", self.handle_pause)
         self.player.bind_event("unpause", self.handle_unpause)
 
-    def is_playing(self, what=None):
+    def is_playing(self):
         """Query if mpv is playing something.
+
+        Returns:
+            bool: True if mpv is playing something.
+        """
+        # query if the player is currently playing
+        if self.is_paused():
+            return False
+
+        playlist = self.player.playlist
+
+        if len(playlist) == 0:
+            return False
+
+        assert len(playlist) == 1, "Too many entries in mpv internal playlist"
+
+        media = playlist[0]
+        return media.get("playing", False)
+
+    def is_paused(self):
+        """Query if mpv is paused.
+
+        Returns:
+            bool: True if mpv is paused.
+        """
+        return self.player.pause
+
+    def is_playing_this(self, what):
+        """Query if mpv is playing the requested media type.
 
         It is pretty difficult to get what mpv is/was playing, as it does not
         have a media object, but only a path to the current media file (that
-        disappear when the said file ends), and a playlist that contains the
-        path of the latest media file (that disappear when another file is set
+        disappears when the said file ends), and a playlist that contains the
+        path of the latest media file (that disappears when another file is set
         to play). We can only rely on the playlist path, and this is pretty
         weak. I don't have any better solution for now.
 
         Args:
-            what (str): If provided, tell if mpv current track is
-                of the requested type, but not if it is actually playing it (it
-                can be in paused). If not provided, tell if mpv is
-                actually playing anything.
+            what (str): Tell if mpv current track is of the requested type, but
+                not if it is actually playing it (it can be in pause).
 
         Returns:
-            bool: True if mpv is playing something.
+            bool: True if mpv is playing the requested type.
         """
         playlist = self.player.playlist
 
@@ -225,25 +251,10 @@ class MediaPlayerMpv(MediaPlayer):
         media = playlist[0]
         path = media.get("filename")
 
-        if what:
-            if what == "idle":
-                return path == self.background_loader.backgrounds["idle"]
+        if what == "idle":
+            return path == self.background_loader.backgrounds["idle"]
 
-            return path == self.playlist_entry_data[what].path
-
-        # query if the player is currently playing
-        if self.is_paused():
-            return False
-
-        return media.get("playing", False)
-
-    def is_paused(self):
-        """Query if mpv is paused.
-
-        Returns:
-            bool: True if mpv is paused.
-        """
-        return self.player.pause
+        return path == self.playlist_entry_data[what].path
 
     def play(self, what):
         """Request mpv to play something.
@@ -307,7 +318,7 @@ class MediaPlayerMpv(MediaPlayer):
         Args:
             paused (bool): If True, pause mpv.
         """
-        if self.is_playing("idle"):
+        if self.is_playing_this("idle"):
             return
 
         if pause:
@@ -332,7 +343,7 @@ class MediaPlayerMpv(MediaPlayer):
         Can only work on transition screens or songs. mpv should
         continue playing, but media has to be considered already finished.
         """
-        if self.is_playing("transition") or self.is_playing("song"):
+        if self.is_playing_this("transition") or self.is_playing_this("song"):
             logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
             self.player_data["skip"] = True
             self.callbacks["finished"](self.playlist_entry["id"])
@@ -361,7 +372,7 @@ class MediaPlayerMpv(MediaPlayer):
                 is playing.
         """
         # if the player is playing the idle screen, mark to skip it
-        if self.is_playing("idle"):
+        if self.is_playing_this("idle"):
             self.player_data["skip"] = True
 
         # set transition
@@ -456,14 +467,14 @@ class MediaPlayerMpv(MediaPlayer):
             return
 
         # the transition screen has finished, request to play the song itself
-        if self.is_playing("transition"):
+        if self.is_playing_this("transition"):
             logger.debug("Will play '{}'".format(self.playlist_entry_data["song"].path))
             self.play("song")
 
             return
 
         # the media has finished, so call the according callback and clean memory
-        if self.is_playing("song"):
+        if self.is_playing_this("song"):
             self.callbacks["finished"](self.playlist_entry["id"])
             self.clear_playlist_entry()
 
@@ -492,7 +503,7 @@ class MediaPlayerMpv(MediaPlayer):
 
         # handle all errors here
         if intlevel == logging.CRITICAL:
-            if self.is_playing("song"):
+            if self.is_playing_this("song"):
                 logger.error("Unable to play '%s'", self.player.path)
                 self.callbacks["error"](
                     self.playlist_entry["id"],
@@ -514,7 +525,7 @@ class MediaPlayerMpv(MediaPlayer):
         logger.debug("Start file callback called")
 
         # the transition screen starts to play
-        if self.is_playing("transition"):
+        if self.is_playing_this("transition"):
             self.callbacks["started_transition"](self.playlist_entry["id"])
             logger.info(
                 "Playing transition for '%s'", self.playlist_entry["song"]["title"]
@@ -523,7 +534,7 @@ class MediaPlayerMpv(MediaPlayer):
             return
 
         # the song starts to play
-        if self.is_playing("song"):
+        if self.is_playing_this("song"):
             self.callbacks["started_song"](self.playlist_entry["id"])
             logger.info(
                 "Now playing '%s' ('%s')",
@@ -534,7 +545,7 @@ class MediaPlayerMpv(MediaPlayer):
             return
 
         # the idle screen starts to play
-        if self.is_playing("idle"):
+        if self.is_playing_this("idle"):
             logger.debug("Playing idle screen")
 
             return
