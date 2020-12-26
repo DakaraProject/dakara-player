@@ -42,7 +42,10 @@ mv ~/.config/dakara/player_vlc.yaml ~/.config/dakara/player.yaml
 On Windows:
 
 ```cmd
-move %APPDATA%/Dakara/player_vlc.yaml %APPDATA%/Dakara/player.yaml
+# cmd
+move %APPDATA%\Dakara\player_vlc.yaml %APPDATA%\Dakara\player.yaml
+# powershell
+mv $env:APPDATA\Dakara\player_vlc.yaml $env:APPDATA\Dakara\player.yaml
 ```
 
 ### Added
