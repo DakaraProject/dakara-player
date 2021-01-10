@@ -586,3 +586,15 @@ class MediaPlayerMpvTestCase(TestCase):
             mpv_player.play("none")
 
         mpv_player.player.play.assert_not_called()
+
+    def test_play_no_song_path_subtitle(self):
+        """Test to play a file no detected subtitle
+        """
+        mpv_player, _, _ = self.get_instance()
+        mpv_player.playlist_entry_data["song"].path = "test_file"
+        mpv_player.playlist_entry_data["song"].path_subtitle = None
+
+        mpv_player.play("song")
+
+        mpv_player.player.play.assert_called_with("test_file")
+        self.assertNotEqual(mpv_player.player.sub_files, [None])

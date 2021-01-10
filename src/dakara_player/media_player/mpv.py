@@ -293,7 +293,10 @@ class MediaPlayerMpv(MediaPlayer):
                     self.player.audio_files = [path_audio]
                     logger.debug("Requesting to play audio file %s", path_audio)
 
-            self.player.sub_files = [self.playlist_entry_data["song"].path_subtitle]
+            # if the subtitle file cannot be discovered, do not request it
+            if self.playlist_entry_data["song"].path_subtitle:
+                self.player.sub_files = [self.playlist_entry_data["song"].path_subtitle]
+
             self.player.play(self.playlist_entry_data["song"].path)
 
             return
