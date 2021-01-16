@@ -138,6 +138,7 @@ class MediaPlayerMpv(MediaPlayer):
 
         # set mpv as a single non-interactive window
         self.player.force_window = "immediate"
+        self.player.input_default_bindings = False
         self.player.osc = False
         self.player.osd_level = 0
 
