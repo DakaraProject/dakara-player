@@ -268,6 +268,10 @@ class MediaPlayerMpv(MediaPlayer):
         self.player.pause = False
 
         if what == "idle":
+            # if already idle, do nothing
+            if self.is_playing_this("idle"):
+                return
+
             self.player.image_display_duration = "inf"
             self.player.sub_files = [self.text_paths["idle"]]
             self.generate_text("idle")
