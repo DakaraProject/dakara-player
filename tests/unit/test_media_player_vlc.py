@@ -742,10 +742,15 @@ class MediaPlayerVlcTestCase(TestCase):
         vlc_player.set_callback("finished", MagicMock())
         mocked_is_playing_this.return_value = False
 
+        self.assertFalse(vlc_player.stop.is_set())
+
         # call the method
         with self.assertLogs("dakara_player.media_player.vlc", "DEBUG"):
-            with self.assertRaises(InvalidStateError):
-                vlc_player.handle_end_reached("event")
+            vlc_player.handle_end_reached("event")
+
+        self.assertTrue(vlc_player.stop.is_set())
+        exception_class, _, _ = vlc_player.errors.get()
+        self.assertIs(InvalidStateError, exception_class)
 
         # assert the call
         vlc_player.callbacks["finished"].assert_not_called()
@@ -975,10 +980,15 @@ class MediaPlayerVlcTestCase(TestCase):
         # setup mock
         mocked_is_playing_this.return_value = False
 
+        self.assertFalse(vlc_player.stop.is_set())
+
         # call the method
         with self.assertLogs("dakara_player.media_player.vlc", "DEBUG"):
-            with self.assertRaises(InvalidStateError):
-                vlc_player.handle_playing("event")
+            vlc_player.handle_playing("event")
+
+        self.assertTrue(vlc_player.stop.is_set())
+        exception_class, _, _ = vlc_player.errors.get()
+        self.assertIs(InvalidStateError, exception_class)
 
     @patch.object(MediaPlayerVlc, "get_timing")
     def test_handle_paused(self, mocked_get_timing):

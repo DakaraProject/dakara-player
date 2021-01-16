@@ -1,6 +1,7 @@
 import logging
 import re
 
+from dakara_base.safe_workers import safe
 from packaging.version import parse
 
 try:
@@ -38,6 +39,8 @@ class MediaPlayerMpv(MediaPlayer):
 
     The class can be used as a context manager that closes mpv
     automatically on exit.
+
+    Any exception in callbacks make the application to crash.
 
     Args:
         stop (threading.Event): Stop event that notify to stop the entire
@@ -439,6 +442,7 @@ class MediaPlayerMpv(MediaPlayer):
             "song": MediaSong(),
         }
 
+    @safe
     def handle_end_file(self, event):
         """Callback called when a media ends.
 
@@ -478,6 +482,7 @@ class MediaPlayerMpv(MediaPlayer):
         # if no state can be determined, raise an error
         raise InvalidStateError("End file on an undeterminated state")
 
+    @safe
     def handle_log_messages(self, loglevel, component, message):
         """Callback called when a log message occurs.
 
@@ -506,6 +511,7 @@ class MediaPlayerMpv(MediaPlayer):
                 )
                 self.skip()
 
+    @safe
     def handle_start_file(self, event):
         """Callback called when a media starts.
 
@@ -559,6 +565,7 @@ class MediaPlayerMpv(MediaPlayer):
 
         return audio
 
+    @safe
     def handle_pause(self, event):
         """Callback called when paused.
 
@@ -572,6 +579,7 @@ class MediaPlayerMpv(MediaPlayer):
 
         logger.debug("Paused")
 
+    @safe
     def handle_unpause(self, event):
         """Callback called when unpaused.
 

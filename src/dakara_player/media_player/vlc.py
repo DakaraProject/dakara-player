@@ -3,6 +3,7 @@ import json
 import re
 
 from dakara_base.exceptions import DakaraError
+from dakara_base.safe_workers import safe
 from packaging.version import parse
 
 try:
@@ -33,6 +34,8 @@ class MediaPlayerVlc(MediaPlayer):
 
     The class can be used as a context manager that closes VLC
     automatically on exit.
+
+    Any exception in callbacks make the application to crash.
 
     Args:
         stop (threading.Event): Stop event that notify to stop the entire
@@ -459,6 +462,7 @@ class MediaPlayerVlc(MediaPlayer):
 
         return audio
 
+    @safe
     def handle_end_reached(self, event):
         """Callback called when a media ends.
 
@@ -504,6 +508,7 @@ class MediaPlayerVlc(MediaPlayer):
         # if no state can be determined, raise an error
         raise InvalidStateError("End reached on an undeterminated state")
 
+    @safe
     def handle_encountered_error(self, event):
         """Callback called when error occurs
 
@@ -531,6 +536,7 @@ class MediaPlayerVlc(MediaPlayer):
 
         # do not assess other errors
 
+    @safe
     def handle_playing(self, event):
         """Callback called when playing has started.
 
@@ -598,6 +604,7 @@ class MediaPlayerVlc(MediaPlayer):
 
         raise InvalidStateError("Playing on an undeterminated state")
 
+    @safe
     def handle_paused(self, event):
         """Callback called when pause is set.
 

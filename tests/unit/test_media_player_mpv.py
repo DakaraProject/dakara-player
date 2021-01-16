@@ -330,12 +330,16 @@ class MediaPlayerMpvTestCase(TestCase):
         self.set_playlist_entry(mpv_player)
         mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "other"
 
+        self.assertFalse(mpv_player.stop.is_set())
+
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG"):
-            with self.assertRaisesRegex(
-                InvalidStateError, "End file on an undeterminated state"
-            ):
-                mpv_player.handle_end_file({"event": "end-file"})
+            mpv_player.handle_end_file({"event": "end-file"})
+
+        self.assertTrue(mpv_player.stop.is_set())
+        exception_class, exception, _ = mpv_player.errors.get()
+        self.assertIs(exception_class, InvalidStateError)
+        self.assertIn("End file on an undeterminated state", str(exception))
 
         # assert the call
         mocked_play.assert_not_called()
@@ -499,11 +503,15 @@ class MediaPlayerMpvTestCase(TestCase):
         # create mocks
         mocked_is_playing_this.return_value = False
 
+        self.assertFalse(mpv_player.stop.is_set())
+
         # call the method
-        with self.assertRaisesRegex(
-            InvalidStateError, "Start file on an undeterminated state"
-        ):
-            mpv_player.handle_start_file({})
+        mpv_player.handle_start_file({})
+
+        self.assertTrue(mpv_player.stop.is_set())
+        exception_class, exception, _ = mpv_player.errors.get()
+        self.assertIs(exception_class, InvalidStateError)
+        self.assertIn("Start file on an undeterminated state", str(exception))
 
         # assert the call
         mpv_player.callbacks["started_transition"].assert_not_called()
