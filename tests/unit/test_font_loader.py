@@ -5,6 +5,12 @@ from unittest.mock import patch, call
 
 from path import Path
 
+try:
+    from importlib.resources import path
+
+except ImportError:
+    from importlib_resources import path
+
 from dakara_player.font_loader import (
     FontLoaderLinux,
     FontLoaderWindows,
@@ -70,14 +76,14 @@ class FontLoaderLinuxTestCase(TestCase):
         mocked_unload.assert_called_with()
 
     @patch.object(FontLoaderLinux, "load_from_list")
-    @patch("dakara_player.font_loader.get_all_fonts", autospec=True)
+    @patch("dakara_player.font_loader.contents", autospec=True)
     def test_load_from_resources_directory(
-        self, mocked_get_all_fonts, mocked_load_from_list
+        self, mocked_contents, mocked_load_from_list
     ):
         """Test to load fonts from the resources directory
         """
         # mock system calls
-        mocked_get_all_fonts.return_value = self.font_path_list
+        mocked_contents.return_value = self.font_path_list
 
         # call the method
         with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
@@ -93,7 +99,7 @@ class FontLoaderLinuxTestCase(TestCase):
         )
 
         # call assertions
-        mocked_get_all_fonts.assert_called_once_with()
+        mocked_contents.assert_called_once_with("dakara_player.resources.fonts")
         mocked_load_from_list.assert_called_once_with(self.font_path_list)
 
     @patch.object(FontLoaderLinux, "load_font")
@@ -429,29 +435,30 @@ class FontLoaderWindowsTestCase(TestCase):
     """Test the Windows font loader
     """
 
-    @patch("dakara_player.font_loader.PATH_FONTS", Path("path_fonts"))
     @patch("dakara_player.font_loader.input")
-    @patch("dakara_player.font_loader.get_all_fonts")
-    def test_load(self, mocked_get_all_fonts, mocked_input):
+    @patch("dakara_player.font_loader.contents")
+    def test_load(self, mocked_contents, mocked_input):
         """Test to ask to load fonts manually
         """
-        mocked_get_all_fonts.return_value = [Path("path_fonts") / "font_file.ext"]
-        output = StringIO()
-        font_loader = FontLoaderWindows(output)
+        with path("dakara_player.resources.fonts", "") as fonts:
+            mocked_contents.return_value = [Path(fonts) / "font_file.ext"]
+            output = StringIO()
 
-        font_loader.load()
-        lines = output.getvalue().split("\n")
-        self.assertListEqual(
-            lines,
-            [
-                "Please install the following fonts located in the '{}' "
-                "folder and press Enter:".format(Path("path_fonts")),
-                "font_file.ext",
-                "",
-            ],
-        )
+            font_loader = FontLoaderWindows(output)
+            font_loader.load()
 
-        mocked_get_all_fonts.assert_called_with()
+            lines = output.getvalue().split("\n")
+            self.assertListEqual(
+                lines,
+                [
+                    "Please install the following fonts located in the '{}' "
+                    "folder and press Enter:".format(fonts),
+                    "font_file.ext",
+                    "",
+                ],
+            )
+
+        mocked_contents.assert_called_with("dakara_player.resources.fonts")
         mocked_input.assert_called_with()
 
     def test_unload(self):

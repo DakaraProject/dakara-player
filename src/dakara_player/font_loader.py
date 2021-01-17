@@ -6,7 +6,11 @@ from os.path import isfile, islink, exists
 
 from path import Path
 
-from dakara_player.resources_manager import get_all_fonts, PATH_FONTS
+try:
+    from importlib.resources import contents, path
+
+except ImportError:
+    from importlib_resources import contents, path
 
 
 logger = logging.getLogger(__name__)
@@ -100,7 +104,9 @@ class FontLoaderLinux(FontLoader):
         """Load all the fonts situated in the resources font directory
         """
         logger.debug("Scanning fonts directory")
-        font_file_path_list = get_all_fonts()
+        font_file_path_list = [
+            Path(f) for f in contents("dakara_player.resources.fonts")
+        ]
 
         logger.debug("Found %i font(s) to load", len(font_file_path_list))
         self.load_from_list(font_file_path_list)
@@ -220,20 +226,23 @@ class FontLoaderWindows(FontLoader):
         """Prompt the user to load the fonts
         """
         logger.debug("Scanning font directory")
-        font_file_path_list = get_all_fonts()
+        font_file_path_list = [
+            Path(f) for f in contents("dakara_player.resources.fonts")
+        ]
 
         # since there seems to be no workable way to load fonts on Windows
         # through Python, we ask the user to do it by themselve
-        self.output.write(
-            "Please install the following fonts located in the '{}' "
-            "folder and press Enter:\n".format(PATH_FONTS)
-        )
+        with path("dakara_player.resources.fonts", "") as fonts:
+            self.output.write(
+                "Please install the following fonts located in the '{}' "
+                "folder and press Enter:\n".format(fonts)
+            )
 
-        for font_file_path in font_file_path_list:
-            font_file_name = font_file_path.basename()
-            self.output.write("{}\n".format(font_file_name))
+            for font_file_path in font_file_path_list:
+                font_file_name = font_file_path.basename()
+                self.output.write("{}\n".format(font_file_name))
 
-        input()
+            input()
 
     def unload(self):
         """Promt the user to remove the fonts

@@ -2,11 +2,14 @@ import json
 import logging
 
 from dakara_base.exceptions import DakaraError
-from dakara_base.resources_manager import get_file
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader
 from path import Path
 
-from dakara_player.resources_manager import PATH_TEMPLATES
+try:
+    from importlib.resources import path
+
+except ImportError:
+    from importlib_resources import path
 
 
 TRANSITION_TEMPLATE_NAME = "transition.ass"
@@ -86,15 +89,15 @@ class TextGenerator:
     def load_icon_map(self):
         """Load the icon map
         """
-        icon_map_path = get_file("dakara_player.resources", ICON_MAP_FILE)
-        with icon_map_path.open() as file:
-            self.icon_map = json.load(file)
+        with path("dakara_player.resources", ICON_MAP_FILE) as file:
+            self.icon_map = json.loads(file.read_text())
 
     def load_templates(self):
         """Set up Jinja environment
         """
         # create loaders
-        loaders = [FileSystemLoader(self.directory), FileSystemLoader(PATH_TEMPLATES)]
+        with path("dakara_player.resources.templates", "") as file:
+            loaders = [FileSystemLoader(self.directory), FileSystemLoader(Path(file))]
 
         # create Jinja2 environment
         self.environment = Environment(loader=ChoiceLoader(loaders))

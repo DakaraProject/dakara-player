@@ -4,9 +4,14 @@ from tempfile import TemporaryDirectory
 from threading import Event
 from unittest.mock import ANY, MagicMock
 
-from dakara_base.resources_manager import get_file
 from func_timeout import func_set_timeout
 from path import Path
+
+try:
+    from importlib.resources import path
+
+except ImportError:
+    from importlib_resources import path
 
 from dakara_player.media_player.mpv import MediaPlayerMpv
 from dakara_player.media_player.base import (
@@ -15,7 +20,6 @@ from dakara_player.media_player.base import (
     TRANSITION_BG_NAME,
     TRANSITION_TEXT_NAME,
 )
-from dakara_player.resources_manager import get_background
 from tests.integration.base import TestCasePoller
 
 
@@ -31,27 +35,36 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
         self.fullscreen = True
 
         # create kara folder
-        self.kara_folder = get_file("tests.resources", "")
+        with path("tests.resources", "") as resources:
+            self.kara_folder = Path(resources)
 
         # create idle background path
-        self.idle_background_path = get_background(IDLE_BG_NAME)
-        self.idle_background_subtitle_path = get_file("tests.resources", IDLE_TEXT_NAME)
+        with path("dakara_player.resources.backgrounds", IDLE_BG_NAME) as file:
+            self.idle_background_path = Path(file)
+
+        with path("tests.resources", IDLE_TEXT_NAME) as file:
+            self.idle_background_subtitle_path = Path(file)
 
         # create transition background path
-        self.transition_background_path = get_background(TRANSITION_BG_NAME)
-        self.transition_background_subtitle_path = get_file(
-            "tests.resources", TRANSITION_TEXT_NAME
-        )
+        with path("dakara_player.resources.backgrounds", TRANSITION_BG_NAME) as file:
+            self.transition_background_path = Path(file)
+
+        with path("tests.resources", TRANSITION_TEXT_NAME) as file:
+            self.transition_background_subtitle_path = Path(file)
 
         # create transition duration
         self.transition_duration = 1
 
         # create a subtitle
-        self.subtitle_path = get_file("tests.resources", "song.ass")
+        with path("tests.resources", "song.ass") as file:
+            self.subtitle_path = Path(file)
 
         # create song path
-        self.song_file_path = get_file("tests.resources", "song.mkv")
-        self.song2_file_path = get_file("tests.resources", "song2.mkv")
+        with path("tests.resources", "song.mkv") as file:
+            self.song_file_path = Path(file)
+
+        with path("tests.resources", "song2.mkv") as file:
+            self.song2_file_path = Path(file)
 
         # create playlist entry
         self.playlist_entry = {

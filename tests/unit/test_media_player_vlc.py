@@ -24,7 +24,6 @@ from dakara_player.mrl import mrl_to_path, path_to_mrl
 from dakara_player.text_generator import TextGenerator
 
 
-@patch("dakara_player.media_player.base.PATH_BACKGROUNDS", "bg")
 @patch("dakara_player.media_player.base.TRANSITION_DURATION", 10)
 @patch("dakara_player.media_player.base.IDLE_DURATION", 20)
 class MediaPlayerVlcTestCase(TestCase):
@@ -1018,9 +1017,12 @@ class MediaPlayerVlcTestCase(TestCase):
         # assert the call
         vlc_player.callbacks["paused"].assert_called_with(42, 25)
 
-    def test_default_backgrounds(self):
+    @patch("dakara_player.media_player.base.path")
+    def test_default_backgrounds(self, mocked_path):
         """Test to instanciate with default backgrounds
         """
+        mocked_path.return_value.__enter__.return_value = "bg"
+
         # create object
         _, _, (_, mocked_background_loader_class, _) = self.get_instance()
 
@@ -1035,9 +1037,12 @@ class MediaPlayerVlcTestCase(TestCase):
             },
         )
 
-    def test_custom_backgrounds(self):
+    @patch("dakara_player.media_player.base.path")
+    def test_custom_backgrounds(self, mocked_path):
         """Test to instanciate with an existing backgrounds directory
         """
+        mocked_path.return_value.__enter__.return_value = "bg"
+
         # create object
         _, _, (_, mocked_background_loader_class, _) = self.get_instance(
             {
