@@ -1,5 +1,8 @@
 # Parameters for the player
 player:
+  # Name of the media player to use ('vlc' or 'mpv')
+  player_name: vlc
+
   # Path of the karaoke folder
   kara_folder: /path/to/folder
 
@@ -54,6 +57,19 @@ player:
       # On Windows:
       # You should not have this problem.
 
+  # Parameters for mpv
+  # You can define specific options for mpv from here
+  # To get a complete list of the available options, consult mpv documentation:
+  #
+  # mpv --list-options
+  mpv:
+    # Enable the debanding algorithm.
+    # This greatly reduces the amount of visible banding, blocking and other
+    # quantization artifacts, at the expense of very slightly blurring some of the
+    # finest details. In practice, it's virtually always an improvement - the only
+    # reason to disable it would be for performance.
+    deband: yes
+
   # Parameters for templates
   # Templates are used to display some information on the idle or the
   # transition screens in the form of subtitles. They can be anything VLC can
@@ -62,7 +78,7 @@ player:
   templates:
     # Path to the directory of templates.
     # Add a look up folder where you can put your custom template files.
-    # The fallback directory is 'dakara_player_vlc/resources/templates'. To
+    # The fallback directory is 'dakara_player/resources/templates'. To
     # customize your templates, you can copy this fallback directory to some
     # places and use the content as a starter.
     # You have to set this parameter in order to set 'transition_template_name'
@@ -88,7 +104,7 @@ player:
   backgrounds:
     # Path to the directory of backgrounds.
     # Add a look up folder where you can put your custom background files.
-    # The fallback directory is 'dakara_player_vlc/resources/backgrounds'. To
+    # The fallback directory is 'dakara_player/resources/backgrounds'. To
     # customize your backgrounds, you can copy this fallback directory to some places
     # and use the content as a starter.
     # You have to set this parameter in order to set 'transition_background_name' and
@@ -136,7 +152,7 @@ server:
 # Other parameters
 
 # Minimal level of messages to log
-# For debug level, you can call `dakara.py` with the `−d` flag to show
+# For debug level, you can call the command with the `−d` flag to show
 # traceback on exceptions.
 # Default is 'info'
 # loglevel: info

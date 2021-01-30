@@ -59,7 +59,7 @@ class BackgroundLoader:
     Attributes:
         backgrounds (dict): dictionary of background file paths. The key is
             the background name, the value the background file path.
-            default_directory (path.Path): default lookup directory.
+        default_directory (path.Path): default lookup directory.
         default_background_filenames (dict): dictionary of default background
             filenames.
         directory (path.Path): custom lookup directory.

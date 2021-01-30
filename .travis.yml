@@ -1,8 +1,8 @@
 language: python
 python:
-  - "3.5"
   - "3.6"
-
+  - "3.7"
+  - "3.8"
 
 # select Ubuntu version
 dist: bionic
@@ -20,7 +20,7 @@ branches:
 before_install:
   # install system dependencies
   - sudo apt-get -qq update
-  - sudo apt-get install -y vlc
+  - sudo apt-get install -y vlc mpv
 
   # check dependencies version
   - vlc --version
@@ -42,12 +42,12 @@ script:
   - python -m coverage run setup.py test
 
   # run commands
-  - python -m dakara_player_vlc --version
-  - dakara-play-vlc --version
+  - python -m dakara_player --version
+  - dakara-play --version
 
   # run code formatting tests
-  - if [[ $TRAVIS_PYTHON_VERSION != 3.5 ]]; then black . --check; fi
-  - flake8
+  - python -m black . --check
+  - python -m flake8
 
 # commands to manage tests results
 after_script:

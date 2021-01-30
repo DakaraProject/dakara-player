@@ -30,6 +30,39 @@
 
 ## Unreleased
 
+### Update notes
+
+Since the project has been renamed, you should migrate your configuration file, if you have one.
+On Linux:
+
+```sh
+mv ~/.config/dakara/player_vlc.yaml ~/.config/dakara/player.yaml
+```
+
+On Windows:
+
+```cmd
+# cmd
+move %APPDATA%\Dakara\player_vlc.yaml %APPDATA%\Dakara\player.yaml
+# powershell
+mv $env:APPDATA\Dakara\player_vlc.yaml $env:APPDATA\Dakara\player.yaml
+```
+
+### Added
+
+- mpv is supported as an alternative player.
+  In the config file, the player can be selected in the `player.player_name` key.
+  Current accepted values are `vlc` and `mpv`.
+
+### Changed
+
+- The project is renamed:
+  - Repository name: `dakara-player-vlc` > `dakara-player`;
+  - Module name `dakara_player_vlc` > `dakara_player`;
+  - Pypi package name `dakaraplayervlc` > `dakaraplayer`;
+  - Config file name `player_vlc.yamd` > `player.yaml`;
+  - Command name `dakara-play-vlc` > `dakara-play`.
+
 ## 1.6.0 - 2020-09-05
 
 ### Added

@@ -4,10 +4,10 @@ from dakara_base.resources_manager import generate_get_resource, resource_listdi
 from path import Path
 
 
-RESOURCES = "dakara_player_vlc.resources"
-RESOURCES_BACKGROUNDS = "dakara_player_vlc.resources.backgrounds"
-RESOURCES_TEMPLATES = "dakara_player_vlc.resources.templates"
-RESOURCES_FONTS = "dakara_player_vlc.resources.fonts"
+RESOURCES = "dakara_player.resources"
+RESOURCES_BACKGROUNDS = "dakara_player.resources.backgrounds"
+RESOURCES_TEMPLATES = "dakara_player.resources.templates"
+RESOURCES_FONTS = "dakara_player.resources.fonts"
 
 PATH_BACKGROUNDS = resource_filename(RESOURCES_BACKGROUNDS, "")
 PATH_TEMPLATES = resource_filename(RESOURCES_TEMPLATES, "")

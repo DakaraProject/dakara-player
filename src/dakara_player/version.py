@@ -4,7 +4,7 @@ from pkg_resources import parse_version
 import importlib_metadata
 
 
-__version__ = importlib_metadata.version("dakaraplayervlc")
+__version__ = importlib_metadata.version("dakaraplayer")
 __date__ = "2020-09-05"
 
 logger = logging.getLogger(__name__)

@@ -1,10 +1,11 @@
 import sys
+from io import StringIO
 from unittest import TestCase, skipUnless
 from unittest.mock import patch, call
 
 from path import Path
 
-from dakara_player_vlc.font_loader import (
+from dakara_player.font_loader import (
     FontLoaderLinux,
     FontLoaderWindows,
     get_font_loader_class,
@@ -19,24 +20,22 @@ class GetFontLoaderClassTestCase(TestCase):
         """Test to get the correct font loader class for the platform
         """
         # call for Linux
-        with patch("dakara_player_vlc.font_loader.sys.platform", "linux"):
+        with patch("dakara_player.font_loader.sys.platform", "linux"):
             FontLoaderClass = get_font_loader_class()
             self.assertEqual(FontLoaderClass, FontLoaderLinux)
 
         # call for Windows
-        with patch("dakara_player_vlc.font_loader.sys.platform", "win32"):
+        with patch("dakara_player.font_loader.sys.platform", "win32"):
             FontLoaderClass = get_font_loader_class()
             self.assertEqual(FontLoaderClass, FontLoaderWindows)
 
         # call for uniplemented OS
-        with patch("dakara_player_vlc.font_loader.sys.platform", "other"):
-            with self.assertRaises(NotImplementedError) as error:
+        with patch("dakara_player.font_loader.sys.platform", "other"):
+            with self.assertRaisesRegex(
+                NotImplementedError,
+                r"This operating system \(other\) is not currently supported",
+            ):
                 get_font_loader_class()
-
-            self.assertEqual(
-                str(error.exception),
-                "This operating system (other) is not currently supported",
-            )
 
 
 @skipUnless(sys.platform.startswith("linux"), "Can be tested on Linux only")
@@ -58,11 +57,20 @@ class FontLoaderLinuxTestCase(TestCase):
         self.user_directory = Path("~").expanduser()
 
         # create a font loader object
-        with self.assertLogs("dakara_player_vlc.font_loader", "DEBUG"):
+        with self.assertLogs("dakara_player.font_loader", "DEBUG"):
             self.font_loader = FontLoaderLinux()
 
+    @patch.object(FontLoaderLinux, "unload")
+    def test_context_manager(self, mocked_unload):
+        """Test the font loader context manager
+        """
+        with FontLoaderLinux():
+            pass
+
+        mocked_unload.assert_called_with()
+
     @patch.object(FontLoaderLinux, "load_from_list")
-    @patch("dakara_player_vlc.font_loader.get_all_fonts", autospec=True)
+    @patch("dakara_player.font_loader.get_all_fonts", autospec=True)
     def test_load_from_resources_directory(
         self, mocked_get_all_fonts, mocked_load_from_list
     ):
@@ -72,15 +80,15 @@ class FontLoaderLinuxTestCase(TestCase):
         mocked_get_all_fonts.return_value = self.font_path_list
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.font_loader", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
             self.font_loader.load_from_resources_directory()
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.font_loader:Scanning fonts directory",
-                "DEBUG:dakara_player_vlc.font_loader:Found 1 font(s) to load",
+                "DEBUG:dakara_player.font_loader:Scanning fonts directory",
+                "DEBUG:dakara_player.font_loader:Found 1 font(s) to load",
             ],
         )
 
@@ -93,24 +101,21 @@ class FontLoaderLinuxTestCase(TestCase):
         """Test to load fonts from list
         """
         # call the method
-        with self.assertLogs("dakara_player_vlc.font_loader", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
             self.font_loader.load_from_list(self.font_path_list)
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
-            [
-                "DEBUG:dakara_player_vlc.font_loader:Font 'font file' "
-                "found to be loaded"
-            ],
+            ["DEBUG:dakara_player.font_loader:Font 'font file' " "found to be loaded"],
         )
 
         # assert the call
         mocked_load_font.assert_called_once_with(self.font_path)
 
-    @patch("dakara_player_vlc.font_loader.os.unlink")
-    @patch("dakara_player_vlc.font_loader.os.symlink", autospec=True)
-    @patch("dakara_player_vlc.font_loader.isfile", autospec=True)
+    @patch("dakara_player.font_loader.os.unlink")
+    @patch("dakara_player.font_loader.os.symlink", autospec=True)
+    @patch("dakara_player.font_loader.isfile", autospec=True)
     def test_load_font_system(self, mocked_isfile, mocked_symlink, mocked_unlink):
         """Test to load one font which is in system directory
         """
@@ -121,14 +126,14 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.font_loader", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
             self.font_loader.load_font(self.font_path)
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.font_loader:Font 'font file' "
+                "DEBUG:dakara_player.font_loader:Font 'font file' "
                 "found in system directory"
             ],
         )
@@ -141,10 +146,10 @@ class FontLoaderLinuxTestCase(TestCase):
         # post assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
-    @patch("dakara_player_vlc.font_loader.os.unlink")
-    @patch("dakara_player_vlc.font_loader.os.symlink", autospec=True)
-    @patch("dakara_player_vlc.font_loader.islink")
-    @patch("dakara_player_vlc.font_loader.isfile")
+    @patch("dakara_player.font_loader.os.unlink")
+    @patch("dakara_player.font_loader.os.symlink", autospec=True)
+    @patch("dakara_player.font_loader.islink")
+    @patch("dakara_player.font_loader.isfile")
     def test_load_font_user(
         self, mocked_isfile, mocked_islink, mocked_symlink, mocked_unlink
     ):
@@ -158,14 +163,14 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.font_loader", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
             self.font_loader.load_font(self.font_path)
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.font_loader:Font 'font file' "
+                "DEBUG:dakara_player.font_loader:Font 'font file' "
                 "found in user directory"
             ],
         )
@@ -184,12 +189,12 @@ class FontLoaderLinuxTestCase(TestCase):
         # post assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
-    @patch("dakara_player_vlc.font_loader.os.unlink")
-    @patch("dakara_player_vlc.font_loader.os.readlink")
-    @patch("dakara_player_vlc.font_loader.exists")
-    @patch("dakara_player_vlc.font_loader.os.symlink", autospec=True)
-    @patch("dakara_player_vlc.font_loader.islink")
-    @patch("dakara_player_vlc.font_loader.isfile")
+    @patch("dakara_player.font_loader.os.unlink")
+    @patch("dakara_player.font_loader.os.readlink")
+    @patch("dakara_player.font_loader.exists")
+    @patch("dakara_player.font_loader.os.symlink", autospec=True)
+    @patch("dakara_player.font_loader.islink")
+    @patch("dakara_player.font_loader.isfile")
     def test_load_font_user_link_valid(
         self,
         mocked_isfile,
@@ -211,14 +216,14 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.font_loader", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
             self.font_loader.load_font(self.font_path)
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.font_loader:Font 'font file' "
+                "DEBUG:dakara_player.font_loader:Font 'font file' "
                 "found as symbolic link in user directory"
             ],
         )
@@ -231,12 +236,12 @@ class FontLoaderLinuxTestCase(TestCase):
         mocked_unlink.assert_not_called()
         mocked_symlink.assert_not_called()
 
-    @patch("dakara_player_vlc.font_loader.os.unlink")
-    @patch("dakara_player_vlc.font_loader.os.readlink")
-    @patch("dakara_player_vlc.font_loader.exists")
-    @patch("dakara_player_vlc.font_loader.os.symlink", autospec=True)
-    @patch("dakara_player_vlc.font_loader.islink")
-    @patch("dakara_player_vlc.font_loader.isfile")
+    @patch("dakara_player.font_loader.os.unlink")
+    @patch("dakara_player.font_loader.os.readlink")
+    @patch("dakara_player.font_loader.exists")
+    @patch("dakara_player.font_loader.os.symlink", autospec=True)
+    @patch("dakara_player.font_loader.islink")
+    @patch("dakara_player.font_loader.isfile")
     def test_load_font_user_link_dead(
         self,
         mocked_isfile,
@@ -258,7 +263,7 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.font_loader", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
             self.font_loader.load_font(self.font_path)
 
         # assert effect on logs
@@ -266,9 +271,9 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.font_loader:Dead symbolic link found for "
+                "DEBUG:dakara_player.font_loader:Dead symbolic link found for "
                 "font 'font file' in user directory, removing it",
-                "DEBUG:dakara_player_vlc.font_loader:Font 'font file' "
+                "DEBUG:dakara_player.font_loader:Font 'font file' "
                 "loaded in user directory: '{}'".format(font_path),
             ],
         )
@@ -283,10 +288,10 @@ class FontLoaderLinuxTestCase(TestCase):
         # post assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 1)
 
-    @patch("dakara_player_vlc.font_loader.os.unlink")
-    @patch("dakara_player_vlc.font_loader.os.symlink", autospec=True)
-    @patch("dakara_player_vlc.font_loader.islink", autospec=True)
-    @patch("dakara_player_vlc.font_loader.isfile", autospec=True)
+    @patch("dakara_player.font_loader.os.unlink")
+    @patch("dakara_player.font_loader.os.symlink", autospec=True)
+    @patch("dakara_player.font_loader.islink", autospec=True)
+    @patch("dakara_player.font_loader.isfile", autospec=True)
     def test_load_font_install(
         self, mocked_isfile, mocked_islink, mocked_symlink, mocked_unlink
     ):
@@ -300,7 +305,7 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.font_loader", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
             self.font_loader.load_font(self.font_path)
 
         # assert effect on logs
@@ -308,7 +313,7 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.font_loader:Font 'font file' "
+                "DEBUG:dakara_player.font_loader:Font 'font file' "
                 "loaded in user directory: '{}'".format(font_path)
             ],
         )
@@ -333,7 +338,7 @@ class FontLoaderLinuxTestCase(TestCase):
         )
 
     @patch.object(FontLoaderLinux, "load_from_resources_directory")
-    @patch("dakara_player_vlc.font_loader.os.mkdir", autospec=True)
+    @patch("dakara_player.font_loader.os.mkdir", autospec=True)
     def test_load(self, mocked_mkdir, mocked_load_from_resources_directory):
         """Test to load fonts from main method
         """
@@ -344,7 +349,19 @@ class FontLoaderLinuxTestCase(TestCase):
         mocked_mkdir.assert_called_once_with(self.user_directory / ".fonts")
         mocked_load_from_resources_directory.assert_called_once_with()
 
-    @patch("dakara_player_vlc.font_loader.os.unlink", autospec=True)
+    @patch.object(FontLoaderLinux, "load_from_resources_directory")
+    @patch("dakara_player.font_loader.os.mkdir", autospec=True)
+    def test_load_directory_exists(
+        self, mocked_mkdir, mocked_load_from_resources_directory
+    ):
+        """Test to load fonts from main method
+        """
+        mocked_mkdir.side_effect = OSError("error message")
+
+        # call the method
+        self.font_loader.load()
+
+    @patch("dakara_player.font_loader.os.unlink", autospec=True)
     def test_unload(self, mocked_unlink):
         """Test to unload fonts
         """
@@ -359,7 +376,7 @@ class FontLoaderLinuxTestCase(TestCase):
         # elements we are iterating on
         mocked_unlink.assert_has_calls([call("font1"), call("font2")])
 
-    @patch("dakara_player_vlc.font_loader.os.unlink", autospec=True)
+    @patch("dakara_player.font_loader.os.unlink", autospec=True)
     def test_unload_font(self, mocked_unlink):
         """Test to unload one font
         """
@@ -370,13 +387,13 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertEqual(len(self.font_loader.fonts_loaded), 1)
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.font_loader", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
             self.font_loader.unload_font(self.font_path)
 
         # assert effect of logs
         self.assertListEqual(
             logger.output,
-            ["DEBUG:dakara_player_vlc.font_loader:Font 'directory/font file' unloaded"],
+            ["DEBUG:dakara_player.font_loader:Font 'directory/font file' unloaded"],
         )
 
         # assert the call
@@ -384,3 +401,65 @@ class FontLoaderLinuxTestCase(TestCase):
 
         # assert there are no font loaded anymore
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
+
+    @patch("dakara_player.font_loader.os.unlink", autospec=True)
+    def test_unload_font_error(self, mocked_unlink):
+        """Test to unload one font when unable to remove font
+        """
+        mocked_unlink.side_effect = OSError("error message")
+
+        # set a font as loaded
+        self.font_loader.fonts_loaded = self.font_path_list
+
+        # call the method
+        with self.assertLogs("dakara_player.font_loader", "ERROR") as logger:
+            self.font_loader.unload_font(self.font_path)
+
+        # assert effect of logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "ERROR:dakara_player.font_loader:Unable to unload "
+                "'directory/font file'"
+            ],
+        )
+
+
+class FontLoaderWindowsTestCase(TestCase):
+    """Test the Windows font loader
+    """
+
+    @patch("dakara_player.font_loader.PATH_FONTS", Path("path_fonts"))
+    @patch("dakara_player.font_loader.input")
+    @patch("dakara_player.font_loader.get_all_fonts")
+    def test_load(self, mocked_get_all_fonts, mocked_input):
+        """Test to ask to load fonts manually
+        """
+        mocked_get_all_fonts.return_value = [Path("path_fonts") / "font_file.ext"]
+        output = StringIO()
+        font_loader = FontLoaderWindows(output)
+
+        font_loader.load()
+        lines = output.getvalue().split("\n")
+        self.assertListEqual(
+            lines,
+            [
+                "Please install the following fonts located in the '{}' "
+                "folder and press Enter:".format(Path("path_fonts")),
+                "font_file.ext",
+                "",
+            ],
+        )
+
+        mocked_get_all_fonts.assert_called_with()
+        mocked_input.assert_called_with()
+
+    def test_unload(self):
+        """Test to ask to unload fonts manually
+        """
+        output = StringIO()
+        font_loader = FontLoaderWindows(output)
+
+        font_loader.unload()
+        lines = output.getvalue().split("\n")
+        self.assertListEqual(lines, ["You can now remove the installed fonts", ""])

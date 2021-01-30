@@ -3,7 +3,7 @@ from threading import Event
 from unittest import TestCase
 from unittest.mock import ANY, MagicMock, patch
 
-from dakara_player_vlc.dakara_server import (
+from dakara_player.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
 )
@@ -49,14 +49,14 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         """Test to report an error sucessfuly
         """
         # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.create_player_error(42, "message")
 
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.dakara_server:"
+                "DEBUG:dakara_player.dakara_server:"
                 "Telling the server that playlist entry 42 cannot be played"
             ],
         )
@@ -84,14 +84,14 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         """Test to report that a playlist entry finished
         """
         # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.update_finished(42)
 
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.dakara_server:"
+                "DEBUG:dakara_player.dakara_server:"
                 "Telling the server that playlist entry 42 is finished"
             ],
         )
@@ -119,14 +119,14 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         """Test to report that a playlist entry transition started
         """
         # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.update_started_transition(42)
 
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.dakara_server:"
+                "DEBUG:dakara_player.dakara_server:"
                 "Telling the server that the transition of playlist entry "
                 "42 has started"
             ],
@@ -157,14 +157,14 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         """Test to report that a playlist entry song started
         """
         # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.update_started_song(42)
 
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.dakara_server:"
+                "DEBUG:dakara_player.dakara_server:"
                 "Telling the server that the song of playlist entry 42 has started"
             ],
         )
@@ -194,14 +194,14 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         """Test to report that a playlist entry could not be played
         """
         # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.update_could_not_play(42)
 
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.dakara_server:"
+                "DEBUG:dakara_player.dakara_server:"
                 "Telling the server that the playlist entry 42 could not play"
             ],
         )
@@ -229,14 +229,14 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         """Test to report that the player paused
         """
         # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.update_paused(42, 424242)
 
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.dakara_server:"
+                "DEBUG:dakara_player.dakara_server:"
                 "Telling the server that the player is paused"
             ],
         )
@@ -264,14 +264,14 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         """Test to report that the player resumed playing
         """
         # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.update_resumed(42, 424242)
 
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.dakara_server:"
+                "DEBUG:dakara_player.dakara_server:"
                 "Telling the server that the player resumed playing"
             ],
         )
@@ -367,12 +367,12 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.dakara_server.set_callback("idle", mocked_idle_callback)
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.receive_idle({})
 
         # assert the effect on logs
         self.assertListEqual(
-            logger.output, ["DEBUG:dakara_player_vlc.dakara_server:Received idle order"]
+            logger.output, ["DEBUG:dakara_player.dakara_server:Received idle order"]
         )
 
         # assert the call
@@ -390,14 +390,14 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         )
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.receive_playlist_entry(content)
 
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.dakara_server:"
+                "DEBUG:dakara_player.dakara_server:"
                 "Received new playlist entry 0 order"
             ],
         )
@@ -415,14 +415,14 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         self.dakara_server.set_callback("command", mocked_command_callback)
 
         # call the method
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.receive_command(content)
 
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.dakara_server:"
+                "DEBUG:dakara_player.dakara_server:"
                 "Received command command_value order"
             ],
         )
@@ -435,14 +435,14 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         """Test to notify the server that the player is ready
         """
         # call the command
-        with self.assertLogs("dakara_player_vlc.dakara_server", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.send_ready()
 
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player_vlc.dakara_server:"
+                "DEBUG:dakara_player.dakara_server:"
                 "Telling the server that the player is ready"
             ],
         )

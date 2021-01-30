@@ -5,8 +5,8 @@ build: false
 # restrict to branches
 branches:
   only:
-  - develop
   - master
+  - develop
 
 # enable cache for Python dependencies
 cache:
@@ -19,12 +19,16 @@ environment:
 
   # setup tests matrix
   matrix:
-    - PYTHON: "C:\\Python35-x64"
-      PYTHON_VERSION: "3.5"
-      PYTHON_ARCH: "64"
-
     - PYTHON: "C:\\Python36-x64"
       PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "64"
+
+    - PYTHON: "C:\\Python37-x64"
+      PYTHON_VERSION: "3.7"
+      PYTHON_ARCH: "64"
+
+    - PYTHON: "C:\\Python38-x64"
+      PYTHON_VERSION: "3.8"
       PYTHON_ARCH: "64"
 
 # check current python version
@@ -34,13 +38,16 @@ init:
 # command to install system and python dependencies
 install:
   # install system dependencies
-  - "cinst vlc"
+  - "cinst vlc mpv"
 
   # the features used in setup.cfg require at decent version of setuptools
   - "py -%PYTHON_VERSION% -m pip install --upgrade \"setuptools>=40.0\""
 
   # install dependencies for test
   - "py -%PYTHON_VERSION% -m pip install -e \".[tests]\""
+  
+  # refresh console
+  - "refreshenv"
 
 # command to run tests
 test_script:
@@ -48,11 +55,11 @@ test_script:
   - "py -%PYTHON_VERSION% -m coverage run setup.py test"
 
   # run commands
-  - "py -%PYTHON_VERSION% -m dakara_player_vlc --version"
-  - "%PYTHON%\\Scripts\\dakara-play-vlc.exe --version"
+  - "py -%PYTHON_VERSION% -m dakara_player --version"
+  - "%PYTHON%\\Scripts\\dakara-play.exe --version"
 
   # run code formatting tests
-  - "if NOT %PYTHON_VERSION% == 3.5 (py -%PYTHON_VERSION% -m  black . --check)"
+  - "py -%PYTHON_VERSION% -m black . --check"
   - "py -%PYTHON_VERSION% -m flake8"
 
 # commands to manage tests results

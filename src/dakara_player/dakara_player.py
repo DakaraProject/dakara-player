@@ -3,24 +3,30 @@ from contextlib import ExitStack
 from tempfile import TemporaryDirectory
 
 from dakara_base.safe_workers import Runner, WorkerSafeThread
+from dakara_base.exceptions import DakaraError
 from path import Path
 
-from dakara_player_vlc.font_loader import get_font_loader_class
-from dakara_player_vlc.dakara_manager import DakaraManager
-from dakara_player_vlc.dakara_server import (
+from dakara_player.font_loader import get_font_loader_class
+from dakara_player.dakara_manager import DakaraManager
+from dakara_player.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
 )
-from dakara_player_vlc.version import check_version
-from dakara_player_vlc.vlc_player import VlcPlayer
+from dakara_player.media_player.mpv import MediaPlayerMpv
+from dakara_player.media_player.vlc import MediaPlayerVlc
+from dakara_player.version import check_version
 
 FontLoader = get_font_loader_class()
 
+MEDIA_PLAYER_CLASSES = {
+    "mpv": MediaPlayerMpv,
+    "vlc": MediaPlayerVlc,
+}
 
 logger = logging.getLogger(__name__)
 
 
-class DakaraPlayerVlc(Runner):
+class DakaraPlayer(Runner):
     """Class associated with the main thread
 
     It simply starts, launchs the worker and waits for it to terminate or for a
@@ -76,6 +82,26 @@ class DakaraWorker(WorkerSafeThread):
         # inform the user
         logger.debug("Starting Dakara worker")
 
+    def get_media_player_class(self):
+        """Get the class of the requested media player
+
+        Fallback to VLC if none was provided in config. If the requested media
+        player is not known, raise an error.
+
+        Returns:
+            dakara_player.media_player.base.MediaPlayer: Specialized class of
+            the media player.
+        """
+        media_player_name = self.config["player"].get("player_name", "vlc")
+
+        try:
+            return MEDIA_PLAYER_CLASSES[media_player_name.lower()]
+
+        except KeyError as error:
+            raise UnsupportedMediaPlayerError(
+                "No media player for '{}'".format(media_player_name)
+            ) from error
+
     def run(self):
         """Worker main method
 
@@ -106,11 +132,13 @@ class DakaraWorker(WorkerSafeThread):
             font_loader = stack.enter_context(FontLoader())
             font_loader.load()
 
-            # vlc player
-            vlc_player = stack.enter_context(
-                VlcPlayer(self.stop, self.errors, self.config["player"], tempdir)
+            # media player
+            media_player = stack.enter_context(
+                self.get_media_player_class()(
+                    self.stop, self.errors, self.config["player"], tempdir
+                )
             )
-            vlc_player.load()
+            media_player.load()
 
             # communication with the dakara HTTP server
             dakara_server_http = DakaraServerHTTPConnection(
@@ -132,7 +160,7 @@ class DakaraWorker(WorkerSafeThread):
 
             # manager for the precedent workers
             dakara_manager = DakaraManager(  # noqa F841
-                font_loader, vlc_player, dakara_server_http, dakara_server_websocket
+                font_loader, media_player, dakara_server_http, dakara_server_websocket
             )
 
             # start the worker timer
@@ -143,3 +171,8 @@ class DakaraWorker(WorkerSafeThread):
 
             # leaving this method means leaving all the context managers and
             # stopping the program
+
+
+class UnsupportedMediaPlayerError(DakaraError):
+    """Raised if an unknown media player is requested
+    """

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from dakara_player_vlc.state_manager import State
+from dakara_player.state_manager import State
 
 
 class StateTestCase(TestCase):

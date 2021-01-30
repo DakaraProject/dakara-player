@@ -4,13 +4,13 @@ from unittest.mock import mock_open, patch
 from dakara_base.resources_manager import get_file
 from path import Path
 
-from dakara_player_vlc.text_generator import (
+from dakara_player.text_generator import (
     IDLE_TEMPLATE_NAME,
     TextGenerator,
     TRANSITION_TEMPLATE_NAME,
 )
 
-from dakara_player_vlc.resources_manager import get_template
+from dakara_player.resources_manager import get_template
 
 
 class TextGeneratorTestCase(TestCase):
@@ -33,9 +33,9 @@ class TextGeneratorTestCase(TestCase):
         mocked_load_templates.assert_called_once_with()
 
     @patch.object(Path, "open", new_callable=mock_open)
-    @patch("dakara_player_vlc.text_generator.ICON_MAP_FILE", "icon_map_file")
-    @patch("dakara_player_vlc.text_generator.get_file", autospec=True)
-    @patch("dakara_player_vlc.text_generator.json.load", autospec=True)
+    @patch("dakara_player.text_generator.ICON_MAP_FILE", "icon_map_file")
+    @patch("dakara_player.text_generator.get_file", autospec=True)
+    @patch("dakara_player.text_generator.json.load", autospec=True)
     def test_load_icon_map(self, mocked_load, mocked_get_file, mocked_open):
         """Test to load the icon map
         """
@@ -57,9 +57,7 @@ class TextGeneratorTestCase(TestCase):
 
         # assert the mock
         mocked_load.assert_called_with(mocked_open.return_value)
-        mocked_get_file.assert_called_with(
-            "dakara_player_vlc.resources", "icon_map_file"
-        )
+        mocked_get_file.assert_called_with("dakara_player.resources", "icon_map_file")
         mocked_open.assert_called_with()
 
     def test_load_templates_default(self):

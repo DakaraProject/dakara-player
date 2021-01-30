@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-"""Entry point for the dakara-play-vlc command
-"""
-
-
 import logging
 from argparse import ArgumentParser
 
@@ -16,11 +11,11 @@ from dakara_base.config import (
     set_loglevel,
 )
 
-from dakara_player_vlc import DakaraPlayerVlc
-from dakara_player_vlc.version import __version__, __date__
+from dakara_player import DakaraPlayer
+from dakara_player.version import __version__, __date__
 
 
-CONFIG_FILE = "player_vlc.yaml"
+CONFIG_FILE = "player.yaml"
 
 
 logger = logging.getLogger(__name__)
@@ -34,7 +29,7 @@ def get_parser():
     """
     # main parser
     parser = ArgumentParser(
-        prog="play-vlc", description="VLC based player for the Dakara project"
+        prog="dakara-play", description="Player for the Dakara project"
     )
 
     parser.set_defaults(function=play)
@@ -90,11 +85,11 @@ def play(args):
 
     except ConfigNotFoundError as error:
         raise ConfigNotFoundError(
-            "{}, please run 'dakara-play-vlc create-config'".format(error)
+            "{}, please run 'dakara-play create-config'".format(error)
         ) from error
 
     set_loglevel(config)
-    dakara = DakaraPlayerVlc(config)
+    dakara = DakaraPlayer(config)
 
     # load the feeder, consider that the config is incomplete if it fails
     try:
@@ -119,7 +114,7 @@ def create_config(args):
         args (argparse.Namespace): arguments from command line.
     """
     create_logger(custom_log_format="%(message)s", custom_log_level="INFO")
-    create_config_file("dakara_player_vlc.resources", CONFIG_FILE, args.force)
+    create_config_file("dakara_player.resources", CONFIG_FILE, args.force)
     logger.info("Please edit this file")
 
 
@@ -147,12 +142,8 @@ def main():
         logger.exception("Unexpected error: %s", str(error))
         logger.critical(
             "Please fill a bug report at "
-            "https://github.com/DakaraProject/dakara-player-vlc/issues"
+            "https://github.com/DakaraProject/dakara-player/issues"
         )
         value = 128
 
     exit(value)
-
-
-if __name__ == "__main__":
-    main()

@@ -4,14 +4,14 @@ from unittest.mock import ANY, call, patch
 from path import Path
 from dakara_base.resources_manager import get_file
 
-from dakara_player_vlc.resources_manager import (
+from dakara_player.resources_manager import (
     get_all_fonts,
     get_background,
     get_template,
 )
 
 
-MODULE_PATH = get_file("dakara_player_vlc", "")
+MODULE_PATH = get_file("dakara_player", "")
 
 
 class GetBackgroundTestCase(TestCase):
@@ -46,8 +46,8 @@ class GetAllFontsTestCase(TestCase):
     """Test the `get_all_fonts` function
     """
 
-    @patch("dakara_player_vlc.resources_manager.resource_filename", autospec=True)
-    @patch("dakara_player_vlc.resources_manager.LIST_FONTS", autospec=True)
+    @patch("dakara_player.resources_manager.resource_filename", autospec=True)
+    @patch("dakara_player.resources_manager.LIST_FONTS", autospec=True)
     def test(self, mocked_list_fonts, mocked_resource_filename):
         """Test to get all the fonts
         """
