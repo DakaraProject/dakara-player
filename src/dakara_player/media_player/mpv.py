@@ -145,6 +145,9 @@ class MediaPlayerMpv(MediaPlayer):
         # set window title
         self.player.title = "Dakara player mpv"
 
+        # handle image transitions as videos
+        self.player.demuxer_lavf_o = "loop=1"
+
     def get_timing(self):
         """Get mpv timing.
 
@@ -262,11 +265,11 @@ class MediaPlayerMpv(MediaPlayer):
             what (str): What media to play.
         """
         # reset player
-        self.player.image_display_duration = 0
         self.player.sub_files = []
         self.player.audio_files = []
         self.player.audio = "auto"
         self.player.pause = False
+        self.player.end = "100%"
 
         if what == "idle":
             # if already idle, do nothing
@@ -281,7 +284,7 @@ class MediaPlayerMpv(MediaPlayer):
             return
 
         if what == "transition":
-            self.player.image_display_duration = int(self.durations["transition"])
+            self.player.end = str(self.durations["transition"])
             self.player.sub_files = [self.text_paths["transition"]]
             self.player.play(self.playlist_entry_data["transition"].path)
 
@@ -382,7 +385,7 @@ class MediaPlayerMpv(MediaPlayer):
         self.playlist_entry_data[
             "transition"
         ].path = self.background_loader.backgrounds["transition"]
-        self.generate_text("transition", fade_in=False)
+        self.generate_text("transition")
 
         if autoplay:
             self.play("transition")
