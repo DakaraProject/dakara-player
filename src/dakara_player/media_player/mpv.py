@@ -269,7 +269,7 @@ class MediaPlayerMpv(MediaPlayer):
         self.player.audio_files = []
         self.player.audio = "auto"
         self.player.pause = False
-        self.player.end = "100%"
+        self.player.end = "none"
 
         if what == "idle":
             # if already idle, do nothing
