@@ -1,9 +1,11 @@
 import logging
 import json
 import re
+import sys
 
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
+from dakara_player.window import get_window_manager_class
 from packaging.version import parse
 
 try:
@@ -27,6 +29,8 @@ except AttributeError:
     METADATA_KEY = None
 
 logger = logging.getLogger(__name__)
+
+WindowManager = get_window_manager_class()
 
 
 class MediaPlayerVlc(MediaPlayer):
@@ -98,6 +102,14 @@ class MediaPlayerVlc(MediaPlayer):
         config_vlc = config.get("vlc") or {}
         self.media_parameters = config_vlc.get("media_parameters") or []
 
+        # window for VLC
+        self.window = WindowManager(
+            self.stop,
+            self.errors,
+            title="Dakara Player VLC",
+            fullscreen=self.fullscreen,
+        )
+
         # VLC objects
         self.instance = vlc.Instance(config_vlc.get("instance_parameters") or [])
         self.player = self.instance.media_player_new()
@@ -116,11 +128,12 @@ class MediaPlayerVlc(MediaPlayer):
         # check VLC version
         self.check_version()
 
+        # assign window to VLC
+        self.window.open()
+        self.set_window(self.window.get_id())
+
         # set VLC callbacks
         self.set_vlc_default_callbacks()
-
-        # set VLC fullscreen
-        self.player.set_fullscreen(self.fullscreen)
 
         # print VLC version
         logger.info("VLC %s", self.get_version())
@@ -305,9 +318,13 @@ class MediaPlayerVlc(MediaPlayer):
     def stop_player(self):
         """Request to stop VLC.
         """
+        # stopping VLC
         logger.info("Stopping player")
         self.player.stop()
         logger.debug("Stopped player")
+
+        # closing window
+        self.window.close()
 
     def set_playlist_entry_player(self, playlist_entry, file_path, autoplay):
         """Prepare playlist entry data to be played.
@@ -617,6 +634,25 @@ class MediaPlayerVlc(MediaPlayer):
         self.callbacks["paused"](self.playlist_entry["id"], self.get_timing())
 
         logger.debug("Paused")
+
+    def set_window(self, id):
+        if id is None:
+            logger.debug("No window to associate, using default window")
+            return
+
+        if "linux" in sys.platform:
+            logger.debug("Associating X window to VLC")
+            self.player.set_xwindow(id)
+            return
+
+        if "win" in sys.platform:
+            logger.debug("Associating Win32/Win64 API window to VLC")
+            self.player.set_hwnd(id)
+            return
+
+        raise NotImplementedError(
+            "This operating system ({}) is not currently supported".format(sys.platform)
+        )
 
 
 def set_metadata(media, metadata):
