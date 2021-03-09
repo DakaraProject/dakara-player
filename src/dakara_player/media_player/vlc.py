@@ -5,7 +5,7 @@ import sys
 
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
-from dakara_player.window import get_window_manager_class
+from dakara_player.window import WindowManager, DummyWindowManager
 from packaging.version import parse
 
 try:
@@ -29,8 +29,6 @@ except AttributeError:
     METADATA_KEY = None
 
 logger = logging.getLogger(__name__)
-
-WindowManager = get_window_manager_class()
 
 
 class MediaPlayerVlc(MediaPlayer):
@@ -103,11 +101,14 @@ class MediaPlayerVlc(MediaPlayer):
         self.media_parameters = config_vlc.get("media_parameters") or []
 
         # window for VLC
-        self.window = WindowManager(
-            self.stop,
-            self.errors,
-            title="Dakara Player VLC",
-            fullscreen=self.fullscreen,
+        if config_vlc.get("use_default_window", False):
+            window_manager_class = DummyWindowManager
+
+        else:
+            window_manager_class = WindowManager
+
+        self.window = window_manager_class(
+            title="Dakara Player VLC", fullscreen=self.fullscreen,
         )
 
         # VLC objects
@@ -636,8 +637,13 @@ class MediaPlayerVlc(MediaPlayer):
         logger.debug("Paused")
 
     def set_window(self, id):
+        """Associate an existing window to VLC
+
+        Args:
+            id (int): ID of the window.
+        """
         if id is None:
-            logger.debug("No window to associate, using default window")
+            logger.debug("Using VLC default window")
             return
 
         if "linux" in sys.platform:
@@ -646,7 +652,7 @@ class MediaPlayerVlc(MediaPlayer):
             return
 
         if "win" in sys.platform:
-            logger.debug("Associating Win32/Win64 API window to VLC")
+            logger.debug("Associating Win API window to VLC")
             self.player.set_hwnd(id)
             return
 
