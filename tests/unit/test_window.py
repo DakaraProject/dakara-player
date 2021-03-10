@@ -1,5 +1,7 @@
+import sys
+import os
 from importlib import reload
-from unittest import TestCase, skipUnless
+from unittest import TestCase, skipIf, skipUnless
 from unittest.mock import patch
 
 try:
@@ -60,6 +62,10 @@ class TkWindowManagerTestCase(TestCase):
         with TkWindowManager(disabled=True):
             pass
 
+    @skipIf(
+        "linux" in sys.platform and "DISPLAY" not in os.environ,
+        "No display detected on Linux",
+    )
     def test_get_id(self):
         """Test to get Tk window ID
         """
