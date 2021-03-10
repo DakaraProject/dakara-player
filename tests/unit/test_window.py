@@ -11,6 +11,7 @@ except ImportError:
 
 from dakara_player.window import (
     DummyWindowManager,
+    get_window_manager_class,
     TkWindowManager,
     WindowManagerNotAvailableError,
 )
@@ -73,3 +74,20 @@ class TkWindowManagerTestCase(TestCase):
         """
         with TkWindowManager(disabled=True) as window_manager:
             self.assertIsNotNone(window_manager.get_id())
+
+
+class GetWindowManagerClassTestCase(TestCase):
+    """Test the get_window_manager_class helper
+    """
+
+    @patch.object(TkWindowManager, "is_available", return_value=True)
+    def test_get_tk_window_manager(self, mocked_is_available):
+        """Test to get the Tkinter window manager
+        """
+        self.assertIs(get_window_manager_class(), TkWindowManager)
+
+    @patch.object(TkWindowManager, "is_available", return_value=False)
+    def test_get_dummy_window_manager(self, mocked_is_available):
+        """Test to get the Tkinter window manager
+        """
+        self.assertIs(get_window_manager_class(), DummyWindowManager)
