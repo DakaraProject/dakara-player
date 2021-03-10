@@ -1,6 +1,5 @@
 import sys
 import os
-from importlib import reload
 from unittest import TestCase, skipIf, skipUnless
 from unittest.mock import patch
 
@@ -55,10 +54,13 @@ class TkWindowManagerTestCase(TestCase):
         """
         self.assertFalse(TkWindowManager.is_available())
 
+    @skipIf(
+        "linux" in sys.platform and "DISPLAY" not in os.environ,
+        "No display detected on Linux",
+    )
     def test_open_close(self):
         """Test to open and close Tk window
         """
-        reload(tkinter)
         with TkWindowManager(disabled=True):
             pass
 
@@ -69,6 +71,5 @@ class TkWindowManagerTestCase(TestCase):
     def test_get_id(self):
         """Test to get Tk window ID
         """
-        reload(tkinter)
         with TkWindowManager(disabled=True) as window_manager:
             self.assertIsNotNone(window_manager.get_id())
