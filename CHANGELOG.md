@@ -53,6 +53,8 @@ mv $env:APPDATA\Dakara\player_vlc.yaml $env:APPDATA\Dakara\player.yaml
 - mpv is supported as an alternative player.
   In the config file, the player can be selected in the `player.player_name` key.
   Current accepted values are `vlc` and `mpv`.
+- VLC runs in a permanent Tkinter window if possible, which doesn't close between media.
+  The old behavior can be restored in config file using the `player.vlc.use_default_window` key.
 
 ### Changed
 
