@@ -57,6 +57,13 @@ player:
       # On Windows:
       # You should not have this problem.
 
+    # Make VLC manage its own window
+    # By default, a permanent Tkinter window is created and passed to VLC if
+    # possible. In contrast, when VLC manages its window, it will create a new
+    # one for each media, which may result in a blinking effect (especially
+    # visible on Windows).
+    # use_default_window = False
+
   # Parameters for mpv
   # You can define specific options for mpv from here
   # To get a complete list of the available options, consult mpv documentation:

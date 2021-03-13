@@ -22,6 +22,7 @@ from dakara_player.media_player.base import (
 )
 from dakara_player.mrl import mrl_to_path, path_to_mrl
 from dakara_player.text_generator import TextGenerator
+from dakara_player.window import DummyWindowManager, WindowManager
 
 
 @patch("dakara_player.media_player.base.PATH_BACKGROUNDS", "bg")
@@ -154,6 +155,19 @@ class MediaPlayerVlcTestCase(TestCase):
             player.get_media.return_value = vlc_player.playlist_entry_data["song"].media
             vlc_player.playlist_entry_data["transition"].started = True
             vlc_player.playlist_entry_data["song"].started = True
+
+    def test_init_window(self):
+        """Test to use default or custom window
+        """
+        # default window
+        vlc_player, _, _ = self.get_instance(
+            {"kara_folder": gettempdir(), "vlc": {"use_default_window": True}}
+        )
+        self.assertIsInstance(vlc_player.window, DummyWindowManager)
+
+        # custom window
+        vlc_player, _, _ = self.get_instance()
+        self.assertIsInstance(vlc_player.window, WindowManager)
 
     def test_set_callback(self):
         """Test the assignation of a callback
@@ -304,6 +318,8 @@ class MediaPlayerVlcTestCase(TestCase):
         ):
             vlc_player.check_kara_folder_path()
 
+    @patch.object(WindowManager, "get_id")
+    @patch.object(WindowManager, "open")
     @patch.object(MediaPlayerVlc, "check_kara_folder_path")
     @patch.object(MediaPlayerVlc, "check_version")
     @patch.object(MediaPlayerVlc, "set_vlc_default_callbacks")
@@ -314,6 +330,8 @@ class MediaPlayerVlcTestCase(TestCase):
         mocked_set_vlc_default_callback,
         mocked_check_version,
         mocked_check_kara_folder_path,
+        mocked_open,
+        mocked_get_id,
     ):
         """Test to load the instance
         """
@@ -337,7 +355,8 @@ class MediaPlayerVlcTestCase(TestCase):
         mocked_background_loader.load.assert_called_with()
         mocked_check_version.assert_called_with()
         mocked_set_vlc_default_callback.assert_called_with()
-        vlc_player.player.set_fullscreen.assert_called_with(False)
+        mocked_open.assert_called_with()
+        mocked_get_id.assert_called_with()
 
         # assert logs
         self.assertListEqual(
@@ -1123,3 +1142,53 @@ class MediaPlayerVlcTestCase(TestCase):
             vlc_player.play("none")
 
         vlc_player.player.play.assert_not_called()
+
+    def test_set_window_none(self):
+        """Test to use default window
+        """
+        vlc_player, _, _ = self.get_instance()
+
+        with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
+            vlc_player.set_window(None)
+
+        self.assertListEqual(
+            logger.output,
+            ["DEBUG:dakara_player.media_player.vlc:Using VLC default window"],
+        )
+
+    @patch("dakara_player.media_player.vlc.sys.platform", "linux")
+    def test_set_window_linux(self):
+        """Test to use X window
+        """
+        vlc_player, _, _ = self.get_instance()
+
+        with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
+            vlc_player.set_window(99)
+
+        self.assertListEqual(
+            logger.output,
+            ["DEBUG:dakara_player.media_player.vlc:Associating X window to VLC"],
+        )
+
+    @patch("dakara_player.media_player.vlc.sys.platform", "win32")
+    def test_set_window_windows(self):
+        """Test to use Win API window
+        """
+        vlc_player, _, _ = self.get_instance()
+
+        with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
+            vlc_player.set_window(99)
+
+        self.assertListEqual(
+            logger.output,
+            ["DEBUG:dakara_player.media_player.vlc:Associating Win API window to VLC"],
+        )
+
+    @patch("dakara_player.media_player.vlc.sys.platform", "other")
+    def test_set_window_other(self):
+        """Test to set window on unknown platform
+        """
+        vlc_player, _, _ = self.get_instance()
+
+        with self.assertRaises(NotImplementedError):
+            vlc_player.set_window(99)

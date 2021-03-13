@@ -34,6 +34,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
             "--text-renderer=tdummy",
         ]
 
+        # use default window
+        self.use_default_window = True
+
         # create fullscreen flag
         self.fullscreen = True
 
@@ -98,6 +101,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
                 "vlc": {
                     "instance_parameters": self.instance_parameters,
                     "media_parameters": self.media_parameters,
+                    "use_default_window": self.use_default_window,
                 },
             }
 
