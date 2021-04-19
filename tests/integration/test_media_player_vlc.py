@@ -1,6 +1,5 @@
 from contextlib import ExitStack, contextmanager
 from queue import Queue
-from tempfile import TemporaryDirectory
 from threading import Event
 from unittest import skipIf
 from unittest.mock import ANY, MagicMock
@@ -118,7 +117,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
             }
 
         with ExitStack() as stack:
-            temp = Path(stack.enter_context(TemporaryDirectory()))
+            temp = stack.enter_context(TempDir())
             vlc_player = stack.enter_context(
                 MediaPlayerVlc(Event(), Queue(), config, temp, warn_long_exit=False)
             )

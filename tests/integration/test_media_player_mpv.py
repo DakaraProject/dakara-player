@@ -1,6 +1,5 @@
 from contextlib import ExitStack, contextmanager
 from queue import Queue
-from tempfile import TemporaryDirectory
 from threading import Event
 from unittest.mock import ANY, MagicMock
 
@@ -100,7 +99,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             }
 
         with ExitStack() as stack:
-            temp = Path(stack.enter_context(TemporaryDirectory()))
+            temp = stack.enter_context(TempDir())
             mpv_player = stack.enter_context(
                 MediaPlayerMpv(Event(), Queue(), config, temp, warn_long_exit=False)
             )
