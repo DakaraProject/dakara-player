@@ -49,7 +49,6 @@ test_script:
 
   # run commands
   - "py -%PYTHON% -m dakara_player --version"
-  - "%PYTHON%\\Scripts\\dakara-play.exe --version"
 
   # run code formatting tests
   - "py -%PYTHON% -m black . --check"
