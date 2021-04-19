@@ -1,3 +1,5 @@
+image: Visual Studio 2019
+
 version: 1.7.0-dev-{build}
 
 build: false
