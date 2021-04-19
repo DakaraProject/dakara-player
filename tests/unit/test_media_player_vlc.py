@@ -52,6 +52,7 @@ class MediaPlayerVlcTestCase(TestCase):
         mock_instance=True,
         mock_background_loader=True,
         mock_text_generator=True,
+        tempdir=None,
     ):
         """Get a heavily mocked instance of MediaPlayerVlc
 
@@ -109,8 +110,11 @@ class MediaPlayerVlcTestCase(TestCase):
                 else None
             )
 
+            if tempdir is None:
+                tempdir = Path("temp")
+
             return (
-                MediaPlayerVlc(Event(), Queue(), config, Path("temp")),
+                MediaPlayerVlc(Event(), Queue(), config, tempdir),
                 (
                     mocked_instance_class.return_value
                     if mocked_instance_class
@@ -1036,33 +1040,12 @@ class MediaPlayerVlcTestCase(TestCase):
         # assert the call
         vlc_player.callbacks["paused"].assert_called_with(42, 25)
 
-    @patch("dakara_player.media_player.base.path")
-    def test_default_backgrounds(self, mocked_path):
-        """Test to instanciate with default backgrounds
+    def test_custom_backgrounds(self):
+        """Test to instanciate with custom backgrounds
         """
-        mocked_path.return_value.__enter__.return_value = "bg"
 
         # create object
-        _, _, (_, mocked_background_loader_class, _) = self.get_instance()
-
-        # assert the instanciation of the background loader
-        mocked_background_loader_class.assert_called_with(
-            directory=Path(""),
-            default_directory=Path("bg"),
-            background_filenames={"transition": None, "idle": None},
-            default_background_filenames={
-                "transition": "transition.png",
-                "idle": "idle.png",
-            },
-        )
-
-    @patch("dakara_player.media_player.base.path")
-    def test_custom_backgrounds(self, mocked_path):
-        """Test to instanciate with an existing backgrounds directory
-        """
-        mocked_path.return_value.__enter__.return_value = "bg"
-
-        # create object
+        tempdir = Path("temp")
         _, _, (_, mocked_background_loader_class, _) = self.get_instance(
             {
                 "backgrounds": {
@@ -1070,20 +1053,18 @@ class MediaPlayerVlcTestCase(TestCase):
                     "transition_background_name": "custom_transition.png",
                     "idle_background_name": "custom_idle.png",
                 }
-            }
+            },
+            tempdir=tempdir,
         )
 
         # assert the instanciation of the background loader
         mocked_background_loader_class.assert_called_with(
+            destination=tempdir,
+            package="dakara_player.resources.backgrounds",
             directory=Path("custom") / "bg",
-            default_directory=Path("bg"),
-            background_filenames={
+            filenames={
                 "transition": "custom_transition.png",
                 "idle": "custom_idle.png",
-            },
-            default_background_filenames={
-                "transition": "transition.png",
-                "idle": "idle.png",
             },
         )
 

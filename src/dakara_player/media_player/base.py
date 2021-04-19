@@ -6,12 +6,6 @@ from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
 from path import Path
 
-try:
-    from importlib.resources import path
-
-except ImportError:
-    from importlib_resources import path
-
 from dakara_player.background_loader import BackgroundLoader
 from dakara_player.audio import get_audio_files
 from dakara_player.text_generator import TextGenerator
@@ -125,21 +119,17 @@ class MediaPlayer(Worker, ABC):
 
         # set background loader
         config_backgrounds = config.get("backgrounds") or {}
-        # this should be made in a cleaner way, as the backgrounds variable may
-        # point to no resources outside of the with block
-        with path("dakara_player.resources.backgrounds", "") as backgrounds:
-            self.background_loader = BackgroundLoader(
-                directory=Path(config_backgrounds.get("directory", "")),
-                default_directory=Path(backgrounds),
-                background_filenames={
-                    "transition": config_backgrounds.get("transition_background_name"),
-                    "idle": config_backgrounds.get("idle_background_name"),
-                },
-                default_background_filenames={
-                    "transition": TRANSITION_BG_NAME,
-                    "idle": IDLE_BG_NAME,
-                },
-            )
+        self.background_loader = BackgroundLoader(
+            destination=tempdir,
+            package="dakara_player.resources.backgrounds",
+            directory=Path(config_backgrounds.get("directory", "")),
+            filenames={
+                "transition": config_backgrounds.get(
+                    "transition_background_name", TRANSITION_BG_NAME
+                ),
+                "idle": config_backgrounds.get("idle_background_name", IDLE_BG_NAME),
+            },
+        )
 
         # set default callbacks
         self.set_default_callbacks()
