@@ -86,6 +86,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
             "use_instrumental": False,
         }
 
+    def tearDown(self):
+        self.kara_folder.rmtree(ignore_errors=True)
+
     @contextmanager
     def get_instance(self, config=None):
         """Get an instance of MediaPlayerVlc
