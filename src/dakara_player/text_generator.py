@@ -2,7 +2,7 @@ import json
 import logging
 
 from dakara_base.exceptions import DakaraError
-from jinja2 import ChoiceLoader, Environment, FileSystemLoader
+from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PackageLoader
 from path import Path
 
 try:
@@ -96,8 +96,10 @@ class TextGenerator:
         """Set up Jinja environment
         """
         # create loaders
-        with path("dakara_player.resources.templates", "") as file:
-            loaders = [FileSystemLoader(self.directory), FileSystemLoader(Path(file))]
+        loaders = [
+            FileSystemLoader(self.directory),
+            PackageLoader("dakara_player.resources"),
+        ]
 
         # create Jinja2 environment
         self.environment = Environment(loader=ChoiceLoader(loaders))

@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch
 
-from path import Path
+from path import Path, TempDir
 from pathlib import Path as Path_pathlib
 
 try:
@@ -89,9 +89,15 @@ class TextGeneratorTestCase(TestCase):
 
         In that case, the templates come from this directory.
         """
-        with path("tests.resources", "") as resources:
+        with TempDir() as temp:
+            with path("tests.resources", "idle.ass") as file:
+                idle_path = Path(file).copy(temp)
+
+            with path("tests.resources", "transition.ass") as file:
+                transition_path = Path(file).copy(temp)
+
             # create object
-            text_generator = TextGenerator({"directory": str(resources)})
+            text_generator = TextGenerator({"directory": str(temp)})
 
             # pre assert there are no templates
             self.assertIsNone(text_generator.idle_template)
@@ -101,11 +107,8 @@ class TextGeneratorTestCase(TestCase):
             text_generator.load_templates()
 
         # assert there are templates defined
-        with path("tests.resources", IDLE_TEMPLATE_NAME) as file:
-            self.assertEqual(text_generator.idle_template.filename, Path(file))
-
-        with path("tests.resources", TRANSITION_TEMPLATE_NAME) as file:
-            self.assertEqual(text_generator.transition_template.filename, Path(file))
+        self.assertEqual(text_generator.idle_template.filename, idle_path)
+        self.assertEqual(text_generator.transition_template.filename, transition_path)
 
     def test_load_templates_custom_directory_fail(self):
         """Test to load templates using a directory that does not exist
@@ -137,13 +140,19 @@ class TextGeneratorTestCase(TestCase):
         In that case, the templates come from the custom directory and have the
         correct name.
         """
-        with path("tests.resources", "") as resources:
+        with TempDir() as temp:
+            with path("tests.resources", "idle.ass") as file:
+                idle_path = Path(file).copy(temp / "idle_custom.ass")
+
+            with path("tests.resources", "transition.ass") as file:
+                transition_path = Path(file).copy(temp / "transition_custom.ass")
+
             # create object
             text_generator = TextGenerator(
                 {
-                    "directory": str(resources),
-                    "idle_template_name": "song.ass",
-                    "transition_template_name": "song.ass",
+                    "directory": str(temp),
+                    "idle_template_name": "idle_custom.ass",
+                    "transition_template_name": "transition_custom.ass",
                 }
             )
 
@@ -155,11 +164,8 @@ class TextGeneratorTestCase(TestCase):
             text_generator.load_templates()
 
         # assert there are templates defined
-        with path("tests.resources", "song.ass") as file:
-            self.assertEqual(text_generator.idle_template.filename, Path(file))
-
-        with path("tests.resources", "song.ass") as file:
-            self.assertEqual(text_generator.transition_template.filename, Path(file))
+        self.assertEqual(text_generator.idle_template.filename, idle_path)
+        self.assertEqual(text_generator.transition_template.filename, transition_path)
 
     def test_load_templates_custom_names_fail(self):
         """Test to load templates using names that do not exist
@@ -167,11 +173,11 @@ class TextGeneratorTestCase(TestCase):
         In that case, the templates come from the custom directory and have
         the default name.
         """
-        with path("tests.resources", "") as resources:
+        with TempDir() as temp:
             # create object
             text_generator = TextGenerator(
                 {
-                    "directory": str(resources),
+                    "directory": str(temp),
                     "idle_template_name": "nothing",
                     "transition_template_name": "nothing",
                 }
@@ -185,10 +191,12 @@ class TextGeneratorTestCase(TestCase):
             text_generator.load_templates()
 
         # assert there are templates defined
-        with path("tests.resources", IDLE_TEMPLATE_NAME) as file:
+        with path("dakara_player.resources.templates", IDLE_TEMPLATE_NAME) as file:
             self.assertEqual(text_generator.idle_template.filename, Path(file))
 
-        with path("tests.resources", TRANSITION_TEMPLATE_NAME) as file:
+        with path(
+            "dakara_player.resources.templates", TRANSITION_TEMPLATE_NAME
+        ) as file:
             self.assertEqual(text_generator.transition_template.filename, Path(file))
 
     def test_convert_icon(self):

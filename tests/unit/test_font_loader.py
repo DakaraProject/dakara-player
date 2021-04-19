@@ -5,12 +5,6 @@ from unittest.mock import patch, call
 
 from path import Path
 
-try:
-    from importlib.resources import path
-
-except ImportError:
-    from importlib_resources import path
-
 from dakara_player.font_loader import (
     FontLoaderLinux,
     FontLoaderWindows,
@@ -440,23 +434,20 @@ class FontLoaderWindowsTestCase(TestCase):
     def test_load(self, mocked_contents, mocked_input):
         """Test to ask to load fonts manually
         """
-        with path("dakara_player.resources.fonts", "") as fonts:
-            mocked_contents.return_value = [Path(fonts) / "font_file.ext"]
-            output = StringIO()
+        mocked_contents.return_value = [Path("directory") / "font_file.ext"]
+        output = StringIO()
 
-            font_loader = FontLoaderWindows(output)
-            font_loader.load()
+        font_loader = FontLoaderWindows(output)
+        font_loader.load()
 
-            lines = output.getvalue().split("\n")
-            self.assertListEqual(
-                lines,
-                [
-                    "Please install the following fonts located in the '{}' "
-                    "folder and press Enter:".format(fonts),
-                    "font_file.ext",
-                    "",
-                ],
-            )
+        lines = output.getvalue().splitlines()
+        self.assertListEqual(
+            lines,
+            [
+                "Please install the following fonts and press Enter:",
+                Path("directory") / "font_file.ext",
+            ],
+        )
 
         mocked_contents.assert_called_with("dakara_player.resources.fonts")
         mocked_input.assert_called_with()

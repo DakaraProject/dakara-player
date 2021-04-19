@@ -7,10 +7,10 @@ from os.path import isfile, islink, exists
 from path import Path
 
 try:
-    from importlib.resources import contents, path
+    from importlib.resources import contents
 
 except ImportError:
-    from importlib_resources import contents, path
+    from importlib_resources import contents
 
 
 logger = logging.getLogger(__name__)
@@ -232,17 +232,12 @@ class FontLoaderWindows(FontLoader):
 
         # since there seems to be no workable way to load fonts on Windows
         # through Python, we ask the user to do it by themselve
-        with path("dakara_player.resources.fonts", "") as fonts:
-            self.output.write(
-                "Please install the following fonts located in the '{}' "
-                "folder and press Enter:\n".format(fonts)
-            )
+        self.output.write("Please install the following fonts and press Enter:\n")
 
-            for font_file_path in font_file_path_list:
-                font_file_name = font_file_path.basename()
-                self.output.write("{}\n".format(font_file_name))
+        for font_file_path in font_file_path_list:
+            self.output.write("{}\n".format(font_file_path))
 
-            input()
+        input()
 
     def unload(self):
         """Promt the user to remove the fonts

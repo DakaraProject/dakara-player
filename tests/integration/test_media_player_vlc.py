@@ -7,7 +7,7 @@ from unittest.mock import ANY, MagicMock
 
 import vlc
 from func_timeout import func_set_timeout
-from path import Path
+from path import Path, TempDir
 
 try:
     from importlib.resources import path
@@ -45,45 +45,43 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
         self.fullscreen = True
 
         # create kara folder
-        with path("tests.resources", "") as resources:
-            self.kara_folder = Path(resources)
+        self.kara_folder = TempDir()
 
         # create media parameter
         self.media_parameters = []
 
-        # create idle background path
-        with path("dakara_player.resources.backgrounds", IDLE_BG_NAME) as file:
-            self.idle_background_path = Path(file)
-
-        # create transition background path
-        with path("dakara_player.resources.backgrounds", TRANSITION_BG_NAME) as file:
-            self.transition_background_path = Path(file)
-
         # create transition duration
         self.transition_duration = 1
 
-        # create a subtitle
-        with path("tests.resources", "song.ass") as file:
-            self.subtitle_path = Path(file)
+        # create subtitle
+        with path("tests.resources", "song1.ass") as file:
+            self.subtitle1_path = Path(file).copy(self.kara_folder)
 
-        # create song path
-        with path("tests.resources", "song.mkv") as file:
-            self.song_file_path = Path(file)
+        with path("tests.resources", "song2.ass") as file:
+            self.subtitle2_path = Path(file).copy(self.kara_folder)
+
+        # create song
+        with path("tests.resources", "song1.mkv") as file:
+            self.song1_path = Path(file).copy(self.kara_folder)
 
         with path("tests.resources", "song2.mkv") as file:
-            self.song2_file_path = Path(file)
+            self.song2_path = Path(file).copy(self.kara_folder)
+
+        # create audio
+        with path("tests.resources", "song2.mp3") as file:
+            self.audio2_path = Path(file).copy(self.kara_folder)
 
         # create playlist entry
         self.playlist_entry = {
             "id": 42,
-            "song": {"title": "Song 1", "file_path": self.song_file_path},
+            "song": {"title": "Song 1", "file_path": self.song1_path},
             "owner": "me",
             "use_instrumental": False,
         }
 
         self.playlist_entry2 = {
             "id": 43,
-            "song": {"title": "Song 2", "file_path": self.song2_file_path},
+            "song": {"title": "Song 2", "file_path": self.song2_path},
             "owner": "me",
             "use_instrumental": False,
         }
@@ -132,7 +130,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
     def test_play_idle(self):
         """Test to display the idle screen
         """
-        with self.get_instance() as (vlc_player, _, _):
+        with self.get_instance() as (vlc_player, temp, _):
             # pre assertions
             self.assertIsNone(vlc_player.player.get_media())
             self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
@@ -149,7 +147,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
             self.assertIsNotNone(vlc_player.player.get_media())
             media = vlc_player.player.get_media()
             file_path = mrl_to_path(media.get_mrl())
-            self.assertEqual(file_path, self.idle_background_path)
+            self.assertEqual(file_path, temp / IDLE_BG_NAME)
 
             # TODO check which subtitle file is read
             # seems impossible to do for now
@@ -160,7 +158,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
 
         First, the transition screen is played, then the song itself.
         """
-        with self.get_instance() as (vlc_player, _, _):
+        with self.get_instance() as (vlc_player, temp, _):
             # mock the callbacks
             vlc_player.set_callback("started_transition", MagicMock())
             vlc_player.set_callback("started_song", MagicMock())
@@ -197,7 +195,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
 
             # check media path
             file_path = mrl_to_path(media.get_mrl())
-            self.assertEqual(file_path, self.transition_background_path)
+            self.assertEqual(file_path, temp / TRANSITION_BG_NAME)
 
             # check there is no audio track
             track = vlc_player.player.audio_get_track()
@@ -227,7 +225,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
 
             # check media path
             file_path = mrl_to_path(media.get_mrl())
-            self.assertEqual(file_path, self.song_file_path)
+            self.assertEqual(file_path, self.song1_path)
 
             # check audio track
             track = vlc_player.player.audio_get_track()
@@ -270,7 +268,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
 
             # check media path
             file_path = mrl_to_path(media.get_mrl())
-            self.assertEqual(file_path, self.song_file_path)
+            self.assertEqual(file_path, self.song1_path)
 
             # check audio track
             track = vlc_player.player.audio_get_track()
@@ -289,7 +287,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
         """Test to play a playlist entry using instrumental file
         """
         # request to use instrumental file
-        self.playlist_entry["song"]["file_path"] = self.song2_file_path
+        self.playlist_entry["song"]["file_path"] = self.song2_path
         self.playlist_entry["use_instrumental"] = True
 
         with self.get_instance() as (vlc_player, _, _):
@@ -317,7 +315,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
 
             # check media path
             file_path = mrl_to_path(media.get_mrl())
-            self.assertEqual(file_path, self.song2_file_path)
+            self.assertEqual(file_path, self.song2_path)
 
             # check audio track
             track = vlc_player.player.audio_get_track()
@@ -468,7 +466,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
 
             # check media path
             file_path = mrl_to_path(media.get_mrl())
-            self.assertEqual(file_path, self.song_file_path)
+            self.assertEqual(file_path, self.song1_path)
 
             # request first playlist entry to stop
             vlc_player.skip()
@@ -495,7 +493,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
 
             # check media path
             file_path = mrl_to_path(media.get_mrl())
-            self.assertEqual(file_path, self.song2_file_path)
+            self.assertEqual(file_path, self.song2_path)
 
     @func_set_timeout(TIMEOUT)
     def test_skip_transition(self):
@@ -541,4 +539,4 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePoller):
 
             # check media path
             file_path = mrl_to_path(media.get_mrl())
-            self.assertEqual(file_path, self.song2_file_path)
+            self.assertEqual(file_path, self.song2_path)

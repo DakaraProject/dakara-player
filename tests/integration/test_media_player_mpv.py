@@ -5,7 +5,7 @@ from threading import Event
 from unittest.mock import ANY, MagicMock
 
 from func_timeout import func_set_timeout
-from path import Path
+from path import Path, TempDir
 
 try:
     from importlib.resources import path
@@ -35,51 +35,46 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
         self.fullscreen = True
 
         # create kara folder
-        with path("tests.resources", "") as resources:
-            self.kara_folder = Path(resources)
-
-        # create idle background path
-        with path("dakara_player.resources.backgrounds", IDLE_BG_NAME) as file:
-            self.idle_background_path = Path(file)
-
-        with path("tests.resources", IDLE_TEXT_NAME) as file:
-            self.idle_background_subtitle_path = Path(file)
-
-        # create transition background path
-        with path("dakara_player.resources.backgrounds", TRANSITION_BG_NAME) as file:
-            self.transition_background_path = Path(file)
-
-        with path("tests.resources", TRANSITION_TEXT_NAME) as file:
-            self.transition_background_subtitle_path = Path(file)
+        self.kara_folder = TempDir()
 
         # create transition duration
         self.transition_duration = 1
 
-        # create a subtitle
-        with path("tests.resources", "song.ass") as file:
-            self.subtitle_path = Path(file)
+        # create subtitle
+        with path("tests.resources", "song1.ass") as file:
+            self.subtitle1_path = Path(file).copy(self.kara_folder)
 
-        # create song path
-        with path("tests.resources", "song.mkv") as file:
-            self.song_file_path = Path(file)
+        with path("tests.resources", "song2.ass") as file:
+            self.subtitle2_path = Path(file).copy(self.kara_folder)
+
+        # create song
+        with path("tests.resources", "song1.mkv") as file:
+            self.song1_path = Path(file).copy(self.kara_folder)
 
         with path("tests.resources", "song2.mkv") as file:
-            self.song2_file_path = Path(file)
+            self.song2_path = Path(file).copy(self.kara_folder)
+
+        # create audio
+        with path("tests.resources", "song2.mp3") as file:
+            self.audio2_file_path = Path(file).copy(self.kara_folder)
 
         # create playlist entry
         self.playlist_entry = {
             "id": 42,
-            "song": {"title": "Song 1", "file_path": self.song_file_path},
+            "song": {"title": "Song 1", "file_path": self.song1_path},
             "owner": "me",
             "use_instrumental": False,
         }
 
         self.playlist_entry2 = {
             "id": 43,
-            "song": {"title": "Song 2", "file_path": self.song2_file_path},
+            "song": {"title": "Song 2", "file_path": self.song2_path},
             "owner": "me",
             "use_instrumental": False,
         }
+
+    def tearDown(self):
+        self.kara_folder.rmtree()
 
     @contextmanager
     def get_instance(self, config=None):
@@ -132,7 +127,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # post assertions
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.idle_background_path)
+            self.assertEqual(mpv_player.player.path, temp / IDLE_BG_NAME)
             self.assertListEqual(mpv_player.player.sub_files, [temp / IDLE_TEXT_NAME])
 
     @func_set_timeout(TIMEOUT)
@@ -156,13 +151,14 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             # check memory
             self.assertEqual(
                 mpv_player.playlist_entry_data["transition"].path,
-                self.transition_background_path,
+                temp / TRANSITION_BG_NAME,
             )
             self.assertEqual(
-                mpv_player.playlist_entry_data["song"].path, self.song_file_path
+                mpv_player.playlist_entry_data["song"].path, self.song1_path
             )
             self.assertEqual(
-                mpv_player.playlist_entry_data["song"].path_subtitle, self.subtitle_path
+                mpv_player.playlist_entry_data["song"].path_subtitle,
+                self.subtitle1_path,
             )
 
             # start playing
@@ -176,7 +172,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.transition_background_path)
+            self.assertEqual(mpv_player.player.path, temp / TRANSITION_BG_NAME)
 
             # check there is no audio track
             self.assertFalse(mpv_player.player.audio)
@@ -196,7 +192,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song_file_path)
+            self.assertEqual(mpv_player.player.path, self.song1_path)
 
             # check audio track
             self.assertEqual(mpv_player.player.audio, 1)
@@ -233,7 +229,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # check media exists
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song_file_path)
+            self.assertEqual(mpv_player.player.path, self.song1_path)
 
             # check audio track
             self.assertEqual(mpv_player.player.audio, 2)
@@ -248,7 +244,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
         """Test to play a playlist entry using instrumental file
         """
         # request to use instrumental file
-        self.playlist_entry["song"]["file_path"] = self.song2_file_path
+        self.playlist_entry["song"]["file_path"] = self.song2_path
         self.playlist_entry["use_instrumental"] = True
 
         with self.get_instance() as (mpv_player, _, _):
@@ -268,7 +264,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # check media exists
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song2_file_path)
+            self.assertEqual(mpv_player.player.path, self.song2_path)
 
             # check audio track
             self.assertEqual(mpv_player.player.audio, 3)
@@ -412,7 +408,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song_file_path)
+            self.assertEqual(mpv_player.player.path, self.song1_path)
 
             # request first playlist entry to stop
             mpv_player.skip()
@@ -434,7 +430,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song2_file_path)
+            self.assertEqual(mpv_player.player.path, self.song2_path)
 
     @func_set_timeout(TIMEOUT)
     def test_skip_transition(self):
@@ -472,7 +468,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song2_file_path)
+            self.assertEqual(mpv_player.player.path, self.song2_path)
 
     @func_set_timeout(TIMEOUT)
     def test_skip_idle(self):
@@ -508,4 +504,4 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song_file_path)
+            self.assertEqual(mpv_player.player.path, self.song1_path)
