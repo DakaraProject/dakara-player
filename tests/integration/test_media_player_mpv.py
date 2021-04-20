@@ -103,7 +103,9 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             try:
                 with ExitStack() as stack:
                     mpv_player = stack.enter_context(
-                        MediaPlayerMpv(Event(), Queue(), config, temp, warn_long_exit=False)
+                        MediaPlayerMpv(
+                            Event(), Queue(), config, temp, warn_long_exit=False
+                        )
                     )
                     output = stack.enter_context(
                         self.assertLogs("dakara_player.media_player.mpv", "DEBUG")
