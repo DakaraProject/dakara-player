@@ -1,5 +1,6 @@
 from contextlib import ExitStack, contextmanager
 from queue import Queue
+from time import sleep
 from threading import Event
 from unittest.mock import ANY, MagicMock
 
@@ -109,6 +110,9 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             mpv_player.load()
 
             yield mpv_player, temp, output
+
+            # sleep to allow slow system to correctly cleanup
+            sleep(self.DELAY)
 
     @func_set_timeout(TIMEOUT)
     def test_play_idle(self):
