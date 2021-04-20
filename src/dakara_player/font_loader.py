@@ -2,18 +2,20 @@ import logging
 import sys
 import os
 from abc import ABC, abstractmethod
-from os.path import isfile, islink, exists
+from contextlib import ExitStack
 
 from path import Path
 
 try:
-    from importlib.resources import contents
+    from importlib.resources import contents, path
 
 except ImportError:
-    from importlib_resources import contents
+    from importlib_resources import contents, path
 
 
 logger = logging.getLogger(__name__)
+
+FONT_EXTENSIONS = (".ttf", ".otf")
 
 
 def get_font_loader_class():
@@ -61,6 +63,19 @@ class FontLoader(ABC):
     def __exit__(self, exception_type, exception_value, traceback):
         self.unload()
 
+    def get_font_name_list(self):
+        """Extract font names in font directory
+
+        Returns:
+            list of str: list of font names.
+        """
+        logger.debug("Scanning fonts directory")
+        return [
+            file
+            for file in contents("dakara_player.resources.fonts")
+            if Path(file).ext.lower() in FONT_EXTENSIONS
+        ]
+
 
 class FontLoaderLinux(FontLoader):
     """Font loader for Linux
@@ -103,71 +118,64 @@ class FontLoaderLinux(FontLoader):
     def load_from_resources_directory(self):
         """Load all the fonts situated in the resources font directory
         """
-        logger.debug("Scanning fonts directory")
-        font_file_path_list = [
-            Path(f) for f in contents("dakara_player.resources.fonts")
-        ]
+        font_file_name_list = self.get_font_name_list()
 
-        logger.debug("Found %i font(s) to load", len(font_file_path_list))
-        self.load_from_list(font_file_path_list)
+        logger.debug("Found %i font(s) to load", len(font_file_name_list))
+        self.load_from_list(font_file_name_list)
 
-    def load_from_list(self, font_file_path_list):
+    def load_from_list(self, font_file_name_list):
         """Load the provided list of fonts
 
         Args:
-            font_file_path_list (list of path.Path): list of absolute path of
-                the fonts to load.
+            font_file_name_list (list of str): list of name of the fonts to
+                load.
         """
         # display list of fonts
-        for font_file_path in font_file_path_list:
-            font_file_name = font_file_path.basename()
+        for font_file_name in font_file_name_list:
             logger.debug("Font '%s' found to be loaded", font_file_name)
 
         # load the fonts
-        for font_file_path in font_file_path_list:
-            self.load_font(font_file_path)
+        for font_file_name in font_file_name_list:
+            with path(
+                "dakara_player.resources.fonts", font_file_name
+            ) as font_file_path:
+                self.load_font(Path(font_file_path))
 
     def load_font(self, font_file_path):
         """Load the provided font
 
         Args:
-            font_file_path (str): absolute path of the font to load.
+            font_file_path (path.Path): absolute path of the font to load.
         """
         # get font file name
         font_file_name = font_file_path.basename()
 
         # check if the font is installed at system level
-        if isfile(self.FONT_DIR_SYSTEM / font_file_name):
+        if (self.FONT_DIR_SYSTEM / font_file_name).exists():
             logger.debug("Font '%s' found in system directory", font_file_name)
             return
 
         # check if the font is installed at user level
         font_file_user_path = self.FONT_DIR_USER.expanduser() / font_file_name
 
-        if isfile(font_file_user_path):
+        if font_file_user_path.exists():
             logger.debug("Font '%s' found in user directory", font_file_name)
             return
 
-        # check if the font is installed as symlink at user level
-        if islink(font_file_user_path):
-            if exists(os.readlink(font_file_user_path)):
-                logger.debug(
-                    "Font '%s' found as symbolic link in user directory", font_file_name
-                )
-                return
-
-            # remove broken link and continue execution
+        # check if the font exists as broken link at user level
+        # in this case remove it and continue execution
+        if font_file_user_path.islink():
             logger.debug(
                 "Dead symbolic link found for font '%s' in user directory, "
                 "removing it",
                 font_file_name,
             )
-            os.unlink(font_file_user_path)
+            font_file_user_path.unlink()
 
         # then, if the font is not installed, load it
         font_file_target_path = self.FONT_DIR_USER.expanduser() / font_file_name
 
-        os.symlink(font_file_path, font_file_target_path)
+        font_file_path.symlink(font_file_target_path)
 
         # register the font
         self.fonts_loaded.append(font_file_target_path)
@@ -191,7 +199,7 @@ class FontLoaderLinux(FontLoader):
             font_path (str): absolute path of the font to unload.
         """
         try:
-            os.unlink(font_path)
+            font_path.unlink()
             self.fonts_loaded.remove(font_path)
             logger.debug("Font '%s' unloaded", font_path)
 
@@ -224,20 +232,23 @@ class FontLoaderWindows(FontLoader):
 
     def load(self):
         """Prompt the user to load the fonts
-        """
-        logger.debug("Scanning font directory")
-        font_file_path_list = [
-            Path(f) for f in contents("dakara_player.resources.fonts")
-        ]
 
-        # since there seems to be no workable way to load fonts on Windows
-        # through Python, we ask the user to do it by themselve
+        Since there seems to be no workable way to load fonts on Windows
+        through Python, we ask the user to do it by themselve.
+        """
+        font_file_name_list = self.get_font_name_list()
+
         self.output.write("Please install the following fonts and press Enter:\n")
 
-        for font_file_path in font_file_path_list:
-            self.output.write("{}\n".format(font_file_path))
+        # extract fonts from package if necessary and present valid paths
+        with ExitStack() as stack:
+            for font_file_name in font_file_name_list:
+                font_file_path = stack.enter_context(
+                    path("dakara_player.resources.fonts", font_file_name)
+                )
+                self.output.write("{}\n".format(font_file_path))
 
-        input()
+            input()
 
     def unload(self):
         """Promt the user to remove the fonts
