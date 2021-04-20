@@ -99,17 +99,17 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
                 "mpv": {"vo": "null", "ao": "null"},
             }
 
-        with ExitStack() as stack:
-            temp = stack.enter_context(TempDir())
-            mpv_player = stack.enter_context(
-                MediaPlayerMpv(Event(), Queue(), config, temp, warn_long_exit=False)
-            )
-            output = stack.enter_context(
-                self.assertLogs("dakara_player.media_player.mpv", "DEBUG")
-            )
-            mpv_player.load()
+        with TempDir() as temp:
+            with ExitStack() as stack:
+                mpv_player = stack.enter_context(
+                    MediaPlayerMpv(Event(), Queue(), config, temp, warn_long_exit=False)
+                )
+                output = stack.enter_context(
+                    self.assertLogs("dakara_player.media_player.mpv", "DEBUG")
+                )
+                mpv_player.load()
 
-            yield mpv_player, temp, output
+                yield mpv_player, temp, output
 
             # sleep to allow slow system to correctly cleanup
             sleep(self.DELAY)
