@@ -113,7 +113,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
                     mpv_player.load()
 
                     yield mpv_player, temp, output
-                    
+
             except OSError:
                 # silence closing errors of mpv
                 pass
