@@ -100,18 +100,23 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             }
 
         with TempDir() as temp:
-            with ExitStack() as stack:
-                mpv_player = stack.enter_context(
-                    MediaPlayerMpv(Event(), Queue(), config, temp, warn_long_exit=False)
-                )
-                output = stack.enter_context(
-                    self.assertLogs("dakara_player.media_player.mpv", "DEBUG")
-                )
-                mpv_player.load()
+            try:
+                with ExitStack() as stack:
+                    mpv_player = stack.enter_context(
+                        MediaPlayerMpv(Event(), Queue(), config, temp, warn_long_exit=False)
+                    )
+                    output = stack.enter_context(
+                        self.assertLogs("dakara_player.media_player.mpv", "DEBUG")
+                    )
+                    mpv_player.load()
 
-                yield mpv_player, temp, output
+                    yield mpv_player, temp, output
+                    
+            except OSError:
+                # silence closing errors of mpv
+                pass
 
-            # sleep to allow slow system to correctly cleanup
+            # sleep to allow slow systems to correctly clean up
             sleep(self.DELAY)
 
     @func_set_timeout(TIMEOUT)
