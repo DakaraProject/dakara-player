@@ -1,5 +1,6 @@
 from contextlib import ExitStack, contextmanager
 from queue import Queue
+from time import sleep
 from threading import Event
 from unittest.mock import ANY, MagicMock
 
@@ -98,17 +99,27 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
                 "mpv": {"vo": "null", "ao": "null"},
             }
 
-        with ExitStack() as stack:
-            temp = stack.enter_context(TempDir())
-            mpv_player = stack.enter_context(
-                MediaPlayerMpv(Event(), Queue(), config, temp, warn_long_exit=False)
-            )
-            output = stack.enter_context(
-                self.assertLogs("dakara_player.media_player.mpv", "DEBUG")
-            )
-            mpv_player.load()
+        with TempDir() as temp:
+            try:
+                with ExitStack() as stack:
+                    mpv_player = stack.enter_context(
+                        MediaPlayerMpv(
+                            Event(), Queue(), config, temp, warn_long_exit=False
+                        )
+                    )
+                    output = stack.enter_context(
+                        self.assertLogs("dakara_player.media_player.mpv", "DEBUG")
+                    )
+                    mpv_player.load()
 
-            yield mpv_player, temp, output
+                    yield mpv_player, temp, output
+
+            except OSError:
+                # silence closing errors of mpv
+                pass
+
+            # sleep to allow slow systems to correctly clean up
+            sleep(self.DELAY)
 
     @func_set_timeout(TIMEOUT)
     def test_play_idle(self):
