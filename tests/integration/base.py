@@ -1,8 +1,19 @@
 from time import sleep
 from unittest import TestCase
 
+try:
+    from importlib.resources import path
+
+except ImportError:
+    from importlib_resources import path
+
+from path import Path, TempDir
+
 
 class TestCasePoller(TestCase):
+    """Test class that can poll the state of tested player
+    """
+
     DELAY = 0.1
 
     @classmethod
@@ -58,3 +69,53 @@ class TestCasePoller(TestCase):
                 pass
 
             sleep(cls.DELAY)
+
+
+class TestCaseKara(TestCase):
+    """Test class that creates a working kara folder
+    """
+
+    def setUp(self):
+        # create kara folder
+        self.kara_folder = TempDir()
+
+        # create subtitle
+        with path("tests.resources", "song1.ass") as file:
+            self.subtitle1_path = Path(file).copy(self.kara_folder)
+
+        with path("tests.resources", "song2.ass") as file:
+            self.subtitle2_path = Path(file).copy(self.kara_folder)
+
+        # create song
+        with path("tests.resources", "song1.mkv") as file:
+            self.song1_path = Path(file).copy(self.kara_folder)
+
+        with path("tests.resources", "song2.mkv") as file:
+            self.song2_path = Path(file).copy(self.kara_folder)
+
+        # create audio
+        with path("tests.resources", "song2.mp3") as file:
+            self.audio2_path = Path(file).copy(self.kara_folder)
+
+        # create playlist entry
+        self.playlist_entry1 = {
+            "id": 42,
+            "song": {"title": "Song 1", "file_path": self.song1_path},
+            "owner": "me",
+            "use_instrumental": False,
+        }
+
+        self.playlist_entry2 = {
+            "id": 43,
+            "song": {"title": "Song 2", "file_path": self.song2_path},
+            "owner": "me",
+            "use_instrumental": False,
+        }
+
+    def tearDown(self):
+        self.kara_folder.rmtree(ignore_errors=True)
+
+
+class TestCasePollerKara(TestCasePoller, TestCaseKara):
+    """Test class that polls player and create kara folder
+    """

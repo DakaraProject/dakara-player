@@ -48,7 +48,7 @@ class FontLoaderLinuxTestCase(TestCase):
         self.directory = Path("directory")
 
         # create font file list
-        self.font_name = "font file"
+        self.font_name = "font_file.ttf"
         self.font_name_list = [self.font_name]
         self.font_path = self.directory / self.font_name
         self.font_path_list = [self.font_path]
@@ -70,14 +70,14 @@ class FontLoaderLinuxTestCase(TestCase):
         mocked_unload.assert_called_with()
 
     @patch.object(FontLoaderLinux, "load_from_list")
-    @patch("dakara_player.font_loader.get_all_fonts", autospec=True)
+    @patch("dakara_player.font_loader.contents", autospec=True)
     def test_load_from_resources_directory(
-        self, mocked_get_all_fonts, mocked_load_from_list
+        self, mocked_contents, mocked_load_from_list
     ):
         """Test to load fonts from the resources directory
         """
         # mock system calls
-        mocked_get_all_fonts.return_value = self.font_path_list
+        mocked_contents.return_value = [self.font_name, "__init__.py"]
 
         # call the method
         with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
@@ -93,34 +93,42 @@ class FontLoaderLinuxTestCase(TestCase):
         )
 
         # call assertions
-        mocked_get_all_fonts.assert_called_once_with()
-        mocked_load_from_list.assert_called_once_with(self.font_path_list)
+        mocked_contents.assert_called_once_with("dakara_player.resources.fonts")
+        mocked_load_from_list.assert_called_once_with(self.font_name_list)
 
+    @patch("dakara_player.font_loader.path")
     @patch.object(FontLoaderLinux, "load_font")
-    def test_load_from_list(self, mocked_load_font):
+    def test_load_from_list(self, mocked_load_font, mocked_path):
         """Test to load fonts from list
         """
+        mocked_path.return_value.__enter__.return_value = (
+            self.directory / self.font_name
+        )
+
         # call the method
         with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
-            self.font_loader.load_from_list(self.font_path_list)
+            self.font_loader.load_from_list(self.font_name_list)
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
-            ["DEBUG:dakara_player.font_loader:Font 'font file' " "found to be loaded"],
+            ["DEBUG:dakara_player.font_loader:Font 'font_file.ttf' found to be loaded"],
         )
 
         # assert the call
         mocked_load_font.assert_called_once_with(self.font_path)
 
-    @patch("dakara_player.font_loader.os.unlink")
-    @patch("dakara_player.font_loader.os.symlink", autospec=True)
-    @patch("dakara_player.font_loader.isfile", autospec=True)
-    def test_load_font_system(self, mocked_isfile, mocked_symlink, mocked_unlink):
+    @patch.object(Path, "unlink", autospec=True)
+    @patch.object(Path, "symlink", autospec=True)
+    @patch.object(Path, "islink", autospec=True)
+    @patch.object(Path, "exists", autospec=True)
+    def test_load_font_system(
+        self, mocked_exists, mocked_islink, mocked_symlink, mocked_unlink
+    ):
         """Test to load one font which is in system directory
         """
         # prepare the mock
-        mocked_isfile.return_value = True
+        mocked_exists.return_value = True
 
         # pre assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
@@ -133,31 +141,31 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.font_loader:Font 'font file' "
+                "DEBUG:dakara_player.font_loader:Font 'font_file.ttf' "
                 "found in system directory"
             ],
         )
 
         # assert the call
-        mocked_isfile.assert_called_once_with("/usr/share/fonts/font file")
+        mocked_exists.assert_called_once_with("/usr/share/fonts/font_file.ttf")
+        mocked_islink.assert_not_called()
         mocked_unlink.assert_not_called()
         mocked_symlink.assert_not_called()
 
         # post assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
-    @patch("dakara_player.font_loader.os.unlink")
-    @patch("dakara_player.font_loader.os.symlink", autospec=True)
-    @patch("dakara_player.font_loader.islink")
-    @patch("dakara_player.font_loader.isfile")
+    @patch.object(Path, "unlink", autospec=True)
+    @patch.object(Path, "symlink", autospec=True)
+    @patch.object(Path, "islink", autospec=True)
+    @patch.object(Path, "exists", autospec=True)
     def test_load_font_user(
-        self, mocked_isfile, mocked_islink, mocked_symlink, mocked_unlink
+        self, mocked_exists, mocked_islink, mocked_symlink, mocked_unlink
     ):
         """Test to load one font which is in user directory
         """
         # prepare the mock
-        mocked_isfile.side_effect = [False, True]
-        mocked_islink.return_value = False
+        mocked_exists.side_effect = [False, True]
 
         # pre assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
@@ -170,16 +178,16 @@ class FontLoaderLinuxTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.font_loader:Font 'font file' "
+                "DEBUG:dakara_player.font_loader:Font 'font_file.ttf' "
                 "found in user directory"
             ],
         )
 
         # assert the call
-        mocked_isfile.assert_has_calls(
+        mocked_exists.assert_has_calls(
             [
-                call("/usr/share/fonts/font file"),
-                call(self.user_directory / ".fonts/font file"),
+                call("/usr/share/fonts/font_file.ttf"),
+                call(self.user_directory / ".fonts/font_file.ttf"),
             ]
         )
         mocked_islink.assert_not_called()
@@ -189,75 +197,18 @@ class FontLoaderLinuxTestCase(TestCase):
         # post assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
-    @patch("dakara_player.font_loader.os.unlink")
-    @patch("dakara_player.font_loader.os.readlink")
-    @patch("dakara_player.font_loader.exists")
-    @patch("dakara_player.font_loader.os.symlink", autospec=True)
-    @patch("dakara_player.font_loader.islink")
-    @patch("dakara_player.font_loader.isfile")
-    def test_load_font_user_link_valid(
-        self,
-        mocked_isfile,
-        mocked_islink,
-        mocked_symlink,
-        mocked_exists,
-        mocked_readlink,
-        mocked_unlink,
-    ):
-        """Test to load one font which is in user directory as valid link
-        """
-        # prepare the mock
-        mocked_isfile.side_effect = [False, False]
-        mocked_islink.return_value = True
-        mocked_exists.return_value = True
-        mocked_readlink.return_value = "/real/path/to/font file"
-
-        # pre assertions
-        self.assertEqual(len(self.font_loader.fonts_loaded), 0)
-
-        # call the method
-        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
-            self.font_loader.load_font(self.font_path)
-
-        # assert effect on logs
-        self.assertListEqual(
-            logger.output,
-            [
-                "DEBUG:dakara_player.font_loader:Font 'font file' "
-                "found as symbolic link in user directory"
-            ],
-        )
-
-        # assert the call
-        font_path = self.user_directory / ".fonts/font file"
-        mocked_islink.assert_called_with(font_path)
-        mocked_exists.assert_called_with("/real/path/to/font file")
-        mocked_readlink.assert_called_with(font_path)
-        mocked_unlink.assert_not_called()
-        mocked_symlink.assert_not_called()
-
-    @patch("dakara_player.font_loader.os.unlink")
-    @patch("dakara_player.font_loader.os.readlink")
-    @patch("dakara_player.font_loader.exists")
-    @patch("dakara_player.font_loader.os.symlink", autospec=True)
-    @patch("dakara_player.font_loader.islink")
-    @patch("dakara_player.font_loader.isfile")
-    def test_load_font_user_link_dead(
-        self,
-        mocked_isfile,
-        mocked_islink,
-        mocked_symlink,
-        mocked_exists,
-        mocked_readlink,
-        mocked_unlink,
+    @patch.object(Path, "unlink", autospec=True)
+    @patch.object(Path, "symlink", autospec=True)
+    @patch.object(Path, "islink", autospec=True)
+    @patch.object(Path, "exists", autospec=True)
+    def test_load_font_user_link_dead_install(
+        self, mocked_exists, mocked_islink, mocked_symlink, mocked_unlink,
     ):
         """Test to load one font which is in user directory as dead link
         """
         # prepare the mock
-        mocked_isfile.side_effect = [False, False]
-        mocked_islink.return_value = True
         mocked_exists.return_value = False
-        mocked_readlink.return_value = "/real/path/to/font file"
+        mocked_islink.return_value = True
 
         # pre assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
@@ -267,38 +218,42 @@ class FontLoaderLinuxTestCase(TestCase):
             self.font_loader.load_font(self.font_path)
 
         # assert effect on logs
-        font_path = self.user_directory / ".fonts/font file"
+        font_path = self.user_directory / ".fonts/font_file.ttf"
         self.assertListEqual(
             logger.output,
             [
                 "DEBUG:dakara_player.font_loader:Dead symbolic link found for "
-                "font 'font file' in user directory, removing it",
-                "DEBUG:dakara_player.font_loader:Font 'font file' "
+                "font 'font_file.ttf' in user directory, removing it",
+                "DEBUG:dakara_player.font_loader:Font 'font_file.ttf' "
                 "loaded in user directory: '{}'".format(font_path),
             ],
         )
 
         # assert the call
+        mocked_exists.assert_has_calls(
+            [
+                call("/usr/share/fonts/font_file.ttf"),
+                call(self.user_directory / ".fonts/font_file.ttf"),
+            ]
+        )
         mocked_islink.assert_called_with(font_path)
-        mocked_exists.assert_called_with("/real/path/to/font file")
-        mocked_readlink.assert_called_with(font_path)
         mocked_unlink.assert_called_with(font_path)
-        mocked_symlink.assert_called_once_with("directory/font file", font_path)
+        mocked_symlink.assert_called_once_with("directory/font_file.ttf", font_path)
 
         # post assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 1)
 
-    @patch("dakara_player.font_loader.os.unlink")
-    @patch("dakara_player.font_loader.os.symlink", autospec=True)
-    @patch("dakara_player.font_loader.islink", autospec=True)
-    @patch("dakara_player.font_loader.isfile", autospec=True)
+    @patch.object(Path, "unlink", autospec=True)
+    @patch.object(Path, "symlink", autospec=True)
+    @patch.object(Path, "islink", autospec=True)
+    @patch.object(Path, "exists", autospec=True)
     def test_load_font_install(
-        self, mocked_isfile, mocked_islink, mocked_symlink, mocked_unlink
+        self, mocked_exists, mocked_islink, mocked_symlink, mocked_unlink
     ):
         """Test to load one font which is not installed
         """
         # prepare the mock
-        mocked_isfile.return_value = False
+        mocked_exists.return_value = False
         mocked_islink.return_value = False
 
         # pre assertions
@@ -309,32 +264,33 @@ class FontLoaderLinuxTestCase(TestCase):
             self.font_loader.load_font(self.font_path)
 
         # assert effect on logs
-        font_path = self.user_directory / ".fonts/font file"
+        font_path = self.user_directory / ".fonts/font_file.ttf"
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.font_loader:Font 'font file' "
+                "DEBUG:dakara_player.font_loader:Font 'font_file.ttf' "
                 "loaded in user directory: '{}'".format(font_path)
             ],
         )
 
         # assert the call
-        mocked_isfile.assert_has_calls(
+        mocked_exists.assert_has_calls(
             [
-                call("/usr/share/fonts/font file"),
-                call(self.user_directory / ".fonts/font file"),
+                call("/usr/share/fonts/font_file.ttf"),
+                call(self.user_directory / ".fonts/font_file.ttf"),
             ]
         )
         mocked_islink.assert_called_with(font_path)
         mocked_unlink.assert_not_called()
         mocked_symlink.assert_called_once_with(
-            "directory/font file", self.user_directory / ".fonts/font file"
+            "directory/font_file.ttf", self.user_directory / ".fonts/font_file.ttf"
         )
 
         # post assertions
         self.assertEqual(len(self.font_loader.fonts_loaded), 1)
         self.assertEqual(
-            self.font_loader.fonts_loaded[0], self.user_directory / ".fonts/font file"
+            self.font_loader.fonts_loaded[0],
+            self.user_directory / ".fonts/font_file.ttf",
         )
 
     @patch.object(FontLoaderLinux, "load_from_resources_directory")
@@ -361,12 +317,12 @@ class FontLoaderLinuxTestCase(TestCase):
         # call the method
         self.font_loader.load()
 
-    @patch("dakara_player.font_loader.os.unlink", autospec=True)
+    @patch.object(Path, "unlink", autospec=True)
     def test_unload(self, mocked_unlink):
         """Test to unload fonts
         """
         # set a font as loaded
-        self.font_loader.fonts_loaded = ["font1", "font2"]
+        self.font_loader.fonts_loaded = [Path("font1"), Path("font2")]
 
         # call the method
         self.font_loader.unload()
@@ -376,7 +332,7 @@ class FontLoaderLinuxTestCase(TestCase):
         # elements we are iterating on
         mocked_unlink.assert_has_calls([call("font1"), call("font2")])
 
-    @patch("dakara_player.font_loader.os.unlink", autospec=True)
+    @patch.object(Path, "unlink", autospec=True)
     def test_unload_font(self, mocked_unlink):
         """Test to unload one font
         """
@@ -393,7 +349,7 @@ class FontLoaderLinuxTestCase(TestCase):
         # assert effect of logs
         self.assertListEqual(
             logger.output,
-            ["DEBUG:dakara_player.font_loader:Font 'directory/font file' unloaded"],
+            ["DEBUG:dakara_player.font_loader:Font 'directory/font_file.ttf' unloaded"],
         )
 
         # assert the call
@@ -402,7 +358,7 @@ class FontLoaderLinuxTestCase(TestCase):
         # assert there are no font loaded anymore
         self.assertEqual(len(self.font_loader.fonts_loaded), 0)
 
-    @patch("dakara_player.font_loader.os.unlink", autospec=True)
+    @patch.object(Path, "unlink", autospec=True)
     def test_unload_font_error(self, mocked_unlink):
         """Test to unload one font when unable to remove font
         """
@@ -420,7 +376,7 @@ class FontLoaderLinuxTestCase(TestCase):
             logger.output,
             [
                 "ERROR:dakara_player.font_loader:Unable to unload "
-                "'directory/font file'"
+                "'directory/font_file.ttf'"
             ],
         )
 
@@ -429,30 +385,43 @@ class FontLoaderWindowsTestCase(TestCase):
     """Test the Windows font loader
     """
 
-    @patch("dakara_player.font_loader.PATH_FONTS", Path("path_fonts"))
+    def setUp(self):
+        # create directory
+        self.directory = Path("directory")
+
+        # create font file list
+        self.font_name = "font_file.ttf"
+        self.font_name_list = [self.font_name]
+        self.font_path = self.directory / self.font_name
+        self.font_path_list = [self.font_path]
+
+    @patch("dakara_player.font_loader.path")
     @patch("dakara_player.font_loader.input")
-    @patch("dakara_player.font_loader.get_all_fonts")
-    def test_load(self, mocked_get_all_fonts, mocked_input):
+    @patch("dakara_player.font_loader.contents")
+    def test_load(self, mocked_contents, mocked_input, mocked_path):
         """Test to ask to load fonts manually
         """
-        mocked_get_all_fonts.return_value = [Path("path_fonts") / "font_file.ext"]
+        mocked_contents.return_value = [self.font_name, "__init__.py"]
+        mocked_path.return_value.__enter__.return_value = self.font_path
         output = StringIO()
-        font_loader = FontLoaderWindows(output)
 
+        font_loader = FontLoaderWindows(output)
         font_loader.load()
-        lines = output.getvalue().split("\n")
+
+        lines = output.getvalue().splitlines()
         self.assertListEqual(
             lines,
             [
-                "Please install the following fonts located in the '{}' "
-                "folder and press Enter:".format(Path("path_fonts")),
-                "font_file.ext",
-                "",
+                "Please install the following fonts and press Enter:",
+                Path("directory") / "font_file.ttf",
             ],
         )
 
-        mocked_get_all_fonts.assert_called_with()
-        mocked_input.assert_called_with()
+        mocked_contents.assert_called_once_with("dakara_player.resources.fonts")
+        mocked_path.assert_called_once_with(
+            "dakara_player.resources.fonts", self.font_name
+        )
+        mocked_input.assert_called_once_with()
 
     def test_unload(self):
         """Test to ask to unload fonts manually
@@ -461,5 +430,5 @@ class FontLoaderWindowsTestCase(TestCase):
         font_loader = FontLoaderWindows(output)
 
         font_loader.unload()
-        lines = output.getvalue().split("\n")
-        self.assertListEqual(lines, ["You can now remove the installed fonts", ""])
+        lines = output.getvalue().splitlines()
+        self.assertListEqual(lines, ["You can now remove the installed fonts"])

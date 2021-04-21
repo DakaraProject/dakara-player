@@ -7,7 +7,6 @@ from dakara_base.safe_workers import Worker
 from path import Path
 
 from dakara_player.background_loader import BackgroundLoader
-from dakara_player.resources_manager import PATH_BACKGROUNDS
 from dakara_player.audio import get_audio_files
 from dakara_player.text_generator import TextGenerator
 from dakara_player.version import __version__
@@ -121,15 +120,14 @@ class MediaPlayer(Worker, ABC):
         # set background loader
         config_backgrounds = config.get("backgrounds") or {}
         self.background_loader = BackgroundLoader(
+            destination=tempdir,
+            package="dakara_player.resources.backgrounds",
             directory=Path(config_backgrounds.get("directory", "")),
-            default_directory=Path(PATH_BACKGROUNDS),
-            background_filenames={
-                "transition": config_backgrounds.get("transition_background_name"),
-                "idle": config_backgrounds.get("idle_background_name"),
-            },
-            default_background_filenames={
-                "transition": TRANSITION_BG_NAME,
-                "idle": IDLE_BG_NAME,
+            filenames={
+                "transition": config_backgrounds.get(
+                    "transition_background_name", TRANSITION_BG_NAME
+                ),
+                "idle": config_backgrounds.get("idle_background_name", IDLE_BG_NAME),
             },
         )
 
