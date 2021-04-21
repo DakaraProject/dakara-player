@@ -85,6 +85,12 @@ class BackgroundLoader:
 
     def get_background_path(self, file_name):
         """Get the accurate path of one background
+
+        Args:
+            file_name (str): name of the background file.
+
+        Returns:
+            path.Path: absolute path to the background file.
         """
         # trying to load from custom directory
         if self.directory:
