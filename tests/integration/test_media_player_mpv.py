@@ -5,13 +5,7 @@ from threading import Event
 from unittest.mock import ANY, MagicMock
 
 from func_timeout import func_set_timeout
-from path import Path, TempDir
-
-try:
-    from importlib.resources import path
-
-except ImportError:
-    from importlib_resources import path
+from path import TempDir
 
 from dakara_player.media_player.mpv import MediaPlayerMpv
 from dakara_player.media_player.base import (
@@ -20,10 +14,10 @@ from dakara_player.media_player.base import (
     TRANSITION_BG_NAME,
     TRANSITION_TEXT_NAME,
 )
-from tests.integration.base import TestCasePoller
+from tests.integration.base import TestCasePollerKara
 
 
-class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
+class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
     """Test the mpv player class in real conditions
     """
 
@@ -31,50 +25,13 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
     DELAY = 0.2
 
     def setUp(self):
+        super().setUp()
+
         # create fullscreen flag
         self.fullscreen = True
 
-        # create kara folder
-        self.kara_folder = TempDir()
-
         # create transition duration
         self.transition_duration = 1
-
-        # create subtitle
-        with path("tests.resources", "song1.ass") as file:
-            self.subtitle1_path = Path(file).copy(self.kara_folder)
-
-        with path("tests.resources", "song2.ass") as file:
-            self.subtitle2_path = Path(file).copy(self.kara_folder)
-
-        # create song
-        with path("tests.resources", "song1.mkv") as file:
-            self.song1_path = Path(file).copy(self.kara_folder)
-
-        with path("tests.resources", "song2.mkv") as file:
-            self.song2_path = Path(file).copy(self.kara_folder)
-
-        # create audio
-        with path("tests.resources", "song2.mp3") as file:
-            self.audio2_file_path = Path(file).copy(self.kara_folder)
-
-        # create playlist entry
-        self.playlist_entry = {
-            "id": 42,
-            "song": {"title": "Song 1", "file_path": self.song1_path},
-            "owner": "me",
-            "use_instrumental": False,
-        }
-
-        self.playlist_entry2 = {
-            "id": 43,
-            "song": {"title": "Song 2", "file_path": self.song2_path},
-            "owner": "me",
-            "use_instrumental": False,
-        }
-
-    def tearDown(self):
-        self.kara_folder.rmtree(ignore_errors=True)
 
     @contextmanager
     def get_instance(self, config=None):
@@ -156,7 +113,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             self.assertIsNone(mpv_player.player.path)
 
             # set playlist entry
-            mpv_player.set_playlist_entry(self.playlist_entry, autoplay=False)
+            mpv_player.set_playlist_entry(self.playlist_entry1, autoplay=False)
 
             # check memory
             self.assertEqual(
@@ -194,7 +151,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # assert the started transition callback has been called
             mpv_player.callbacks["started_transition"].assert_called_with(
-                self.playlist_entry["id"]
+                self.playlist_entry1["id"]
             )
 
             # wait for the media to start
@@ -209,7 +166,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # assert the started song callback has been called
             mpv_player.callbacks["started_song"].assert_called_with(
-                self.playlist_entry["id"]
+                self.playlist_entry1["id"]
             )
 
     @func_set_timeout(TIMEOUT)
@@ -217,7 +174,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
         """Test to play a playlist entry using instrumental track
         """
         # request to use instrumental track
-        self.playlist_entry["use_instrumental"] = True
+        self.playlist_entry1["use_instrumental"] = True
 
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
@@ -229,7 +186,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             self.assertIsNone(mpv_player.player.path)
 
             # call the method
-            mpv_player.set_playlist_entry(self.playlist_entry)
+            mpv_player.set_playlist_entry(self.playlist_entry1)
 
             # wait for the song to start
             self.wait_is_playing(mpv_player, "song")
@@ -246,7 +203,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # assert the started song callback has been called
             mpv_player.callbacks["started_song"].assert_called_with(
-                self.playlist_entry["id"]
+                self.playlist_entry1["id"]
             )
 
     @func_set_timeout(TIMEOUT)
@@ -254,8 +211,8 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
         """Test to play a playlist entry using instrumental file
         """
         # request to use instrumental file
-        self.playlist_entry["song"]["file_path"] = self.song2_path
-        self.playlist_entry["use_instrumental"] = True
+        self.playlist_entry1["song"]["file_path"] = self.song2_path
+        self.playlist_entry1["use_instrumental"] = True
 
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
@@ -267,7 +224,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             self.assertIsNone(mpv_player.player.path)
 
             # call the method
-            mpv_player.set_playlist_entry(self.playlist_entry)
+            mpv_player.set_playlist_entry(self.playlist_entry1)
 
             # wait for the song to start
             self.wait_is_playing(mpv_player, "song")
@@ -281,7 +238,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # assert the started song callback has been called
             mpv_player.callbacks["started_song"].assert_called_with(
-                self.playlist_entry["id"]
+                self.playlist_entry1["id"]
             )
 
     @func_set_timeout(TIMEOUT)
@@ -294,7 +251,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             mpv_player.set_callback("resumed", MagicMock())
 
             # start the playlist entry
-            mpv_player.set_playlist_entry(self.playlist_entry)
+            mpv_player.set_playlist_entry(self.playlist_entry1)
 
             # wait for the song to start
             self.wait_is_playing(mpv_player, "song")
@@ -308,7 +265,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # assert the callback
             mpv_player.callbacks["paused"].assert_called_with(
-                self.playlist_entry["id"], timing
+                self.playlist_entry1["id"], timing
             )
             mpv_player.callbacks["resumed"].assert_not_called()
 
@@ -326,7 +283,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             # assert the callback
             mpv_player.callbacks["paused"].assert_not_called()
             mpv_player.callbacks["resumed"].assert_called_with(
-                self.playlist_entry["id"],
+                self.playlist_entry1["id"],
                 timing,  # on a slow computer, the timing may be inaccurate
             )
 
@@ -340,7 +297,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             mpv_player.set_callback("resumed", MagicMock())
 
             # start the playlist entry
-            mpv_player.set_playlist_entry(self.playlist_entry)
+            mpv_player.set_playlist_entry(self.playlist_entry1)
 
             # wait for the song to start
             self.wait_is_playing(mpv_player, "song")
@@ -408,7 +365,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             self.assertIsNone(mpv_player.player.path)
 
             # request initial playlist entry to play
-            mpv_player.set_playlist_entry(self.playlist_entry)
+            mpv_player.set_playlist_entry(self.playlist_entry1)
 
             # wait for the media to start
             self.wait_is_playing(mpv_player, "song")
@@ -426,7 +383,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             # check the song is stopped accordingly
             self.assertIsNone(mpv_player.playlist_entry)
             mpv_player.callbacks["finished"].assert_called_with(
-                self.playlist_entry["id"]
+                self.playlist_entry1["id"]
             )
 
             # request second playlist entry to play
@@ -457,7 +414,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             self.assertIsNone(mpv_player.player.path)
 
             # request initial playlist entry to play
-            mpv_player.set_playlist_entry(self.playlist_entry)
+            mpv_player.set_playlist_entry(self.playlist_entry1)
 
             # wait for the transition to start
             self.wait_is_playing(mpv_player, "transition")
@@ -467,7 +424,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
 
             # check the song is stopped accordingly
             mpv_player.callbacks["finished"].assert_called_with(
-                self.playlist_entry["id"]
+                self.playlist_entry1["id"]
             )
 
             # request second playlist entry to play
@@ -504,7 +461,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePoller):
             self.assertIsNone(mpv_player.playlist_entry)
 
             # request second playlist entry to play
-            mpv_player.set_playlist_entry(self.playlist_entry)
+            mpv_player.set_playlist_entry(self.playlist_entry1)
 
             # wait for the media to start
             self.wait_is_playing(mpv_player, "song")
