@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 def get_user_directory():
-    if sys.platform.startswith("linux"):
+    if "linux" in sys.platform:
         return Path("~") / ".local" / "share" / "dakara" / "player"
 
-    if sys.platfrom.startswith("win"):
+    if "win" in sys.platform:
         return Path("$APPDATA") / "Dakara" / "player"
 
-    raise Exception("Operating system not supported")
+    raise NotImplementedError("Operating system not supported")
 
 
 def copy_resource(resource, destination, force):
@@ -29,7 +29,8 @@ def copy_resource(resource, destination, force):
         try:
             result = strtobool(
                 input(
-                    "Directory {destination} already exists, overwrite it with its content? [y/N] "
+                    f"Directory {destination} already exists, "
+                    "overwrite it with its content? [y/N] "
                 )
             )
 
@@ -41,7 +42,8 @@ def copy_resource(resource, destination, force):
 
     destination.mkdir_p()
 
-    for file_name in contents(resources):
+    for file_name in contents(resource):
+        # ignore Python files
         if file_name.startswith("__"):
             continue
 
@@ -55,7 +57,7 @@ def create_resource_files(force=False):
 
     for directory in ["backgrounds", "templates"]:
         copy_resource(
-            "dakara_player.resources.{directory}", user_directory / directory, force
+            f"dakara_player.resources.{directory}", user_directory / directory, force
         )
 
-    logging.info("Resource files created in '{directory}")
+    logger.info(f"Resource files created in '{user_directory}'")
