@@ -53,7 +53,7 @@ def copy_resource(resource, destination, force):
         if not result:
             return
 
-    destination.mkdir_p()
+    destination.makedirs_p()
 
     for file_name in contents(resource):
         # ignore Python files
@@ -61,7 +61,7 @@ def copy_resource(resource, destination, force):
             continue
 
         with path(resource, file_name) as file:
-            Path(file).copyfile(destination)
+            Path(file).copy(destination)
 
 
 def create_resource_files(force=False):
@@ -72,7 +72,7 @@ def create_resource_files(force=False):
             directories and this flag is set, overwrite the directories.
     """
     user_directory = get_user_directory().expand()
-    user_directory.mkdir_p()
+    user_directory.makedirs_p()
 
     for directory in ["backgrounds", "templates"]:
         copy_resource(
