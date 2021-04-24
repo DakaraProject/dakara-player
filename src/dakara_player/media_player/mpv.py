@@ -269,24 +269,32 @@ class MediaPlayerMpv(MediaPlayer):
         self.player.audio_files = []
         self.player.audio = "auto"
         self.player.pause = False
-        self.player.end = "none"
 
         if what == "idle":
             # if already idle, do nothing
             if self.is_playing_this("idle"):
                 return
 
-            self.player.image_display_duration = "inf"
-            self.player.sub_files = [self.text_paths["idle"]]
             self.generate_text("idle")
-            self.player.play(self.background_loader.backgrounds["idle"])
+            self.player.command(
+                "loadfile",
+                self.background_loader.backgrounds["idle"],
+                "replace",
+                {"sub-files": self.text_paths["idle"]},
+            )
 
             return
 
         if what == "transition":
-            self.player.end = str(self.durations["transition"])
-            self.player.sub_files = [self.text_paths["transition"]]
-            self.player.play(self.playlist_entry_data["transition"].path)
+            self.player.command(
+                "loadfile",
+                self.playlist_entry_data["transition"].path,
+                "replace",
+                {
+                    "sub-files": self.text_paths["transition"],
+                    "end": str(self.durations["transition"]),
+                },
+            )
 
             return
 
