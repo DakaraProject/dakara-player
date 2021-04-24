@@ -7,7 +7,7 @@ from unittest.mock import ANY, MagicMock
 from func_timeout import func_set_timeout
 from path import TempDir
 
-from dakara_player.media_player.mpv import MediaPlayerMpv
+from dakara_player.media_player.mpv import media_player_mpv_selector
 from dakara_player.media_player.base import (
     IDLE_BG_NAME,
     IDLE_TEXT_NAME,
@@ -35,7 +35,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @contextmanager
     def get_instance(self, config=None):
-        """Get an instance of MediaPlayerMpv
+        """Get an instance of MediaPlayerMpv*
 
         This method is a context manager that automatically stops the player on
         exit.
@@ -45,7 +45,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
         Yields:
             tuple: Containing the following elements:
-                MediaPlayerMpv: Instance;
+                MediaPlayerMpv*: Instance;
                 path.Path: Path of the temporary directory;
                 unittest.case._LoggingWatcher: Captured output.
                 """
@@ -60,7 +60,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             try:
                 with ExitStack() as stack:
                     mpv_player = stack.enter_context(
-                        MediaPlayerMpv(
+                        media_player_mpv_selector(
                             Event(), Queue(), config, temp, warn_long_exit=False
                         )
                     )

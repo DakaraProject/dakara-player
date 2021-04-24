@@ -11,14 +11,14 @@ from dakara_player.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
 )
-from dakara_player.media_player.mpv import MediaPlayerMpv
+from dakara_player.media_player.mpv import media_player_mpv_selector
 from dakara_player.media_player.vlc import MediaPlayerVlc
 from dakara_player.version import check_version
 
 FontLoader = get_font_loader_class()
 
 MEDIA_PLAYER_CLASSES = {
-    "mpv": MediaPlayerMpv,
+    "mpv": media_player_mpv_selector,
     "vlc": MediaPlayerVlc,
 }
 

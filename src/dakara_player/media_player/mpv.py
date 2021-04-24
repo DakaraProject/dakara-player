@@ -2,7 +2,7 @@ import logging
 import re
 
 from dakara_base.safe_workers import safe
-from packaging.version import parse
+from packaging.version import parse, Version
 
 try:
     import python_mpv_jsonipc as mpv
@@ -34,8 +34,35 @@ MPV_ERROR_LEVELS = {
 }
 
 
-class MediaPlayerMpv(MediaPlayer):
-    """Class to manipulate mpv.
+def get_media_player_mpv_class():
+    """Get the mpv media player class according to installed version.
+
+    Returns:
+        object: Will return `MediaPlayerMpvPost0330` if mpv version is
+        higher than 0.33.0, or `MediaPlayerMpvOld` otherwise.
+    """
+    version = MediaPlayerMpvOld.get_version()
+
+    if version >= Version("0.33.0"):
+        logger.debug("Using post 0.33.0 API of mpv")
+        return MediaPlayerMpvPost0330
+
+    logger.debug("Using old API of mpv")
+    return MediaPlayerMpvOld
+
+
+def media_player_mpv_selector(*args, **kwargs):
+    """Instanciate the right mpv media player class.
+
+    Returns:
+        MediaPlayer: Instance of the mpv media player for the correct version
+        of mpv.
+    """
+    return get_media_player_mpv_class()(*args, **kwargs)
+
+
+class MediaPlayerMpvOld(MediaPlayer):
+    """Class to manipulate old mpv versions (< 0.33.0).
 
     The class can be used as a context manager that closes mpv
     automatically on exit.
@@ -599,6 +626,126 @@ class MediaPlayerMpv(MediaPlayer):
         self.callbacks["resumed"](self.playlist_entry["id"], self.get_timing())
 
         logger.debug("Resumed play")
+
+
+class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
+    """Class to manipulate newer mpv versions (>= 0.33.0).
+
+    The class can be used as a context manager that closes mpv
+    automatically on exit.
+
+    Any exception in callbacks make the application to crash.
+
+    Args:
+        stop (threading.Event): Stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): Error queue to communicate the exception to the
+            main thread.
+        config (dict): Dictionary of configuration.
+        tempdir (path.Path): Path of the temporary directory.
+
+    Attributes:
+        stop (threading.Event): Stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): Error queue to communicate the exception to the
+            main thread.
+        player_name (str): Name of mpv.
+        fullscreen (bool): If True, mpv will be fullscreen.
+        kara_folder_path (path.Path): Path to the karaoke folder.
+        playlist_entry (dict): Playlist entyr object.
+        callbacks (dict): High level callbacks associated with the media
+            player.
+        warn_long_exit (bool): If True, display a warning message if the media
+            player takes too long to stop.
+        durations (dict of int): Duration of the different screens in seconds.
+        text_paths (dict of path.Path): Path of the different text screens.
+        text_generator (dakara_player.text_generator.TextGenerator): Text
+            generator instance.
+        background_loader
+        (dakara_player.background_loader.BackgroundLoader): Background
+            loader instance.
+        player (mpv.MPV): Instance of mpv.
+        playlist_entry_data (dict): Extra data of the playlist entry.
+        player_data (dict): Extra data of the player. This attribute is not
+            used by the post 0.33.0 methods.
+    """
+
+    def is_playing(self):
+        """Query if mpv is playing something.
+
+        Returns:
+            bool: True if mpv is playing something.
+        """
+        # query if the player is currently playing
+        if self.is_paused():
+            return False
+
+        current_entries = [e for e in self.player.playlist if e.get("playing")]
+        return bool(len(current_entries))
+
+    def was_playing_this(self, what, id):
+        # extract entry from playlist
+        entries = [e for e in self.player.playlist if e["id"] == id]
+
+        assert len(entries) < 2, "There are more than one media that was playing"
+        assert len(entries) > 0, "No media was playing"
+
+        return self.is_playing_this(what, entries[0]["filename"])
+
+    def is_playing_this(self, what, media_path=None):
+        """Query if mpv is playing the requested media type.
+
+        Args:
+            what (str): Tell if mpv current track is of the requested type, but
+                not if it is actually playing it (it can be in pause).
+
+        Returns:
+            bool: True if mpv is playing the requested type.
+        """
+        media_path = media_path or self.player.path
+
+        if what == "idle":
+            return media_path == self.background_loader.backgrounds["idle"]
+
+        return media_path == self.playlist_entry_data[what].path
+
+    @safe
+    def handle_end_file(self, event):
+        """Callback called when a media ends.
+
+        This happens when:
+            - A transition screen ends, leading to playing the actual song;
+            - A song ends normally, leading to calling the callback
+                `callbacks["finished"]`;
+            - A song ends because it has been skipped, this case is ignored.
+
+        Args:
+            event (dict): mpv event.
+        """
+        logger.debug("File end callback called")
+        id = event["playlist_entry_id"]
+
+        # only handle when a file naturally ends
+        if event["reason"] != "eof":
+            logger.debug("File has been skipped")
+            return
+
+        # the transition screen has finished, request to play the song itself
+        if self.was_playing_this("transition", id):
+            logger.debug("Will play '{}'".format(self.playlist_entry_data["song"].path))
+            self.play("song")
+
+            return
+
+        # the media has finished, so call the according callback and clean memory
+        if self.was_playing_this("song", id):
+            self.callbacks["finished"](self.playlist_entry["id"])
+            self.clear_playlist_entry()
+
+            return
+
+        # if no state can be determined, raise an error
+        raise InvalidStateError("End file on an undeterminated state")
 
 
 class Media:

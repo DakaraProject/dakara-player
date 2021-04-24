@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch, call
 
 from path import Path
 
-from dakara_player.media_player.mpv import MediaPlayerMpv
+from dakara_player.media_player.mpv import MediaPlayerMpvOld
 from dakara_player.media_player.base import (
     MediaPlayerNotAvailableError,
     InvalidStateError,
@@ -15,7 +15,7 @@ from dakara_player.media_player.base import (
 )
 
 
-class MediaPlayerMpvTestCase(TestCase):
+class MediaPlayerMpvOldTestCase(TestCase):
     """Test the mpv player class unitary
     """
 
@@ -41,7 +41,7 @@ class MediaPlayerMpvTestCase(TestCase):
         mock_background_loader=True,
         mock_text_generator=True,
     ):
-        """Get a heavily mocked instance of MediaPlayerMpv
+        """Get a heavily mocked instance of MediaPlayerMpvOld
 
         Args:
             config (dict): Configuration passed to the constructor.
@@ -54,7 +54,7 @@ class MediaPlayerMpvTestCase(TestCase):
 
         Returns:
             tuple: Contains the following elements:
-                MediaPlayerMpv: Instance;
+                MediaPlayerMpvOld: Instance;
                 tuple: Contains the mocked objects:
                     unittest.mock.MagicMock: MPV object or None if
                         `mock_instance` is False;
@@ -96,7 +96,7 @@ class MediaPlayerMpvTestCase(TestCase):
             )
 
             return (
-                MediaPlayerMpv(Event(), Queue(), config, Path("temp")),
+                MediaPlayerMpvOld(Event(), Queue(), config, Path("temp")),
                 (
                     mocked_instance_class.return_value
                     if mocked_instance_class
@@ -119,7 +119,7 @@ class MediaPlayerMpvTestCase(TestCase):
         """Set a playlist entry and make the player play it
 
         Args:
-            mpv_player (MediaPlayerMpv): Instance of the mpv player.
+            mpv_player (MediaPlayerMpvOld): Instance of the mpv player.
             started (bool): If True, make the player play the song.
         """
         mpv_player.playlist_entry = self.playlist_entry
@@ -153,7 +153,7 @@ class MediaPlayerMpvTestCase(TestCase):
             ]
             mpv_player.player.pause = False
 
-    @patch.object(MediaPlayerMpv, "is_available")
+    @patch.object(MediaPlayerMpvOld, "is_available")
     def test_init_unavailable(self, mocked_is_available):
         """Test when mpv is not available
         """
@@ -162,7 +162,7 @@ class MediaPlayerMpvTestCase(TestCase):
         with self.assertRaisesRegex(
             MediaPlayerNotAvailableError, "mpv is not available"
         ):
-            MediaPlayerMpv(Event(), Queue(), {}, Path("temp"))
+            MediaPlayerMpvOld(Event(), Queue(), {}, Path("temp"))
 
     @patch("dakara_player.media_player.mpv.mpv.MPV")
     def test_get_version_postrelease(self, mocked_mpv_class):
@@ -174,7 +174,7 @@ class MediaPlayerMpvTestCase(TestCase):
         )
 
         # call the method
-        version = MediaPlayerMpv.get_version()
+        version = MediaPlayerMpvOld.get_version()
 
         # assert the result
         self.assertEqual(version.base_version, "0.32.0")
@@ -188,7 +188,7 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_mpv_class.return_value.mpv_version = "mpv 0.32.0"
 
         # call the method
-        version = MediaPlayerMpv.get_version()
+        version = MediaPlayerMpvOld.get_version()
 
         # assert the result
         self.assertEqual(version.base_version, "0.32.0")
@@ -203,9 +203,9 @@ class MediaPlayerMpvTestCase(TestCase):
 
         # call the method
         with self.assertRaisesRegex(VersionNotFoundError, "Unable to get mpv version"):
-            MediaPlayerMpv.get_version()
+            MediaPlayerMpvOld.get_version()
 
-    @patch.object(MediaPlayerMpv, "is_playing_this")
+    @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_get_timing(self, mocked_is_playing_this):
         """Test to get timing
         """
@@ -217,7 +217,7 @@ class MediaPlayerMpvTestCase(TestCase):
 
         mocked_is_playing_this.assert_has_calls([call("idle"), call("transition")])
 
-    @patch.object(MediaPlayerMpv, "is_playing_this")
+    @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_get_timing_idle(self, mocked_is_playing_this):
         """Test to get timing when idle
         """
@@ -227,7 +227,7 @@ class MediaPlayerMpvTestCase(TestCase):
 
         self.assertEqual(mpv_player.get_timing(), 0)
 
-    @patch.object(MediaPlayerMpv, "is_playing_this")
+    @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_get_timing_transition(self, mocked_is_playing_this):
         """Test to get timing when in transition
         """
@@ -237,7 +237,7 @@ class MediaPlayerMpvTestCase(TestCase):
 
         self.assertEqual(mpv_player.get_timing(), 0)
 
-    @patch.object(MediaPlayerMpv, "get_version")
+    @patch.object(MediaPlayerMpvOld, "get_version")
     def test_load_player(self, mocked_get_version):
         """Test to load the instance
         """
@@ -259,8 +259,8 @@ class MediaPlayerMpvTestCase(TestCase):
             logger.output, ["INFO:dakara_player.media_player.mpv:mpv 0.32.0"]
         )
 
-    @patch.object(MediaPlayerMpv, "clear_playlist_entry")
-    @patch.object(MediaPlayerMpv, "play")
+    @patch.object(MediaPlayerMpvOld, "clear_playlist_entry")
+    @patch.object(MediaPlayerMpvOld, "play")
     def test_handle_end_file_transition(self, mocked_play, mocked_clear_playlist_entry):
         """Test end file callback for after a transition
         """
@@ -290,8 +290,8 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_clear_playlist_entry.assert_not_called()
         mpv_player.callbacks["finished"].assert_not_called()
 
-    @patch.object(MediaPlayerMpv, "clear_playlist_entry")
-    @patch.object(MediaPlayerMpv, "play")
+    @patch.object(MediaPlayerMpvOld, "clear_playlist_entry")
+    @patch.object(MediaPlayerMpvOld, "play")
     def test_handle_end_file_song(self, mocked_play, mocked_clear_playlist_entry):
         """Test end file callback for after a song
         """
@@ -315,8 +315,8 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_clear_playlist_entry.assert_called_with()
         mpv_player.callbacks["finished"].assert_called_with(self.playlist_entry["id"])
 
-    @patch.object(MediaPlayerMpv, "clear_playlist_entry")
-    @patch.object(MediaPlayerMpv, "play")
+    @patch.object(MediaPlayerMpvOld, "clear_playlist_entry")
+    @patch.object(MediaPlayerMpvOld, "play")
     def test_handle_end_file_other(self, mocked_play, mocked_clear_playlist_entry):
         """Test end file callback for unknown state
         """
@@ -342,7 +342,7 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_clear_playlist_entry.assert_not_called()
         mpv_player.callbacks["finished"].assert_not_called()
 
-    @patch.object(MediaPlayerMpv, "skip")
+    @patch.object(MediaPlayerMpvOld, "skip")
     def test_handle_log_message(self, mocked_skip):
         """Test log message callback
         """
@@ -379,7 +379,7 @@ class MediaPlayerMpvTestCase(TestCase):
         )
         mocked_skip.assert_called_with()
 
-    @patch.object(MediaPlayerMpv, "is_playing_this")
+    @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_handle_start_file_transition(self, mocked_is_playing_this):
         """Test start file callback for a transition
         """
@@ -413,7 +413,7 @@ class MediaPlayerMpvTestCase(TestCase):
         mpv_player.callbacks["started_song"].assert_not_called()
         mocked_is_playing_this.assert_called_with("transition")
 
-    @patch.object(MediaPlayerMpv, "is_playing_this")
+    @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_handle_start_file_song(self, mocked_is_playing_this):
         """Test start file callback for a song
         """
@@ -453,7 +453,7 @@ class MediaPlayerMpvTestCase(TestCase):
         )
         mocked_is_playing_this.assert_has_calls([call("transition"), call("song")])
 
-    @patch.object(MediaPlayerMpv, "is_playing_this")
+    @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_handle_start_file_idle(self, mocked_is_playing_this):
         """Test start file callback for a idle
         """
@@ -486,7 +486,7 @@ class MediaPlayerMpvTestCase(TestCase):
             [call("transition"), call("song"), call("idle")]
         )
 
-    @patch.object(MediaPlayerMpv, "is_playing_this")
+    @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_handle_start_file_unknown(self, mocked_is_playing_this):
         """Test start file callback for an unknown state
         """
@@ -513,7 +513,7 @@ class MediaPlayerMpvTestCase(TestCase):
         mpv_player.callbacks["started_transition"].assert_not_called()
         mpv_player.callbacks["started_song"].assert_not_called()
 
-    @patch.object(MediaPlayerMpv, "get_timing")
+    @patch.object(MediaPlayerMpvOld, "get_timing")
     def test_handle_pause(self, mocked_get_timing):
         """Test pause callback
         """
@@ -542,7 +542,7 @@ class MediaPlayerMpvTestCase(TestCase):
         mpv_player.callbacks["paused"].assert_called_with(self.playlist_entry["id"], 42)
         mocked_get_timing.assert_called_with()
 
-    @patch.object(MediaPlayerMpv, "get_timing")
+    @patch.object(MediaPlayerMpvOld, "get_timing")
     def test_handle_unpause(self, mocked_get_timing):
         """Test unpause callback
         """
