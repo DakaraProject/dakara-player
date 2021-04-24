@@ -40,6 +40,16 @@ class GetParserTestCase(TestCase):
         # check the function
         self.assertIs(args.function, play.create_config)
 
+    def test_create_resources_function(self):
+        """Test the parser calls create_resources when prompted
+        """
+        # call the function
+        parser = play.get_parser()
+        args = parser.parse_args(["create-resources"])
+
+        # check the function
+        self.assertIs(args.function, play.create_resources)
+
 
 class PlayTestCase(TestCase):
     """Test the play action
@@ -190,6 +200,32 @@ class CreateConfigTestCase(TestCase):
         mocked_create_config_file.assert_called_with(
             "dakara_player.resources", "player.yaml", False
         )
+
+
+class CreateResourcesTestCase(TestCase):
+    """Test the create-resources action
+    """
+
+    @patch("dakara_player.commands.play.create_logger")
+    @patch("dakara_player.commands.play.create_resource_files")
+    def test_create_config(self, mocked_create_resource_files, mocked_create_logger):
+        """Test a simple create-resources action
+        """
+        # call the function
+        with self.assertLogs("dakara_player.commands.play") as logger:
+            play.create_resources(Namespace(force=False))
+
+        # assert the logs
+        self.assertListEqual(
+            logger.output,
+            ["INFO:dakara_player.commands.play:You can now customize those files"],
+        )
+
+        # assert the call
+        mocked_create_logger.assert_called_with(
+            custom_log_format=ANY, custom_log_level=ANY
+        )
+        mocked_create_resource_files.assert_called_with(False)
 
 
 @patch("dakara_player.commands.play.exit")

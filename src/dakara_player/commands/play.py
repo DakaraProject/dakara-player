@@ -68,7 +68,8 @@ def get_parser():
     # create resources subparser
     create_resource_subparser = subparsers.add_parser(
         "create-resources",
-        description="Create resource files in user directory (for background screens, text templates)",
+        description="Create resource files in user directory "
+        "(for background screens, text templates)",
         help="Create resource files in user directory",
     )
     create_resource_subparser.set_defaults(function=create_resources)
@@ -133,7 +134,7 @@ def create_config(args):
 
 def create_resources(args):
     """Create resource files
-    
+
     Args:
         args (argparse.Namespace): arguments from command line.
     """

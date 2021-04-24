@@ -15,6 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 def get_user_directory():
+    """Get the user directory for resource files
+
+    Returns:
+        path.Path: path to the user directory, must be expanded to be used.
+    """
     if "linux" in sys.platform:
         return Path("~") / ".local" / "share" / "dakara" / "player"
 
@@ -25,6 +30,14 @@ def get_user_directory():
 
 
 def copy_resource(resource, destination, force):
+    """Copy the content of one resource directory
+
+    Args:
+        resource (str): resource to copy.
+        destination (path.Path): directory where to copy the resource.
+        force (bool): if the destination exists and this flag is set to True,
+            overwrite the destination.
+    """
     if not force and destination.exists():
         try:
             result = strtobool(
@@ -52,6 +65,12 @@ def copy_resource(resource, destination, force):
 
 
 def create_resource_files(force=False):
+    """Copy the resource files to user directory
+
+    Args:
+        force (bool): if the user directory already contains the resource
+            directories and this flag is set, overwrite the directories.
+    """
     user_directory = get_user_directory().expand()
     user_directory.mkdir_p()
 
