@@ -81,9 +81,9 @@ class BackgroundLoader:
         """
         logger.debug("Loading backgrounds")
         for name, file_name in self.filenames.items():
-            self.backgrounds[name] = self.get_background_path(file_name)
+            self.backgrounds[name] = self.get_background_path(name, file_name)
 
-    def get_background_path(self, file_name):
+    def get_background_path(self, background_name, file_name):
         """Get the accurate path of one background
 
         Args:
@@ -96,17 +96,25 @@ class BackgroundLoader:
         if self.directory:
             file_path = self.directory / file_name
             if file_path.exists():
+                logger.debug(
+                    "Loading custom %s background file '%s'", background_name, file_name
+                )
                 return file_path.copy(self.destination)
 
         # trying to load from package by default
         try:
             with path(self.package, file_name) as file:
+                logger.debug(
+                    "Loading default %s background file '%s'",
+                    background_name,
+                    file_name,
+                )
                 file_path = Path(file)
                 return file_path.copy(self.destination)
 
         except FileNotFoundError as error:
             raise BackgroundNotFoundError(
-                "Unable to find background file '{}'".format(file_name)
+                f"No {background_name} background file found for '{file_name}'"
             ) from error
 
 

@@ -12,9 +12,6 @@ except ImportError:
     from importlib_resources import path
 
 
-TRANSITION_TEMPLATE_NAME = "transition.ass"
-IDLE_TEMPLATE_NAME = "idle.ass"
-
 ICON_MAP_FILE = "font-awesome.json"
 
 LINK_TYPE_NAMES = {
@@ -28,49 +25,56 @@ logger = logging.getLogger(__name__)
 
 
 class TextGenerator:
-    """Text generator
+    """Generator for text screens
 
-    This class creates custom ASS contents that are used for idle or transition
-    screens. It uses Jinja to populate ASS templates with various informations.
+    # It populates text contents that are used for idle or transition
+    # screens. It uses Jinja under the hood, and can use templates from a custom
+    # directory, or from a fallback package.
 
     Example of use:
 
     >>> from path import Path
-    >>> config = {
-    ...     "directory": Path("my/directory")
-    ... }
-    >>> generator = TextGenerator(config)
+    >>> generator = TextGenerator(
+    ...     package="package",
+    ...     directory=Path("directory"),
+    ...     filenames={
+    ...         "idle": "idle.ass",
+    ...         "transition": "transition.ass",
+    ...     },
+    ... )
     >>> generator.load()
-    >>> idle_screen_content = generator.create_idle_text({
-    ...     "notes": [
-    ...         "line1",
-    ...         "line2",
-    ...     ]
-    ... })
+    >>> idle_screen_content = generator.get_text(
+    ...     "idle",
+    ...     {
+    ...         "notes": [
+    ...             "line1",
+    ...             "line2",
+    ...         ],
+    ...     },
+    ... )
 
     Args:
-        config (dict): config dictionary, which may contain the keys
-            "directory", "transition_template_name" and "idle_template_name".
+        package (str): package checked for text templates by default.
+        directory (path.Path): custom directory checked for text templates.
+        filenames (dict): dictionary of text templates filenames. The key is the
+            template name, the value the template file name.
 
     Attributes:
-        config (dict): config dictionary.
-        directory (path.Path): path to custom templates directory.
+        package (str): package checked for text templates by default.
+        directory (path.Path): custom directory checked for text templates.
+        filenames (dict): dictionary of text templates filenames. The key is the
+            template name, the value the template file name.
         environment (jinja2.Environment): environment for Jinja2.
-        transition_template_name (jinja2.Template): template to generate the
-            transition text.
-        idle_template_name (jinja2.Template): template to generate the idle
-            text.
         icon_map (dict): map of icons. Keys are icon name, values are icon character.
     """
 
-    def __init__(self, config):
-        self.config = config
-        self.directory = Path(config.get("directory", ""))
+    def __init__(self, package, directory=None, filenames=None):
+        self.package = package
+        self.directory = directory or Path()
+        self.filenames = filenames or {}
 
         # Jinja2 elements
         self.environment = None
-        self.transition_template = None
-        self.idle_template = None
 
         # icon map
         self.icon_map = {}
@@ -95,10 +99,12 @@ class TextGenerator:
     def load_templates(self):
         """Set up Jinja environment
         """
+        logger.debug("Loading text templates")
         # create loaders
+        *package_list, package_directory = self.package.split(".")
         loaders = [
             FileSystemLoader(self.directory),
-            PackageLoader("dakara_player.resources"),
+            PackageLoader(".".join(package_list), package_directory),
         ]
 
         # create Jinja2 environment
@@ -110,73 +116,46 @@ class TextGenerator:
         # add filter for work link type complete name
         self.environment.filters["link_type_name"] = self.convert_link_type_name
 
-        # load templates
-        self.load_transition_template(
-            self.config.get("transition_template_name", TRANSITION_TEMPLATE_NAME)
-        )
+        # check loaded templates
+        for name, file_name in self.filenames.items():
+            self.check_template(name, file_name)
 
-        self.load_idle_template(
-            self.config.get("idle_template_name", IDLE_TEMPLATE_NAME)
-        )
+    def get_environment_loaders(self):
+        """Return the different loaders used by Jinja
 
-    def load_transition_template(self, transition_template_name):
-        """Load transition screen text template file
+        Returns:
+            list: list of the different loaders.
+        """
+        return self.environment.loader.loaders
 
-        Load the default or customized ASS template for transition screen.
+    def check_template(self, template_name, file_name):
+        """Check if a template is accessible either custom or default
 
         Args:
-            transition_template_name (str): name of the transition template to
-                use.
-        """
-        loader_custom, loader_default = self.environment.loader.loaders
+            template_name (str): name of the text template.
+            file_name (str): name of the text template file.
 
-        if transition_template_name in loader_custom.list_templates():
+        Raises:
+            TemplateNotFoundError: if the template can neither be found on
+            custom loader, nor default loader.
+        """
+        loader_custom, loader_default = self.get_environment_loaders()
+
+        if file_name in loader_custom.list_templates():
             logger.debug(
-                "Loading custom transition template file '%s'", transition_template_name
+                "Loading custom %s text template file '%s'", template_name, file_name
             )
+            return
 
-            self.transition_template = self.environment.get_template(
-                transition_template_name
+        if file_name in loader_default.list_templates():
+            logger.debug(
+                "Loading default %s text template file '%s'", template_name, file_name
             )
-
             return
 
-        if TRANSITION_TEMPLATE_NAME in loader_default.list_templates():
-            logger.debug("Loading default transition template file")
-
-            self.transition_template = self.environment.get_template(
-                TRANSITION_TEMPLATE_NAME
-            )
-
-            return
-
-        raise TemplateNotFoundError("No template file for transition screen found")
-
-    def load_idle_template(self, idle_template_name):
-        """Load idle screen text template file
-
-        Load the default or customized ASS template for idle screen.
-
-        Args:
-            transition_template_name (str): name of the idle template to use.
-        """
-        loader_custom, loader_default = self.environment.loader.loaders
-
-        if idle_template_name in loader_custom.list_templates():
-            logger.debug("Loading custom idle template file '%s'", idle_template_name)
-
-            self.idle_template = self.environment.get_template(idle_template_name)
-
-            return
-
-        if IDLE_TEMPLATE_NAME in loader_default.list_templates():
-            logger.debug("Loading default idle template file")
-
-            self.idle_template = self.environment.get_template(IDLE_TEMPLATE_NAME)
-
-            return
-
-        raise TemplateNotFoundError("No template file for idle screen found")
+        raise TemplateNotFoundError(
+            f"No {template_name} text template file found for '{file_name}'"
+        )
 
     def convert_icon(self, name):
         """Convert the name of an icon to its code
@@ -204,31 +183,20 @@ class TextGenerator:
         """
         return LINK_TYPE_NAMES[link_type]
 
-    def create_idle_text(self, info):
-        """Create custom idle text and save it
+    def get_text(self, template_name, data, **kwargs):
+        """Generate the text for the desired template
 
         Args:
-            info (dict): dictionnary of additionnal information.
+            template_name (str): name of the text template.
+            data (dict): values to pass to the template.
+            kwargs (dict): extra values to pass to the template.
 
         Returns:
-            str: text containing the idle screen content.
+            str: generated text from the template with provided values.
         """
-        return self.idle_template.render(**info)
-
-    def create_transition_text(self, playlist_entry, fade_in=True):
-        """Create custom transition text and save it
-
-        Args:
-            playlist_entry (dict): dictionary containing keys for the playlist
-                entry.
-            fade_in: text will appear with fade-in effect
-
-        Returns:
-            str: text containing the transition screen content.
-        """
-        info = playlist_entry
-        info["fade_in"] = fade_in
-        return self.transition_template.render(info)
+        return self.environment.get_template(self.filenames[template_name]).render(
+            **data, **kwargs
+        )
 
 
 class TemplateNotFoundError(DakaraError, FileNotFoundError):

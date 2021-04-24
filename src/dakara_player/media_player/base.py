@@ -9,6 +9,7 @@ from path import Path
 from dakara_player.background_loader import BackgroundLoader
 from dakara_player.audio import get_audio_files
 from dakara_player.text_generator import TextGenerator
+from dakara_player.user_resource_files import get_user_directory
 from dakara_player.version import __version__
 
 
@@ -115,14 +116,23 @@ class MediaPlayer(Worker, ABC):
 
         # set text generator
         config_texts = config.get("templates") or {}
-        self.text_generator = TextGenerator(config_texts)
+        self.text_generator = TextGenerator(
+            package="dakara_player.resources.templates",
+            directory=get_user_directory().expand() / "templates",
+            filenames={
+                "transition": config_texts.get(
+                    "transition_template_name", TRANSITION_TEXT_NAME
+                ),
+                "idle": config_texts.get("idle_template_name", IDLE_TEXT_NAME),
+            },
+        )
 
         # set background loader
         config_backgrounds = config.get("backgrounds") or {}
         self.background_loader = BackgroundLoader(
             destination=tempdir,
             package="dakara_player.resources.backgrounds",
-            directory=Path(config_backgrounds.get("directory", "")),
+            directory=get_user_directory().expand() / "backgrounds",
             filenames={
                 "transition": config_backgrounds.get(
                     "transition_background_name", TRANSITION_BG_NAME
@@ -408,7 +418,7 @@ class MediaPlayer(Worker, ABC):
         """
         logger.warning("{} takes too long to stop".format(cls.player_name))
 
-    def generate_text(self, what, *args, **kwargs):
+    def generate_text(self, what, **kwargs):
         """Generate text screens for the requested action.
 
         Extra arguments are passed to `TextGenerator.create_*_text`.
@@ -420,26 +430,26 @@ class MediaPlayer(Worker, ABC):
             path.Path: Path of the text screen.
         """
         if what == "idle":
-            text = self.text_generator.create_idle_text(
+            text = self.text_generator.get_text(
+                "idle",
                 {
                     "notes": [
                         "{} {}".format(self.player_name, self.get_version()),
                         "Dakara player {}".format(__version__),
                     ]
                 },
-                *args,
                 **kwargs
             )
 
         elif what == "transition":
-            text = self.text_generator.create_transition_text(
-                self.playlist_entry, *args, **kwargs
+            text = self.text_generator.get_text(
+                "transition", self.playlist_entry, **kwargs
             )
 
         else:
             raise ValueError("Unexpected action to generate text to: {}".format(what))
 
-        self.text_paths[what].write_text(text, "utf-8")
+        self.text_paths[what].write_text(text, encoding="utf-8")
 
         return self.text_paths[what]
 

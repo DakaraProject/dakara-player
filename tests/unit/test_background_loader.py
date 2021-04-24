@@ -94,12 +94,12 @@ class BackgroundLoaderTestCase(TestCase):
             destination=self.destination,
             package="package",
             directory=Path("/") / "directory",
-            filenames={"background": "background.png"},
+            filenames={"idle": "idle.png"},
         )
 
         # load the backgrounds
         with self.assertRaisesRegex(
-            BackgroundNotFoundError, "Unable to find background file 'background.png'"
+            BackgroundNotFoundError, "No idle background file found for 'idle.png'"
         ):
             loader.load()
 
@@ -107,6 +107,6 @@ class BackgroundLoaderTestCase(TestCase):
         self.assertDictEqual(loader.backgrounds, {})
 
         # assert the call of the mocked method
-        mocked_exists.assert_called_with(Path("/") / "directory" / "background.png")
+        mocked_exists.assert_called_with(Path("/") / "directory" / "idle.png")
         mocked_copy.assert_not_called()
-        mocked_path.assert_called_with("package", "background.png")
+        mocked_path.assert_called_with("package", "idle.png")
