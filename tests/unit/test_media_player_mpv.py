@@ -164,50 +164,46 @@ class MediaPlayerMpvTestCase(TestCase):
         ):
             MediaPlayerMpv(Event(), Queue(), {}, Path("temp"))
 
-    def test_get_version_postrelease(self):
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_get_version_postrelease(self, mocked_mpv_class):
         """Test to get the mpv post release version
         """
-        # create instance
-        mpv_player, (mocked_mpv, _, _), _ = self.get_instance()
-
         # mock the version of mpv
-        mocked_mpv.mpv_version = "mpv 0.32.0+git.20200402T120653.5824ac7d36"
+        mocked_mpv_class.return_value.mpv_version = (
+            "mpv 0.32.0+git.20200402T120653.5824ac7d36"
+        )
 
         # call the method
-        version = mpv_player.get_version()
+        version = MediaPlayerMpv.get_version()
 
         # assert the result
         self.assertEqual(version.base_version, "0.32.0")
         self.assertTrue(version.is_postrelease)
 
-    def test_get_version(self):
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_get_version(self, mocked_mpv_class):
         """Test to get the mpv stable version
         """
-        # create instance
-        mpv_player, (mocked_mpv, _, _), _ = self.get_instance()
-
         # mock the version of mpv
-        mocked_mpv.mpv_version = "mpv 0.32.0"
+        mocked_mpv_class.return_value.mpv_version = "mpv 0.32.0"
 
         # call the method
-        version = mpv_player.get_version()
+        version = MediaPlayerMpv.get_version()
 
         # assert the result
         self.assertEqual(version.base_version, "0.32.0")
         self.assertFalse(version.is_postrelease)
 
-    def test_get_version_not_found(self):
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_get_version_not_found(self, mocked_mpv_class):
         """Test to get the mpv version when it is not available
         """
-        # create instance
-        mpv_player, (mocked_mpv, _, _), _ = self.get_instance()
-
         # mock the version of mpv
-        mocked_mpv.mpv_version = "none"
+        mocked_mpv_class.return_value.mpv_version = "none"
 
         # call the method
         with self.assertRaisesRegex(VersionNotFoundError, "Unable to get mpv version"):
-            mpv_player.get_version()
+            MediaPlayerMpv.get_version()
 
     @patch.object(MediaPlayerMpv, "is_playing_this")
     def test_get_timing(self, mocked_is_playing_this):

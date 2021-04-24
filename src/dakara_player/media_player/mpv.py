@@ -159,7 +159,8 @@ class MediaPlayerMpv(MediaPlayer):
 
         return int(timing)
 
-    def get_version(self):
+    @staticmethod
+    def get_version():
         """Get media player version.
 
         mpv version is in the form "mpv x.y.z+git.v.w" where "v" is a timestamp
@@ -172,10 +173,12 @@ class MediaPlayerMpv(MediaPlayer):
         Returns:
             packaging.version.Version: Parsed version of mpv.
         """
+        player = mpv.MPV()
         match = re.search(
-            r"mpv (\d+\.\d+\.\d+)(?:\+git\.(\d{8})T(\d{6})\..*)?",
-            self.player.mpv_version,
+            r"mpv (\d+\.\d+\.\d+)(?:\+git\.(\d{8})T(\d{6})\..*)?", player.mpv_version,
         )
+        player.terminate()
+
         if match:
             if match.group(2) and match.group(3):
                 return parse(match.group(1) + "-post" + match.group(2) + match.group(3))
