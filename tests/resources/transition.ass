@@ -6,10 +6,6 @@ YCbCr Matrix: TV.601
 PlayResX: 1920
 PlayResY: 1080
 
-; DON'T TOUCH THIS FILE!
-; Consult the documentation below if you want to customize
-; the transition screen template
-
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: title,Roboto Thin,70,&H00191919,&H00191919,&H00A01286,&H00000000,0,0,0,0,100,100,0,0,3,20,0,1,70,70,585,1
@@ -35,27 +31,16 @@ Dialogue: 1,0:00:00.10,0:00:05.00,playlist-entry-detail-text,,0,0,0,,{\fad(500, 
 Dialogue: 0,0:00:00.20,0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome}{\fs50}​
 
 
-; DON'T TOUCH THIS FILE!
-; Your modification will be lost during the next update.
+; We have decided to use subtitle files for text display with media players
+; because we can get a fancy output quite easily. Subtitles allow formatting and
+; easy text positionning. We have used Advanced Subtitle Station Alpha format
+; because it has some animation features and it is widely used for karaoke
+; subbing. You should feel at home!
 
-; To make your own transition template, copy this file with another name and
-; modify it. Then uncomment the line `transition_template_name` in `config.yaml`
-; and modify it to point to your new template file. Same goes for the
-; transition background file, uncomment the line `transition_background_name` and
-; modify it to point to your new background file.
-
-; We have decided to use subtitle files for text display with VLC
-; because we can get a fancy output quite easily. Subtitles allow
-; formatting and easy text positionning. We have used Advanced
-; Subtitle Station Alpha format because it has some animation
-; features and it is widely used for karaoke subbing. You should
-; feel at home!
-
-; You can use any kind of subtitle format for the transition template file, as
-; long as VLC can display it. The template is handled within the program by
-; the Jinja2 template engine. Playlist entry information are added by the
-; mean of placeholders in the template, which are associated to the data
-; structure of the playlist entry:
+; You can use any kind of subtitle format for the idle template file, as long as
+; the media player can display it. The template is handled within the program by
+; the Jinja2 template engine. Information are added by the mean of placeholders
+; in the template, which are associated to the following data:
 
 ; {
 ;     "song": {
@@ -96,6 +81,10 @@ Dialogue: 0,0:00:00.20,0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 
 ; Icon name can be used with the filter `icon` to get an actual icon (you have to
 ; set the font as Fontawesome). Long name of the link type is obtained with the
 ; `link_type_name` filter.
+
+; You will notice the special character "​" (zero width space) at the end of
+; some lines, after a font size change. It is used to keep a line at the desired
+; line height without having to display a real character.
 
 ; For further information about the Jinja2 template engine and its abilities,
 ; please consult the documentation:

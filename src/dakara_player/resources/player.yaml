@@ -79,8 +79,13 @@ player:
 
   # Parameters for templates
   # Templates are used to display some information on the idle or the
-  # transition screens in the form of subtitles. They can be anything VLC can
-  # handle as subtitle. Users can create their own files and place them in ~/.local/share/dakara/playel/templates on Linux, or $APPDATA\Dakara\player\templates on Windows. Generic files from the package are used as fallback. The command 'dakara-play create-resources' will copy the generic files to the user directory.
+  # transition screens in text. They can be anything the media player can handle
+  # as subtitle, we chose the Advanced SubStation Alpha format as it is highly
+  # customizable. Users can create their own files and place them in
+  # ~/.local/share/dakara/playel/templates on Linux, or
+  # $APPDATA\Dakara\player\templates on Windows. Generic files from the package
+  # are used as fallback. The command 'dakara-play create-resources' will copy
+  # the generic files to the user directory.
   templates:
     # Name of the template for the transition screen text.
     # This template displays information about the song to play (artist,
@@ -89,18 +94,24 @@ player:
     # transition_template_name: transition.ass
 
     # Name of the template for the idle sceen text.
-    # This template displays information about the player (Dakara version, VLC/mpv version).
+    # This template displays information about the player (Dakara version,
+    # VLC/mpv version).
     # Default is 'idle.ass'.
     # idle_template_name: idle.ass
 
   # Parameters for backgrounds
   # Backgrounds are used during the idle or the transition screens. They can be
-  # a steady picture or a video, anything VLC can read. In case of pictures,
-  # they will be displayed for a certain amount of time. Users can use their own files and place them in ~/.local/share/dakara/playel/templates on Linux, or $APPDATA\Dakara\player\templates on Windows. Generic files from the package are used as fallback. The command 'dakara-play create-resources' will copy the generic files to the user directory.
+  # a steady picture or a video, anything the media player can read. In case of
+  # pictures, they will be displayed for a certain amount of time. Users can
+  # use their own files and place them in
+  # ~/.local/share/dakara/playel/backgrounds on Linux, or
+  # $APPDATA\Dakara\player\backgrounds on Windows. Generic files from the
+  # package are used as fallback. The command 'dakara-play create-resources'
+  # will copy the generic files to the user directory.
   backgrounds:
     # Name of the background file of the transition screen.
-    # In case of a picture, it will be displayed during 'transitionDuration'
-    # seconds.
+    # In case of a picture, it will be displayed during
+    # 'durations.transition_duration' seconds.
     # Default is 'transition.png'.
     # transition_background_name: transition.png
 
