@@ -456,7 +456,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
         # assert mocks
         mocked_exists.assert_called_with()
-        mocked_generate_text.assert_called_with("transition")
+        mocked_generate_text.assert_called_with("transition", fade_in=True)
         mocked_play.assert_called_with("transition")
         mocked_manage_instrumental.assert_not_called()
 

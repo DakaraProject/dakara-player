@@ -359,7 +359,7 @@ class MediaPlayerVlc(MediaPlayer):
             {"type": "transition", "playlist_entry": self.playlist_entry},
         )
 
-        self.generate_text("transition")
+        self.generate_text("transition", fade_in=True)
 
         self.playlist_entry_data["transition"].media = media_transition
 
