@@ -55,6 +55,7 @@ mv $env:APPDATA\Dakara\player_vlc.yaml $env:APPDATA\Dakara\player.yaml
   Current accepted values are `vlc` and `mpv`.
 - VLC runs in a permanent Tkinter window if possible, which doesn't close between media.
   The old behavior can be restored in config file using the `player.vlc.use_default_window` key.
+- The default backgrounds and text templates can be copied to user directory with the command `dakara-play create-resources`, to be easily customized.
 
 ### Changed
 
@@ -64,6 +65,8 @@ mv $env:APPDATA\Dakara\player_vlc.yaml $env:APPDATA\Dakara\player.yaml
   - Pypi package name `dakaraplayervlc` > `dakaraplayer`;
   - Config file name `player_vlc.yamd` > `player.yaml`;
   - Command name `dakara-play-vlc` > `dakara-play`.
+- Custom backgrounds and text templates are loaded from the user directory: `~/.local/share/dakara/player` on Linux and `$APPDATA\Dakara\player` on Windows.
+  It is not possible to specify a custom lookup directory anymore, so the config keys `player.backgrounds.directory` and `player.templates.directory` are now ignored.
 
 ## 1.6.0 - 2020-09-05
 
