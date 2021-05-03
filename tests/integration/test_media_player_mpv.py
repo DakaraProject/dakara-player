@@ -275,6 +275,9 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # wait for the player to be paused
             self.wait_is_paused(mpv_player)
 
+            # assert in pause
+            self.assertFalse(mpv_player.is_playing())
+
             # assert the callback
             mpv_player.callbacks["paused"].assert_called_with(
                 self.playlist_entry1["id"], timing

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch, call
 
 from path import Path
 
-from dakara_player.media_player.mpv import MediaPlayerMpvOld
+from dakara_player.media_player.mpv import MediaPlayerMpvOld, MediaPlayerMpvPost0330
 from dakara_player.media_player.base import (
     MediaPlayerNotAvailableError,
     InvalidStateError,
@@ -15,9 +15,11 @@ from dakara_player.media_player.base import (
 )
 
 
-class MediaPlayerMpvOldTestCase(TestCase):
+class MediaPlayerMpvTestCase(TestCase):
     """Test the mpv player class unitary
     """
+
+    mpv_player_class = None
 
     def setUp(self):
         # create playlist entry ID
@@ -96,7 +98,7 @@ class MediaPlayerMpvOldTestCase(TestCase):
             )
 
             return (
-                MediaPlayerMpvOld(Event(), Queue(), config, Path("temp")),
+                self.mpv_player_class(Event(), Queue(), config, Path("temp")),
                 (
                     mocked_instance_class.return_value
                     if mocked_instance_class
@@ -152,6 +154,33 @@ class MediaPlayerMpvOldTestCase(TestCase):
                 }
             ]
             mpv_player.player.pause = False
+
+
+class MediaPlayerMpvOldTestCase(MediaPlayerMpvTestCase):
+    """Test the old mpv player class unitary
+    """
+
+    mpv_player_class = MediaPlayerMpvOld
+
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_is_available_ok_direct(self, mocked_mpv_class):
+        """Test to get availability directly
+        """
+        self.assertTrue(MediaPlayerMpvOld.is_available())
+
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_is_available_ok_indirect(self, mocked_mpv_class):
+        """Test to get availability indirectly
+        """
+        mocked_mpv_class.side_effect = [FileNotFoundError(), MagicMock()]
+        self.assertTrue(MediaPlayerMpvOld.is_available())
+
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_is_available_ng(self, mocked_mpv_class):
+        """Test to get inavailability
+        """
+        mocked_mpv_class.side_effect = FileNotFoundError()
+        self.assertFalse(MediaPlayerMpvOld.is_available())
 
     @patch.object(MediaPlayerMpvOld, "is_available")
     def test_init_unavailable(self, mocked_is_available):
@@ -602,3 +631,99 @@ class MediaPlayerMpvOldTestCase(TestCase):
 
         mpv_player.player.play.assert_called_with("test_file")
         self.assertNotEqual(mpv_player.player.sub_files, [None])
+
+
+class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvTestCase):
+    """Test the post 0.33.0 mpv player class unitary
+    """
+
+    mpv_player_class = MediaPlayerMpvPost0330
+
+    @patch.object(MediaPlayerMpvPost0330, "clear_playlist_entry")
+    @patch.object(MediaPlayerMpvPost0330, "play")
+    def test_handle_end_file_transition(self, mocked_play, mocked_clear_playlist_entry):
+        """Test end file callback for after a transition
+        """
+        # create instance
+        mpv_player, (mocked_player, _, _), _ = self.get_instance()
+        mpv_player.set_callback("finished", MagicMock())
+        self.set_playlist_entry(mpv_player)
+        mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "transition.png"
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
+            mpv_player.handle_end_file(
+                {"event": "end-file", "reason": "eof", "playlist_entry_id": 1}
+            )
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player.media_player.mpv:File end callback called",
+                "DEBUG:dakara_player.media_player.mpv:Will play '{}'".format(
+                    Path(gettempdir()) / self.song_file_path
+                ),
+            ],
+        )
+
+        # assert the call
+        mocked_play.assert_called_with("song")
+        mocked_clear_playlist_entry.assert_not_called()
+        mpv_player.callbacks["finished"].assert_not_called()
+
+    @patch.object(MediaPlayerMpvPost0330, "clear_playlist_entry")
+    @patch.object(MediaPlayerMpvPost0330, "play")
+    def test_handle_end_file_song(self, mocked_play, mocked_clear_playlist_entry):
+        """Test end file callback for after a song
+        """
+        # create instance
+        mpv_player, (mocked_player, _, _), _ = self.get_instance()
+        mpv_player.set_callback("finished", MagicMock())
+        self.set_playlist_entry(mpv_player)
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
+            mpv_player.handle_end_file(
+                {"event": "end-file", "reason": "eof", "playlist_entry_id": 1}
+            )
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            ["DEBUG:dakara_player.media_player.mpv:File end callback called"],
+        )
+
+        # assert the call
+        mocked_play.assert_not_called()
+        mocked_clear_playlist_entry.assert_called_with()
+        mpv_player.callbacks["finished"].assert_called_with(self.playlist_entry["id"])
+
+    @patch.object(MediaPlayerMpvPost0330, "clear_playlist_entry")
+    @patch.object(MediaPlayerMpvPost0330, "play")
+    def test_handle_end_file_other(self, mocked_play, mocked_clear_playlist_entry):
+        """Test end file callback for unknown state
+        """
+        # create instance
+        mpv_player, (mocked_player, _, _), _ = self.get_instance()
+        mpv_player.set_callback("finished", MagicMock())
+        self.set_playlist_entry(mpv_player)
+        mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "other"
+
+        self.assertFalse(mpv_player.stop.is_set())
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG"):
+            mpv_player.handle_end_file(
+                {"event": "end-file", "reason": "eof", "playlist_entry_id": 1}
+            )
+
+        self.assertTrue(mpv_player.stop.is_set())
+        exception_class, exception, _ = mpv_player.errors.get()
+        self.assertIs(exception_class, InvalidStateError)
+        self.assertIn("End file on an undeterminated state", str(exception))
+
+        # assert the call
+        mocked_play.assert_not_called()
+        mocked_clear_playlist_entry.assert_not_called()
+        mpv_player.callbacks["finished"].assert_not_called()

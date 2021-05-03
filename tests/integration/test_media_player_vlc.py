@@ -319,6 +319,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             # wait for the player to be paused
             self.wait_is_paused(vlc_player)
 
+            # assert in pause
+            self.assertFalse(vlc_player.is_playing())
+
             # assert the callback
             vlc_player.callbacks["paused"].assert_called_with(
                 self.playlist_entry1["id"], timing

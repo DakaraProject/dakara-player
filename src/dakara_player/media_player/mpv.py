@@ -505,6 +505,7 @@ class MediaPlayerMpvOld(MediaPlayer):
         if self.player_data["skip"]:
             self.player_data["skip"] = False
             logger.debug("File has been skipped")
+
             return
 
         # the transition screen has finished, request to play the song itself
@@ -742,6 +743,7 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
         if event["reason"] != "eof" or self.player_data["skip"]:
             self.player_data["skip"] = False
             logger.debug("File has been skipped")
+
             return
 
         # the transition screen has finished, request to play the song itself
