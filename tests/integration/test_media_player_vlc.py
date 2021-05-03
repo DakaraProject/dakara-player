@@ -91,7 +91,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
                 # display errors in queue if any
                 if not vlc_player.errors.empty():
                     _, error, traceback = vlc_player.errors.get(5)
-                    error.with_trackback(traceback)
+                    error.with_traceback(traceback)
                     raise error
 
                 # assert no errors to fail test if any

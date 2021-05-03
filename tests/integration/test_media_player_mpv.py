@@ -77,7 +77,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
                         # display errors in queue if any
                         if not mpv_player.errors.empty():
                             _, error, traceback = mpv_player.errors.get(5)
-                            error.with_trackback(traceback)
+                            error.with_traceback(traceback)
                             raise error
 
                         # assert no errors to fail test if any
