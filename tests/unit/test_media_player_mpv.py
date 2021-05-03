@@ -1,5 +1,6 @@
 from queue import Queue
 from contextlib import ExitStack
+from packaging.version import Version
 from tempfile import gettempdir
 from threading import Event
 from unittest import TestCase
@@ -7,12 +8,59 @@ from unittest.mock import MagicMock, patch, call
 
 from path import Path
 
-from dakara_player.media_player.mpv import MediaPlayerMpvOld, MediaPlayerMpvPost0330
+from dakara_player.media_player.mpv import (
+    get_media_player_mpv_class,
+    media_player_mpv_selector,
+    MediaPlayerMpvOld,
+    MediaPlayerMpvPost0330,
+)
 from dakara_player.media_player.base import (
-    MediaPlayerNotAvailableError,
     InvalidStateError,
+    MediaPlayerNotAvailableError,
     VersionNotFoundError,
 )
+
+
+@patch.object(MediaPlayerMpvOld, "get_version")
+class GetMediaPlayerMpvClassTestCase(TestCase):
+    """Test to get media player mpv class according to mpv version
+    """
+
+    def test_get_old(self, mocked_get_version):
+        """Test to get media player for old version of mpv
+        """
+        mocked_get_version.return_value = Version("0.27.0")
+
+        self.assertIs(get_media_player_mpv_class(), MediaPlayerMpvOld)
+
+    def test_get_post_0330(self, mocked_get_version):
+        """Test to get media player for version of mpv newer than 0.33.0
+        """
+        mocked_get_version.return_value = Version("0.33.0")
+
+        self.assertIs(get_media_player_mpv_class(), MediaPlayerMpvPost0330)
+
+
+@patch("dakara_player.media_player.mpv.get_media_player_mpv_class")
+class MediaPlayerMpvSelectorTestCase(TestCase):
+    """Test the instanciation of the media player mpv class
+    """
+
+    def test_instanciate(self, mocked_get_media_player_mpv_class):
+        """Test to instanciate media player mpv class
+        """
+
+        class Dummy:
+            def __init__(self, *args, **kwargs):
+                self.args = args
+                self.kwargs = kwargs
+
+        mocked_get_media_player_mpv_class.return_value = Dummy
+
+        instance = media_player_mpv_selector(1, 2, v3=3, v4=4)
+        self.assertIsInstance(instance, Dummy)
+        self.assertEqual(instance.args, (1, 2))
+        self.assertEqual(instance.kwargs, {"v3": 3, "v4": 4})
 
 
 class MediaPlayerMpvTestCase(TestCase):
