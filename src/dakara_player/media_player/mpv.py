@@ -33,6 +33,8 @@ MPV_ERROR_LEVELS = {
     "debug": logging.DEBUG,
 }
 
+PLAYER_IS_AVAILABLE_ATTEMPTS = 5
+
 
 def get_media_player_mpv_class():
     """Get the mpv media player class according to installed version.
@@ -108,19 +110,24 @@ class MediaPlayerMpvOld(MediaPlayer):
     def is_available():
         """Indicate if mpv is available.
 
+        Try the detection `PLAYER_IS_AVAILABLE_ATTEMPTS` times.
+
         Returns:
             bool: True if mpv is useable.
         """
         if mpv is None:
             return False
 
-        try:
-            player = mpv.MPV()
-            player.terminate()
-            return True
+        for _ in range(PLAYER_IS_AVAILABLE_ATTEMPTS):
+            try:
+                player = mpv.MPV()
+                player.terminate()
+                return True
 
-        except FileNotFoundError:
-            return False
+            except FileNotFoundError:
+                pass
+
+        return False
 
     def init_player(self, config, tempdir):
         """Initialize the objects of mpv.
