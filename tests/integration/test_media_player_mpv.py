@@ -74,6 +74,13 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
                     yield mpv_player, temp, output
 
                     if check_no_stop:
+                        # display errors in queue if any
+                        if not mpv_player.errors.empty():
+                            _, error, traceback = mpv_player.errors.get(5)
+                            error.with_trackback(traceback)
+                            raise error
+
+                        # assert no errors to fail test if any
                         self.assertFalse(mpv_player.stop.is_set())
 
             except OSError:
@@ -638,7 +645,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # post assertions for song
             self.assertIsNone(mpv_player.playlist_entry)
 
-            # request second playlist entry to play
+            # request playlist entry to play
             mpv_player.set_playlist_entry(self.playlist_entry1)
 
             # wait for the media to start

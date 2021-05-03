@@ -88,6 +88,13 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             yield vlc_player, temp, output
 
             if check_no_stop:
+                # display errors in queue if any
+                if not vlc_player.errors.empty():
+                    _, error, traceback = vlc_player.errors.get(5)
+                    error.with_trackback(traceback)
+                    raise error
+
+                # assert no errors to fail test if any
                 self.assertFalse(vlc_player.stop.is_set())
 
     @func_set_timeout(TIMEOUT)
