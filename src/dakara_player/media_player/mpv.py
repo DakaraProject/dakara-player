@@ -560,6 +560,9 @@ class MediaPlayerMpvOld(MediaPlayer):
         """
         logger.debug("Start file callback called")
 
+        # reset skip flag
+        self.player_data["skip"] = False
+
         # the transition screen starts to play
         if self.is_playing_this("transition"):
             self.callbacks["started_transition"](self.playlist_entry["id"])
@@ -618,10 +621,15 @@ class MediaPlayerMpvOld(MediaPlayer):
     def handle_unpause(self, event):
         """Callback called when unpaused.
 
+        If the player is skipping a song, do not handle this event.
+
         Args:
             event (dict): mpv event.
         """
         logger.debug("Unpause callback called")
+
+        if self.player_data["skip"]:
+            return
 
         self.callbacks["resumed"](self.playlist_entry["id"], self.get_timing())
 

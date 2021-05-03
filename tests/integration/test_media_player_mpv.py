@@ -380,6 +380,9 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # request first playlist entry to stop
             mpv_player.skip()
 
+            # check skip flag
+            self.assertTrue(mpv_player.player_data["skip"])
+
             # check the song is stopped accordingly
             self.assertIsNone(mpv_player.playlist_entry)
             mpv_player.callbacks["finished"].assert_called_with(
@@ -399,15 +402,134 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(mpv_player.player.path)
             self.assertEqual(mpv_player.player.path, self.song2_path)
 
+            # check skip flag
+            self.assertFalse(mpv_player.player_data["skip"])
+
     @func_set_timeout(TIMEOUT)
-    def test_skip_song_pause(self):
-        """Test to skip a playlist entry on pause
+    def test_skip_last_song(self):
+        """Test to skip the last playlist entry
         """
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("started_transition", MagicMock())
             mpv_player.set_callback("started_song", MagicMock())
             mpv_player.set_callback("finished", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.player.path)
+
+            # request initial playlist entry to play
+            mpv_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(mpv_player, "song")
+
+            # post assertions for song
+            self.assertIsNotNone(mpv_player.playlist_entry)
+
+            # check media
+            self.assertIsNotNone(mpv_player.player.path)
+            self.assertEqual(mpv_player.player.path, self.song1_path)
+
+            # request first playlist entry to stop
+            mpv_player.skip()
+
+            # check skip flag
+            self.assertTrue(mpv_player.player_data["skip"])
+
+            # check the song is stopped accordingly
+            self.assertIsNone(mpv_player.playlist_entry)
+            mpv_player.callbacks["finished"].assert_called_with(
+                self.playlist_entry1["id"]
+            )
+
+            # request idle screen
+            mpv_player.play("idle")
+
+            # wait for the media to start
+            self.wait_is_playing(mpv_player, "idle")
+
+            # check skip flag
+            self.assertFalse(mpv_player.player_data["skip"])
+
+    @func_set_timeout(TIMEOUT)
+    def test_skip_song_pause(self):
+        """Test to skip playlist entry on pause
+        """
+        with self.get_instance() as (mpv_player, _, _):
+            # mock the callbacks
+            mpv_player.set_callback("started_transition", MagicMock())
+            mpv_player.set_callback("started_song", MagicMock())
+            mpv_player.set_callback("finished", MagicMock())
+            mpv_player.set_callback("pause", MagicMock())
+            mpv_player.set_callback("resumed", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.player.path)
+
+            # request initial playlist entry to play
+            mpv_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(mpv_player, "song")
+
+            # post assertions for song
+            self.assertIsNotNone(mpv_player.playlist_entry)
+
+            # check media
+            self.assertIsNotNone(mpv_player.player.path)
+            self.assertEqual(mpv_player.player.path, self.song1_path)
+
+            # pause song
+            mpv_player.pause(True)
+
+            # wait for the media to be paused
+            self.wait_is_paused(mpv_player)
+
+            # request first playlist entry to stop
+            mpv_player.skip()
+
+            # check skip flag
+            self.assertTrue(mpv_player.player_data["skip"])
+
+            # check the song is stopped accordingly
+            self.assertIsNone(mpv_player.playlist_entry)
+            mpv_player.callbacks["finished"].assert_called_with(
+                self.playlist_entry1["id"]
+            )
+
+            # request second playlist entry to play
+            mpv_player.set_playlist_entry(self.playlist_entry2)
+
+            # wait for the media to start
+            self.wait_is_playing(mpv_player, "song")
+
+            # post assertions for song
+            self.assertIsNotNone(mpv_player.playlist_entry)
+
+            # check media
+            self.assertIsNotNone(mpv_player.player.path)
+            self.assertEqual(mpv_player.player.path, self.song2_path)
+
+            # check skip flag
+            self.assertFalse(mpv_player.player_data["skip"])
+
+            # check callbacks
+            mpv_player.callbacks["resumed"].assert_not_called()
+
+    @func_set_timeout(TIMEOUT)
+    def test_skip_last_song_pause(self):
+        """Test to skip the last playlist entry on pause
+        """
+        with self.get_instance() as (mpv_player, _, _):
+            # mock the callbacks
+            mpv_player.set_callback("started_transition", MagicMock())
+            mpv_player.set_callback("started_song", MagicMock())
+            mpv_player.set_callback("finished", MagicMock())
+            mpv_player.set_callback("pause", MagicMock())
+            mpv_player.set_callback("resumed", MagicMock())
 
             # pre assertions
             self.assertIsNone(mpv_player.playlist_entry)
@@ -441,18 +563,14 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
                 self.playlist_entry1["id"]
             )
 
-            # request second playlist entry to play
-            mpv_player.set_playlist_entry(self.playlist_entry2)
+            # request idle screen
+            mpv_player.play("idle")
 
             # wait for the media to start
-            self.wait_is_playing(mpv_player, "song")
+            self.wait_is_playing(mpv_player, "idle")
 
-            # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
-
-            # check media
-            self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song2_path)
+            # check callbacks
+            mpv_player.callbacks["resumed"].assert_not_called()
 
     @func_set_timeout(TIMEOUT)
     def test_skip_transition(self):
