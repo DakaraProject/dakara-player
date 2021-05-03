@@ -34,7 +34,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
         self.transition_duration = 1
 
     @contextmanager
-    def get_instance(self, config=None):
+    def get_instance(self, config=None, check_no_stop=True):
         """Get an instance of MediaPlayerMpv*
 
         This method is a context manager that automatically stops the player on
@@ -42,6 +42,8 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
         Args:
             config (dict): Configuration passed to the constructor.
+            check_no_stop (bool): If true, check the player stop event is not
+                set at end.
 
         Yields:
             tuple: Containing the following elements:
@@ -70,6 +72,9 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
                     mpv_player.load()
 
                     yield mpv_player, temp, output
+
+                    if check_no_stop:
+                        self.assertFalse(mpv_player.stop.is_set())
 
             except OSError:
                 # silence closing errors of mpv
