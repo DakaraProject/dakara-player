@@ -500,8 +500,8 @@ class MediaPlayerMpvOld(MediaPlayer):
         logger.debug("File end callback called")
 
         # only handle when a file naturally ends (i.e. is not skipped)
-        # i know this strategy is risky, but it is not possible to not capture
-        # end-file for EOF only with the stable version of mpv (0.32.0)
+        # i know this strategy is risky this is the only way for this version
+        # of mpv
         if self.player_data["skip"]:
             self.player_data["skip"] = False
             logger.debug("File has been skipped")
@@ -566,9 +566,6 @@ class MediaPlayerMpvOld(MediaPlayer):
             event (dict): mpv event.
         """
         logger.debug("Start file callback called")
-
-        # reset skip flag
-        self.player_data["skip"] = False
 
         # the transition screen starts to play
         if self.is_playing_this("transition"):
@@ -741,7 +738,9 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
         id = event["playlist_entry_id"]
 
         # only handle when a file naturally ends
-        if event["reason"] != "eof":
+        # we additionnaly check the skip flag as sometimes the reason is not correct
+        if event["reason"] != "eof" or self.player_data["skip"]:
+            self.player_data["skip"] = False
             logger.debug("File has been skipped")
             return
 
