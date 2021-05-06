@@ -1,6 +1,5 @@
 # Dakara player
 
-[![Travis CI Build Status](https://travis-ci.com/DakaraProject/dakara-player.svg?branch=develop)](https://travis-ci.com/DakaraProject/dakara-player)
 [![Appveyor CI Build status](https://ci.appveyor.com/api/projects/status/gcgpwu2i8vdwhb7y?svg=true)](https://ci.appveyor.com/project/neraste/dakara-player)
 [![Codecov coverage analysis](https://codecov.io/gh/DakaraProject/dakara-player/branch/develop/graph/badge.svg)](https://codecov.io/gh/DakaraProject/dakara-player)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
