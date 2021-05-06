@@ -97,10 +97,6 @@ for:
       # refresh console
       - "refreshenv"
 
-      # check dependencies version
-      - "vlc --version"
-      - "mpv --version"
-
     test_script:
       # run tests
       - "py -%PYTHON% -m coverage run -m pytest -v"
