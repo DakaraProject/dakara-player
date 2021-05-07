@@ -11,7 +11,7 @@ from packaging.version import parse
 try:
     import vlc
 
-except ImportError:
+except (ImportError, OSError):
     vlc = None
 
 from dakara_player.media_player.base import (

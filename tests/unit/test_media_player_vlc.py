@@ -4,10 +4,15 @@ from contextlib import ExitStack
 from queue import Queue
 from threading import Event
 from time import sleep
-from unittest import TestCase
+from unittest import TestCase, skipIf
 from unittest.mock import MagicMock, patch, call
 
-import vlc
+try:
+    import vlc
+
+except (ImportError, OSError):
+    vlc = None
+
 from packaging.version import parse
 from path import Path
 
@@ -20,7 +25,7 @@ from dakara_player.media_player.base import (
     InvalidStateError,
     VersionNotFoundError,
 )
-from dakara_player.mrl import mrl_to_path, path_to_mrl
+from dakara_player.mrl import path_to_mrl
 from dakara_player.text_generator import TextGenerator
 from dakara_player.window import DummyWindowManager, WindowManager
 
@@ -190,6 +195,7 @@ class MediaPlayerVlcTestCase(TestCase):
         # post assert the callback is now set
         self.assertIs(vlc_player.callbacks.get("test"), callback)
 
+    @skipIf(vlc is None, "VLC not installed")
     def test_set_vlc_callback(self):
         """Test the assignation of a callback to a VLC event
 
@@ -421,9 +427,7 @@ class MediaPlayerVlcTestCase(TestCase):
         """Test to set a playlist entry
         """
         # create instance
-        vlc_player, (_, mocked_background_loader, _), _ = self.get_instance(
-            mock_instance=False
-        )
+        vlc_player, (_, mocked_background_loader, _), _ = self.get_instance()
 
         # setup mocks
         mocked_exists.return_value = True
@@ -444,11 +448,6 @@ class MediaPlayerVlcTestCase(TestCase):
 
         # post assertions
         self.assertDictEqual(vlc_player.playlist_entry, self.playlist_entry)
-        data_transition = vlc_player.playlist_entry_data["transition"]
-        self.assertEqual(
-            mrl_to_path(data_transition.media.get_mrl()),
-            Path(gettempdir()) / "transition.png",
-        )
 
         # assert the callbacks
         vlc_player.callbacks["could_not_play"].assert_not_called()
