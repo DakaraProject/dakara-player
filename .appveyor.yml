@@ -24,6 +24,38 @@ for:
   - matrix:
       only:
         - image: Ubuntu
+          PYTHON: "3.9"
+
+    install:
+      # install system dependencies
+      - "sudo apt-get -qq update"
+      - "sudo apt-get install -y vlc mpv"
+
+      # the features used in setup.cfg require a recent enough version of setuptools
+      - "python -m pip install --upgrade \"setuptools>=40.0\""
+
+      # install dependencies for test
+      - "python -m pip install -e \".[tests]\""
+
+      # check dependencies version
+      - "vlc --version"
+      - "mpv --version"
+
+    test_script:
+      # run tests
+      - "python -m coverage run -m pytest -v"
+
+      # run commands
+      - "python -m dakara_player --version"
+      - "dakara-play --version"
+
+      # run code formatting tests
+      - "python -m black . --check"
+      - "python -m flake8"
+
+  - matrix:
+      only:
+        - image: Ubuntu
 
     cache:
       # enable cache for Python dependencies
@@ -66,35 +98,32 @@ for:
 
   - matrix:
       only:
-        - image: Ubuntu
-          PYTHON: "3.9"
+        - image: Visual Studio 2019
+        - PYTHON: "3.9"
 
     install:
       # install system dependencies
-      - "sudo apt-get -qq update"
-      - "sudo apt-get install -y vlc mpv"
+      - "cinst vlc mpv"
 
       # the features used in setup.cfg require a recent enough version of setuptools
-      - "python -m pip install --upgrade \"setuptools>=40.0\""
+      - "py -%PYTHON% -m pip install --upgrade \"setuptools>=40.0\""
 
       # install dependencies for test
-      - "python -m pip install -e \".[tests]\""
+      - "py -%PYTHON% -m pip install -e \".[tests]\""
 
-      # check dependencies version
-      - "vlc --version"
-      - "mpv --version"
+      # refresh console
+      - "refreshenv"
 
     test_script:
       # run tests
-      - "python -m coverage run -m pytest -v"
+      - "py -%PYTHON% -m coverage run -m pytest -v"
 
       # run commands
-      - "python -m dakara_player --version"
-      - "dakara-play --version"
+      - "py -%PYTHON% -m dakara_player --version"
 
       # run code formatting tests
-      - "python -m black . --check"
-      - "python -m flake8"
+      - "py -%PYTHON% -m black . --check"
+      - "py -%PYTHON% -m flake8"
 
   - matrix:
       only:
@@ -134,32 +163,3 @@ for:
       # codecov token is stored in appveyor settings
       - "py -%PYTHON% -m coverage xml"
       - "py -%PYTHON% -m codecov -X gcov --file coverage.xml"
-
-  - matrix:
-      only:
-        - image: Visual Studio 2019
-        - PYTHON: "3.9"
-
-    install:
-      # install system dependencies
-      - "cinst vlc mpv"
-
-      # the features used in setup.cfg require a recent enough version of setuptools
-      - "py -%PYTHON% -m pip install --upgrade \"setuptools>=40.0\""
-
-      # install dependencies for test
-      - "py -%PYTHON% -m pip install -e \".[tests]\""
-
-      # refresh console
-      - "refreshenv"
-
-    test_script:
-      # run tests
-      - "py -%PYTHON% -m coverage run -m pytest -v"
-
-      # run commands
-      - "py -%PYTHON% -m dakara_player --version"
-
-      # run code formatting tests
-      - "py -%PYTHON% -m black . --check"
-      - "py -%PYTHON% -m flake8"
