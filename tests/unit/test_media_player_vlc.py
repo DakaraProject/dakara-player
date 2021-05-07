@@ -65,19 +65,13 @@ class MediaPlayerVlcTestCase(TestCase):
             tuple: Contains the following elements:
                 MediaPlayerVlc: Instance;
                 tuple: Contains the mocked objects:
-                    unittest.mock.MagicMock: VLC Instance object or None if
-                        `mock_instance` is False;
-                    unittest.mock.MagicMock: BackgroundLoader object or None if
-                        `mock_background_loader` is False;
-                    unittest.mock.MagicMock: TextGenerator object or None if
-                        `mock_text_generator` is False;
+                    unittest.mock.MagicMock: VLC Instance object.
+                    unittest.mock.MagicMock: BackgroundLoader object.
+                    unittest.mock.MagicMock: TextGenerator object.
                 tuple: Contains the mocked classes:
-                    unittest.mock.MagicMock: VLC Instance class or None if
-                        `mock_instance` is False;
-                    unittest.mock.MagicMock: BackgroundLoader class or None if
-                        `mock_background_loader` is False;
-                    unittest.mock.MagicMock: TextGenerator class or None if
-                        `mock_text_generator` is False.
+                    unittest.mock.MagicMock: VLC Instance class.
+                    unittest.mock.MagicMock: BackgroundLoader class.
+                    unittest.mock.MagicMock: TextGenerator class.
         """
         config = config or {"kara_folder": gettempdir()}
 
