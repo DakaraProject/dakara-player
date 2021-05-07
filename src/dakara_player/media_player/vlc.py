@@ -168,9 +168,7 @@ class MediaPlayerVlc(MediaPlayer):
         Returns:
             packaging.version.Version: Parsed version of VLC.
         """
-        match = re.search(
-            r"(\d+\.\d+\.\d+(?:\.\d+)*)", libvlc_get_version().decode()
-        )
+        match = re.search(r"(\d+\.\d+\.\d+(?:\.\d+)*)", libvlc_get_version().decode())
         if match:
             return parse(match.group(1))
 

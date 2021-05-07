@@ -53,9 +53,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @contextmanager
     def get_instance(
-        self,
-        config=None,
-        tempdir=None,
+        self, config=None, tempdir=None,
     ):
         """Get a heavily mocked instance of MediaPlayerVlc
 
@@ -85,29 +83,23 @@ class MediaPlayerVlcTestCase(TestCase):
 
         with ExitStack() as stack:
             if vlc is None:
-                mocked_vlc = stack.enter_context(patch("dakara_player.media_player.vlc.vlc"))
-                mocked_instance_class = (
-                    mocked_vlc.Instance
+                mocked_vlc = stack.enter_context(
+                    patch("dakara_player.media_player.vlc.vlc")
                 )
+                mocked_instance_class = mocked_vlc.Instance
             else:
-                mocked_instance_class = (
-                    stack.enter_context(
-                        patch("dakara_player.media_player.vlc.vlc.Instance")
-                    )
+                mocked_instance_class = stack.enter_context(
+                    patch("dakara_player.media_player.vlc.vlc.Instance")
                 )
 
-            mocked_background_loader_class = (
-                stack.enter_context(
-                    patch("dakara_player.media_player.base.BackgroundLoader")
-                )
+            mocked_background_loader_class = stack.enter_context(
+                patch("dakara_player.media_player.base.BackgroundLoader")
             )
 
-            mocked_text_generator_class = (
-                stack.enter_context(
-                    patch("dakara_player.media_player.base.TextGenerator")
-                )
+            mocked_text_generator_class = stack.enter_context(
+                patch("dakara_player.media_player.base.TextGenerator")
             )
-            
+
             stack.enter_context(patch.object(MediaPlayerVlc, "check_is_available"))
 
             if tempdir is None:
@@ -199,7 +191,8 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # pre assert the callback is not set yet
             self.assertIsNot(
-                vlc_player.vlc_callbacks.get(vlc.EventType.MediaPlayerEndReached), callback
+                vlc_player.vlc_callbacks.get(vlc.EventType.MediaPlayerEndReached),
+                callback,
             )
 
             # call the method
@@ -207,7 +200,8 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # assert the callback is now set
             self.assertIs(
-                vlc_player.vlc_callbacks.get(vlc.EventType.MediaPlayerEndReached), callback
+                vlc_player.vlc_callbacks.get(vlc.EventType.MediaPlayerEndReached),
+                callback,
             )
 
             # assert the event manager got the right arguments
@@ -657,7 +651,9 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # assert the call
             vlc_player.callbacks["finished"].assert_not_called()
-            mocked_create_thread.assert_called_with(target=vlc_player.play, args=("song",))
+            mocked_create_thread.assert_called_with(
+                target=vlc_player.play, args=("song",)
+            )
             mocked_is_playing_this.assert_called_with("transition")
 
     @patch.object(MediaPlayerVlc, "create_thread")
@@ -706,7 +702,9 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # assert the call
             vlc_player.callbacks["finished"].assert_not_called()
-            mocked_create_thread.assert_called_with(target=vlc_player.play, args=("idle",))
+            mocked_create_thread.assert_called_with(
+                target=vlc_player.play, args=("idle",)
+            )
             mocked_is_playing_this.assert_has_calls(
                 [call("transition"), call("song"), call("idle")]
             )
@@ -1026,7 +1024,11 @@ class MediaPlayerVlcTestCase(TestCase):
     def test_custom_durations(self):
         """Test to instanciate with custom durations
         """
-        with self.get_instance({"durations": {"transition_duration": 5}}) as (vlc_player, _, _):
+        with self.get_instance({"durations": {"transition_duration": 5}}) as (
+            vlc_player,
+            _,
+            _,
+        ):
             # assert the instance
             self.assertDictEqual(vlc_player.durations, {"transition": 5, "idle": 20})
 
@@ -1106,7 +1108,9 @@ class MediaPlayerVlcTestCase(TestCase):
 
             self.assertListEqual(
                 logger.output,
-                ["DEBUG:dakara_player.media_player.vlc:Associating Win API window to VLC"],
+                [
+                    "DEBUG:dakara_player.media_player.vlc:Associating Win API window to VLC"
+                ],
             )
 
     @patch("dakara_player.media_player.vlc.sys.platform", "other")
