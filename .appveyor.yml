@@ -90,7 +90,7 @@ for:
 
     install:
       # install system dependencies if requested
-      - "if %INTEGRATION_TEST% cinst vlc mpv"
+      - "if %INTEGRATION_TEST% == true (cinst vlc mpv)"
 
       # the features used in setup.cfg require a recent enough version of setuptools
       - "py -%PYTHON% -m pip install --upgrade \"setuptools>=40.0\""
@@ -103,7 +103,7 @@ for:
 
     test_script:
       # run tests
-      - "if %INTEGRATION_TEST% (py -%PYTHON% -m coverage run -m pytest -v) else (py -%PYTHON% -m coverage run -m pytest -v tests/unit)"
+      - "if %INTEGRATION_TEST% == true (py -%PYTHON% -m coverage run -m pytest -v) else (py -%PYTHON% -m coverage run -m pytest -v tests/unit)"
 
       # run commands
       - "py -%PYTHON% -m dakara_player --version"
