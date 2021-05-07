@@ -122,25 +122,26 @@ class MediaPlayerVlcTestCase(TestCase):
             if tempdir is None:
                 tempdir = Path("temp")
 
-            return (
-                MediaPlayerVlc(Event(), Queue(), config, tempdir),
-                (
-                    mocked_instance_class.return_value
-                    if mocked_instance_class
-                    else None,
-                    mocked_background_loader_class.return_value
-                    if mocked_background_loader_class
-                    else None,
-                    mocked_text_generator_class.return_value
-                    if mocked_text_generator_class
-                    else None,
-                ),
-                (
-                    mocked_instance_class,
-                    mocked_background_loader_class,
-                    mocked_text_generator_class,
-                ),
-            )
+            with patch.object(MediaPlayerVlc, "is_available", return_value=True):
+                return (
+                    MediaPlayerVlc(Event(), Queue(), config, tempdir),
+                    (
+                        mocked_instance_class.return_value
+                        if mocked_instance_class
+                        else None,
+                        mocked_background_loader_class.return_value
+                        if mocked_background_loader_class
+                        else None,
+                        mocked_text_generator_class.return_value
+                        if mocked_text_generator_class
+                        else None,
+                    ),
+                    (
+                        mocked_instance_class,
+                        mocked_background_loader_class,
+                        mocked_text_generator_class,
+                    ),
+                )
 
     def set_playlist_entry(self, vlc_player, started=True):
         """Set a playlist entry and make the player play it
