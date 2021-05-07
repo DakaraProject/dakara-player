@@ -92,12 +92,8 @@ class MediaPlayerVlcTestCase(TestCase):
 
         with ExitStack() as stack:
             mocked_instance_class = (
-                (
-                    stack.enter_context(
-                        patch("dakara_player.media_player.vlc.vlc.Instance")
-                    )
-                    if vlc is not None
-                    else MagicMock()
+                stack.enter_context(
+                    patch("dakara_player.media_player.vlc.vlc.Instance")
                 )
                 if mock_instance
                 else None
@@ -122,7 +118,7 @@ class MediaPlayerVlcTestCase(TestCase):
             if tempdir is None:
                 tempdir = Path("temp")
 
-            with patch.object(MediaPlayerVlc, "is_available", return_value=True):
+            with patch.object(MediaPlayerVlc, "check_is_available"):
                 return (
                     MediaPlayerVlc(Event(), Queue(), config, tempdir),
                     (
