@@ -92,8 +92,12 @@ class MediaPlayerVlcTestCase(TestCase):
 
         with ExitStack() as stack:
             mocked_instance_class = (
-                stack.enter_context(
-                    patch("dakara_player.media_player.vlc.vlc.Instance")
+                (
+                    stack.enter_context(
+                        patch("dakara_player.media_player.vlc.vlc.Instance")
+                    )
+                    if vlc is not None
+                    else MagicMock()
                 )
                 if mock_instance
                 else None
