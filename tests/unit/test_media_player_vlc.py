@@ -463,8 +463,8 @@ class MediaPlayerVlcTestCase(TestCase):
             self.assertListEqual(
                 logger.output,
                 [
-                    "INFO:dakara_player.media_player.vlc:Requesting to play instrumental "
-                    "file '{}' for '{}'".format(audio_path, video_path),
+                    "INFO:dakara_player.media_player.vlc:Requesting to play "
+                    "instrumental file '{}' for '{}'".format(audio_path, video_path),
                 ],
             )
 
@@ -509,8 +509,8 @@ class MediaPlayerVlcTestCase(TestCase):
             self.assertListEqual(
                 logger.output,
                 [
-                    "INFO:dakara_player.media_player.vlc:Requesting to play instrumental "
-                    "file '{}' for '{}'".format(audio_path, video_path),
+                    "INFO:dakara_player.media_player.vlc:Requesting to play "
+                    "instrumental file '{}' for '{}'".format(audio_path, video_path),
                     "ERROR:dakara_player.media_player.vlc:This version of VLC does "
                     "not support slaves, cannot add instrumental file",
                 ],
@@ -554,8 +554,8 @@ class MediaPlayerVlcTestCase(TestCase):
             self.assertListEqual(
                 logger.output,
                 [
-                    "INFO:dakara_player.media_player.vlc:Requesting to play instrumental "
-                    "track of '{}'".format(video_path),
+                    "INFO:dakara_player.media_player.vlc:Requesting to play "
+                    "instrumental track of '{}'".format(video_path),
                 ],
             )
 
@@ -1109,7 +1109,8 @@ class MediaPlayerVlcTestCase(TestCase):
             self.assertListEqual(
                 logger.output,
                 [
-                    "DEBUG:dakara_player.media_player.vlc:Associating Win API window to VLC"
+                    "DEBUG:dakara_player.media_player.vlc:"
+                    "Associating Win API window to VLC"
                 ],
             )
 
