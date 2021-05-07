@@ -91,6 +91,9 @@ class MediaPlayerVlcTestCase(TestCase):
         config = config or {"kara_folder": gettempdir()}
 
         with ExitStack() as stack:
+            if vlc is None:
+                stack.enter_context(patch("dakara_player.MediaPlayerVlc.vlc.vlc"))
+
             mocked_instance_class = (
                 stack.enter_context(
                     patch("dakara_player.media_player.vlc.vlc.Instance")
