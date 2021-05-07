@@ -10,9 +10,11 @@ from packaging.version import parse
 
 try:
     import vlc
+    from vlc import libvlc_get_version
 
 except (ImportError, OSError):
     vlc = None
+    libvlc_get_version = None
 
 from dakara_player.media_player.base import (
     MediaPlayer,
@@ -167,7 +169,7 @@ class MediaPlayerVlc(MediaPlayer):
             packaging.version.Version: Parsed version of VLC.
         """
         match = re.search(
-            r"(\d+\.\d+\.\d+(?:\.\d+)*)", vlc.libvlc_get_version().decode()
+            r"(\d+\.\d+\.\d+(?:\.\d+)*)", libvlc_get_version().decode()
         )
         if match:
             return parse(match.group(1))
