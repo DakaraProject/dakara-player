@@ -98,14 +98,29 @@ This installs the normal dependencies of the package plus the dependencies for t
 Run tests simply with:
 
 ```sh
-python setup.py test
+pytest
+# or
+python -m pytest
+```
+
+Tests are split between unit tests, which are ligthweight and do not require VLC or mpv to be installed, and integration tests, which are heavier:
+
+```sh
+pytest tests/unit
+pytest tests/integration
+# or
+python -m pytest tests/unit
+python -m pytest tests/integration
 ```
 
 To check coverage, use the `coverage` command:
 
 ```sh
-coverage run setup.py test
+coverage run -m pytest
 coverage report -m
+# or
+python -m coverage run -m pytest
+python -m coverage report -m
 ```
 
 ### Hooks

@@ -2,7 +2,8 @@ from contextlib import ExitStack, contextmanager
 from queue import Queue
 from time import sleep
 from threading import Event
-from unittest.mock import ANY, MagicMock
+from unittest import skipUnless
+from unittest.mock import MagicMock
 
 from func_timeout import func_set_timeout
 from path import TempDir
@@ -17,6 +18,7 @@ from dakara_player.media_player.base import (
 from tests.integration.base import TestCasePollerKara
 
 
+@skipUnless(MediaPlayerMpv.is_available(), "mpv not installed")
 class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
     """Test the mpv player class in real conditions
     """
@@ -309,7 +311,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_paused(mpv_player)
 
             # assert the callback
-            mpv_player.callbacks["paused"].assert_called_with(ANY, ANY)
+            mpv_player.callbacks["paused"].assert_called()
             mpv_player.callbacks["resumed"].assert_not_called()
 
             # reset the mocks
@@ -336,7 +338,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # assert the callback
             mpv_player.callbacks["paused"].assert_not_called()
-            mpv_player.callbacks["resumed"].assert_called_with(ANY, ANY)
+            mpv_player.callbacks["resumed"].assert_called()
 
             # reset the mocks
             mpv_player.callbacks["paused"].reset_mock()
