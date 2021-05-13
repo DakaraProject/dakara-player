@@ -85,78 +85,46 @@ class MediaPlayerMpvTestCase(TestCase):
         }
 
     def get_instance(
-        self,
-        config=None,
-        mock_instance=True,
-        mock_background_loader=True,
-        mock_text_generator=True,
+        self, config=None,
     ):
         """Get a heavily mocked instance of MediaPlayerMpvOld
 
         Args:
             config (dict): Configuration passed to the constructor.
-            mock_instance (bool): If True, the MPV class is mocked, otherwise
-                it is a real object.
-            mock_background_loader(bool): If True, the BackgroundLoader class
-                is mocked, otherwise it is a real object.
-            mock_text_generator(bool): If True, the TextGenerator class is
-                mocked, otherwise it is a real object.
 
         Returns:
             tuple: Contains the following elements:
                 MediaPlayerMpvOld: Instance;
                 tuple: Contains the mocked objects:
-                    unittest.mock.MagicMock: MPV object or None if
-                        `mock_instance` is False;
-                    unittest.mock.MagicMock: BackgroundLoader object or None if
-                        `mock_background_loader` is False;
-                    unittest.mock.MagicMock: TextGenerator object or None if
-                        `mock_text_generator` is False;
+                    unittest.mock.MagicMock: MPV object.
+                    unittest.mock.MagicMock: BackgroundLoader object.
+                    unittest.mock.MagicMock: TextGenerator object.
                 tuple: Contains the mocked classes:
-                    unittest.mock.MagicMock: MPV class or None if
-                        `mock_instance` is False;
-                    unittest.mock.MagicMock: BackgroundLoader class or None if
-                        `mock_background_loader` is False;
-                    unittest.mock.MagicMock: TextGenerator class or None if
-                        `mock_text_generator` is False.
+                    unittest.mock.MagicMock: MPV class.
+                    unittest.mock.MagicMock: BackgroundLoader class.
+                    unittest.mock.MagicMock: TextGenerator class.
         """
         config = config or {"kara_folder": gettempdir()}
 
         with ExitStack() as stack:
-            mocked_instance_class = (
-                stack.enter_context(patch("dakara_player.media_player.mpv.mpv.MPV"))
-                if mock_instance
-                else None
+            mocked_instance_class = stack.enter_context(
+                patch("dakara_player.media_player.mpv.mpv.MPV")
             )
 
-            mocked_background_loader_class = (
-                stack.enter_context(
-                    patch("dakara_player.media_player.base.BackgroundLoader")
-                )
-                if mock_background_loader
-                else None
+            mocked_background_loader_class = stack.enter_context(
+                patch("dakara_player.media_player.base.BackgroundLoader")
             )
 
-            mocked_text_generator_class = (
-                stack.enter_context(
-                    patch("dakara_player.media_player.base.TextGenerator")
-                )
-                if mock_text_generator
-                else None
+            mocked_text_generator_class = stack.enter_context(
+                patch("dakara_player.media_player.base.TextGenerator")
             )
 
             return (
                 self.mpv_player_class(Event(), Queue(), config, Path("temp")),
                 (
-                    mocked_instance_class.return_value
-                    if mocked_instance_class
-                    else None,
-                    mocked_background_loader_class.return_value
-                    if mocked_background_loader_class
-                    else None,
-                    mocked_text_generator_class.return_value
-                    if mocked_text_generator_class
-                    else None,
+                    mocked_instance_class.return_value,
+                    mocked_background_loader_class.return_value,
+                    mocked_text_generator_class.return_value,
                 ),
                 (
                     mocked_instance_class,
