@@ -10,7 +10,7 @@ from dakara_player.dakara_player import (
     UnsupportedMediaPlayerError,
 )
 from dakara_player.media_player.vlc import MediaPlayerVlc
-from dakara_player.media_player.mpv import media_player_mpv_selector
+from dakara_player.media_player.mpv import MediaPlayerMpv
 
 
 CONFIG = {
@@ -76,7 +76,7 @@ class DakaraWorkerTestCase(TestCase):
         worker = DakaraWorker(stop, errors, config)
         media_player_class = worker.get_media_player_class()
 
-        self.assertIs(media_player_class, media_player_mpv_selector)
+        self.assertIs(media_player_class, MediaPlayerMpv.from_version)
 
     def test_get_media_player_class_default(self):
         """Test to get the default media player

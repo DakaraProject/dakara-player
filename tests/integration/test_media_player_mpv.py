@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 from func_timeout import func_set_timeout
 from path import TempDir
 
-from dakara_player.media_player.mpv import media_player_mpv_selector
+from dakara_player.media_player.mpv import MediaPlayerMpv
 from dakara_player.media_player.base import (
     IDLE_BG_NAME,
     IDLE_TEXT_NAME,
@@ -64,7 +64,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             try:
                 with ExitStack() as stack:
                     mpv_player = stack.enter_context(
-                        media_player_mpv_selector(
+                        MediaPlayerMpv.from_version(
                             Event(), Queue(), config, temp, warn_long_exit=False
                         )
                     )

@@ -9,8 +9,7 @@ from unittest.mock import MagicMock, patch, call
 from path import Path
 
 from dakara_player.media_player.mpv import (
-    get_media_player_mpv_class,
-    media_player_mpv_selector,
+    MediaPlayerMpv,
     MediaPlayerMpvOld,
     MediaPlayerMpvPost0330,
 )
@@ -21,32 +20,69 @@ from dakara_player.media_player.base import (
 )
 
 
-@patch.object(MediaPlayerMpvOld, "get_version")
-class GetMediaPlayerMpvClassTestCase(TestCase):
-    """Test to get media player mpv class according to mpv version
+class MediaPlayerMpvTestCase(TestCase):
+    """Test the static methods of the abstract MediaPlayerMpv class.
     """
 
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_get_version_postrelease(self, mocked_mpv_class):
+        """Test to get the mpv post release version
+        """
+        # mock the version of mpv
+        mocked_mpv_class.return_value.mpv_version = (
+            "mpv 0.32.0+git.20200402T120653.5824ac7d36"
+        )
+
+        # call the method
+        version = MediaPlayerMpvOld.get_version()
+
+        # assert the result
+        self.assertEqual(version.base_version, "0.32.0")
+        self.assertTrue(version.is_postrelease)
+
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_get_version(self, mocked_mpv_class):
+        """Test to get the mpv stable version
+        """
+        # mock the version of mpv
+        mocked_mpv_class.return_value.mpv_version = "mpv 0.32.0"
+
+        # call the method
+        version = MediaPlayerMpvOld.get_version()
+
+        # assert the result
+        self.assertEqual(version.base_version, "0.32.0")
+        self.assertFalse(version.is_postrelease)
+
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_get_version_not_found(self, mocked_mpv_class):
+        """Test to get the mpv version when it is not available
+        """
+        # mock the version of mpv
+        mocked_mpv_class.return_value.mpv_version = "none"
+
+        # call the method
+        with self.assertRaisesRegex(VersionNotFoundError, "Unable to get mpv version"):
+            MediaPlayerMpvOld.get_version()
+
+    @patch.object(MediaPlayerMpv, "get_version")
     def test_get_old(self, mocked_get_version):
         """Test to get media player for old version of mpv
         """
         mocked_get_version.return_value = Version("0.27.0")
 
-        self.assertIs(get_media_player_mpv_class(), MediaPlayerMpvOld)
+        self.assertIs(MediaPlayerMpv.get_class(), MediaPlayerMpvOld)
 
+    @patch.object(MediaPlayerMpv, "get_version")
     def test_get_post_0330(self, mocked_get_version):
         """Test to get media player for version of mpv newer than 0.33.0
         """
         mocked_get_version.return_value = Version("0.33.0")
 
-        self.assertIs(get_media_player_mpv_class(), MediaPlayerMpvPost0330)
+        self.assertIs(MediaPlayerMpv.get_class(), MediaPlayerMpvPost0330)
 
-
-@patch("dakara_player.media_player.mpv.get_media_player_mpv_class")
-class MediaPlayerMpvSelectorTestCase(TestCase):
-    """Test the instanciation of the media player mpv class
-    """
-
-    def test_instanciate(self, mocked_get_media_player_mpv_class):
+    @patch.object(MediaPlayerMpv, "get_class")
+    def test_instanciate(self, mocked_get_class):
         """Test to instanciate media player mpv class
         """
 
@@ -55,15 +91,35 @@ class MediaPlayerMpvSelectorTestCase(TestCase):
                 self.args = args
                 self.kwargs = kwargs
 
-        mocked_get_media_player_mpv_class.return_value = Dummy
+        mocked_get_class.return_value = Dummy
 
-        instance = media_player_mpv_selector(1, 2, v3=3, v4=4)
+        instance = MediaPlayerMpv.from_version(1, 2, v3=3, v4=4)
         self.assertIsInstance(instance, Dummy)
         self.assertEqual(instance.args, (1, 2))
         self.assertEqual(instance.kwargs, {"v3": 3, "v4": 4})
 
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_is_available_ok_direct(self, mocked_mpv_class):
+        """Test to get availability directly
+        """
+        self.assertTrue(MediaPlayerMpv.is_available())
 
-class MediaPlayerMpvTestCase(TestCase):
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_is_available_ok_indirect(self, mocked_mpv_class):
+        """Test to get availability indirectly
+        """
+        mocked_mpv_class.side_effect = [FileNotFoundError(), MagicMock()]
+        self.assertTrue(MediaPlayerMpv.is_available())
+
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_is_available_ng(self, mocked_mpv_class):
+        """Test to get inavailability
+        """
+        mocked_mpv_class.side_effect = FileNotFoundError()
+        self.assertFalse(MediaPlayerMpv.is_available())
+
+
+class MediaPlayerMpvModelTestCase(TestCase):
     """Test the mpv player class unitary
     """
 
@@ -172,31 +228,11 @@ class MediaPlayerMpvTestCase(TestCase):
             mpv_player.player.pause = False
 
 
-class MediaPlayerMpvOldTestCase(MediaPlayerMpvTestCase):
+class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
     """Test the old mpv player class unitary
     """
 
     mpv_player_class = MediaPlayerMpvOld
-
-    @patch("dakara_player.media_player.mpv.mpv.MPV")
-    def test_is_available_ok_direct(self, mocked_mpv_class):
-        """Test to get availability directly
-        """
-        self.assertTrue(MediaPlayerMpvOld.is_available())
-
-    @patch("dakara_player.media_player.mpv.mpv.MPV")
-    def test_is_available_ok_indirect(self, mocked_mpv_class):
-        """Test to get availability indirectly
-        """
-        mocked_mpv_class.side_effect = [FileNotFoundError(), MagicMock()]
-        self.assertTrue(MediaPlayerMpvOld.is_available())
-
-    @patch("dakara_player.media_player.mpv.mpv.MPV")
-    def test_is_available_ng(self, mocked_mpv_class):
-        """Test to get inavailability
-        """
-        mocked_mpv_class.side_effect = FileNotFoundError()
-        self.assertFalse(MediaPlayerMpvOld.is_available())
 
     @patch.object(MediaPlayerMpvOld, "is_available")
     def test_init_unavailable(self, mocked_is_available):
@@ -208,47 +244,6 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvTestCase):
             MediaPlayerNotAvailableError, "mpv is not available"
         ):
             MediaPlayerMpvOld(Event(), Queue(), {}, Path("temp"))
-
-    @patch("dakara_player.media_player.mpv.mpv.MPV")
-    def test_get_version_postrelease(self, mocked_mpv_class):
-        """Test to get the mpv post release version
-        """
-        # mock the version of mpv
-        mocked_mpv_class.return_value.mpv_version = (
-            "mpv 0.32.0+git.20200402T120653.5824ac7d36"
-        )
-
-        # call the method
-        version = MediaPlayerMpvOld.get_version()
-
-        # assert the result
-        self.assertEqual(version.base_version, "0.32.0")
-        self.assertTrue(version.is_postrelease)
-
-    @patch("dakara_player.media_player.mpv.mpv.MPV")
-    def test_get_version(self, mocked_mpv_class):
-        """Test to get the mpv stable version
-        """
-        # mock the version of mpv
-        mocked_mpv_class.return_value.mpv_version = "mpv 0.32.0"
-
-        # call the method
-        version = MediaPlayerMpvOld.get_version()
-
-        # assert the result
-        self.assertEqual(version.base_version, "0.32.0")
-        self.assertFalse(version.is_postrelease)
-
-    @patch("dakara_player.media_player.mpv.mpv.MPV")
-    def test_get_version_not_found(self, mocked_mpv_class):
-        """Test to get the mpv version when it is not available
-        """
-        # mock the version of mpv
-        mocked_mpv_class.return_value.mpv_version = "none"
-
-        # call the method
-        with self.assertRaisesRegex(VersionNotFoundError, "Unable to get mpv version"):
-            MediaPlayerMpvOld.get_version()
 
     @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_get_timing(self, mocked_is_playing_this):
@@ -649,7 +644,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvTestCase):
         self.assertNotEqual(mpv_player.player.sub_files, [None])
 
 
-class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvTestCase):
+class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
     """Test the post 0.33.0 mpv player class unitary
     """
 

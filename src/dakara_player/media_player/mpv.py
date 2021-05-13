@@ -1,5 +1,6 @@
 import logging
 import re
+from abc import ABC
 
 from dakara_base.safe_workers import safe
 from packaging.version import parse, Version
@@ -36,34 +37,96 @@ MPV_ERROR_LEVELS = {
 PLAYER_IS_AVAILABLE_ATTEMPTS = 5
 
 
-def get_media_player_mpv_class():
-    """Get the mpv media player class according to installed version.
+class MediaPlayerMpv(MediaPlayer, ABC):
+    """Abstract class to manipulate mpv.
 
-    Returns:
-        object: Will return `MediaPlayerMpvPost0330` if mpv version is
-        higher than 0.33.0, or `MediaPlayerMpvOld` otherwise.
+    This class contains the minimum static methods to detect mpv availability
+    and installed version. It can be used to instanciate the correct version
+    with the static method `from_version`.
     """
-    version = MediaPlayerMpvOld.get_version()
 
-    if version >= Version("0.33.0"):
-        logger.debug("Using post 0.33.0 API of mpv")
-        return MediaPlayerMpvPost0330
+    player_name = "mpv"
 
-    logger.debug("Using old API of mpv")
-    return MediaPlayerMpvOld
+    @staticmethod
+    def is_available():
+        """Indicate if mpv is available.
+
+        Try the detection `PLAYER_IS_AVAILABLE_ATTEMPTS` times.
+
+        Returns:
+            bool: True if mpv is useable.
+        """
+        if mpv is None:
+            return False
+
+        for _ in range(PLAYER_IS_AVAILABLE_ATTEMPTS):
+            try:
+                player = mpv.MPV()
+                player.terminate()
+                return True
+
+            except FileNotFoundError:
+                pass
+
+        return False
+
+    @staticmethod
+    def get_version():
+        """Get media player version.
+
+        mpv version is in the form "mpv x.y.z+git.v.w" where "v" is a timestamp
+        and "w" a commit hash for post releases, or "mpv x.y.z" for releases.
+
+        In case of post release, as the version given by mpv does not respect
+        semantic versionning, the sub-version is the concatenation of the day
+        part and the time part of "v".
+
+        Returns:
+            packaging.version.Version: Parsed version of mpv.
+        """
+        player = mpv.MPV()
+        match = re.search(
+            r"mpv (\d+\.\d+\.\d+)(?:\+git\.(\d{8})T(\d{6})\..*)?", player.mpv_version,
+        )
+        player.terminate()
+
+        if match:
+            if match.group(2) and match.group(3):
+                return parse(match.group(1) + "-post" + match.group(2) + match.group(3))
+
+            return parse(match.group(1))
+
+        raise VersionNotFoundError("Unable to get mpv version")
+
+    @staticmethod
+    def get_class():
+        """Get the mpv media player class according to installed version.
+
+        Returns:
+            object: Will return `MediaPlayerMpvPost0330` if mpv version is
+            higher than 0.33.0, or `MediaPlayerMpvOld` otherwise.
+        """
+        version = MediaPlayerMpv.get_version()
+
+        if version >= Version("0.33.0"):
+            logger.debug("Using post 0.33.0 API of mpv")
+            return MediaPlayerMpvPost0330
+
+        logger.debug("Using old API of mpv")
+        return MediaPlayerMpvOld
+
+    @staticmethod
+    def from_version(*args, **kwargs):
+        """Instanciate the right mpv media player class.
+
+        Returns:
+            MediaPlayer: Instance of the mpv media player for the correct
+            version of mpv.
+        """
+        return MediaPlayerMpv.get_class()(*args, **kwargs)
 
 
-def media_player_mpv_selector(*args, **kwargs):
-    """Instanciate the right mpv media player class.
-
-    Returns:
-        MediaPlayer: Instance of the mpv media player for the correct version
-        of mpv.
-    """
-    return get_media_player_mpv_class()(*args, **kwargs)
-
-
-class MediaPlayerMpvOld(MediaPlayer):
+class MediaPlayerMpvOld(MediaPlayerMpv):
     """Class to manipulate old mpv versions (< 0.33.0).
 
     The class can be used as a context manager that closes mpv
@@ -103,31 +166,6 @@ class MediaPlayerMpvOld(MediaPlayer):
         playlist_entry_data (dict): Extra data of the playlist entry.
         player_data (dict): Extra data of the player.
     """
-
-    player_name = "mpv"
-
-    @staticmethod
-    def is_available():
-        """Indicate if mpv is available.
-
-        Try the detection `PLAYER_IS_AVAILABLE_ATTEMPTS` times.
-
-        Returns:
-            bool: True if mpv is useable.
-        """
-        if mpv is None:
-            return False
-
-        for _ in range(PLAYER_IS_AVAILABLE_ATTEMPTS):
-            try:
-                player = mpv.MPV()
-                player.terminate()
-                return True
-
-            except FileNotFoundError:
-                pass
-
-        return False
 
     def init_player(self, config, tempdir):
         """Initialize the objects of mpv.
@@ -192,34 +230,6 @@ class MediaPlayerMpvOld(MediaPlayer):
         timing = self.player.time_pos or 0
 
         return int(timing)
-
-    @staticmethod
-    def get_version():
-        """Get media player version.
-
-        mpv version is in the form "mpv x.y.z+git.v.w" where "v" is a timestamp
-        and "w" a commit hash for post releases, or "mpv x.y.z" for releases.
-
-        In case of post release, as the version given by mpv does not respect
-        semantic versionning, the sub-version is the concatenation of the day
-        part and the time part of "v".
-
-        Returns:
-            packaging.version.Version: Parsed version of mpv.
-        """
-        player = mpv.MPV()
-        match = re.search(
-            r"mpv (\d+\.\d+\.\d+)(?:\+git\.(\d{8})T(\d{6})\..*)?", player.mpv_version,
-        )
-        player.terminate()
-
-        if match:
-            if match.group(2) and match.group(3):
-                return parse(match.group(1) + "-post" + match.group(2) + match.group(3))
-
-            return parse(match.group(1))
-
-        raise VersionNotFoundError("Unable to get mpv version")
 
     def set_mpv_default_callbacks(self):
         """Set mpv default callbacks.
