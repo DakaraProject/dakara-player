@@ -1,10 +1,15 @@
 from contextlib import ExitStack, contextmanager
 from queue import Queue
 from threading import Event
-from unittest import skipIf
-from unittest.mock import ANY, MagicMock
+from unittest import skipIf, skipUnless
+from unittest.mock import MagicMock
 
-import vlc
+try:
+    import vlc
+
+except (ImportError, OSError):
+    vlc = None
+
 from func_timeout import func_set_timeout
 from path import TempDir
 
@@ -17,6 +22,7 @@ from dakara_player.media_player.base import (
 from tests.integration.base import TestCasePollerKara
 
 
+@skipUnless(MediaPlayerVlc.is_available(), "VLC not installed")
 class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     """Test the VLC player class in real conditions
     """
@@ -353,7 +359,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.wait_is_paused(vlc_player)
 
             # assert the callback
-            vlc_player.callbacks["paused"].assert_called_with(ANY, ANY)
+            vlc_player.callbacks["paused"].assert_called()
             vlc_player.callbacks["resumed"].assert_not_called()
 
             # reset the mocks
@@ -380,7 +386,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # assert the callback
             vlc_player.callbacks["paused"].assert_not_called()
-            vlc_player.callbacks["resumed"].assert_called_with(ANY, ANY)
+            vlc_player.callbacks["resumed"].assert_called()
 
             # reset the mocks
             vlc_player.callbacks["paused"].reset_mock()
