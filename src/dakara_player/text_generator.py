@@ -183,19 +183,18 @@ class TextGenerator:
         """
         return LINK_TYPE_NAMES[link_type]
 
-    def get_text(self, template_name, data, **kwargs):
+    def get_text(self, template_name, data):
         """Generate the text for the desired template
 
         Args:
             template_name (str): name of the text template.
             data (dict): values to pass to the template.
-            kwargs (dict): extra values to pass to the template.
 
         Returns:
             str: generated text from the template with provided values.
         """
         return self.environment.get_template(self.filenames[template_name]).render(
-            **data, **kwargs
+            **data
         )
 
 

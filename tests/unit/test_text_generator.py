@@ -321,7 +321,7 @@ class TextGeneratorIntegrationTestCase(TestCase):
         """
         # call method
         result = self.text_generator.get_text(
-            "transition", self.playlist_entry, fade_in=True
+            "transition", {"playlist_entry": self.playlist_entry, "fade_in": True}
         )
 
         # check file content

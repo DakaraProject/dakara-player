@@ -52,7 +52,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
         self.transition_duration = 1
 
     @contextmanager
-    def get_instance(self, config=None):
+    def get_instance(self, config=None, check_error=True):
         """Get an instance of MediaPlayerVlc
 
         This method is a context manager that automatically stops the player on
@@ -60,6 +60,8 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
         Args:
             config (dict): Configuration passed to the constructor.
+            check_error (bool): If true, check if the player stop event is not
+                set and the error queue is empty at the end.
 
         Yields:
             tuple: Containing the following elements:
@@ -90,6 +92,16 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.load()
 
             yield vlc_player, temp, output
+
+            if check_error:
+                # display errors in queue if any
+                if not vlc_player.errors.empty():
+                    _, error, traceback = vlc_player.errors.get(5)
+                    error.with_traceback(traceback)
+                    raise error
+
+                # assert no errors to fail test if any
+                self.assertFalse(vlc_player.stop.is_set())
 
     @func_set_timeout(TIMEOUT)
     def test_play_idle(self):
@@ -312,6 +324,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # wait for the player to be paused
             self.wait_is_paused(vlc_player)
+
+            # assert in pause
+            self.assertFalse(vlc_player.is_playing())
 
             # assert the callback
             vlc_player.callbacks["paused"].assert_called_with(

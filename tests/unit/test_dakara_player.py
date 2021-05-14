@@ -76,7 +76,7 @@ class DakaraWorkerTestCase(TestCase):
         worker = DakaraWorker(stop, errors, config)
         media_player_class = worker.get_media_player_class()
 
-        self.assertIs(media_player_class, MediaPlayerMpv)
+        self.assertIs(media_player_class, MediaPlayerMpv.from_version)
 
     def test_get_media_player_class_default(self):
         """Test to get the default media player

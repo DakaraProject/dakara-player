@@ -191,8 +191,9 @@ class MediaPlayer(Worker, ABC):
                 idle or during transition screen.
         """
 
+    @staticmethod
     @abstractmethod
-    def get_version(self):
+    def get_version():
         """Get media player version.
 
         Must be overriden.
@@ -443,7 +444,7 @@ class MediaPlayer(Worker, ABC):
 
         elif what == "transition":
             text = self.text_generator.get_text(
-                "transition", self.playlist_entry, **kwargs
+                "transition", {"playlist_entry": self.playlist_entry, **kwargs}
             )
 
         else:
