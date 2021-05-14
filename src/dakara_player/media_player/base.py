@@ -422,10 +422,12 @@ class MediaPlayer(Worker, ABC):
     def generate_text(self, what, **kwargs):
         """Generate text screens for the requested action.
 
-        Extra arguments are passed to `TextGenerator.create_*_text`.
-
         Args:
             what (str): What text screen to generate.
+            kwargs (dict): Extra arguments passed to the different text
+                screens. For transition screen, accepts the `no_fade_in`
+                boolean. If True, the transition screen will have no fade in
+                effect.
 
         Returns:
             path.Path: Path of the text screen.
@@ -439,7 +441,6 @@ class MediaPlayer(Worker, ABC):
                         "Dakara player {}".format(__version__),
                     ]
                 },
-                **kwargs
             )
 
         elif what == "transition":
