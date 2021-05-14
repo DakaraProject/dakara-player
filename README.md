@@ -23,7 +23,7 @@ Installation guidelines are provided over here:
 
 At least one of there players:
 
-* [VLC](https://www.videolan.org/vlc/) (supported version: 3.0.0 and higher);
+* [VLC](https://www.videolan.org/vlc/) (supported version: 3.0.0 and higher, note that versions 3.0.13 and 3.0.14 cannot be used);
 * [mpv](https://mpv.io/) (supported version: 0.27 and higher).
 
 For 64 bits operating systems, you must install the equivalent version of the requirements.
