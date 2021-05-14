@@ -20,18 +20,18 @@ Style: playlist-entry-detail-icon,Roboto Light,40,&H00A01286,&H00191919,&H003333
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:00.00,0:00:05.00,title,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ song.title }}
-{% for artist in song.artists %}
+Dialogue: 0,0:00:00.00,0:00:05.00,title,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ playlist_entry.song.title }}
+{% for artist in playlist_entry.song.artists %}
 Dialogue: 0,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,song-detail-icon,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{\fnFontAwesome}{{ "music"|icon }}{\fs50}​
 Dialogue: 1,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,song-detail-text,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ artist.name }}
 {% endfor %}
-{% for work in song.works %}
+{% for work in playlist_entry.song.works %}
 Dialogue: 0,0:00:00.{% if fade_in %}20{% else %}00{% endif %},0:00:05.00,song-detail-icon,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{\fnFontAwesome}{{ work.work.work_type.icon_name|icon }}{\fs50}​
 Dialogue: 1,0:00:00.{% if fade_in %}20{% else %}00{% endif %},0:00:05.00,song-detail-text,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ work.work.title }}{% if work.work.subtitle %} {\alpha&H80&}{{ work.work.subtitle }}{\r}{% endif %} {{ work.link_type }}{{ work.link_type_number or '' }}
 {% endfor %}
 Dialogue: 0,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{\fnFontAwesome}{{ "user"|icon }}{\fs50}​
-Dialogue: 1,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,playlist-entry-detail-text,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ owner.username }}
-{% if use_instrumental %}
+Dialogue: 1,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,playlist-entry-detail-text,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ playlist_entry.owner.username }}
+{% if playlist_entry.use_instrumental %}
 Dialogue: 0,0:00:00.{% if fade_in %}20{% else %}00{% endif %},0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome}{{ "microphone-slash"|icon }}{\fs50}​
 {% endif %}
 
