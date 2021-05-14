@@ -414,7 +414,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # assert mocks
             mocked_exists.assert_called_with()
-            mocked_generate_text.assert_called_with("transition", fade_in=True)
+            mocked_generate_text.assert_called_with("transition")
             mocked_play.assert_called_with("transition")
             mocked_manage_instrumental.assert_not_called()
 
@@ -1052,12 +1052,12 @@ class MediaPlayerVlcTestCase(TestCase):
         """
         with self.get_instance() as (vlc_player, _, _):
             with self.assertRaisesRegex(
-                ValueError, "Unexpected action to generate text to: none"
+                ValueError, "Unexpected action to generate text for: none"
             ):
                 vlc_player.generate_text("none")
 
         with self.assertRaisesRegex(
-            ValueError, "Unexpected action to generate text to: none"
+            ValueError, "Unexpected action to generate text for: none"
         ):
             vlc_player.generate_text("none")
 

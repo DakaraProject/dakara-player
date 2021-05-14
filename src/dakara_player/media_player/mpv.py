@@ -429,7 +429,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         self.playlist_entry_data[
             "transition"
         ].path = self.background_loader.backgrounds["transition"]
-        self.generate_text("transition", fade_in=False)
+        self.generate_text("transition", no_fade_in=True)
 
         if autoplay:
             self.play("transition")

@@ -444,11 +444,15 @@ class MediaPlayer(Worker, ABC):
 
         elif what == "transition":
             text = self.text_generator.get_text(
-                "transition", {"playlist_entry": self.playlist_entry, **kwargs}
+                "transition",
+                {
+                    "playlist_entry": self.playlist_entry,
+                    "fade_in": not kwargs.get("no_fade_in", False),
+                },
             )
 
         else:
-            raise ValueError("Unexpected action to generate text to: {}".format(what))
+            raise ValueError("Unexpected action to generate text for: {}".format(what))
 
         self.text_paths[what].write_text(text, encoding="utf-8")
 
