@@ -36,20 +36,20 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
         self.transition_duration = 1
 
     @contextmanager
-    def get_instance(self, config=None, check_no_stop=True):
-        """Get an instance of MediaPlayerMpv*
+    def get_instance(self, config=None, check_error=True):
+        """Get an instance of MediaPlayerMpv for the available version
 
         This method is a context manager that automatically stops the player on
         exit.
 
         Args:
             config (dict): Configuration passed to the constructor.
-            check_no_stop (bool): If true, check the player stop event is not
-                set at end.
+            check_error (bool): If true, check if the player stop event is not
+                set and the error queue is empty at the end.
 
         Yields:
             tuple: Containing the following elements:
-                MediaPlayerMpv*: Instance;
+                MediaPlayerMpv: Instance;
                 path.Path: Path of the temporary directory;
                 unittest.case._LoggingWatcher: Captured output.
                 """
@@ -75,7 +75,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
                     yield mpv_player, temp, output
 
-                    if check_no_stop:
+                    if check_error:
                         # display errors in queue if any
                         if not mpv_player.errors.empty():
                             _, error, traceback = mpv_player.errors.get(5)

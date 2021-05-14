@@ -71,7 +71,7 @@ class MediaPlayerMpvTestCase(TestCase):
         """
         mocked_get_version.return_value = Version("0.27.0")
 
-        self.assertIs(MediaPlayerMpv.get_class(), MediaPlayerMpvOld)
+        self.assertIs(MediaPlayerMpv.get_class_from_version(), MediaPlayerMpvOld)
 
     @patch.object(MediaPlayerMpv, "get_version")
     def test_get_post_0330(self, mocked_get_version):
@@ -79,10 +79,10 @@ class MediaPlayerMpvTestCase(TestCase):
         """
         mocked_get_version.return_value = Version("0.33.0")
 
-        self.assertIs(MediaPlayerMpv.get_class(), MediaPlayerMpvPost0330)
+        self.assertIs(MediaPlayerMpv.get_class_from_version(), MediaPlayerMpvPost0330)
 
-    @patch.object(MediaPlayerMpv, "get_class")
-    def test_instanciate(self, mocked_get_class):
+    @patch.object(MediaPlayerMpv, "get_class_from_version")
+    def test_instanciate(self, mocked_get_class_from_version):
         """Test to instanciate media player mpv class
         """
 
@@ -91,7 +91,7 @@ class MediaPlayerMpvTestCase(TestCase):
                 self.args = args
                 self.kwargs = kwargs
 
-        mocked_get_class.return_value = Dummy
+        mocked_get_class_from_version.return_value = Dummy
 
         instance = MediaPlayerMpv.from_version(1, 2, v3=3, v4=4)
         self.assertIsInstance(instance, Dummy)
@@ -110,6 +110,12 @@ class MediaPlayerMpvTestCase(TestCase):
         """
         mocked_mpv_class.side_effect = [FileNotFoundError(), MagicMock()]
         self.assertTrue(MediaPlayerMpv.is_available())
+
+    @patch("dakara_player.media_player.mpv.mpv", None)
+    def test_is_available_ng_no_module(self):
+        """Test to get inavailability if mpv module cannot be loaded
+        """
+        self.assertFalse(MediaPlayerMpv.is_available())
 
     @patch("dakara_player.media_player.mpv.mpv.MPV")
     def test_is_available_ng(self, mocked_mpv_class):
@@ -143,14 +149,14 @@ class MediaPlayerMpvModelTestCase(TestCase):
     def get_instance(
         self, config=None,
     ):
-        """Get a heavily mocked instance of MediaPlayerMpvOld
+        """Get a heavily mocked instance of the desired subclass of MediaPlayerMpv
 
         Args:
             config (dict): Configuration passed to the constructor.
 
         Returns:
             tuple: Contains the following elements:
-                MediaPlayerMpvOld: Instance;
+                MediaPlayerMpv: Instance;
                 tuple: Contains the mocked objects:
                     unittest.mock.MagicMock: MPV object.
                     unittest.mock.MagicMock: BackgroundLoader object.
@@ -193,7 +199,7 @@ class MediaPlayerMpvModelTestCase(TestCase):
         """Set a playlist entry and make the player play it
 
         Args:
-            mpv_player (MediaPlayerMpvOld): Instance of the mpv player.
+            mpv_player (MediaPlayerMpv): Instance of the mpv player.
             started (bool): If True, make the player play the song.
         """
         mpv_player.playlist_entry = self.playlist_entry

@@ -99,7 +99,7 @@ class MediaPlayerMpv(MediaPlayer, ABC):
         raise VersionNotFoundError("Unable to get mpv version")
 
     @staticmethod
-    def get_class():
+    def get_class_from_version():
         """Get the mpv media player class according to installed version.
 
         Returns:
@@ -123,7 +123,7 @@ class MediaPlayerMpv(MediaPlayer, ABC):
             MediaPlayer: Instance of the mpv media player for the correct
             version of mpv.
         """
-        return MediaPlayerMpv.get_class()(*args, **kwargs)
+        return MediaPlayerMpv.get_class_from_version()(*args, **kwargs)
 
 
 class MediaPlayerMpvOld(MediaPlayerMpv):

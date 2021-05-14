@@ -52,7 +52,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
         self.transition_duration = 1
 
     @contextmanager
-    def get_instance(self, config=None, check_no_stop=True):
+    def get_instance(self, config=None, check_error=True):
         """Get an instance of MediaPlayerVlc
 
         This method is a context manager that automatically stops the player on
@@ -60,8 +60,8 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
         Args:
             config (dict): Configuration passed to the constructor.
-            check_no_stop (bool): If true, check the player stop event is not
-                set at end.
+            check_error (bool): If true, check if the player stop event is not
+                set and the error queue is empty at the end.
 
         Yields:
             tuple: Containing the following elements:
@@ -93,7 +93,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             yield vlc_player, temp, output
 
-            if check_no_stop:
+            if check_error:
                 # display errors in queue if any
                 if not vlc_player.errors.empty():
                     _, error, traceback = vlc_player.errors.get(5)
