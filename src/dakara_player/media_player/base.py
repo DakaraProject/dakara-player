@@ -425,9 +425,9 @@ class MediaPlayer(Worker, ABC):
         Args:
             what (str): What text screen to generate.
             kwargs (dict): Extra arguments passed to the different text
-                screens. For transition screen, accepts the `no_fade_in`
-                boolean. If True, the transition screen will have no fade in
-                effect.
+                screens. For transition screen, accepts the `fade_in` boolean,
+                which is True by default. If False, the transition screen will
+                have no fade in effect.
 
         Returns:
             path.Path: Path of the text screen.
@@ -448,7 +448,7 @@ class MediaPlayer(Worker, ABC):
                 "transition",
                 {
                     "playlist_entry": self.playlist_entry,
-                    "fade_in": not kwargs.get("no_fade_in", False),
+                    "fade_in": kwargs.get("fade_in", True),
                 },
             )
 
