@@ -276,8 +276,7 @@ class MediaPlayerMpv(MediaPlayer):
                 return
 
             self.generate_text("idle")
-            self.player.command(
-                "loadfile",
+            self.player.loadfile(
                 self.background_loader.backgrounds["idle"],
                 "replace",
                 {"sub-files": self.text_paths["idle"]},
@@ -286,8 +285,7 @@ class MediaPlayerMpv(MediaPlayer):
             return
 
         if what == "transition":
-            self.player.command(
-                "loadfile",
+            self.player.loadfile(
                 self.playlist_entry_data["transition"].path,
                 "replace",
                 {
