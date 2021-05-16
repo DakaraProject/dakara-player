@@ -18,7 +18,7 @@ from dakara_player.version import check_version
 FontLoader = get_font_loader_class()
 
 MEDIA_PLAYER_CLASSES = {
-    "mpv": MediaPlayerMpv,
+    "mpv": MediaPlayerMpv.from_version,
     "vlc": MediaPlayerVlc,
 }
 

@@ -181,8 +181,9 @@ class MediaPlayer(Worker, ABC):
                 idle or during transition screen.
         """
 
+    @staticmethod
     @abstractmethod
-    def get_version(self):
+    def get_version():
         """Get media player version.
 
         Must be overriden.

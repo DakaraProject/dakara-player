@@ -1,10 +1,15 @@
 from contextlib import ExitStack, contextmanager
 from queue import Queue
 from threading import Event
-from unittest import skipIf
-from unittest.mock import ANY, MagicMock
+from unittest import skipIf, skipUnless
+from unittest.mock import MagicMock
 
-import vlc
+try:
+    import vlc
+
+except (ImportError, OSError):
+    vlc = None
+
 from func_timeout import func_set_timeout
 from path import TempDir
 
@@ -17,6 +22,7 @@ from dakara_player.media_player.base import (
 from tests.integration.base import TestCasePollerKara
 
 
+@skipUnless(MediaPlayerVlc.is_available(), "VLC not installed")
 class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     """Test the VLC player class in real conditions
     """
@@ -46,7 +52,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
         self.transition_duration = 1
 
     @contextmanager
-    def get_instance(self, config=None):
+    def get_instance(self, config=None, check_error=True):
         """Get an instance of MediaPlayerVlc
 
         This method is a context manager that automatically stops the player on
@@ -54,6 +60,8 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
         Args:
             config (dict): Configuration passed to the constructor.
+            check_error (bool): If true, check if the player stop event is not
+                set and the error queue is empty at the end.
 
         Yields:
             tuple: Containing the following elements:
@@ -84,6 +92,16 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.load()
 
             yield vlc_player, temp, output
+
+            if check_error:
+                # display errors in queue if any
+                if not vlc_player.errors.empty():
+                    _, error, traceback = vlc_player.errors.get(5)
+                    error.with_traceback(traceback)
+                    raise error
+
+                # assert no errors to fail test if any
+                self.assertFalse(vlc_player.stop.is_set())
 
     @func_set_timeout(TIMEOUT)
     def test_play_idle(self):
@@ -307,6 +325,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             # wait for the player to be paused
             self.wait_is_paused(vlc_player)
 
+            # assert in pause
+            self.assertFalse(vlc_player.is_playing())
+
             # assert the callback
             vlc_player.callbacks["paused"].assert_called_with(
                 self.playlist_entry1["id"], timing
@@ -353,7 +374,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.wait_is_paused(vlc_player)
 
             # assert the callback
-            vlc_player.callbacks["paused"].assert_called_with(ANY, ANY)
+            vlc_player.callbacks["paused"].assert_called()
             vlc_player.callbacks["resumed"].assert_not_called()
 
             # reset the mocks
@@ -380,7 +401,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # assert the callback
             vlc_player.callbacks["paused"].assert_not_called()
-            vlc_player.callbacks["resumed"].assert_called_with(ANY, ANY)
+            vlc_player.callbacks["resumed"].assert_called()
 
             # reset the mocks
             vlc_player.callbacks["paused"].reset_mock()

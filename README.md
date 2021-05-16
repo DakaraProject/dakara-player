@@ -1,7 +1,7 @@
 # Dakara player
 
-[![Travis CI Build Status](https://travis-ci.com/DakaraProject/dakara-player.svg?branch=develop)](https://travis-ci.com/DakaraProject/dakara-player)
-[![Appveyor CI Build status](https://ci.appveyor.com/api/projects/status/gcgpwu2i8vdwhb7y?svg=true)](https://ci.appveyor.com/project/neraste/dakara-player)
+<!-- Badges are displayed for the develop branch -->
+[![Appveyor CI Build status](https://ci.appveyor.com/api/projects/status/seo2wb9u01ga9vpd/branch/develop?svg=true)](https://ci.appveyor.com/project/neraste/dakara-player/branch/develop)
 [![Codecov coverage analysis](https://codecov.io/gh/DakaraProject/dakara-player/branch/develop/graph/badge.svg)](https://codecov.io/gh/DakaraProject/dakara-player)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 [![PyPI version](https://badge.fury.io/py/dakaraplayer.svg)](https://pypi.python.org/pypi/dakaraplayer/)
@@ -23,7 +23,7 @@ Installation guidelines are provided over here:
 
 At least one of there players:
 
-* [VLC](https://www.videolan.org/vlc/) (supported version: 3.0.0 and higher);
+* [VLC](https://www.videolan.org/vlc/) (supported version: 3.0.0 and higher, note that versions 3.0.13 and 3.0.14 cannot be used);
 * [mpv](https://mpv.io/) (supported version: 0.27 and higher).
 
 For 64 bits operating systems, you must install the equivalent version of the requirements.
@@ -98,14 +98,29 @@ This installs the normal dependencies of the package plus the dependencies for t
 Run tests simply with:
 
 ```sh
-python setup.py test
+pytest
+# or
+python -m pytest
+```
+
+Tests are split between unit tests, which are ligthweight and do not require VLC or mpv to be installed, and integration tests, which are heavier:
+
+```sh
+pytest tests/unit
+pytest tests/integration
+# or
+python -m pytest tests/unit
+python -m pytest tests/integration
 ```
 
 To check coverage, use the `coverage` command:
 
 ```sh
-coverage run setup.py test
+coverage run -m pytest
 coverage report -m
+# or
+python -m coverage run -m pytest
+python -m coverage report -m
 ```
 
 ### Hooks

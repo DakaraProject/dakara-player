@@ -1,4 +1,5 @@
 #!/bin/bash
 
-echo "Running tests for the Dakara VLC Player"
-python setup.py test -s tests.unit
+echo "Running tests for Dakara player"
+
+pytest tests/unit

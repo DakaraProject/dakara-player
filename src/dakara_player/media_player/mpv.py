@@ -1,8 +1,9 @@
 import logging
 import re
+from abc import ABC
 
 from dakara_base.safe_workers import safe
-from packaging.version import parse
+from packaging.version import parse, Version
 
 try:
     import python_mpv_jsonipc as mpv
@@ -33,9 +34,100 @@ MPV_ERROR_LEVELS = {
     "debug": logging.DEBUG,
 }
 
+PLAYER_IS_AVAILABLE_ATTEMPTS = 5
 
-class MediaPlayerMpv(MediaPlayer):
-    """Class to manipulate mpv.
+
+class MediaPlayerMpv(MediaPlayer, ABC):
+    """Abstract class to manipulate mpv.
+
+    This class contains the minimum static methods to detect mpv availability
+    and installed version. It can be used to instanciate the correct version
+    with the static method `from_version`.
+    """
+
+    player_name = "mpv"
+
+    @staticmethod
+    def is_available():
+        """Indicate if mpv is available.
+
+        Try the detection `PLAYER_IS_AVAILABLE_ATTEMPTS` times.
+
+        Returns:
+            bool: True if mpv is useable.
+        """
+        if mpv is None:
+            return False
+
+        for _ in range(PLAYER_IS_AVAILABLE_ATTEMPTS):
+            try:
+                player = mpv.MPV()
+                player.terminate()
+                return True
+
+            except FileNotFoundError:
+                pass
+
+        return False
+
+    @staticmethod
+    def get_version():
+        """Get media player version.
+
+        mpv version is in the form "mpv x.y.z+git.v.w" where "v" is a timestamp
+        and "w" a commit hash for post releases, or "mpv x.y.z" for releases.
+
+        In case of post release, as the version given by mpv does not respect
+        semantic versionning, the sub-version is the concatenation of the day
+        part and the time part of "v".
+
+        Returns:
+            packaging.version.Version: Parsed version of mpv.
+        """
+        player = mpv.MPV()
+        match = re.search(
+            r"mpv (\d+\.\d+\.\d+)(?:\+git\.(\d{8})T(\d{6})\..*)?", player.mpv_version,
+        )
+        player.terminate()
+
+        if match:
+            if match.group(2) and match.group(3):
+                return parse(match.group(1) + "-post" + match.group(2) + match.group(3))
+
+            return parse(match.group(1))
+
+        raise VersionNotFoundError("Unable to get mpv version")
+
+    @staticmethod
+    def get_class_from_version():
+        """Get the mpv media player class according to installed version.
+
+        Returns:
+            object: Will return `MediaPlayerMpvPost0330` if mpv version is
+            higher than 0.33.0, or `MediaPlayerMpvOld` otherwise.
+        """
+        version = MediaPlayerMpv.get_version()
+
+        if version >= Version("0.33.0"):
+            logger.debug("Using post 0.33.0 API of mpv")
+            return MediaPlayerMpvPost0330
+
+        logger.debug("Using old API of mpv")
+        return MediaPlayerMpvOld
+
+    @staticmethod
+    def from_version(*args, **kwargs):
+        """Instanciate the right mpv media player class.
+
+        Returns:
+            MediaPlayer: Instance of the mpv media player for the correct
+            version of mpv.
+        """
+        return MediaPlayerMpv.get_class_from_version()(*args, **kwargs)
+
+
+class MediaPlayerMpvOld(MediaPlayerMpv):
+    """Class to manipulate old mpv versions (< 0.33.0).
 
     The class can be used as a context manager that closes mpv
     automatically on exit.
@@ -74,26 +166,6 @@ class MediaPlayerMpv(MediaPlayer):
         playlist_entry_data (dict): Extra data of the playlist entry.
         player_data (dict): Extra data of the player.
     """
-
-    player_name = "mpv"
-
-    @staticmethod
-    def is_available():
-        """Indicate if mpv is available.
-
-        Returns:
-            bool: True if mpv is useable.
-        """
-        if mpv is None:
-            return False
-
-        try:
-            player = mpv.MPV()
-            player.terminate()
-            return True
-
-        except FileNotFoundError:
-            return False
 
     def init_player(self, config, tempdir):
         """Initialize the objects of mpv.
@@ -161,31 +233,6 @@ class MediaPlayerMpv(MediaPlayer):
         timing = self.player.time_pos or 0
 
         return int(timing)
-
-    def get_version(self):
-        """Get media player version.
-
-        mpv version is in the form "mpv x.y.z+git.v.w" where "v" is a timestamp
-        and "w" a commit hash for post releases, or "mpv x.y.z" for releases.
-
-        In case of post release, as the version given by mpv does not respect
-        semantic versionning, the sub-version is the concatenation of the day
-        part and the time part of "v".
-
-        Returns:
-            packaging.version.Version: Parsed version of mpv.
-        """
-        match = re.search(
-            r"mpv (\d+\.\d+\.\d+)(?:\+git\.(\d{8})T(\d{6})\..*)?",
-            self.player.mpv_version,
-        )
-        if match:
-            if match.group(2) and match.group(3):
-                return parse(match.group(1) + "-post" + match.group(2) + match.group(3))
-
-            return parse(match.group(1))
-
-        raise VersionNotFoundError("Unable to get mpv version")
 
     def set_mpv_default_callbacks(self):
         """Set mpv default callbacks.
@@ -472,11 +519,12 @@ class MediaPlayerMpv(MediaPlayer):
         logger.debug("File end callback called")
 
         # only handle when a file naturally ends (i.e. is not skipped)
-        # i know this strategy is risky, but it is not possible to not capture
-        # end-file for EOF only with the stable version of mpv (0.32.0)
+        # i know this strategy is risky this is the only way for this version
+        # of mpv
         if self.player_data["skip"]:
             self.player_data["skip"] = False
             logger.debug("File has been skipped")
+
             return
 
         # the transition screen has finished, request to play the song itself
@@ -597,14 +645,142 @@ class MediaPlayerMpv(MediaPlayer):
     def handle_unpause(self, event):
         """Callback called when unpaused.
 
+        If the player is skipping a song, do not handle this event.
+
         Args:
             event (dict): mpv event.
         """
         logger.debug("Unpause callback called")
 
+        if self.player_data["skip"]:
+            return
+
         self.callbacks["resumed"](self.playlist_entry["id"], self.get_timing())
 
         logger.debug("Resumed play")
+
+
+class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
+    """Class to manipulate newer mpv versions (>= 0.33.0).
+
+    The class can be used as a context manager that closes mpv
+    automatically on exit.
+
+    Any exception in callbacks make the application to crash.
+
+    Args:
+        stop (threading.Event): Stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): Error queue to communicate the exception to the
+            main thread.
+        config (dict): Dictionary of configuration.
+        tempdir (path.Path): Path of the temporary directory.
+
+    Attributes:
+        stop (threading.Event): Stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): Error queue to communicate the exception to the
+            main thread.
+        player_name (str): Name of mpv.
+        fullscreen (bool): If True, mpv will be fullscreen.
+        kara_folder_path (path.Path): Path to the karaoke folder.
+        playlist_entry (dict): Playlist entyr object.
+        callbacks (dict): High level callbacks associated with the media
+            player.
+        warn_long_exit (bool): If True, display a warning message if the media
+            player takes too long to stop.
+        durations (dict of int): Duration of the different screens in seconds.
+        text_paths (dict of path.Path): Path of the different text screens.
+        text_generator (dakara_player.text_generator.TextGenerator): Text
+            generator instance.
+        background_loader
+        (dakara_player.background_loader.BackgroundLoader): Background
+            loader instance.
+        player (mpv.MPV): Instance of mpv.
+        playlist_entry_data (dict): Extra data of the playlist entry.
+        player_data (dict): Extra data of the player. This attribute is not
+            used by the post 0.33.0 methods.
+    """
+
+    def is_playing(self):
+        """Query if mpv is playing something.
+
+        Returns:
+            bool: True if mpv is playing something.
+        """
+        # query if the player is currently playing
+        if self.is_paused():
+            return False
+
+        current_entries = [e for e in self.player.playlist if e.get("playing")]
+        return bool(len(current_entries))
+
+    def was_playing_this(self, what, id):
+        # extract entry from playlist
+        entries = [e for e in self.player.playlist if e["id"] == id]
+
+        assert len(entries) < 2, "There are more than one media that was playing"
+        assert len(entries) > 0, "No media was playing"
+
+        return self.is_playing_this(what, entries[0]["filename"])
+
+    def is_playing_this(self, what, media_path=None):
+        """Query if mpv is playing the requested media type.
+
+        Args:
+            what (str): Tell if mpv current track is of the requested type, but
+                not if it is actually playing it (it can be in pause).
+
+        Returns:
+            bool: True if mpv is playing the requested type.
+        """
+        media_path = media_path or self.player.path
+
+        if what == "idle":
+            return media_path == self.background_loader.backgrounds["idle"]
+
+        return media_path == self.playlist_entry_data[what].path
+
+    @safe
+    def handle_end_file(self, event):
+        """Callback called when a media ends.
+
+        This happens when:
+            - A transition screen ends, leading to playing the actual song;
+            - A song ends normally, leading to calling the callback
+                `callbacks["finished"]`;
+            - A song ends because it has been skipped, this case is ignored.
+
+        Args:
+            event (dict): mpv event.
+        """
+        logger.debug("File end callback called")
+        id = event["playlist_entry_id"]
+
+        # only handle when a file naturally ends
+        # we additionnaly check the skip flag as sometimes the reason is not correct
+        if event["reason"] != "eof" or self.player_data["skip"]:
+            self.player_data["skip"] = False
+            logger.debug("File has been skipped")
+
+            return
+
+        # the transition screen has finished, request to play the song itself
+        if self.was_playing_this("transition", id):
+            logger.debug("Will play '{}'".format(self.playlist_entry_data["song"].path))
+            self.play("song")
+
+            return
+
+        # the media has finished, so call the according callback and clean memory
+        if self.was_playing_this("song", id):
+            self.callbacks["finished"](self.playlist_entry["id"])
+            self.clear_playlist_entry()
+
+            return
+
+        # if no state can be determined, raise an error
+        raise InvalidStateError("End file on an undeterminated state")
 
 
 class Media:
