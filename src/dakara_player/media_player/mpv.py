@@ -217,6 +217,9 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         # set window title
         self.player.title = "Dakara player mpv"
 
+        # handle image transitions as videos
+        self.player.demuxer_lavf_o = "loop=1"
+
     def get_timing(self):
         """Get mpv timing.
 
@@ -309,7 +312,6 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             what (str): What media to play.
         """
         # reset player
-        self.player.image_display_duration = 0
         self.player.sub_files = []
         self.player.audio_files = []
         self.player.audio = "auto"
@@ -320,17 +322,24 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             if self.is_playing_this("idle"):
                 return
 
-            self.player.image_display_duration = "inf"
-            self.player.sub_files = [self.text_paths["idle"]]
             self.generate_text("idle")
-            self.player.play(self.background_loader.backgrounds["idle"])
+            self.player.loadfile(
+                self.background_loader.backgrounds["idle"],
+                "replace",
+                {"sub-files": self.text_paths["idle"]},
+            )
 
             return
 
         if what == "transition":
-            self.player.image_display_duration = int(self.durations["transition"])
-            self.player.sub_files = [self.text_paths["transition"]]
-            self.player.play(self.playlist_entry_data["transition"].path)
+            self.player.loadfile(
+                self.playlist_entry_data["transition"].path,
+                "replace",
+                {
+                    "sub-files": self.text_paths["transition"],
+                    "end": str(self.durations["transition"]),
+                },
+            )
 
             return
 
@@ -429,7 +438,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         self.playlist_entry_data[
             "transition"
         ].path = self.background_loader.backgrounds["transition"]
-        self.generate_text("transition", fade_in=False)
+        self.generate_text("transition")
 
         if autoplay:
             self.play("transition")
