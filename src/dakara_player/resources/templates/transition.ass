@@ -43,48 +43,52 @@ Dialogue: 0,0:00:00.{% if fade_in %}20{% else %}00{% endif %},0:00:05.00,playlis
 ; in the template, which are associated to the following data:
 
 ; {
-;     "song": {
-;         "title": "song title",
-;         "artists": [
-;             {
-;                 "id": "id of the artist",
-;                 "name": "artist name"
-;             }
-;         ],
-;         "works": [
-;             {
-;                 "work": {
-;                     "id": "id of the work",
-;                     "title": "title of the work",
-;                     "subtitle": "subtitle of the work",
-;                     "work_type": {
-;                         "name": "name of the type of work",
-;                         "name_plural": "plural form of the name",
-;                         "query_name": "query name form of the name",
-;                         "icon_name": "FontAwesome name of the icon",
-;                     }
-;                 },
-;                 "link_type": "type of relation betwoon the song and the work",
-;                 "link_type_number": "number of the relation",
-;                 "episodes": "episodes where this song is used"
-;             }
-;         ],
-;         "file_path": "path to the song file",
+;     "playlist_entry": {
+;         "song": {
+;             "title": "song title",
+;             "artists": [
+;                 {
+;                     "id": "id of the artist",
+;                     "name": "artist name"
+;                 }
+;             ],
+;             "works": [
+;                 {
+;                     "work": {
+;                         "id": "id of the work",
+;                         "title": "title of the work",
+;                         "subtitle": "subtitle of the work",
+;                         "work_type": {
+;                             "name": "name of the type of work",
+;                             "name_plural": "plural form of the name",
+;                             "query_name": "query name form of the name",
+;                             "icon_name": "FontAwesome name of the icon",
+;                         }
+;                     },
+;                     "link_type": "type of relation betwoon the song and the work",
+;                     "link_type_number": "number of the relation",
+;                     "episodes": "episodes where this song is used"
+;                 }
+;             ],
+;             "file_path": "path to the song file",
+;         },
+;         "owner": {
+;             "id": "id of the user who asked this song",
+;             "username": "name of the user"
+;         },
+;         "date_created": "date when the playlist entry was created",
 ;     },
-;     "owner": {
-;         "id": "id of the user who asked this song",
-;         "username": "name of the user"
-;     },
-;     "date_created": "date when the playlist entry was created"
+;     "fade_in": "if true, use fade-in effects"
 ; }
 
 ; Icon name can be used with the filter `icon` to get an actual icon (you have to
 ; set the font as Fontawesome). Long name of the link type is obtained with the
 ; `link_type_name` filter.
 
-; You will notice the special character "​" (zero width space) at the end of
-; some lines, after a font size change. It is used to keep a line at the desired
-; line height without having to display a real character.
+; You will notice the special character "​" (zero width space, U+200B, may
+; not be displayed in all editors) at the end of some lines, after a font size
+; change. It is used to keep a line at the desired line height without having to
+; display a real character.
 
 ; For further information about the Jinja2 template engine and its abilities,
 ; please consult the documentation:
