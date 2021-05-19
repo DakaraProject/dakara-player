@@ -11,6 +11,7 @@ except ImportError:
     from importlib_resources import path
 
 from dakara_player.text_generator import (
+    separate_package_last_directory,
     TemplateNotFoundError,
     TextGenerator,
 )
@@ -328,3 +329,29 @@ class TextGeneratorIntegrationTestCase(TestCase):
         with path("tests.resources", "transition.ass") as file:
             transition_text_content = file.read_text(encoding="utf8")
             self.assertEqual(transition_text_content, result)
+
+
+class SeparatePackageLastDirectoryTestCase(TestCase):
+    """Test the separate_package_last_directory function
+    """
+
+    def test_three(self):
+        """Test separate package with three elements
+        """
+        package, directory = separate_package_last_directory("a.b.c")
+        self.assertEqual(package, "a.b")
+        self.assertEqual(directory, "c")
+
+    def test_two(self):
+        """Test separate package with two elements
+        """
+        package, directory = separate_package_last_directory("a.b")
+        self.assertEqual(package, "a")
+        self.assertEqual(directory, "b")
+
+    def test_one(self):
+        """Test separate package with one element
+        """
+        package, directory = separate_package_last_directory("a")
+        self.assertEqual(package, "")
+        self.assertEqual(directory, "a")

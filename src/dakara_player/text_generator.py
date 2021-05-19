@@ -100,11 +100,11 @@ class TextGenerator:
         """Set up Jinja environment
         """
         logger.debug("Loading text templates")
+
         # create loaders
-        *package_list, package_directory = self.package.split(".")
         loaders = [
             FileSystemLoader(self.directory),
-            PackageLoader(".".join(package_list), package_directory),
+            PackageLoader(*separate_package_last_directory(self.package)),
         ]
 
         # create Jinja2 environment
@@ -196,6 +196,21 @@ class TextGenerator:
         return self.environment.get_template(self.filenames[template_name]).render(
             **data
         )
+
+
+def separate_package_last_directory(package):
+    """Separate last directory from package
+
+    Args:
+        package (str): Package.
+
+    Returns:
+        tuple:
+            str: Package without last directory.
+            str: Last directory.
+    """
+    *package_list, package_directory = package.split(".")
+    return ".".join(package_list), package_directory
 
 
 class TemplateNotFoundError(DakaraError, FileNotFoundError):
