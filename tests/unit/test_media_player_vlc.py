@@ -983,25 +983,29 @@ class MediaPlayerVlcTestCase(TestCase):
             # assert the call
             vlc_player.callbacks["paused"].assert_called_with(42, 25)
 
-    def test_custom_backgrounds(self):
+    @patch("dakara_player.media_player.base.get_user_directory")
+    def test_custom_backgrounds(self, mocked_get_user_directory):
         """Test to instanciate with custom backgrounds
         """
+        mocked_get_user_directory.return_value = Path("custom")
+
+        # create object
         tempdir = Path("temp")
         with self.get_instance(
             {
                 "backgrounds": {
-                    "directory": Path("custom") / "bg",
                     "transition_background_name": "custom_transition.png",
                     "idle_background_name": "custom_idle.png",
                 }
             },
             tempdir=tempdir,
         ) as (_, _, (_, mocked_background_loader_class, _)):
+
             # assert the instanciation of the background loader
             mocked_background_loader_class.assert_called_with(
                 destination=tempdir,
                 package="dakara_player.resources.backgrounds",
-                directory=Path("custom") / "bg",
+                directory=Path("custom") / "backgrounds",
                 filenames={
                     "transition": "custom_transition.png",
                     "idle": "custom_idle.png",
@@ -1042,21 +1046,22 @@ class MediaPlayerVlcTestCase(TestCase):
                 ["WARNING:dakara_player.media_player.base:VLC takes too long to stop"],
             )
 
-    @patch.object(TextGenerator, "create_transition_text")
-    @patch.object(TextGenerator, "create_idle_text")
-    def test_generate_text_invalid(
-        self, mocked_create_idle_text, mocked_create_transition_text
-    ):
+    @patch.object(TextGenerator, "get_text")
+    def test_generate_text_invalid(self, mocked_get_text):
         """Test to generate invalid text screen
         """
         with self.get_instance() as (vlc_player, _, _):
             with self.assertRaisesRegex(
-                ValueError, "Unexpected action to generate text to: none"
+                ValueError, "Unexpected action to generate text for: none"
             ):
                 vlc_player.generate_text("none")
 
-            mocked_create_idle_text.assert_not_called()
-            mocked_create_transition_text.assert_not_called()
+        with self.assertRaisesRegex(
+            ValueError, "Unexpected action to generate text for: none"
+        ):
+            vlc_player.generate_text("none")
+
+        mocked_get_text.assert_not_called()
 
     def test_play_invalid(self):
         """Test to play invalid action
@@ -1108,8 +1113,9 @@ class MediaPlayerVlcTestCase(TestCase):
                 ],
             )
 
+    @patch("dakara_player.media_player.base.get_user_directory", autospec=True)
     @patch("dakara_player.media_player.vlc.sys.platform", "other")
-    def test_set_window_other(self):
+    def test_set_window_other(self, mocked_get_user_directory):
         """Test to set window on unknown platform
         """
         with self.get_instance() as (vlc_player, _, _):

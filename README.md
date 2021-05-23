@@ -75,6 +75,21 @@ python -m dakara_player create-config
 
 and complete it with your values. The file is stored in your user space: `~/.config/dakara` on Linux or `$APPDATA\Dakara` on Windows.
 
+## Customization
+
+The different text screens used when the player is idle, or before a song, can be customized, both for the background and the text template.
+The program looks for custom files at startup in the user directory: `~/.local/share/dakara/player` on Linux or `$APPDATA\Dakara\player` on Windows.
+Backgrounds are located in the `backgrounds` subfolder, and text templates in the `templates` subfolder.
+File names can be modified in the config file, see `player.templates` and `player.backgrounds`.
+
+You can dump the default backgrounds and templates in the user directory as a starter with:
+
+```sh
+dakara-play create-resources
+# or
+python -m dakara_player create-resources
+```
+
 ## Development
 
 ### Install dependencies

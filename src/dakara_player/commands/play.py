@@ -12,6 +12,7 @@ from dakara_base.config import (
 )
 
 from dakara_player import DakaraPlayer
+from dakara_player.user_resource_files import create_resource_files
 from dakara_player.version import __version__, __date__
 
 
@@ -64,6 +65,19 @@ def get_parser():
         action="store_true",
     )
 
+    # create resources subparser
+    create_resource_subparser = subparsers.add_parser(
+        "create-resources",
+        description="Create resource files in user directory "
+        "(for background screens, text templates)",
+        help="Create resource files in user directory",
+    )
+    create_resource_subparser.set_defaults(function=create_resources)
+
+    create_resource_subparser.add_argument(
+        "--force", help="overwrite existing files if any", action="store_true",
+    )
+
     return parser
 
 
@@ -108,7 +122,7 @@ def play(args):
 
 
 def create_config(args):
-    """Create the config
+    """Create the config file
 
     Args:
         args (argparse.Namespace): arguments from command line.
@@ -116,6 +130,17 @@ def create_config(args):
     create_logger(custom_log_format="%(message)s", custom_log_level="INFO")
     create_config_file("dakara_player.resources", CONFIG_FILE, args.force)
     logger.info("Please edit this file")
+
+
+def create_resources(args):
+    """Create resource files
+
+    Args:
+        args (argparse.Namespace): arguments from command line.
+    """
+    create_logger(custom_log_format="%(message)s", custom_log_level="INFO")
+    create_resource_files(args.force)
+    logger.info("You can now customize those files")
 
 
 def main():
