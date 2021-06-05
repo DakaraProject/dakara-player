@@ -263,6 +263,46 @@ class MediaPlayerVlcTestCase(TestCase):
             with self.assertRaisesRegex(VlcTooOldError, "VLC is too old"):
                 vlc_player.check_version()
 
+    @patch.object(MediaPlayerVlc, "get_version")
+    def test_check_version_3013(self, mocked_get_version):
+        """Test to check VLC version 3.0.13
+        """
+        with self.get_instance() as (vlc_player, _, _):
+            # mock the version of VLC
+            mocked_get_version.return_value = parse("3.0.13")
+
+            # call the method
+            with self.assertLogs("dakara_player.media_player.vlc", "WARNING") as logger:
+                vlc_player.check_version()
+
+            self.assertListEqual(
+                logger.output,
+                [
+                    "WARNING:dakara_player.media_player.vlc:This version of VLC "
+                    "is known to not work with Dakara player"
+                ],
+            )
+
+    @patch.object(MediaPlayerVlc, "get_version")
+    def test_check_version_3014(self, mocked_get_version):
+        """Test to check VLC version 3.0.14
+        """
+        with self.get_instance() as (vlc_player, _, _):
+            # mock the version of VLC
+            mocked_get_version.return_value = parse("3.0.14")
+
+            # call the method
+            with self.assertLogs("dakara_player.media_player.vlc", "WARNING") as logger:
+                vlc_player.check_version()
+
+            self.assertListEqual(
+                logger.output,
+                [
+                    "WARNING:dakara_player.media_player.vlc:This version of VLC "
+                    "is known to not work with Dakara player"
+                ],
+            )
+
     @patch.object(Path, "exists")
     def test_check_kara_folder_path(self, mocked_exists):
         """Test to check if the kara folder exists
