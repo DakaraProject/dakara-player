@@ -93,6 +93,9 @@ class TestCaseKara(TestCase):
         with path("tests.resources", "song2.mkv") as file:
             self.song2_path = Path(file).copy(self.kara_folder)
 
+        with path("tests.resources", "song3.avi") as file:
+            self.song3_path = Path(file).copy(self.kara_folder)
+
         # create audio
         with path("tests.resources", "song2.mp3") as file:
             self.audio2_path = Path(file).copy(self.kara_folder)
@@ -108,6 +111,13 @@ class TestCaseKara(TestCase):
         self.playlist_entry2 = {
             "id": 43,
             "song": {"title": "Song 2", "file_path": self.song2_path},
+            "owner": "me",
+            "use_instrumental": False,
+        }
+
+        self.playlist_entry3 = {
+            "id": 44,
+            "song": {"title": "Song 3", "file_path": self.song3_path},
             "owner": "me",
             "use_instrumental": False,
         }

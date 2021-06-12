@@ -414,6 +414,8 @@ class MediaPlayerVlcTestCase(TestCase):
                 ],
             )
 
+    @patch("dakara_player.media_player.vlc.set_metadata")
+    @patch("dakara_player.media_player.vlc.get_metadata")
     @patch.object(MediaPlayerVlc, "manage_instrumental")
     @patch.object(MediaPlayerVlc, "play")
     @patch.object(MediaPlayerVlc, "generate_text")
@@ -424,6 +426,8 @@ class MediaPlayerVlcTestCase(TestCase):
         mocked_generate_text,
         mocked_play,
         mocked_manage_instrumental,
+        mocked_get_metadata,
+        mocked_set_metadata,
     ):
         """Test to set a playlist entry
         """
