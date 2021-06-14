@@ -19,6 +19,8 @@ from path import Path
 from dakara_player.media_player.vlc import (
     MediaPlayerVlc,
     VlcTooOldError,
+    set_metadata,
+    get_metadata,
 )
 from dakara_player.media_player.base import (
     KaraFolderNotFound,
@@ -1165,3 +1167,68 @@ class MediaPlayerVlcTestCase(TestCase):
         with self.get_instance() as (vlc_player, _, _):
             with self.assertRaises(NotImplementedError):
                 vlc_player.set_window(99)
+
+
+@patch("dakara_player.media_player.vlc.METADATA_KEYS_COUNT", 10)
+class SetMetadataTestCase(TestCase):
+    """Test the set_metadata function"""
+
+    def test_set_first(self):
+        """Test to set metadata in first field"""
+        media = MagicMock()
+        media.get_meta.return_value = None
+
+        set_metadata(media, {"data": "value"})
+
+        media.set_meta.assert_called_with(0, '{"data": "value"}')
+
+    def test_set_second(self):
+        """Test to set metadata in second field"""
+        media = MagicMock()
+        media.get_meta.side_effect = ["value", None]
+
+        set_metadata(media, {"data": "value"})
+
+        media.set_meta.assert_called_with(1, '{"data": "value"}')
+
+    def test_set_fail(self):
+        """Test error when unable to set metadata in any field"""
+        media = MagicMock()
+        media.get_meta.return_value = "value"
+
+        with self.assertRaises(ValueError):
+            set_metadata(media, {"data": "value"})
+
+
+@patch("dakara_player.media_player.vlc.METADATA_KEYS_COUNT", 10)
+class GetMetadataTestCase(TestCase):
+    """Test the get_metadata function"""
+
+    def test_get_first(self):
+        """Test to get metadata from first field"""
+        media = MagicMock()
+        media.get_meta.return_value = '{"data": "value"}'
+
+        self.assertEqual(get_metadata(media), {"data": "value"})
+
+    def test_get_second_none(self):
+        """Test to get metadata from second field with first being none"""
+        media = MagicMock()
+        media.get_meta.side_effect = [None, '{"data": "value"}']
+
+        self.assertEqual(get_metadata(media), {"data": "value"})
+
+    def test_get_second_text(self):
+        """Test to get metadata from second field with first being text"""
+        media = MagicMock()
+        media.get_meta.side_effect = ["value", '{"data": "value"}']
+
+        self.assertEqual(get_metadata(media), {"data": "value"})
+
+    def test_get_fail(self):
+        """Test error when unable to get metadata from any field"""
+        media = MagicMock()
+        media.get_meta.return_value = "value"
+
+        with self.assertRaises(ValueError):
+            get_metadata(media)

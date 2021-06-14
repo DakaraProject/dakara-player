@@ -278,9 +278,7 @@ class MediaPlayerVlc(MediaPlayer):
             raise ValueError("Unexpected action to play: {}".format(what))
 
         self.player.set_media(media)
-        metadata = get_metadata(media)
         self.player.play()
-        set_metadata(media, metadata)
 
     def pause(self, paused):
         """Request VLC to pause or unpause.
@@ -693,16 +691,13 @@ def get_metadata(media):
         any: JSON representable data.
     """
     for key in range(METADATA_KEYS_COUNT):
-        if media.get_meta(key) is None:
-            continue
-
         try:
             return json.loads(media.get_meta(key))
 
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, TypeError):
             continue
 
-    raise ValueError("This media has no metadata set")
+    raise ValueError("This media has no set metadata")
 
 
 class Media:
