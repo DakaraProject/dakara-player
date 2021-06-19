@@ -13,7 +13,7 @@ except (ImportError, OSError):
 from func_timeout import func_set_timeout
 from path import TempDir
 
-from dakara_player.media_player.vlc import MediaPlayerVlc
+from dakara_player.media_player.vlc import MediaPlayerVlc, METADATA_KEYS_COUNT
 from dakara_player.mrl import mrl_to_path
 from dakara_player.media_player.base import (
     IDLE_BG_NAME,
@@ -102,6 +102,11 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
                 # assert no errors to fail test if any
                 self.assertFalse(vlc_player.stop.is_set())
+
+    def test_metadata_keys_count(self):
+        """Test the number of metadata keys
+        """
+        self.assertNotEqual(METADATA_KEYS_COUNT, 0)
 
     @func_set_timeout(TIMEOUT)
     def test_play_idle(self):
@@ -254,6 +259,52 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             # assert the started song callback has been called
             vlc_player.callbacks["started_song"].assert_called_with(
                 self.playlist_entry1["id"]
+            )
+
+    @func_set_timeout(TIMEOUT)
+    def test_play_playlist_entry_instrumental_track_avi(self):
+        """Test to play a playlist entry AVI file using instrumental track
+
+        This type of file is known to have data in the key we use to store
+        information in media.
+        """
+        # request to use instrumental track
+        self.playlist_entry3["use_instrumental"] = True
+
+        with self.get_instance() as (vlc_player, _, _):
+            # mock the callbacks
+            vlc_player.set_callback("started_transition", MagicMock())
+            vlc_player.set_callback("started_song", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.player.get_media())
+            self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
+
+            # call the method
+            vlc_player.set_playlist_entry(self.playlist_entry3)
+
+            # wait for the song to start
+            self.wait_is_playing(vlc_player, "song")
+
+            # post assertions for song
+            self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
+
+            # check media exists
+            media = vlc_player.player.get_media()
+            self.assertIsNotNone(media)
+
+            # check media path
+            file_path = mrl_to_path(media.get_mrl())
+            self.assertEqual(file_path, self.song3_path)
+
+            # check audio track
+            track = vlc_player.player.audio_get_track()
+            self.assertEqual(track, 2)
+
+            # assert the started song callback has been called
+            vlc_player.callbacks["started_song"].assert_called_with(
+                self.playlist_entry3["id"]
             )
 
     @skipIf(

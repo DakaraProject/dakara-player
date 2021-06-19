@@ -25,10 +25,11 @@ from dakara_player.mrl import path_to_mrl, mrl_to_path
 
 
 try:
-    METADATA_KEY = vlc.Meta.Setting
+    METADATA_KEYS_COUNT = len(vlc.Meta.__dict__["_enum_names_"])
 
 except AttributeError:
-    METADATA_KEY = None
+    METADATA_KEYS_COUNT = 0
+
 
 logger = logging.getLogger(__name__)
 
@@ -375,6 +376,7 @@ class MediaPlayerVlc(MediaPlayer):
         # create song media
         media_song = self.instance.media_new_path(file_path)
         media_song.add_options(*self.media_parameters)
+        media_song.parse()
         set_metadata(
             media_song, {"type": "song", "playlist_entry": self.playlist_entry}
         )
@@ -462,9 +464,6 @@ class MediaPlayerVlc(MediaPlayer):
         Returns:
             int: Number of tracks in the media.
         """
-        # parse media to extract tracks
-        media.parse()
-
         return len(list(media.tracks_get()))
 
     @staticmethod
@@ -477,13 +476,9 @@ class MediaPlayerVlc(MediaPlayer):
         Returns:
             list of int: ID of audio tracks in the media.
         """
-        # parse media to extract tracks
-        media.parse()
-        audio = [
+        return [
             item.id for item in media.tracks_get() if item.type == vlc.TrackType.audio
         ]
-
-        return audio
 
     @safe
     def handle_end_reached(self, event):
@@ -669,19 +664,25 @@ class MediaPlayerVlc(MediaPlayer):
 def set_metadata(media, metadata):
     """Set metadata to media.
 
-    Use the `METADATA_KEY` for storage. The metadata can be extracted after.
+    Take the first free metadata slot to store value. The metadata can be
+    extracted after.
 
     Args:
         media (vlc.Media): Media to set metadata in.
         metadata (any): JSON representable data.
     """
-    media.set_meta(METADATA_KEY, json.dumps(metadata))
+    for key in range(METADATA_KEYS_COUNT):
+        if media.get_meta(key) is None:
+            media.set_meta(key, json.dumps(metadata))
+            return
+
+    raise ValueError("This media has no spare metadata to use")
 
 
 def get_metadata(media):
     """Get metadata from media.
 
-    Use the `METADATA_KEY` for storage.
+    Take the first non free metadata slot that contains a valid JSON value.
 
     Args:
         media (vlc.Media): Media to get metadata from.
@@ -689,7 +690,14 @@ def get_metadata(media):
     Returns:
         any: JSON representable data.
     """
-    return json.loads(media.get_meta(METADATA_KEY))
+    for key in range(METADATA_KEYS_COUNT):
+        try:
+            return json.loads(media.get_meta(key))
+
+        except (json.JSONDecodeError, TypeError):
+            continue
+
+    raise ValueError("This media has no set metadata")
 
 
 class Media:
