@@ -30,6 +30,8 @@
 
 ## Unreleased
 
+## 1.7.0 - 2021-06-20
+
 ### Update notes
 
 Since the project has been renamed, you should migrate your configuration file, if you have one.
