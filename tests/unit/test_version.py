@@ -5,12 +5,10 @@ from dakara_player.version import check_version
 
 
 class CheckVersionTestCase(TestCase):
-    """Test the version checker
-    """
+    """Test the version checker."""
 
     def test_check_version_release(self):
-        """Test to display the version for a release
-        """
+        """Test to display the version for a release."""
         with self.assertLogs("dakara_player.version", "DEBUG") as logger:
             with patch.multiple(
                 "dakara_player.version", __version__="0.0.0", __date__="1970-01-01"
@@ -24,11 +22,12 @@ class CheckVersionTestCase(TestCase):
         )
 
     def test_check_version_non_release(self):
-        """Test to display the version for a non release
-        """
+        """Test to display the version for a non release."""
         with self.assertLogs("dakara_player.version", "DEBUG") as logger:
             with patch.multiple(
-                "dakara_player.version", __version__="0.1.0-dev", __date__="1970-01-01",
+                "dakara_player.version",
+                __version__="0.1.0-dev",
+                __date__="1970-01-01",
             ):
                 check_version()
 

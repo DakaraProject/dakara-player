@@ -1,3 +1,5 @@
+"""VLC media player."""
+
 import json
 import logging
 import re
@@ -35,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 class MediaPlayerVlc(MediaPlayer):
-    """Abstract class to manipulate VLC.
+    """Class to manipulate VLC.
 
     The class can be used as a context manager that closes VLC
     automatically on exit.
@@ -111,7 +113,8 @@ class MediaPlayerVlc(MediaPlayer):
             window_manager_class = WindowManager
 
         self.window = window_manager_class(
-            title="Dakara Player VLC", fullscreen=self.fullscreen,
+            title="Dakara Player VLC",
+            fullscreen=self.fullscreen,
         )
 
         # VLC objects
@@ -127,8 +130,7 @@ class MediaPlayerVlc(MediaPlayer):
         self.clear_playlist_entry_player()
 
     def load_player(self):
-        """Perform actions with side effects for VLC initialization.
-        """
+        """Perform actions with side effects for VLC initialization."""
         # check VLC version
         self.check_version()
 
@@ -168,6 +170,9 @@ class MediaPlayerVlc(MediaPlayer):
 
         Returns:
             packaging.version.Version: Parsed version of VLC.
+
+        Raises:
+            VersionNotFoundError: If the version cannot be parsed.
         """
         match = re.search(r"(\d+\.\d+\.\d+(?:\.\d+)*)", libvlc_get_version().decode())
         if match:
@@ -177,6 +182,9 @@ class MediaPlayerVlc(MediaPlayer):
 
     def check_version(self):
         """Check that VLC is at least version 3.
+
+        Raises:
+            VlcTooOldError: If VLC version is lower than 3.
         """
         version = self.get_version()
 
@@ -189,8 +197,7 @@ class MediaPlayerVlc(MediaPlayer):
             )
 
     def set_vlc_default_callbacks(self):
-        """Set VLC default callbacks.
-        """
+        """Set VLC default callbacks."""
         self.set_vlc_callback(
             vlc.EventType.MediaPlayerEndReached, self.handle_end_reached
         )
@@ -250,6 +257,9 @@ class MediaPlayerVlc(MediaPlayer):
 
         Args:
             what (str): What media to play.
+
+        Raises:
+            ValueError: If the action to play is unknown.
         """
         if what == "idle":
             # create idle screen media
@@ -323,8 +333,7 @@ class MediaPlayerVlc(MediaPlayer):
             self.clear_playlist_entry()
 
     def stop_player(self):
-        """Request to stop VLC.
-        """
+        """Request to stop VLC."""
         # stopping VLC
         logger.info("Stopping player")
         self.player.stop()
@@ -447,8 +456,7 @@ class MediaPlayerVlc(MediaPlayer):
         )
 
     def clear_playlist_entry_player(self):
-        """Clean playlist entry data after being played.
-        """
+        """Clean playlist entry data after being played."""
         self.playlist_entry_data = {
             "transition": Media(),
             "song": MediaSong(),
@@ -494,6 +502,10 @@ class MediaPlayerVlc(MediaPlayer):
 
         Args:
             event (vlc.EventType): VLC event object.
+
+        Raises:
+            InvalidStateError: If the context of call of this callback is
+                unexpected.
         """
         logger.debug("End reached callback called")
 
@@ -566,6 +578,10 @@ class MediaPlayerVlc(MediaPlayer):
 
         Args:
             event (vlc.EventType): VLC event object.
+
+        Raises:
+            InvalidStateError: If the context of call of this callback is
+                unexpected.
         """
         logger.debug("Playing callback called")
 
@@ -641,6 +657,9 @@ class MediaPlayerVlc(MediaPlayer):
 
         Args:
             id (int): ID of the window.
+
+        Raises:
+            NotImplementedError: If the current platform is not supported.
         """
         if id is None:
             logger.debug("Using VLC default window")
@@ -670,6 +689,9 @@ def set_metadata(media, metadata):
     Args:
         media (vlc.Media): Media to set metadata in.
         metadata (any): JSON representable data.
+
+    Raises:
+        ValueError: If the media has no free metadata to use.
     """
     for key in range(METADATA_KEYS_COUNT):
         if media.get_meta(key) is None:
@@ -689,6 +711,9 @@ def get_metadata(media):
 
     Returns:
         any: JSON representable data.
+
+    Raises:
+        ValueError: If the media has no valid metadata.
     """
     for key in range(METADATA_KEYS_COUNT):
         try:
@@ -701,8 +726,7 @@ def get_metadata(media):
 
 
 class Media:
-    """Media object.
-    """
+    """Media object."""
 
     def __init__(self, media=None):
         self.media = media
@@ -710,8 +734,7 @@ class Media:
 
 
 class MediaSong(Media):
-    """Song object.
-    """
+    """Song object."""
 
     def __init__(self, *args, audio_track_id=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -719,5 +742,4 @@ class MediaSong(Media):
 
 
 class VlcTooOldError(DakaraError):
-    """Error raised if VLC is too old.
-    """
+    """Error raised if VLC is too old."""

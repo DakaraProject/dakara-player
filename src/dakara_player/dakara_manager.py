@@ -1,22 +1,24 @@
+"""Manage the player."""
+
 import logging
 
 logger = logging.getLogger("dakara_manager")
 
 
 class DakaraManager:
-    """Manager for the Dakara player
+    """Manager for the Dakara player.
 
     This object is a high-level manager for the Dakara player. It controls the
     different elements of the project with simple commands.
 
     Args:
-        font_loader (font_loader.FontLoader): object for font
+        font_loader (font_loader.FontLoader): Object for font
             installation/deinstallation.
-        media_player (media_player.MediaPlayer): interface to VLC.
+        media_player (media_player.MediaPlayer): Interface to VLC.
         dakara_server_http (dakara_server.DakaraServerHTTPConnection):
             interface to the Dakara server for the HTTP protocol.
         dakara_server_websocket
-            (dakara_server.DakaraServerWebSocketConnection): interface to the
+            (dakara_server.DakaraServerWebSocketConnection): Interface to the
             Dakara server for the Websocket protocol.
     """
 
@@ -51,85 +53,84 @@ class DakaraManager:
         )
 
     def handle_error(self, playlist_entry_id, message):
-        """Callback when a media player error occurs
+        """Callback when a media player error occurs.
 
         Args:
-            playlist_entry_id (int): playlist entry ID.
-            message (str): text describing the error.
+            playlist_entry_id (int): Playlist entry ID.
+            message (str): Text describing the error.
         """
         self.dakara_server_http.create_player_error(playlist_entry_id, message)
 
     def handle_finished(self, playlist_entry_id):
-        """Callback when a playlist entry finishes
+        """Callback when a playlist entry finishes.
 
         Args:
-            playlist_entry_id (int): playlist entry ID.
+            playlist_entry_id (int): Playlist entry ID.
         """
         self.dakara_server_http.update_finished(playlist_entry_id)
 
     def handle_started_transition(self, playlist_entry_id):
-        """Callback when the transition of a playlist entry starts
+        """Callback when the transition of a playlist entry starts.
 
         Args:
-            playlist_entry_id (int): playlist entry ID.
+            playlist_entry_id (int): Playlist entry ID.
         """
         self.dakara_server_http.update_started_transition(playlist_entry_id)
 
     def handle_started_song(self, playlist_entry_id):
-        """Callback when the song of a playlist entry starts
+        """Callback when the song of a playlist entry starts.
 
         Args:
-            playlist_entry_id (int): playlist entry ID.
+            playlist_entry_id (int): Playlist entry ID.
         """
         self.dakara_server_http.update_started_song(playlist_entry_id)
 
     def handle_could_not_play(self, playlist_entry_id):
-        """Callback when a playlist entry could not play
+        """Callback when a playlist entry could not play.
 
         Args:
-            playlist_entry_id (int): playlist entry ID.
+            playlist_entry_id (int): Playlist entry ID.
         """
         self.dakara_server_http.update_could_not_play(playlist_entry_id)
 
     def handle_paused(self, playlist_entry_id, timing):
-        """Callback when the player is paused
+        """Callback when the player is paused.
 
         Args:
-            playlist_entry_id (int): playlist entry ID.
-            timing (int): position of the player in seconds.
+            playlist_entry_id (int): Playlist entry ID.
+            timing (int): Position of the player in seconds.
         """
         self.dakara_server_http.update_paused(playlist_entry_id, timing)
 
     def handle_resumed(self, playlist_entry_id, timing):
-        """Callback when the player resumed playing
+        """Callback when the player resumed playing.
 
         Args:
-            playlist_entry_id (int): playlist entry ID.
-            timing (int): position of the player in seconds.
+            playlist_entry_id (int): Playlist entry ID.
+            timing (int): Position of the player in seconds.
         """
         self.dakara_server_http.update_resumed(playlist_entry_id, timing)
 
     def play_playlist_entry(self, playlist_entry):
-        """Play the requested playlist entry
+        """Play the requested playlist entry.
 
         Args:
-            playlist_entry (dict): dictionary of the playlist entry.
+            playlist_entry (dict): Dictionary of the playlist entry.
         """
         self.media_player.set_playlist_entry(playlist_entry)
 
     def play_idle_screen(self):
-        """Play the idle screen
-        """
+        """Play the idle screen."""
         self.media_player.play("idle")
 
     def do_command(self, command):
-        """Execute a player command
+        """Execute a player command.
 
         Args:
-            command (str): name of the command to execute.
+            command (str): Name of the command to execute.
 
         Raises:
-            AssertError: if the command is not known.
+            AssertError: If the command is not known.
         """
         assert command in (
             "pause",

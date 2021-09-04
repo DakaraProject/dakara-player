@@ -18,14 +18,12 @@ from dakara_player.text_generator import (
 
 
 class TextGeneratorTestCase(TestCase):
-    """Test the text generator class unitary
-    """
+    """Test the text generator class unitary."""
 
     @patch.object(TextGenerator, "load_templates")
     @patch.object(TextGenerator, "load_icon_map")
     def test_load(self, mocked_load_icon_map, mocked_load_templates):
-        """Test the load method
-        """
+        """Test the load method."""
         # create ojbect
         text_generator = TextGenerator("package")
 
@@ -39,8 +37,7 @@ class TextGeneratorTestCase(TestCase):
     @patch.object(Path_pathlib, "read_text", autospec=True)
     @patch("dakara_player.text_generator.json.loads", autospec=True)
     def test_load_icon_map(self, mocked_loads, mocked_read_text):
-        """Test to load the icon map
-        """
+        """Test to load the icon map."""
         # create the mock
         mocked_loads.return_value = {"name": "value"}
         mocked_read_text.return_value = '{"name": "value"}'
@@ -73,8 +70,7 @@ class TextGeneratorTestCase(TestCase):
         mocked_choice_loader_class,
         mocked_check_template,
     ):
-        """Test to load templates for text
-        """
+        """Test to load templates for text."""
         mocked_environment_class.return_value.filters = {}
         # create object
         text_generator = TextGenerator(
@@ -106,8 +102,7 @@ class TextGeneratorTestCase(TestCase):
         )
 
     def test_convert_icon(self):
-        """Test the convertion of an available icon name to its code
-        """
+        """Test the convertion of an available icon name to its code."""
         # create object
         text_generator = TextGenerator("package")
         text_generator.icon_map = {"music": "0xf001"}
@@ -116,24 +111,21 @@ class TextGeneratorTestCase(TestCase):
         self.assertEqual(text_generator.convert_icon("other"), " ")
 
     def test_convert_icon_unavailable(self):
-        """Test the convertion of an unavailable icon name to a generic code
-        """
+        """Test the convertion of an unavailable icon name to a generic code."""
         # create object
         text_generator = TextGenerator("package")
 
         self.assertEqual(text_generator.convert_icon("unavailable"), " ")
 
     def test_convert_icon_none(self):
-        """Test the convertion of a null icon name is handled
-        """
+        """Test the convertion of a null icon name is handled."""
         # create object
         text_generator = TextGenerator("package")
 
         self.assertEqual(text_generator.convert_icon(None), "")
 
     def test_convert_link_type_name(self):
-        """Test the convertion of a link type to its long name
-        """
+        """Test the convertion of a link type to its long name."""
         # create object
         text_generator = TextGenerator("package")
 
@@ -144,8 +136,7 @@ class TextGeneratorTestCase(TestCase):
 
     @patch.object(TextGenerator, "get_environment_loaders", autospec=True)
     def test_check_template_custom(self, mocked_get_environment_loaders):
-        """Test to find a custom template
-        """
+        """Test to find a custom template."""
         mocked_loader_custom = MagicMock()
         mocked_loader_custom.list_templates.return_value = ["idle.ass"]
         mocked_loader_default = MagicMock()
@@ -170,8 +161,7 @@ class TextGeneratorTestCase(TestCase):
 
     @patch.object(TextGenerator, "get_environment_loaders", autospec=True)
     def test_check_template_default(self, mocked_get_environment_loaders):
-        """Test to find a default template
-        """
+        """Test to find a default template."""
         mocked_loader_custom = MagicMock()
         mocked_loader_custom.list_templates.return_value = []
         mocked_loader_default = MagicMock()
@@ -196,8 +186,7 @@ class TextGeneratorTestCase(TestCase):
 
     @patch.object(TextGenerator, "get_environment_loaders", autospec=True)
     def test_check_template_not_found(self, mocked_get_environment_loaders):
-        """Test to find an unaccessible template
-        """
+        """Test to find an unaccessible template."""
         mocked_loader_custom = MagicMock()
         mocked_loader_custom.list_templates.return_value = []
         mocked_loader_default = MagicMock()
@@ -216,8 +205,7 @@ class TextGeneratorTestCase(TestCase):
 
 
 class TextGeneratorIntegrationTestCase(TestCase):
-    """Test the text generator class in real conditions
-    """
+    """Test the text generator class in real conditions."""
 
     def setUp(self):
         # create info dictionary
@@ -258,7 +246,7 @@ class TextGeneratorIntegrationTestCase(TestCase):
         self.text_generator.load()
 
     def test_load_templates_default(self):
-        """Test to load default templates using an existing directory
+        """Test to load default templates using an existing directory.
 
         Integration test.
         """
@@ -281,8 +269,7 @@ class TextGeneratorIntegrationTestCase(TestCase):
             self.assertIn("transition.ass", loader_default.list_templates())
 
     def test_load_templates_custom(self):
-        """Test to load custom templates using an existing directory
-        """
+        """Test to load custom templates using an existing directory."""
         with TempDir() as temp:
             # prepare directory
             with path("dakara_player.resources.templates", "idle.ass") as file:
@@ -307,8 +294,7 @@ class TextGeneratorIntegrationTestCase(TestCase):
             self.assertIn("transition.ass", loader_custom.list_templates())
 
     def test_get_idle_text(self):
-        """Test the generation of an idle text
-        """
+        """Test the generation of an idle text."""
         # call method
         result = self.text_generator.get_text("idle", self.idle_info)
 
@@ -318,8 +304,7 @@ class TextGeneratorIntegrationTestCase(TestCase):
             self.assertEqual(idle_text_content, result)
 
     def test_get_transition_text(self):
-        """Test the generation of a transition text
-        """
+        """Test the generation of a transition text."""
         # call method
         result = self.text_generator.get_text(
             "transition", {"playlist_entry": self.playlist_entry, "fade_in": True}
@@ -332,26 +317,22 @@ class TextGeneratorIntegrationTestCase(TestCase):
 
 
 class SeparatePackageLastDirectoryTestCase(TestCase):
-    """Test the separate_package_last_directory function
-    """
+    """Test the separate_package_last_directory function."""
 
     def test_three(self):
-        """Test separate package with three elements
-        """
+        """Test separate package with three elements."""
         package, directory = separate_package_last_directory("a.b.c")
         self.assertEqual(package, "a.b")
         self.assertEqual(directory, "c")
 
     def test_two(self):
-        """Test separate package with two elements
-        """
+        """Test separate package with two elements."""
         package, directory = separate_package_last_directory("a.b")
         self.assertEqual(package, "a")
         self.assertEqual(directory, "b")
 
     def test_one(self):
-        """Test separate package with one element
-        """
+        """Test separate package with one element."""
         package, directory = separate_package_last_directory("a")
         self.assertEqual(package, "")
         self.assertEqual(directory, "a")

@@ -11,18 +11,15 @@ from dakara_player.commands import play
 
 
 class GetParserTestCase(TestCase):
-    """Test the parser creator
-    """
+    """Test the parser creator."""
 
     def test(self):
-        """Test a parser is created
-        """
+        """Test a parser is created."""
         parser = play.get_parser()
         self.assertIsNotNone(parser)
 
     def test_main_function(self):
-        """Test the parser calls play by default
-        """
+        """Test the parser calls play by default."""
         # call the function
         parser = play.get_parser()
         args = parser.parse_args([])
@@ -31,8 +28,7 @@ class GetParserTestCase(TestCase):
         self.assertIs(args.function, play.play)
 
     def test_create_config_function(self):
-        """Test the parser calls create_config when prompted
-        """
+        """Test the parser calls create_config when prompted."""
         # call the function
         parser = play.get_parser()
         args = parser.parse_args(["create-config"])
@@ -41,8 +37,7 @@ class GetParserTestCase(TestCase):
         self.assertIs(args.function, play.create_config)
 
     def test_create_resources_function(self):
-        """Test the parser calls create_resources when prompted
-        """
+        """Test the parser calls create_resources when prompted."""
         # call the function
         parser = play.get_parser()
         args = parser.parse_args(["create-resources"])
@@ -52,8 +47,7 @@ class GetParserTestCase(TestCase):
 
 
 class PlayTestCase(TestCase):
-    """Test the play action
-    """
+    """Test the play action."""
 
     @patch.object(DakaraPlayer, "run")
     @patch.object(DakaraPlayer, "load")
@@ -68,8 +62,7 @@ class PlayTestCase(TestCase):
         mocked_load,
         mocked_run,
     ):
-        """Test when config file is not found
-        """
+        """Test when config file is not found."""
         # create the mocks
         mocked_get_config_file.return_value = Path("path") / "to" / "config"
         mocked_load_config.side_effect = ConfigNotFoundError("Config file not found")
@@ -100,8 +93,7 @@ class PlayTestCase(TestCase):
         mocked_load,
         mocked_run,
     ):
-        """Test when config file is incomplete
-        """
+        """Test when config file is incomplete."""
         # create the mocks
         mocked_get_config_file.return_value = Path("path") / "to" / "config"
         mocked_load.side_effect = DakaraError("Config-related error")
@@ -148,8 +140,7 @@ class PlayTestCase(TestCase):
         mocked_run,
         mocked_load,
     ):
-        """Test a simple play action
-        """
+        """Test a simple play action."""
         # setup the mocks
         mocked_get_config_file.return_value = Path("path") / "to" / "config"
         config = {
@@ -176,21 +167,20 @@ class PlayTestCase(TestCase):
 
 
 class CreateConfigTestCase(TestCase):
-    """Test the create-config action
-    """
+    """Test the create-config action."""
 
     @patch("dakara_player.commands.play.create_logger")
     @patch("dakara_player.commands.play.create_config_file")
     def test_create_config(self, mocked_create_config_file, mocked_create_logger):
-        """Test a simple create-config action
-        """
+        """Test a simple create-config action."""
         # call the function
         with self.assertLogs("dakara_player.commands.play") as logger:
             play.create_config(Namespace(force=False))
 
         # assert the logs
         self.assertListEqual(
-            logger.output, ["INFO:dakara_player.commands.play:Please edit this file"],
+            logger.output,
+            ["INFO:dakara_player.commands.play:Please edit this file"],
         )
 
         # assert the call
@@ -203,14 +193,12 @@ class CreateConfigTestCase(TestCase):
 
 
 class CreateResourcesTestCase(TestCase):
-    """Test the create-resources action
-    """
+    """Test the create-resources action."""
 
     @patch("dakara_player.commands.play.create_logger")
     @patch("dakara_player.commands.play.create_resource_files")
     def test_create_config(self, mocked_create_resource_files, mocked_create_logger):
-        """Test a simple create-resources action
-        """
+        """Test a simple create-resources action."""
         # call the function
         with self.assertLogs("dakara_player.commands.play") as logger:
             play.create_resources(Namespace(force=False))
@@ -231,12 +219,10 @@ class CreateResourcesTestCase(TestCase):
 @patch("dakara_player.commands.play.exit")
 @patch.object(ArgumentParser, "parse_args")
 class MainTestCase(TestCase):
-    """Test the main action
-    """
+    """Test the main action."""
 
     def test_normal_exit(self, mocked_parse_args, mocked_exit):
-        """Test a normal exit
-        """
+        """Test a normal exit."""
         # create mocks
         function = MagicMock()
         mocked_parse_args.return_value = Namespace(function=function, debug=False)
@@ -249,8 +235,7 @@ class MainTestCase(TestCase):
         mocked_exit.assert_called_with(0)
 
     def test_known_error(self, mocked_parse_args, mocked_exit):
-        """Test a known error exit
-        """
+        """Test a known error exit."""
         # create mocks
         def function(args):
             raise DakaraError("error")
@@ -270,8 +255,7 @@ class MainTestCase(TestCase):
         )
 
     def test_known_error_debug(self, mocked_parse_args, mocked_exit):
-        """Test a known error exit in debug mode
-        """
+        """Test a known error exit in debug mode."""
         # create mocks
         def function(args):
             raise DakaraError("error message")
@@ -286,8 +270,7 @@ class MainTestCase(TestCase):
         mocked_exit.assert_not_called()
 
     def test_unknown_error(self, mocked_parse_args, mocked_exit):
-        """Test an unknown error exit
-        """
+        """Test an unknown error exit."""
         # create mocks
         def function(args):
             raise Exception("error")
@@ -312,8 +295,7 @@ class MainTestCase(TestCase):
         )
 
     def test_unknown_error_debug(self, mocked_parse_args, mocked_exit):
-        """Test an unknown error exit in debug mode
-        """
+        """Test an unknown error exit in debug mode."""
         # create mocks
         def function(args):
             raise Exception("error message")

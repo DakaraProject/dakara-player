@@ -1,8 +1,10 @@
+"""Manage audio files independently of the media player."""
+
 import filetype
 
 
 def get_audio_files(filepath):
-    """Get audio files with the same name as provided file
+    """Get audio files with the same name as provided file.
 
     Args:
         filepath (path.Path): Path of the initial file.
@@ -16,7 +18,7 @@ def get_audio_files(filepath):
 
 
 def is_audio_file(file_path):
-    """Detect if a file is audio file based on standard magic numbers
+    """Detect if a file is audio file based on standard magic numbers.
 
     Args:
         file_path (path.Path): Path of the file to investigate.

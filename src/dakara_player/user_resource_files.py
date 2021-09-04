@@ -1,3 +1,5 @@
+"""Manage the user resource directory and files."""
+
 import logging
 import sys
 from distutils.util import strtobool
@@ -14,10 +16,13 @@ logger = logging.getLogger(__name__)
 
 
 def get_user_directory():
-    """Get the user directory for resource files
+    """Get the user directory for resource files.
 
     Returns:
-        path.Path: path to the user directory, must be expanded to be used.
+        path.Path: Path to the user directory, must be expanded to be used.
+
+    Raises:
+        NotImplementedError: If the current platform is not supported.
     """
     if "linux" in sys.platform:
         return Path("~") / ".local" / "share" / "dakara" / "player"
@@ -29,12 +34,12 @@ def get_user_directory():
 
 
 def copy_resource(resource, destination, force):
-    """Copy the content of one resource directory
+    """Copy the content of one resource directory.
 
     Args:
-        resource (str): resource to copy.
-        destination (path.Path): directory where to copy the resource.
-        force (bool): if the destination exists and this flag is set to True,
+        resource (str): Resource to copy.
+        destination (path.Path): Directory where to copy the resource.
+        force (bool): If the destination exists and this flag is set to True,
             overwrite the destination.
     """
     if not force and destination.exists():
@@ -64,10 +69,10 @@ def copy_resource(resource, destination, force):
 
 
 def create_resource_files(force=False):
-    """Copy the resource files to user directory
+    """Copy the resource files to user directory.
 
     Args:
-        force (bool): if the user directory already contains the resource
+        force (bool): If the user directory already contains the resource
             directories and this flag is set, overwrite the directories.
     """
     user_directory = get_user_directory().expand()

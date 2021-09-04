@@ -1,3 +1,5 @@
+"""Base objects for media players."""
+
 import logging
 from abc import ABC, abstractmethod
 from threading import Timer
@@ -160,8 +162,7 @@ class MediaPlayer(Worker, ABC):
         """
 
     def load(self):
-        """Perform base actions with side effects for media player initialization.
-        """
+        """Perform base actions with side effects for media player initialization."""
         # check kara folder
         self.check_kara_folder_path()
 
@@ -323,8 +324,7 @@ class MediaPlayer(Worker, ABC):
         """
 
     def clear_playlist_entry(self):
-        """Clean playlist entry base data after being played.
-        """
+        """Clean playlist entry base data after being played."""
         self.playlist_entry = None
 
         self.clear_playlist_entry_player()
@@ -351,6 +351,9 @@ class MediaPlayer(Worker, ABC):
 
         Consider that this instrumental file should be the only one audio file found.
 
+        Args:
+            filepath (path.Path): Path to the media file.
+
         Returns:
             path.Path: Path to the instrumental file. None if not found.
         """
@@ -364,16 +367,14 @@ class MediaPlayer(Worker, ABC):
         return None
 
     def check_kara_folder_path(self):
-        """Check if the karaoke folder exists.
-        """
+        """Check if the karaoke folder exists."""
         if not self.kara_folder_path.exists():
             raise KaraFolderNotFound(
                 'Karaoke folder "{}" does not exist'.format(self.kara_folder_path)
             )
 
     def check_is_available(self):
-        """Check if the media player is installed and useable.
-        """
+        """Check if the media player is installed and useable."""
         # check the target player is available
         if not self.is_available():
             raise MediaPlayerNotAvailableError(
@@ -381,8 +382,7 @@ class MediaPlayer(Worker, ABC):
             )
 
     def set_default_callbacks(self):
-        """Set dummy callbacks that have to be defined externally.
-        """
+        """Set dummy callbacks that have to be defined externally."""
         self.set_callback("started_transition", lambda playlist_entry_id: None)
         self.set_callback("started_song", lambda playlist_entry_id: None)
         self.set_callback("could_not_play", lambda playlist_entry_id: None)
@@ -414,8 +414,7 @@ class MediaPlayer(Worker, ABC):
 
     @classmethod
     def warn_stop_player_too_long(cls):
-        """Notify the user that the player takes too long to stop.
-        """
+        """Notify the user that the player takes too long to stop."""
         logger.warning("{} takes too long to stop".format(cls.player_name))
 
     def generate_text(self, what, **kwargs):
@@ -430,6 +429,9 @@ class MediaPlayer(Worker, ABC):
 
         Returns:
             path.Path: Path of the text screen.
+
+        Raises:
+            ValueError: If the type of screen to generate is unknown.
         """
         if what == "idle":
             text = self.text_generator.get_text(
@@ -460,20 +462,16 @@ class MediaPlayer(Worker, ABC):
 
 
 class KaraFolderNotFound(DakaraError):
-    """Error raised when the kara folder cannot be found
-    """
+    """Error raised when the kara folder cannot be found."""
 
 
 class MediaPlayerNotAvailableError(DakaraError):
-    """Error raised when trying to use a target player that cannot be found
-    """
+    """Error raised when trying to use a target player that cannot be found."""
 
 
 class InvalidStateError(RuntimeError):
-    """Error raised when the state of the player is invalid
-    """
+    """Error raised when the state of the player is invalid."""
 
 
 class VersionNotFoundError(Exception):
-    """Error raised when the version of the player cannot be found
-    """
+    """Error raised when the version of the player cannot be found."""

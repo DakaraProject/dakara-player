@@ -10,16 +10,14 @@ from dakara_player.background_loader import BackgroundLoader, BackgroundNotFound
 @patch.object(Path, "copy", autospec=True)
 @patch.object(Path, "exists", autospec=True)
 class BackgroundLoaderTestCase(TestCase):
-    """Test the loader for backgrounds
-    """
+    """Test the loader for backgrounds."""
 
     def setUp(self):
         # destination
         self.destination = Path("/") / "destination"
 
     def test_load_default(self, mocked_exists, mocked_copy, mocked_path):
-        """Test to load a default background
-        """
+        """Test to load a default background."""
         mocked_exists.return_value = False
         mocked_copy.return_value = Path("/") / "destination" / "idle.png"
         mocked_path.return_value.__enter__.return_value = (
@@ -42,7 +40,8 @@ class BackgroundLoaderTestCase(TestCase):
 
         # assert the backgrounds
         self.assertDictEqual(
-            loader.backgrounds, {"idle": self.destination / "idle.png"},
+            loader.backgrounds,
+            {"idle": self.destination / "idle.png"},
         )
 
         # assert logs
@@ -63,8 +62,7 @@ class BackgroundLoaderTestCase(TestCase):
         mocked_path.assert_called_with("package", "idle.png")
 
     def test_load_custom(self, mocked_exists, mocked_copy, mocked_path):
-        """Test to load a custom background
-        """
+        """Test to load a custom background."""
         mocked_exists.return_value = True
         mocked_copy.return_value = Path("/") / "destination" / "idle.png"
 
@@ -103,8 +101,7 @@ class BackgroundLoaderTestCase(TestCase):
         mocked_path.assert_not_called()
 
     def test_load_error(self, mocked_exists, mocked_copy, mocked_path):
-        """Test to load one unexisting background
-        """
+        """Test to load one unexisting background."""
         mocked_exists.return_value = False
         mocked_path.return_value.__enter__.side_effect = FileNotFoundError
 

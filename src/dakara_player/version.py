@@ -1,3 +1,5 @@
+"""Version of the program."""
+
 import logging
 
 import importlib_metadata
@@ -10,8 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def check_version():
-    """Display version number and check if on release
-    """
+    """Display version number and check if on release."""
     # log player versio
     logger.info("Dakara player %s (%s)", __version__, __date__)
 

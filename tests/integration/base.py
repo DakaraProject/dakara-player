@@ -11,14 +11,13 @@ from path import Path, TempDir
 
 
 class TestCasePoller(TestCase):
-    """Test class that can poll the state of tested player
-    """
+    """Test class that can poll the state of tested player."""
 
     DELAY = 0.1
 
     @classmethod
     def wait_is_playing(cls, player, what=None, wait_extra=DELAY):
-        """Wait for the player to be playing or to play something specifically
+        """Wait for the player to be playing or to play something specifically.
 
         Use a polling loop. Note that after the condition is fulfilled, the
         function waits a little bit more.
@@ -39,7 +38,7 @@ class TestCasePoller(TestCase):
 
     @classmethod
     def wait_is_paused(cls, player, wait_extra=DELAY):
-        """Wait for the player to be paused
+        """Wait for the player to be paused.
 
         Use a polling loop. Note that after the condition is fulfilled, the
         function waits a little bit more.
@@ -54,7 +53,7 @@ class TestCasePoller(TestCase):
 
     @classmethod
     def wait(cls, condition_method):
-        """Wait for a condition to be true safely
+        """Wait for a condition to be true safely.
 
         Args:
             condition_method (function): Function to call in loop in a try/except
@@ -72,8 +71,7 @@ class TestCasePoller(TestCase):
 
 
 class TestCaseKara(TestCase):
-    """Test class that creates a working kara folder
-    """
+    """Test class that creates a working kara folder."""
 
     def setUp(self):
         # create kara folder
@@ -127,5 +125,4 @@ class TestCaseKara(TestCase):
 
 
 class TestCasePollerKara(TestCasePoller, TestCaseKara):
-    """Test class that polls player and create kara folder
-    """
+    """Test class that polls player and create kara folder."""
