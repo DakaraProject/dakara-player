@@ -110,12 +110,10 @@ This installs the normal dependencies of the package plus the dependencies for t
 
 ### Run tests
 
-Run tests simply with:
+Tests are run by [Pytest](https://docs.pytest.org/en/stable/) with:
 
 ```sh
 pytest
-# or
-python -m pytest
 ```
 
 Tests are split between unit tests, which are ligthweight and do not require VLC or mpv to be installed, and integration tests, which are heavier:
@@ -123,20 +121,9 @@ Tests are split between unit tests, which are ligthweight and do not require VLC
 ```sh
 pytest tests/unit
 pytest tests/integration
-# or
-python -m pytest tests/unit
-python -m pytest tests/integration
 ```
 
-To check coverage, use the `coverage` command:
-
-```sh
-coverage run -m pytest
-coverage report -m
-# or
-python -m coverage run -m pytest
-python -m coverage report -m
-```
+Coverage is checked automatically with [Pytest-cov](https://pypi.org/project/pytest-cov/).
 
 ### Hooks
 
