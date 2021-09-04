@@ -57,7 +57,7 @@ for:
 
     test_script:
       # run tests
-      - "if $INTEGRATION_TEST; then python pytest -v --cov-report term; else python -m pytest -v --cov-report term tests/unit; fi"
+      - "if $INTEGRATION_TEST; then python -m pytest -v --cov-report term; else python -m pytest -v --cov-report term tests/unit; fi"
 
       # run commands
       - "python -m dakara_player --version"

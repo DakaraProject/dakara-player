@@ -65,7 +65,7 @@ You need to call Black before committing changes.
 You may want to configure your editor to call it automatically.
 Additionnal checking can be manually performed with [Pylint](https://www.pylint.org/).
 
-## Hooks
+### Hooks
 
 Pre-commit hooks allow to perform checks before commiting changes.
 They are managed with [Pre-commit](https://pre-commit.com/), use the following command to install them:

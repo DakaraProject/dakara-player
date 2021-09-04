@@ -51,7 +51,7 @@ git tag "$version_number"
 # say something
 echo "Version bumped to $version_number"
 
-# patch dev version and date in setup.cfg
+# patch dev version in setup.cfg
 sed -i "s/^version = .*$/version = $dev_version_number/" $setup_file
 
 # change version in appveyor config file
