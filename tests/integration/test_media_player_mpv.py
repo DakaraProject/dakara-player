@@ -1,20 +1,20 @@
 from contextlib import ExitStack, contextmanager
 from queue import Queue
-from time import sleep
 from threading import Event
+from time import sleep
 from unittest import skipUnless
 from unittest.mock import MagicMock
 
 from func_timeout import func_set_timeout
 from path import TempDir
 
-from dakara_player.media_player.mpv import MediaPlayerMpv
 from dakara_player.media_player.base import (
     IDLE_BG_NAME,
     IDLE_TEXT_NAME,
     TRANSITION_BG_NAME,
     TRANSITION_TEXT_NAME,
 )
+from dakara_player.media_player.mpv import MediaPlayerMpv
 from tests.integration.base import TestCasePollerKara
 
 

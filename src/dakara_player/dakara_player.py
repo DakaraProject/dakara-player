@@ -1,16 +1,16 @@
 import logging
 from contextlib import ExitStack
 
-from dakara_base.safe_workers import Runner, WorkerSafeThread
 from dakara_base.exceptions import DakaraError
+from dakara_base.safe_workers import Runner, WorkerSafeThread
 from path import TempDir
 
-from dakara_player.font_loader import get_font_loader_class
 from dakara_player.dakara_manager import DakaraManager
 from dakara_player.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
 )
+from dakara_player.font_loader import get_font_loader_class
 from dakara_player.media_player.mpv import MediaPlayerMpv
 from dakara_player.media_player.vlc import MediaPlayerVlc
 from dakara_player.version import check_version

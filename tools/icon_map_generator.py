@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-import re
-import os
 import json
+import os
+import re
 from argparse import ArgumentParser
-
 
 CSS_ICON_NAME_PARSER = r"""\.fa-([^:]*?):(?=[^}]*?content:\s*['"](.*?)['"])"""
 

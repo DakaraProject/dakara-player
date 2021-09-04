@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from threading import Thread, Event
+from threading import Event, Thread
 
 try:
     import tkinter

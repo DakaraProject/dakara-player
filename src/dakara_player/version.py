@@ -1,8 +1,7 @@
 import logging
-from pkg_resources import parse_version
 
 import importlib_metadata
-
+from pkg_resources import parse_version
 
 __version__ = importlib_metadata.version("dakaraplayer")
 __date__ = "2021-06-20"

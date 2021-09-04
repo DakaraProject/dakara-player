@@ -1,6 +1,6 @@
 import logging
-import sys
 import os
+import sys
 from abc import ABC, abstractmethod
 from contextlib import ExitStack
 

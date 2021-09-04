@@ -3,7 +3,7 @@ import re
 from abc import ABC
 
 from dakara_base.safe_workers import safe
-from packaging.version import parse, Version
+from packaging.version import Version, parse
 
 try:
     import python_mpv_jsonipc as mpv
@@ -16,7 +16,6 @@ from dakara_player.media_player.base import (
     MediaPlayer,
     VersionNotFoundError,
 )
-
 
 logger = logging.getLogger(__name__)
 mpv_logger = logging.getLogger("mpv")

@@ -1,12 +1,13 @@
-import logging
 import json
+import logging
 import re
 import sys
 
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
-from dakara_player.window import WindowManager, DummyWindowManager
-from packaging.version import parse, Version
+from packaging.version import Version, parse
+
+from dakara_player.window import DummyWindowManager, WindowManager
 
 try:
     import vlc
@@ -17,12 +18,11 @@ except (ImportError, OSError):
     libvlc_get_version = None
 
 from dakara_player.media_player.base import (
-    MediaPlayer,
     InvalidStateError,
+    MediaPlayer,
     VersionNotFoundError,
 )
-from dakara_player.mrl import path_to_mrl, mrl_to_path
-
+from dakara_player.mrl import mrl_to_path, path_to_mrl
 
 try:
     METADATA_KEYS_COUNT = len(vlc.Meta.__dict__["_enum_names_"])

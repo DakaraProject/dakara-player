@@ -3,13 +3,12 @@ import sys
 from distutils.util import strtobool
 
 try:
-    from importlib.resources import path, contents
+    from importlib.resources import contents, path
 
 except ImportError:
     from importlib_resources import path, contents
 
 from path import Path
-
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,6 @@
 import logging
 from argparse import ArgumentParser
 
-from dakara_base.exceptions import DakaraError
 from dakara_base.config import (
     ConfigNotFoundError,
     create_config_file,
@@ -10,11 +9,11 @@ from dakara_base.config import (
     load_config,
     set_loglevel,
 )
+from dakara_base.exceptions import DakaraError
 
 from dakara_player import DakaraPlayer
 from dakara_player.user_resource_files import create_resource_files
-from dakara_player.version import __version__, __date__
-
+from dakara_player.version import __date__, __version__
 
 CONFIG_FILE = "player.yaml"
 

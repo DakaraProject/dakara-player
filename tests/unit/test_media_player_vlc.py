@@ -1,11 +1,11 @@
 import re
-from tempfile import gettempdir
 from contextlib import ExitStack, contextmanager
 from queue import Queue
+from tempfile import gettempdir
 from threading import Event
 from time import sleep
 from unittest import TestCase, skipIf
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, call, patch
 
 try:
     import vlc
@@ -16,16 +16,16 @@ except (ImportError, OSError):
 from packaging.version import parse
 from path import Path
 
+from dakara_player.media_player.base import (
+    InvalidStateError,
+    KaraFolderNotFound,
+    VersionNotFoundError,
+)
 from dakara_player.media_player.vlc import (
     MediaPlayerVlc,
     VlcTooOldError,
-    set_metadata,
     get_metadata,
-)
-from dakara_player.media_player.base import (
-    KaraFolderNotFound,
-    InvalidStateError,
-    VersionNotFoundError,
+    set_metadata,
 )
 from dakara_player.mrl import path_to_mrl
 from dakara_player.text_generator import TextGenerator

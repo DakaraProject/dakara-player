@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 from unittest import TestCase, skipIf, skipUnless
 from unittest.mock import patch
 
@@ -11,9 +11,9 @@ except ImportError:
 
 from dakara_player.window import (
     DummyWindowManager,
-    get_window_manager_class,
     TkWindowManager,
     WindowManagerNotAvailableError,
+    get_window_manager_class,
 )
 
 

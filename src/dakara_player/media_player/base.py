@@ -6,12 +6,11 @@ from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
 from path import Path
 
-from dakara_player.background_loader import BackgroundLoader
 from dakara_player.audio import get_audio_files
+from dakara_player.background_loader import BackgroundLoader
 from dakara_player.text_generator import TextGenerator
 from dakara_player.user_resource_files import get_user_directory
 from dakara_player.version import __version__
-
 
 TRANSITION_BG_NAME = "transition.png"
 TRANSITION_TEXT_NAME = "transition.ass"

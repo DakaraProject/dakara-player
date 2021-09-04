@@ -9,7 +9,6 @@ except ImportError:
 from dakara_base.exceptions import DakaraError
 from path import Path
 
-
 logger = logging.getLogger(__name__)
 
 

@@ -1,9 +1,8 @@
 import logging
 
-from dakara_base.http_client import authenticated, HTTPClient
-from dakara_base.websocket_client import WebSocketClient
+from dakara_base.http_client import HTTPClient, authenticated
 from dakara_base.utils import truncate_message
-
+from dakara_base.websocket_client import WebSocketClient
 
 logger = logging.getLogger(__name__)
 

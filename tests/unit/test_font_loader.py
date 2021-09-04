@@ -1,7 +1,7 @@
 import sys
 from io import StringIO
 from unittest import TestCase, skipUnless
-from unittest.mock import patch, call
+from unittest.mock import call, patch
 
 from path import Path
 

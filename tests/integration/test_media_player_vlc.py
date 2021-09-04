@@ -13,12 +13,9 @@ except (ImportError, OSError):
 from func_timeout import func_set_timeout
 from path import TempDir
 
-from dakara_player.media_player.vlc import MediaPlayerVlc, METADATA_KEYS_COUNT
+from dakara_player.media_player.base import IDLE_BG_NAME, TRANSITION_BG_NAME
+from dakara_player.media_player.vlc import METADATA_KEYS_COUNT, MediaPlayerVlc
 from dakara_player.mrl import mrl_to_path
-from dakara_player.media_player.base import (
-    IDLE_BG_NAME,
-    TRANSITION_BG_NAME,
-)
 from tests.integration.base import TestCasePollerKara
 
 

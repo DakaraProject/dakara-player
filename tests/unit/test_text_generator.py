@@ -1,8 +1,8 @@
+from pathlib import Path as Path_pathlib
 from unittest import TestCase
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from path import Path, TempDir
-from pathlib import Path as Path_pathlib
 
 try:
     from importlib.resources import path
@@ -11,9 +11,9 @@ except ImportError:
     from importlib_resources import path
 
 from dakara_player.text_generator import (
-    separate_package_last_directory,
     TemplateNotFoundError,
     TextGenerator,
+    separate_package_last_directory,
 )
 
 

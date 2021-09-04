@@ -3,10 +3,7 @@ from unittest.mock import patch
 
 from path import Path
 
-from dakara_player.background_loader import (
-    BackgroundLoader,
-    BackgroundNotFoundError,
-)
+from dakara_player.background_loader import BackgroundLoader, BackgroundNotFoundError
 
 
 @patch("dakara_player.background_loader.path", autospec=True)

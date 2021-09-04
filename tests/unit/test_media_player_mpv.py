@@ -1,22 +1,22 @@
-from queue import Queue
 from contextlib import ExitStack
-from packaging.version import Version
+from queue import Queue
 from tempfile import gettempdir
 from threading import Event
 from unittest import TestCase
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, call, patch
 
+from packaging.version import Version
 from path import Path
 
-from dakara_player.media_player.mpv import (
-    MediaPlayerMpv,
-    MediaPlayerMpvOld,
-    MediaPlayerMpvPost0330,
-)
 from dakara_player.media_player.base import (
     InvalidStateError,
     MediaPlayerNotAvailableError,
     VersionNotFoundError,
+)
+from dakara_player.media_player.mpv import (
+    MediaPlayerMpv,
+    MediaPlayerMpvOld,
+    MediaPlayerMpvPost0330,
 )
 
 
