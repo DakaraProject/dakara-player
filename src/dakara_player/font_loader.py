@@ -49,13 +49,11 @@ class FontLoader(ABC):
 
     @abstractmethod
     def load(self):
-        """Load the fonts
-        """
+        """Load the fonts"""
 
     @abstractmethod
     def unload(self):
-        """Unload the loaded fonts
-        """
+        """Unload the loaded fonts"""
 
     def __enter__(self):
         return self
@@ -106,8 +104,7 @@ class FontLoaderLinux(FontLoader):
         self.fonts_loaded = {}
 
     def load(self):
-        """Load the fonts
-        """
+        """Load the fonts"""
         # ensure that the user font directory exists
         try:
             os.mkdir(self.FONT_DIR_USER.expanduser())
@@ -119,11 +116,8 @@ class FontLoaderLinux(FontLoader):
         self.load_from_resources_directory()
 
     def load_from_resources_directory(self):
-        """Load all the fonts situated in the resources font directory
-        """
+        """Load all the fonts situated in the resources font directory"""
         font_file_name_list = self.get_font_name_list()
-
-        logger.debug("Found %i font(s) to load", len(font_file_name_list))
         self.load_from_list(font_file_name_list)
 
     def load_from_list(self, font_file_name_list):
@@ -190,8 +184,7 @@ class FontLoaderLinux(FontLoader):
         )
 
     def unload(self):
-        """Remove loaded fonts
-        """
+        """Remove loaded fonts"""
         for font_file_name in self.fonts_loaded.copy():
             self.unload_font(font_file_name)
 
@@ -206,8 +199,13 @@ class FontLoaderLinux(FontLoader):
             font_file_path.unlink()
             logger.debug("Font '%s' unloaded", font_file_name)
 
-        except OSError:
-            logger.error("Unable to remove '%s'", font_file_path)
+        except OSError as error:
+            logger.error(
+                "Font '%s' in '%s' cannot be unloaded: %s",
+                font_file_name,
+                font_file_path,
+                error,
+            )
 
 
 class FontLoaderWindows(FontLoader):
@@ -237,8 +235,7 @@ class FontLoaderWindows(FontLoader):
         self.fonts_loaded = {}
 
     def load(self):
-        """Load the fonts
-        """
+        """Load the fonts"""
         font_file_name_list = self.get_font_name_list()
         self.load_from_list(font_file_name_list)
 
@@ -270,8 +267,7 @@ class FontLoaderWindows(FontLoader):
         logger.warning("Font '%s' cannot be loaded", font_file_path.name)
 
     def unload(self):
-        """Remove loaded fonts
-        """
+        """Remove loaded fonts"""
         for font_file_name in self.fonts_loaded.copy():
             self.unload_font(font_file_name)
 
