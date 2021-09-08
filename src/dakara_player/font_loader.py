@@ -1,7 +1,6 @@
 import ctypes
 import logging
 import sys
-import os
 from abc import ABC, abstractmethod
 
 from path import Path
@@ -39,11 +38,19 @@ class FontLoader(ABC):
     """Abstract font loader
 
     Must be specialized for a given OS.
+
+    Args:
+        package (str): Package checked for font files.
+
+    Attributes:
+        package (str): Package checked for font files.
     """
 
-    GREETINGS = "Dummy font loader selected"
+    GREETINGS = "Abstract font loader selected"
 
-    def __init__(self):
+    def __init__(self, package):
+        self.package = package
+
         # show type of font loader
         logger.debug(self.GREETINGS)
 
@@ -58,11 +65,11 @@ class FontLoader(ABC):
     def __enter__(self):
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, *args, **kwargs):
         self.unload()
 
     def get_font_name_list(self):
-        """Extract font names in font directory
+        """Give font names in font package
 
         Returns:
             list of str: list of font names.
@@ -70,12 +77,22 @@ class FontLoader(ABC):
         logger.debug("Scanning fonts directory")
         font_file_name_list = [
             file
-            for file in contents("dakara_player.resources.fonts")
+            for file in contents(self.package)
             if Path(file).ext.lower() in FONT_EXTENSIONS
         ]
         logger.debug("Found %i font(s) to load", len(font_file_name_list))
 
         return font_file_name_list
+
+    def get_font_path_iterator(self):
+        """Give font paths in font package.
+
+        Yields:
+            path.Path: Absolute path to the font, from the package.
+        """
+        for font_file_name in self.get_font_name_list():
+            with path(self.package, font_file_name) as font_file_path:
+                yield Path(font_file_path)
 
 
 class FontLoaderLinux(FontLoader):
@@ -90,15 +107,24 @@ class FontLoaderLinux(FontLoader):
     ...     loader.load()
     ...     # do stuff while fonts are loaded
     >>> # now fonts are unloaded
+
+    Args:
+        package (str): Package checked for font files.
+
+    Attributes:
+        package (str): Package checked for font files.
+        font_loader (dict of path.Path): List of loaded fonts. The key is the
+            font file name and the value is the path of the installed font in
+            user directory.
     """
 
     GREETINGS = "Font loader for Linux selected"
     FONT_DIR_SYSTEM = Path("/usr/share/fonts")
     FONT_DIR_USER = Path("~/.fonts")
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         # call parent constructor
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
         # create list of fonts
         self.fonts_loaded = {}
@@ -106,37 +132,11 @@ class FontLoaderLinux(FontLoader):
     def load(self):
         """Load the fonts"""
         # ensure that the user font directory exists
-        try:
-            os.mkdir(self.FONT_DIR_USER.expanduser())
-
-        except OSError:
-            pass
+        self.FONT_DIR_USER.expanduser().mkdir_p()
 
         # load fonts
-        self.load_from_resources_directory()
-
-    def load_from_resources_directory(self):
-        """Load all the fonts situated in the resources font directory"""
-        font_file_name_list = self.get_font_name_list()
-        self.load_from_list(font_file_name_list)
-
-    def load_from_list(self, font_file_name_list):
-        """Load the provided list of fonts
-
-        Args:
-            font_file_name_list (list of str): list of name of the fonts to
-                load.
-        """
-        # display list of fonts
-        for font_file_name in font_file_name_list:
-            logger.debug("Font '%s' found to be loaded", font_file_name)
-
-        # load the fonts
-        for font_file_name in font_file_name_list:
-            with path(
-                "dakara_player.resources.fonts", font_file_name
-            ) as font_file_path:
-                self.load_font(Path(font_file_path))
+        for font_file_path in self.get_font_path_iterator():
+            self.load_font(font_file_path)
 
     def load_font(self, font_file_path):
         """Load the provided font
@@ -220,13 +220,23 @@ class FontLoaderWindows(FontLoader):
     ...     loader.load()
     ...     # do stuff while fonts are loaded
     >>> # fonts are unloaded
+
+    Args:
+        package (str): Package checked for font files.
+
+    Attributes:
+        package (str): Package checked for font files.
+        gdi32 (ctypes.WinDLL): Handle to the gdi32 library.
+        font_loader (dict of path.Path): List of loaded fonts. The key is the
+            font file name and the value is the path of font used at
+            installation.
     """
 
     GREETINGS = "Font loader for Windows selected"
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         # call parent constructor
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
         # create handle to gdi32 library
         self.gdi32 = ctypes.WinDLL("gdi32.dll")
@@ -236,21 +246,8 @@ class FontLoaderWindows(FontLoader):
 
     def load(self):
         """Load the fonts"""
-        font_file_name_list = self.get_font_name_list()
-        self.load_from_list(font_file_name_list)
-
-    def load_from_list(self, font_file_name_list):
-        """Load the provided list of fonts
-
-        Args:
-            font_file_name_list (list of str): list of name of the fonts to
-                load.
-        """
-        for font_file_name in font_file_name_list:
-            with path(
-                "dakara_player.resources.fonts", font_file_name
-            ) as font_file_path:
-                self.load_font(Path(font_file_path))
+        for font_file_path in self.get_font_path_iterator():
+            self.load_font(font_file_path)
 
     def load_font(self, font_file_path):
         """Load the provided font

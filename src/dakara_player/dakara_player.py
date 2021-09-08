@@ -47,14 +47,12 @@ class DakaraPlayer(Runner):
         logger.debug("Started main")
 
     def load(self):
-        """Execute side-effect actions
-        """
+        """Execute side-effect actions"""
         # check version
         check_version()
 
     def run(self):
-        """Launch the worker and wait for the end
-        """
+        """Launch the worker and wait for the end"""
         self.run_safe(DakaraWorker, self.config)
 
 
@@ -128,7 +126,9 @@ class DakaraWorker(WorkerSafeThread):
             tempdir = stack.enter_context(TempDir(suffix=".dakara"))
 
             # font loader
-            font_loader = stack.enter_context(FontLoader())
+            font_loader = stack.enter_context(
+                FontLoader("dakara_player.resources.fonts")
+            )
             font_loader.load()
 
             # media player
@@ -173,5 +173,4 @@ class DakaraWorker(WorkerSafeThread):
 
 
 class UnsupportedMediaPlayerError(DakaraError):
-    """Raised if an unknown media player is requested
-    """
+    """Raised if an unknown media player is requested"""
