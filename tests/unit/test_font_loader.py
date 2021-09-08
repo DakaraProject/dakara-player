@@ -1,5 +1,4 @@
 import sys
-from io import StringIO
 from unittest import TestCase, skipUnless
 from unittest.mock import patch, call
 
@@ -393,42 +392,163 @@ class FontLoaderWindowsTestCase(TestCase):
         self.font_name = "font_file.ttf"
         self.font_name_list = [self.font_name]
         self.font_path = self.directory / self.font_name
-        self.font_path_list = [self.font_path]
+        self.font_path_list = {self.font_name: self.font_path}
+
+    def get_font_loader(self):
+        """Return an instance of the font loader
+        """
+        with self.assertLogs("dakara_player.font_loader", "DEBUG"):
+            return FontLoaderWindows()
 
     @patch("dakara_player.font_loader.path")
-    @patch("dakara_player.font_loader.input")
-    @patch("dakara_player.font_loader.contents")
-    def test_load(self, mocked_contents, mocked_input, mocked_path):
-        """Test to ask to load fonts manually
+    @patch.object(FontLoaderWindows, "load_font")
+    def test_load_from_list(self, mocked_load_font, mocked_path):
+        """Test to load fonts from list
         """
-        mocked_contents.return_value = [self.font_name, "__init__.py"]
-        mocked_path.return_value.__enter__.return_value = self.font_path
-        output = StringIO()
+        mocked_path.return_value.__enter__.return_value = (
+            self.directory / self.font_name
+        )
 
-        font_loader = FontLoaderWindows(output)
-        font_loader.load()
+        font_loader = self.get_font_loader()
 
-        lines = output.getvalue().splitlines()
+        # call the method
+        font_loader.load_from_list(self.font_name_list)
+
+        # assert the call
+        mocked_load_font.assert_called_once_with(self.font_path)
+
+    @patch("dakara_player.font_loader.ctypes.WinDLL")
+    def test_load_font(self, mocked_windll):
+        """Test to load one font
+        """
+        # setup mock
+        mocked_windll.return_value.AddFontResourceW.return_value = 1
+
+        font_loader = self.get_font_loader()
+
+        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
+            # pre assertions
+            self.assertEqual(len(font_loader.fonts_loaded), 0)
+
+            # call the method
+            font_loader.load_font(self.font_path)
+
+            # post assertions
+            self.assertEqual(len(font_loader.fonts_loaded), 1)
+
+        # assert effect on logs
         self.assertListEqual(
-            lines,
+            logger.output,
+            ["DEBUG:dakara_player.font_loader:Font 'font_file.ttf' loaded"],
+        )
+
+        # assert the call
+        mocked_windll.return_value.AddFontResourceW.assert_called_once_with(
+            self.font_path
+        )
+
+    @patch("dakara_player.font_loader.ctypes.WinDLL")
+    def test_load_font_error(self, mocked_windll):
+        """Test to fail to load one font
+        """
+        # setup mock
+        mocked_windll.return_value.AddFontResourceW.return_value = 0
+
+        font_loader = self.get_font_loader()
+
+        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
+            # pre assertions
+            self.assertEqual(len(font_loader.fonts_loaded), 0)
+
+            # call the method
+            font_loader.load_font(self.font_path)
+
+            # post assertions
+            self.assertEqual(len(font_loader.fonts_loaded), 0)
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            ["WARNING:dakara_player.font_loader:Font 'font_file.ttf' cannot be loaded"],
+        )
+
+    @patch.object(FontLoaderWindows, "unload_font")
+    def test_unload(self, mocked_unload_font):
+        """Test to unload fonts
+        """
+        font_loader = self.get_font_loader()
+
+        # set a font as loaded
+        font_loader.fonts_loaded = {"font1": Path("font1"), "font2": Path("font2")}
+
+        # call the method
+        font_loader.unload()
+
+        # assert the call
+        mocked_unload_font.assert_has_calls([call("font1"), call("font2")])
+
+    @patch("dakara_player.font_loader.ctypes.WinDLL")
+    def test_unload_font(self, mocked_windll):
+        """Test to unload one font
+        """
+        # setup mock
+        mocked_windll.return_value.RemoveFontResourceW.return_value = 1
+
+        font_loader = self.get_font_loader()
+
+        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
+            # set a font as loaded
+            font_loader.fonts_loaded = self.font_path_list
+
+            # pre assert there is one font loaded
+            self.assertEqual(len(font_loader.fonts_loaded), 1)
+            print(font_loader.fonts_loaded)
+
+            # call the method
+            font_loader.unload_font(self.font_name)
+
+            # assert there are no font loaded anymore
+            self.assertEqual(len(font_loader.fonts_loaded), 0)
+
+        # assert effect of logs
+        self.assertListEqual(
+            logger.output,
+            ["DEBUG:dakara_player.font_loader:Font 'font_file.ttf' unloaded"],
+        )
+
+        # assert the call
+        mocked_windll.return_value.RemoveFontResourceW.assert_called_once_with(
+            self.font_path
+        )
+
+    @patch("dakara_player.font_loader.ctypes.WinDLL")
+    def test_unload_font_error(self, mocked_windll):
+        """Test to fail to unload one font
+        """
+        # setup mock
+        mocked_windll.return_value.RemoveFontResourceW.return_value = 0
+
+        font_loader = self.get_font_loader()
+
+        with self.assertLogs("dakara_player.font_loader", "DEBUG") as logger:
+            # set a font as loaded
+            font_loader.fonts_loaded = self.font_path_list
+
+            # pre assert there is one font loaded
+            self.assertEqual(len(font_loader.fonts_loaded), 1)
+            print(font_loader.fonts_loaded)
+
+            # call the method
+            font_loader.unload_font(self.font_name)
+
+            # assert there are no font loaded anymore
+            self.assertEqual(len(font_loader.fonts_loaded), 0)
+
+        # assert effect of logs
+        self.assertListEqual(
+            logger.output,
             [
-                "Please install the following fonts and press Enter:",
-                Path("directory") / "font_file.ttf",
+                "WARNING:dakara_player.font_loader:Font 'font_file.ttf' cannot "
+                "be unloaded",
             ],
         )
-
-        mocked_contents.assert_called_once_with("dakara_player.resources.fonts")
-        mocked_path.assert_called_once_with(
-            "dakara_player.resources.fonts", self.font_name
-        )
-        mocked_input.assert_called_once_with()
-
-    def test_unload(self):
-        """Test to ask to unload fonts manually
-        """
-        output = StringIO()
-        font_loader = FontLoaderWindows(output)
-
-        font_loader.unload()
-        lines = output.getvalue().splitlines()
-        self.assertListEqual(lines, ["You can now remove the installed fonts"])

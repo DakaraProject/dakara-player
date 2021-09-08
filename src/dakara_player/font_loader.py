@@ -1,8 +1,8 @@
+import ctypes
 import logging
 import sys
 import os
 from abc import ABC, abstractmethod
-from contextlib import ExitStack
 
 from path import Path
 
@@ -70,11 +70,14 @@ class FontLoader(ABC):
             list of str: list of font names.
         """
         logger.debug("Scanning fonts directory")
-        return [
+        font_file_name_list = [
             file
             for file in contents("dakara_player.resources.fonts")
             if Path(file).ext.lower() in FONT_EXTENSIONS
         ]
+        logger.debug("Found %i font(s) to load", len(font_file_name_list))
+
+        return font_file_name_list
 
 
 class FontLoaderLinux(FontLoader):
@@ -100,7 +103,7 @@ class FontLoaderLinux(FontLoader):
         super().__init__()
 
         # create list of fonts
-        self.fonts_loaded = []
+        self.fonts_loaded = {}
 
     def load(self):
         """Load the fonts
@@ -178,7 +181,7 @@ class FontLoaderLinux(FontLoader):
         font_file_path.symlink(font_file_target_path)
 
         # register the font
-        self.fonts_loaded.append(font_file_target_path)
+        self.fonts_loaded[font_file_name] = font_file_target_path
 
         logger.debug(
             "Font '%s' loaded in user directory: '%s'",
@@ -189,68 +192,99 @@ class FontLoaderLinux(FontLoader):
     def unload(self):
         """Remove loaded fonts
         """
-        for font_path in self.fonts_loaded.copy():
-            self.unload_font(font_path)
+        for font_file_name in self.fonts_loaded.copy():
+            self.unload_font(font_file_name)
 
-    def unload_font(self, font_path):
+    def unload_font(self, font_file_name):
         """Remove the provided font
 
         Args:
-            font_path (str): absolute path of the font to unload.
+            font_file_name (str): Name of the font to unload.
         """
         try:
-            font_path.unlink()
-            self.fonts_loaded.remove(font_path)
-            logger.debug("Font '%s' unloaded", font_path)
+            font_file_path = self.fonts_loaded.pop(font_file_name)
+            font_file_path.unlink()
+            logger.debug("Font '%s' unloaded", font_file_name)
 
         except OSError:
-            logger.error("Unable to unload '%s'", font_path)
+            logger.error("Unable to remove '%s'", font_file_path)
 
 
 class FontLoaderWindows(FontLoader):
     """Font loader for Windows
 
-    It cannot do anything, since it is impossible to load fonts on Windows
-    programatically, as for now. It simply asks the user to do so.
+    It uses the gdi32 library to dynamically load and unload fonts for the
+    current session.
 
     Example of use:
 
     >>> with FontLoaderWindows() as loader:
-    ...     loader.load() # prompts the user to install fonts manually
+    ...     loader.load()
     ...     # do stuff while fonts are loaded
-    >>> # fonts are not unloaded, as they were manually installed
-
-    Args:
-        output (io.BaseIO): Output stream. By default, stdout.
+    >>> # fonts are unloaded
     """
 
     GREETINGS = "Font loader for Windows selected"
 
-    def __init__(self, output=None):
+    def __init__(self):
+        # call parent constructor
         super().__init__()
-        self.output = output or sys.stdout
+
+        # create handle to gdi32 library
+        self.gdi32 = ctypes.WinDLL("gdi32.dll")
+
+        # create list of fonts
+        self.fonts_loaded = {}
 
     def load(self):
-        """Prompt the user to load the fonts
-
-        Since there seems to be no workable way to load fonts on Windows
-        through Python, we ask the user to do it by themselve.
+        """Load the fonts
         """
         font_file_name_list = self.get_font_name_list()
+        self.load_from_list(font_file_name_list)
 
-        self.output.write("Please install the following fonts and press Enter:\n")
+    def load_from_list(self, font_file_name_list):
+        """Load the provided list of fonts
 
-        # extract fonts from package if necessary and present valid paths
-        with ExitStack() as stack:
-            for font_file_name in font_file_name_list:
-                font_file_path = stack.enter_context(
-                    path("dakara_player.resources.fonts", font_file_name)
-                )
-                self.output.write("{}\n".format(font_file_path))
+        Args:
+            font_file_name_list (list of str): list of name of the fonts to
+                load.
+        """
+        for font_file_name in font_file_name_list:
+            with path(
+                "dakara_player.resources.fonts", font_file_name
+            ) as font_file_path:
+                self.load_font(Path(font_file_path))
 
-            input()
+    def load_font(self, font_file_path):
+        """Load the provided font
+
+        Args:
+            font_file_path (path.Path): absolute path of the font to load.
+        """
+        success = self.gdi32.AddFontResourceW(font_file_path)
+        if success:
+            self.fonts_loaded[font_file_path.name] = font_file_path
+            logger.debug("Font '%s' loaded", font_file_path.name)
+            return
+
+        logger.warning("Font '%s' cannot be loaded", font_file_path.name)
 
     def unload(self):
-        """Promt the user to remove the fonts
+        """Remove loaded fonts
         """
-        self.output.write("You can now remove the installed fonts\n")
+        for font_file_name in self.fonts_loaded.copy():
+            self.unload_font(font_file_name)
+
+    def unload_font(self, font_file_name):
+        """Remove the provided font
+
+        Args:
+            font_file_name (str): Name of the font to unload.
+        """
+        font_file_path = self.fonts_loaded.pop(font_file_name)
+        success = self.gdi32.RemoveFontResourceW(font_file_path)
+        if success:
+            logger.debug("Font '%s' unloaded", font_file_name)
+            return
+
+        logger.warning("Font '%s' cannot be unloaded", font_file_name)
