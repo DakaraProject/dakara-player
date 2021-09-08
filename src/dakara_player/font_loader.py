@@ -134,53 +134,58 @@ class FontLoaderLinux(FontLoader):
         # ensure that the user font directory exists
         self.FONT_DIR_USER.expanduser().mkdir_p()
 
+        # get system and user font files
+        system_font_path_list = list(self.FONT_DIR_SYSTEM.walkfiles())
+        user_font_path_list = list(self.FONT_DIR_USER.expanduser().walkfiles())
+
         # load fonts
         for font_file_path in self.get_font_path_iterator():
-            self.load_font(font_file_path)
+            self.load_font(font_file_path, system_font_path_list, user_font_path_list)
 
-    def load_font(self, font_file_path):
+    def load_font(self, font_file_path, system_font_path_list, user_font_path_list):
         """Load the provided font
 
         Args:
             font_file_path (path.Path): absolute path of the font to load.
+            system_font_path_list (list of path.Path): List of absolute paths
+                of system fonts.
+            user_font_path_list (list of path.Path): List of absolute paths of
+                user fonts.
         """
         # get font file name
         font_file_name = font_file_path.basename()
 
         # check if the font is installed at system level
-        if (self.FONT_DIR_SYSTEM / font_file_name).exists():
+        if any(font_file_name in path for path in system_font_path_list):
             logger.debug("Font '%s' found in system directory", font_file_name)
             return
 
         # check if the font is installed at user level
-        font_file_user_path = self.FONT_DIR_USER.expanduser() / font_file_name
-
-        if font_file_user_path.exists():
+        if any(font_file_name in path for path in user_font_path_list):
             logger.debug("Font '%s' found in user directory", font_file_name)
             return
 
         # check if the font exists as broken link at user level
         # in this case remove it and continue execution
+        font_file_user_path = self.FONT_DIR_USER.expanduser() / font_file_name
         if font_file_user_path.islink():
             logger.debug(
                 "Dead symbolic link found for font '%s' in user directory, "
                 "removing it",
                 font_file_name,
             )
-            font_file_user_path.unlink()
+            font_file_user_path.unlink_p()
 
         # then, if the font is not installed, load it
-        font_file_target_path = self.FONT_DIR_USER.expanduser() / font_file_name
-
-        font_file_path.symlink(font_file_target_path)
+        font_file_path.symlink(font_file_user_path)
 
         # register the font
-        self.fonts_loaded[font_file_name] = font_file_target_path
+        self.fonts_loaded[font_file_name] = font_file_user_path
 
         logger.debug(
             "Font '%s' loaded in user directory: '%s'",
             font_file_name,
-            font_file_target_path,
+            font_file_user_path,
         )
 
     def unload(self):
