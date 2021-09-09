@@ -409,8 +409,8 @@ class FontLoaderWindowsTestCase(TestCase):
         with self.assertLogs("dakara_player.font_loader", "DEBUG"):
             return FontLoaderWindows("package")
 
-    @patch.object(FontLoaderLinux, "load_font", autospec=True)
-    @patch.object(FontLoaderLinux, "get_font_path_iterator", autospec=True)
+    @patch.object(FontLoaderWindows, "load_font", autospec=True)
+    @patch.object(FontLoaderWindows, "get_font_path_iterator", autospec=True)
     def test_load(self, mocked_get_font_path_iterator, mocked_load_font):
         """Test to load fonts"""
         # prepare the mock
