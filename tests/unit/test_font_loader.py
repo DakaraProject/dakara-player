@@ -6,6 +6,7 @@ from path import Path
 
 from dakara_player.font_loader import (
     FontLoaderLinux,
+    FontLoaderNotAvailableError,
     FontLoaderWindows,
     get_font_loader_class,
 )
@@ -409,6 +410,14 @@ class FontLoaderWindowsTestCase(TestCase):
         with self.assertLogs("dakara_player.font_loader", "DEBUG"):
             return FontLoaderWindows("package")
 
+    @patch("dakara_player.font_loader.ctypes", spec=[])
+    def test_init_no_windll(self, mocked_ctypes):
+        """Test to create font loader on a different OS"""
+        with self.assertRaisesRegex(
+            FontLoaderNotAvailableError, "FontLoaderWindows can only be used on Windows"
+        ):
+            self.get_font_loader()
+
     @patch.object(FontLoaderWindows, "load_font", autospec=True)
     @patch.object(FontLoaderWindows, "get_font_path_iterator", autospec=True)
     def test_load(self, mocked_get_font_path_iterator, mocked_load_font):
@@ -425,11 +434,11 @@ class FontLoaderWindowsTestCase(TestCase):
         mocked_get_font_path_iterator.assert_called_once_with(font_loader)
         mocked_load_font.assert_called_once_with(font_loader, self.font_path)
 
-    @patch("dakara_player.font_loader.ctypes.WinDLL")
-    def test_load_font(self, mocked_windll):
+    @patch("dakara_player.font_loader.ctypes")
+    def test_load_font(self, mocked_ctypes):
         """Test to load one font"""
         # setup mock
-        mocked_windll.return_value.AddFontResourceW.return_value = 1
+        mocked_ctypes.windll.gdi32.AddFontResourceW.return_value = 1
 
         font_loader = self.get_font_loader()
 
@@ -450,15 +459,15 @@ class FontLoaderWindowsTestCase(TestCase):
         )
 
         # assert the call
-        mocked_windll.return_value.AddFontResourceW.assert_called_once_with(
+        mocked_ctypes.windll.gdi32.AddFontResourceW.assert_called_once_with(
             self.font_path
         )
 
-    @patch("dakara_player.font_loader.ctypes.WinDLL")
-    def test_load_font_error(self, mocked_windll):
+    @patch("dakara_player.font_loader.ctypes")
+    def test_load_font_error(self, mocked_ctypes):
         """Test to fail to load one font"""
         # setup mock
-        mocked_windll.return_value.AddFontResourceW.return_value = 0
+        mocked_ctypes.windll.gdi32.AddFontResourceW.return_value = 0
 
         font_loader = self.get_font_loader()
 
@@ -492,11 +501,11 @@ class FontLoaderWindowsTestCase(TestCase):
         # assert the call
         mocked_unload_font.assert_has_calls([call("font1"), call("font2")])
 
-    @patch("dakara_player.font_loader.ctypes.WinDLL")
-    def test_unload_font(self, mocked_windll):
+    @patch("dakara_player.font_loader.ctypes")
+    def test_unload_font(self, mocked_ctypes):
         """Test to unload one font"""
         # setup mock
-        mocked_windll.return_value.RemoveFontResourceW.return_value = 1
+        mocked_ctypes.windll.gdi32.RemoveFontResourceW.return_value = 1
 
         font_loader = self.get_font_loader()
 
@@ -520,15 +529,15 @@ class FontLoaderWindowsTestCase(TestCase):
         )
 
         # assert the call
-        mocked_windll.return_value.RemoveFontResourceW.assert_called_once_with(
+        mocked_ctypes.windll.gdi32.RemoveFontResourceW.assert_called_once_with(
             self.font_path
         )
 
-    @patch("dakara_player.font_loader.ctypes.WinDLL")
-    def test_unload_font_error(self, mocked_windll):
+    @patch("dakara_player.font_loader.ctypes")
+    def test_unload_font_error(self, mocked_ctypes):
         """Test to fail to unload one font"""
         # setup mock
-        mocked_windll.return_value.RemoveFontResourceW.return_value = 0
+        mocked_ctypes.windll.gdi32.RemoveFontResourceW.return_value = 0
 
         font_loader = self.get_font_loader()
 
