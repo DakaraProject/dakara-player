@@ -388,7 +388,6 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         )
 
 
-@skipUnless(sys.platform.startswith("win"), "Can be tested on Windows only")
 class FontLoaderWindowsTestCase(TestCase):
     """Test the Windows font loader."""
 
@@ -415,9 +414,10 @@ class FontLoaderWindowsTestCase(TestCase):
         ):
             self.get_font_loader()
 
+    @patch("dakara_player.font_loader.ctypes")
     @patch.object(FontLoaderWindows, "load_font", autospec=True)
     @patch.object(FontLoaderWindows, "get_font_path_iterator", autospec=True)
-    def test_load(self, mocked_get_font_path_iterator, mocked_load_font):
+    def test_load(self, mocked_get_font_path_iterator, mocked_load_font, mocked_ctypes):
         """Test to load fonts."""
         # prepare the mock
         mocked_get_font_path_iterator.return_value = (p for p in [self.font_path])
@@ -484,8 +484,9 @@ class FontLoaderWindowsTestCase(TestCase):
             ["WARNING:dakara_player.font_loader:Font 'font_file.ttf' cannot be loaded"],
         )
 
+    @patch("dakara_player.font_loader.ctypes")
     @patch.object(FontLoaderWindows, "unload_font")
-    def test_unload(self, mocked_unload_font):
+    def test_unload(self, mocked_unload_font, mocked_ctypes):
         """Test to unload fonts."""
         font_loader = self.get_font_loader()
 
