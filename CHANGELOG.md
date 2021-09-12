@@ -30,6 +30,11 @@
 
 ## Unreleased
 
+### Changed
+
+- Name of the command changed from `dakara-play` to `dakara-player`.
+- Play command moved from `dakara-play` to `dakara-player play`.
+
 ## 1.7.0 - 2021-06-20
 
 ### Update notes

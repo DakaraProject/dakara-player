@@ -49,18 +49,18 @@ pip install .
 
 ## Usage
 
-The package provides the `dakara-play` command which runs the player:
+The package provides the `dakara-player play` command which runs the player:
 
 ```sh
-dakara-play
+dakara-player play
 # or
-python -m dakara_player
+python -m dakara_player play
 ```
 
 One instance of the Dakara server should be running. For more help:
 
 ```sh
-dakara-play -h
+dakara-player -h
 # or
 python -m dakara_player -h
 ```
@@ -68,7 +68,7 @@ python -m dakara_player -h
 Before calling the command, you should create a config file with:
 
 ```sh
-dakara-play create-config
+dakara-player create-config
 # or
 python -m dakara_player create-config
 ```
@@ -85,7 +85,7 @@ File names can be modified in the config file, see `player.templates` and `playe
 You can dump the default backgrounds and templates in the user directory as a starter with:
 
 ```sh
-dakara-play create-resources
+dakara-player create-resources
 # or
 python -m dakara_player create-resources
 ```
