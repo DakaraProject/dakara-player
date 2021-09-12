@@ -101,8 +101,11 @@ class FontLoader(ABC):
 class FontLoaderLinux(FontLoader):
     """Font loader for Linux.
 
-    It symlinks fonts to load in the user fonts directory. On exit, it
-    removes the created symlinks.
+    It copies fonts to load in the user fonts directory and removes them on
+    exit. Using symbolic links is not safe as the location of the package fonts
+    may not be permanent (see `importlib.resources.path` for more info).
+
+    See: https://docs.python.org/3/library/importlib.html#importlib.resources.path
 
     Example of use:
 
@@ -116,14 +119,14 @@ class FontLoaderLinux(FontLoader):
 
     Attributes:
         package (str): Package checked for font files.
-        font_loader (dict of path.Path): List of loaded fonts. The key is the
+        font_loaded (dict of path.Path): List of loaded fonts. The key is the
             font file name and the value is the path of the installed font in
             user directory.
     """
 
     GREETINGS = "Font loader for Linux selected"
-    FONT_DIR_SYSTEM = Path("/usr/share/fonts")
-    FONT_DIR_USER = Path("~/.fonts")
+    FONT_DIR_SYSTEM = Path("/") / "usr" / "share" / "fonts"
+    FONT_DIR_USER = Path("~") / ".fonts"
 
     def __init__(self, *args, **kwargs):
         # call parent constructor
@@ -179,8 +182,8 @@ class FontLoaderLinux(FontLoader):
             )
             font_file_user_path.unlink_p()
 
-        # then, if the font is not installed, load it
-        font_file_path.symlink(font_file_user_path)
+        # then, if the font is not installed, load by copying it
+        font_file_path.copy(font_file_user_path)
 
         # register the font
         self.fonts_loaded[font_file_name] = font_file_user_path
@@ -234,7 +237,7 @@ class FontLoaderWindows(FontLoader):
 
     Attributes:
         package (str): Package checked for font files.
-        font_loader (dict of path.Path): List of loaded fonts. The key is the
+        font_loaded (dict of path.Path): List of loaded fonts. The key is the
             font file name and the value is the path of font used at
             installation.
     """
