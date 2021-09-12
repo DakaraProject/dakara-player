@@ -44,7 +44,7 @@ pip install dakaraplayer
 If you have downloaded the repo, you can install the package directly with:
 
 ```sh
-python setup.py install
+pip install .
 ```
 
 ## Usage
@@ -92,75 +92,4 @@ python -m dakara_player create-resources
 
 ## Development
 
-### Install dependencies
-
-Please ensure you have a recent enough version of `setuptools`:
-
-```sh
-pip install --upgrade "setuptools>=40.0"
-```
-
-Install the dependencies with:
-
-```sh
-pip install -e ".[tests]"
-```
-
-This installs the normal dependencies of the package plus the dependencies for tests.
-
-### Run tests
-
-Run tests simply with:
-
-```sh
-pytest
-# or
-python -m pytest
-```
-
-Tests are split between unit tests, which are ligthweight and do not require VLC or mpv to be installed, and integration tests, which are heavier:
-
-```sh
-pytest tests/unit
-pytest tests/integration
-# or
-python -m pytest tests/unit
-python -m pytest tests/integration
-```
-
-To check coverage, use the `coverage` command:
-
-```sh
-coverage run -m pytest
-coverage report -m
-# or
-python -m coverage run -m pytest
-python -m coverage report -m
-```
-
-### Hooks
-
-Git hooks are included in the `hooks` directory.
-
-Use the following command to use this hook folder for the project:
-
-```
-git config core.hooksPath hooks
-```
-
-If you're using git < 2.9 you can make a symlink instead:
-
-```
-ln -s -f ../../hooks/pre-commit .git/hooks/pre-commit
-```
-
-Note that pre-commit hook does not run integration tests.
-
-### Code style
-
-The code follows the [PEP8](https://www.python.org/dev/peps/pep-0008/) style guide (88 chars per line).
-Quality of code is checked with [Flake8](https://pypi.org/project/flake8/).
-Style is enforced using [Black](https://github.com/ambv/black).
-You need to call Black before committing changes.
-You may want to configure your editor to call it automatically.
-Additionnal checking can be manually performed with [Pylint](https://www.pylint.org/).
+Please read the [developers documentation](CONTRIBUTING.md).

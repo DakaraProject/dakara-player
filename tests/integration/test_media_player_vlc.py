@@ -13,19 +13,15 @@ except (ImportError, OSError):
 from func_timeout import func_set_timeout
 from path import TempDir
 
-from dakara_player.media_player.vlc import MediaPlayerVlc, METADATA_KEYS_COUNT
+from dakara_player.media_player.base import IDLE_BG_NAME, TRANSITION_BG_NAME
+from dakara_player.media_player.vlc import METADATA_KEYS_COUNT, MediaPlayerVlc
 from dakara_player.mrl import mrl_to_path
-from dakara_player.media_player.base import (
-    IDLE_BG_NAME,
-    TRANSITION_BG_NAME,
-)
 from tests.integration.base import TestCasePollerKara
 
 
 @skipUnless(MediaPlayerVlc.is_available(), "VLC not installed")
 class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
-    """Test the VLC player class in real conditions
-    """
+    """Test the VLC player class in real conditions."""
 
     TIMEOUT = 30
 
@@ -53,7 +49,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
     @contextmanager
     def get_instance(self, config=None, check_error=True):
-        """Get an instance of MediaPlayerVlc
+        """Get an instance of MediaPlayerVlc.
 
         This method is a context manager that automatically stops the player on
         exit.
@@ -68,7 +64,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
                 MediaPlayerVlc: Instance;
                 path.Path: Path of the temporary directory;
                 unittest.case._LoggingWatcher: Captured output.
-                """
+        """
 
         if not config:
             config = {
@@ -104,14 +100,12 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
                 self.assertFalse(vlc_player.stop.is_set())
 
     def test_metadata_keys_count(self):
-        """Test the number of metadata keys
-        """
+        """Test the number of metadata keys."""
         self.assertNotEqual(METADATA_KEYS_COUNT, 0)
 
     @func_set_timeout(TIMEOUT)
     def test_play_idle(self):
-        """Test to display the idle screen
-        """
+        """Test to display the idle screen."""
         with self.get_instance() as (vlc_player, temp, _):
             # pre assertions
             self.assertIsNone(vlc_player.player.get_media())
@@ -136,7 +130,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry(self):
-        """Test to play a playlist entry
+        """Test to play a playlist entry.
 
         First, the transition screen is played, then the song itself.
         """
@@ -220,8 +214,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry_instrumental_track(self):
-        """Test to play a playlist entry using instrumental track
-        """
+        """Test to play a playlist entry using instrumental track."""
         # request to use instrumental track
         self.playlist_entry1["use_instrumental"] = True
 
@@ -263,7 +256,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry_instrumental_track_avi(self):
-        """Test to play a playlist entry AVI file using instrumental track
+        """Test to play a playlist entry AVI file using instrumental track.
 
         This type of file is known to have data in the key we use to store
         information in media.
@@ -312,8 +305,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     )
     @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry_instrumental_file(self):
-        """Test to play a playlist entry using instrumental file
-        """
+        """Test to play a playlist entry using instrumental file."""
         # request to use instrumental file
         self.playlist_entry1["song"]["file_path"] = self.song2_path
         self.playlist_entry1["use_instrumental"] = True
@@ -356,8 +348,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_pause(self):
-        """Test to pause and unpause the player
-        """
+        """Test to pause and unpause the player."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the callbacks
             vlc_player.set_callback("paused", MagicMock())
@@ -405,8 +396,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_double_pause(self):
-        """Test that double pause and double resume have no effects
-        """
+        """Test that double pause and double resume have no effects."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the callbacks
             vlc_player.set_callback("paused", MagicMock())
@@ -468,8 +458,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_skip_song(self):
-        """Test to skip a playlist entry
-        """
+        """Test to skip a playlist entry."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the callbacks
             vlc_player.set_callback("started_transition", MagicMock())
@@ -528,8 +517,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_skip_transition(self):
-        """Test to skip a playlist entry transition screen
-        """
+        """Test to skip a playlist entry transition screen."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the callbacks
             vlc_player.set_callback("started_transition", MagicMock())

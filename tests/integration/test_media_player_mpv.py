@@ -1,27 +1,26 @@
 from contextlib import ExitStack, contextmanager
 from queue import Queue
-from time import sleep
 from threading import Event
+from time import sleep
 from unittest import skipUnless
 from unittest.mock import MagicMock
 
 from func_timeout import func_set_timeout
 from path import TempDir
 
-from dakara_player.media_player.mpv import MediaPlayerMpv
 from dakara_player.media_player.base import (
     IDLE_BG_NAME,
     IDLE_TEXT_NAME,
     TRANSITION_BG_NAME,
     TRANSITION_TEXT_NAME,
 )
+from dakara_player.media_player.mpv import MediaPlayerMpv
 from tests.integration.base import TestCasePollerKara
 
 
 @skipUnless(MediaPlayerMpv.is_available(), "mpv not installed")
 class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
-    """Test the mpv player class in real conditions
-    """
+    """Test the mpv player class in real conditions."""
 
     TIMEOUT = 30
     DELAY = 0.2
@@ -37,7 +36,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @contextmanager
     def get_instance(self, config=None, check_error=True):
-        """Get an instance of MediaPlayerMpv for the available version
+        """Get an instance of MediaPlayerMpv for the available version.
 
         This method is a context manager that automatically stops the player on
         exit.
@@ -52,7 +51,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
                 MediaPlayerMpv: Instance;
                 path.Path: Path of the temporary directory;
                 unittest.case._LoggingWatcher: Captured output.
-                """
+        """
         if not config:
             config = {
                 "kara_folder": self.kara_folder,
@@ -94,8 +93,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_play_idle(self):
-        """Test to display the idle screen
-        """
+        """Test to display the idle screen."""
         with self.get_instance() as (mpv_player, temp, _):
             # pre assertions
             self.assertIsNone(mpv_player.player.path)
@@ -113,7 +111,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry(self):
-        """Test to play a playlist entry
+        """Test to play a playlist entry.
 
         First, the transition screen is played, then the song itself.
         """
@@ -185,8 +183,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry_instrumental_track(self):
-        """Test to play a playlist entry using instrumental track
-        """
+        """Test to play a playlist entry using instrumental track."""
         # request to use instrumental track
         self.playlist_entry1["use_instrumental"] = True
 
@@ -222,8 +219,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry_instrumental_file(self):
-        """Test to play a playlist entry using instrumental file
-        """
+        """Test to play a playlist entry using instrumental file."""
         # request to use instrumental file
         self.playlist_entry1["song"]["file_path"] = self.song2_path
         self.playlist_entry1["use_instrumental"] = True
@@ -257,8 +253,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_pause(self):
-        """Test to pause and unpause the player
-        """
+        """Test to pause and unpause the player."""
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("paused", MagicMock())
@@ -306,8 +301,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_double_pause(self):
-        """Test that double pause and double resume have no effects
-        """
+        """Test that double pause and double resume have no effects."""
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("paused", MagicMock())
@@ -369,8 +363,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_skip_song(self):
-        """Test to skip a playlist entry
-        """
+        """Test to skip a playlist entry."""
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("started_transition", MagicMock())
@@ -424,8 +417,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_skip_last_song(self):
-        """Test to skip the last playlist entry
-        """
+        """Test to skip the last playlist entry."""
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("started_transition", MagicMock())
@@ -472,8 +464,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_skip_song_pause(self):
-        """Test to skip playlist entry on pause
-        """
+        """Test to skip playlist entry on pause."""
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("started_transition", MagicMock())
@@ -538,8 +529,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_skip_last_song_pause(self):
-        """Test to skip the last playlist entry on pause
-        """
+        """Test to skip the last playlist entry on pause."""
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("started_transition", MagicMock())
@@ -591,8 +581,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_skip_transition(self):
-        """Test to skip a playlist entry transition screen
-        """
+        """Test to skip a playlist entry transition screen."""
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("started_transition", MagicMock())
@@ -629,8 +618,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_skip_idle(self):
-        """Test to play a playlist entry after idle screen
-        """
+        """Test to play a playlist entry after idle screen."""
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("started_transition", MagicMock())

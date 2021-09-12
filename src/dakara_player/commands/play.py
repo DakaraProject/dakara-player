@@ -1,7 +1,8 @@
+"""Command to run the player."""
+
 import logging
 from argparse import ArgumentParser
 
-from dakara_base.exceptions import DakaraError
 from dakara_base.config import (
     ConfigNotFoundError,
     create_config_file,
@@ -10,11 +11,11 @@ from dakara_base.config import (
     load_config,
     set_loglevel,
 )
+from dakara_base.exceptions import DakaraError
 
 from dakara_player import DakaraPlayer
 from dakara_player.user_resource_files import create_resource_files
-from dakara_player.version import __version__, __date__
-
+from dakara_player.version import __date__, __version__
 
 CONFIG_FILE = "player.yaml"
 
@@ -23,10 +24,10 @@ logger = logging.getLogger(__name__)
 
 
 def get_parser():
-    """Get a parser
+    """Get a parser.
 
     Returns:
-        argparse.ArgumentParser: parser.
+        argparse.ArgumentParser: Parser.
     """
     # main parser
     parser = ArgumentParser(
@@ -82,10 +83,10 @@ def get_parser():
 
 
 def play(args):
-    """Execute the player
+    """Execute the player.
 
     Args:
-        args (argparse.Namespace): arguments from command line.
+        args (argparse.Namespace): Arguments from command line.
     """
     create_logger()
 
@@ -122,10 +123,10 @@ def play(args):
 
 
 def create_config(args):
-    """Create the config file
+    """Create the config file.
 
     Args:
-        args (argparse.Namespace): arguments from command line.
+        args (argparse.Namespace): Arguments from command line.
     """
     create_logger(custom_log_format="%(message)s", custom_log_level="INFO")
     create_config_file("dakara_player.resources", CONFIG_FILE, args.force)
@@ -133,10 +134,10 @@ def create_config(args):
 
 
 def create_resources(args):
-    """Create resource files
+    """Create resource files.
 
     Args:
-        args (argparse.Namespace): arguments from command line.
+        args (argparse.Namespace): Arguments from command line.
     """
     create_logger(custom_log_format="%(message)s", custom_log_level="INFO")
     create_resource_files(args.force)
@@ -144,8 +145,7 @@ def create_resources(args):
 
 
 def main():
-    """Main command
-    """
+    """Main command."""
     parser = get_parser()
     args = parser.parse_args()
 

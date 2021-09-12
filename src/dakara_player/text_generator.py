@@ -1,3 +1,5 @@
+"""Generate text screens."""
+
 import json
 import logging
 
@@ -25,11 +27,11 @@ logger = logging.getLogger(__name__)
 
 
 class TextGenerator:
-    """Generator for text screens
+    """Generator for text screens.
 
-    # It populates text contents that are used for idle or transition
-    # screens. It uses Jinja under the hood, and can use templates from a custom
-    # directory, or from a fallback package.
+    It populates text contents that are used for idle or transition screens. It
+    uses Jinja under the hood, and can use templates from a custom directory,
+    or from a fallback package.
 
     Example of use:
 
@@ -54,18 +56,18 @@ class TextGenerator:
     ... )
 
     Args:
-        package (str): package checked for text templates by default.
-        directory (path.Path): custom directory checked for text templates.
-        filenames (dict): dictionary of text templates filenames. The key is the
+        package (str): Package checked for text templates by default.
+        directory (path.Path): Custom directory checked for text templates.
+        filenames (dict): Dictionary of text templates filenames. The key is the
             template name, the value the template file name.
 
     Attributes:
-        package (str): package checked for text templates by default.
-        directory (path.Path): custom directory checked for text templates.
-        filenames (dict): dictionary of text templates filenames. The key is the
+        package (str): Package checked for text templates by default.
+        directory (path.Path): Custom directory checked for text templates.
+        filenames (dict): Dictionary of text templates filenames. The key is the
             template name, the value the template file name.
-        environment (jinja2.Environment): environment for Jinja2.
-        icon_map (dict): map of icons. Keys are icon name, values are icon character.
+        environment (jinja2.Environment): Environment for Jinja2.
+        icon_map (dict): Map of icons. Keys are icon name, values are icon character.
     """
 
     def __init__(self, package, directory=None, filenames=None):
@@ -80,7 +82,7 @@ class TextGenerator:
         self.icon_map = {}
 
     def load(self):
-        """Load the different parts of the class
+        """Load the different parts of the class.
 
         Here are the actions with side effect.
         """
@@ -91,14 +93,12 @@ class TextGenerator:
         self.load_templates()
 
     def load_icon_map(self):
-        """Load the icon map
-        """
+        """Load the icon map."""
         with path("dakara_player.resources", ICON_MAP_FILE) as file:
             self.icon_map = json.loads(file.read_text())
 
     def load_templates(self):
-        """Set up Jinja environment
-        """
+        """Set up Jinja environment."""
         logger.debug("Loading text templates")
 
         # create loaders
@@ -121,22 +121,22 @@ class TextGenerator:
             self.check_template(name, file_name)
 
     def get_environment_loaders(self):
-        """Return the different loaders used by Jinja
+        """Return the different loaders used by Jinja.
 
         Returns:
-            list: list of the different loaders.
+            list: List of the different loaders.
         """
         return self.environment.loader.loaders
 
     def check_template(self, template_name, file_name):
-        """Check if a template is accessible either custom or default
+        """Check if a template is accessible either custom or default.
 
         Args:
-            template_name (str): name of the text template.
-            file_name (str): name of the text template file.
+            template_name (str): Name of the text template.
+            file_name (str): Name of the text template file.
 
         Raises:
-            TemplateNotFoundError: if the template can neither be found on
+            TemplateNotFoundError: If the template can neither be found on
             custom loader, nor default loader.
         """
         loader_custom, loader_default = self.get_environment_loaders()
@@ -158,13 +158,13 @@ class TextGenerator:
         )
 
     def convert_icon(self, name):
-        """Convert the name of an icon to its code
+        """Convert the name of an icon to its code.
 
         Args:
-            name (str): name of the icon.
+            name (str): Name of the icon.
 
         Returns:
-            str: corresponding character.
+            str: Corresponding character.
         """
         if name is None:
             return ""
@@ -173,25 +173,25 @@ class TextGenerator:
 
     @staticmethod
     def convert_link_type_name(link_type):
-        """Convert the short name of a link type to its long name
+        """Convert the short name of a link type to its long name.
 
         Args:
-            link_type (str): short name of the link type.
+            link_type (str): Short name of the link type.
 
         Returns:
-            str: long name of the link type.
+            str: Long name of the link type.
         """
         return LINK_TYPE_NAMES[link_type]
 
     def get_text(self, template_name, data):
-        """Generate the text for the desired template
+        """Generate the text for the desired template.
 
         Args:
-            template_name (str): name of the text template.
-            data (dict): values to pass to the template.
+            template_name (str): Name of the text template.
+            data (dict): Values to pass to the template.
 
         Returns:
-            str: generated text from the template with provided values.
+            str: Generated text from the template with provided values.
         """
         return self.environment.get_template(self.filenames[template_name]).render(
             **data
@@ -199,7 +199,7 @@ class TextGenerator:
 
 
 def separate_package_last_directory(package):
-    """Separate last directory from package
+    """Separate last directory from package.
 
     Args:
         package (str): Package.
@@ -214,5 +214,4 @@ def separate_package_last_directory(package):
 
 
 class TemplateNotFoundError(DakaraError, FileNotFoundError):
-    """Error raised when a template cannot be found
-    """
+    """Error raised when a template cannot be found."""

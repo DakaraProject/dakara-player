@@ -1,9 +1,11 @@
+"""mpv media player."""
+
 import logging
 import re
 from abc import ABC
 
 from dakara_base.safe_workers import safe
-from packaging.version import parse, Version
+from packaging.version import Version, parse
 
 try:
     import python_mpv_jsonipc as mpv
@@ -16,7 +18,6 @@ from dakara_player.media_player.base import (
     MediaPlayer,
     VersionNotFoundError,
 )
-
 
 logger = logging.getLogger(__name__)
 mpv_logger = logging.getLogger("mpv")
@@ -83,6 +84,9 @@ class MediaPlayerMpv(MediaPlayer, ABC):
 
         Returns:
             packaging.version.Version: Parsed version of mpv.
+
+        Raises:
+            VersionNotFoundError: If unable to parse version.
         """
         player = mpv.MPV()
         match = re.search(
@@ -197,8 +201,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         self.player_data = {"skip": False}
 
     def load_player(self):
-        """Perform actions with side effects for mpv initialization.
-        """
+        """Perform actions with side effects for mpv initialization."""
         # set mpv callbacks
         self.set_mpv_default_callbacks()
 
@@ -235,8 +238,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         return int(timing)
 
     def set_mpv_default_callbacks(self):
-        """Set mpv default callbacks.
-        """
+        """Set mpv default callbacks."""
         self.player.bind_event("end-file", self.handle_end_file)
         self.player.bind_event("start-file", self.handle_start_file)
         self.player.bind_event("pause", self.handle_pause)
@@ -247,6 +249,10 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         Returns:
             bool: True if mpv is playing something.
+
+        Raises:
+            AssertError: If too many intries are present in the mpv internal
+                playlist.
         """
         # query if the player is currently playing
         if self.is_paused():
@@ -286,6 +292,10 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         Returns:
             bool: True if mpv is playing the requested type.
+
+        Raises:
+            AssertError: If too many intries are present in the mpv internal
+                playlist.
         """
         playlist = self.player.playlist
 
@@ -310,6 +320,9 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         Args:
             what (str): What media to play.
+
+        Raises:
+            ValueError: If the action to play is unknown.
         """
         # reset player
         self.player.sub_files = []
@@ -409,8 +422,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             self.clear_playlist_entry()
 
     def stop_player(self):
-        """Request to stop mpv.
-        """
+        """Request to stop mpv."""
         logger.info("Stopping player")
         self.player.terminate()
         logger.debug("Stopped player")
@@ -496,8 +508,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         logger.info("Requesting to play instrumental track of '%s'", file_path)
 
     def clear_playlist_entry_player(self):
-        """Clean playlist entry data after being played.
-        """
+        """Clean playlist entry data after being played."""
         self.playlist_entry_data = {
             "transition": Media(),
             "song": MediaSong(),
@@ -514,12 +525,16 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             - A song ends because it has been skipped, this case is ignored.
 
         Args:
-            event (dict): mpv event.
+            event (dict): Mpv event.
+
+        Raises:
+            InvalidStateError: If the context of call of this callback is
+                unexpected.
         """
         logger.debug("File end callback called")
 
         # only handle when a file naturally ends (i.e. is not skipped)
-        # i know this strategy is risky this is the only way for this version
+        # i know this strategy is risky but it is the only way for this version
         # of mpv
         if self.player_data["skip"]:
             self.player_data["skip"] = False
@@ -583,7 +598,11 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             - A idle screen starts.
 
         Args:
-            event (dict): mpv event.
+            event (dict): Mpv event.
+
+        Raises:
+            InvalidStateError: If the context of call of this callback is
+                unexpected.
         """
         logger.debug("Start file callback called")
 
@@ -632,7 +651,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         """Callback called when paused.
 
         Args:
-            event (dict): mpv event.
+            event (dict): Mpv event.
         """
         logger.debug("Pause callback called")
 
@@ -648,7 +667,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         If the player is skipping a song, do not handle this event.
 
         Args:
-            event (dict): mpv event.
+            event (dict): Mpv event.
         """
         logger.debug("Unpause callback called")
 
@@ -716,6 +735,19 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
         return bool(len(current_entries))
 
     def was_playing_this(self, what, id):
+        """Query if mpv was playing the requested internal playlist ID.
+
+        Args:
+            what (str): Type of the track.
+            id (int): ID of the track in mpv internal playlist.
+
+        Returns:
+            bool: True if mpv was playing the requested track.
+
+        Raises:
+            AssertError: If zero or more than one entries correspond to the
+                provided ID.
+        """
         # extract entry from playlist
         entries = [e for e in self.player.playlist if e["id"] == id]
 
@@ -730,6 +762,7 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
         Args:
             what (str): Tell if mpv current track is of the requested type, but
                 not if it is actually playing it (it can be in pause).
+            media_path (path.Path): Optional media path.
 
         Returns:
             bool: True if mpv is playing the requested type.
@@ -752,7 +785,11 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
             - A song ends because it has been skipped, this case is ignored.
 
         Args:
-            event (dict): mpv event.
+            event (dict): Mpv event.
+
+        Raises:
+            InvalidStateError: If the context of call of this callback is
+                unexpected.
         """
         logger.debug("File end callback called")
         id = event["playlist_entry_id"]
@@ -784,16 +821,14 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
 
 
 class Media:
-    """Media class.
-    """
+    """Media class."""
 
     def __init__(self, path=None):
         self.path = path
 
 
 class MediaSong(Media):
-    """Song class.
-    """
+    """Song class."""
 
     def __init__(self, *args, path_subtitle=None, path_audio=None, **kwargs):
         super().__init__(*args, **kwargs)

@@ -1,11 +1,11 @@
 import re
-from tempfile import gettempdir
 from contextlib import ExitStack, contextmanager
 from queue import Queue
+from tempfile import gettempdir
 from threading import Event
 from time import sleep
 from unittest import TestCase, skipIf
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, call, patch
 
 try:
     import vlc
@@ -16,16 +16,16 @@ except (ImportError, OSError):
 from packaging.version import parse
 from path import Path
 
+from dakara_player.media_player.base import (
+    InvalidStateError,
+    KaraFolderNotFound,
+    VersionNotFoundError,
+)
 from dakara_player.media_player.vlc import (
     MediaPlayerVlc,
     VlcTooOldError,
-    set_metadata,
     get_metadata,
-)
-from dakara_player.media_player.base import (
-    KaraFolderNotFound,
-    InvalidStateError,
-    VersionNotFoundError,
+    set_metadata,
 )
 from dakara_player.mrl import path_to_mrl
 from dakara_player.text_generator import TextGenerator
@@ -35,8 +35,7 @@ from dakara_player.window import DummyWindowManager, WindowManager
 @patch("dakara_player.media_player.base.TRANSITION_DURATION", 10)
 @patch("dakara_player.media_player.base.IDLE_DURATION", 20)
 class MediaPlayerVlcTestCase(TestCase):
-    """Test the VLC player class unitary
-    """
+    """Test the VLC player class unitary."""
 
     def setUp(self):
         # create playlist entry ID
@@ -57,7 +56,7 @@ class MediaPlayerVlcTestCase(TestCase):
     def get_instance(
         self, config=None, tempdir=None,
     ):
-        """Get a heavily mocked instance of MediaPlayerVlc
+        """Get a heavily mocked instance of MediaPlayerVlc.
 
         Args:
             config (dict): Configuration passed to the constructor.
@@ -116,7 +115,7 @@ class MediaPlayerVlcTestCase(TestCase):
             )
 
     def set_playlist_entry(self, vlc_player, started=True):
-        """Set a playlist entry and make the player play it
+        """Set a playlist entry and make the player play it.
 
         Args:
             vlc_player (MediaPlayerVlc): Instance of the VLC player.
@@ -142,8 +141,7 @@ class MediaPlayerVlcTestCase(TestCase):
             vlc_player.playlist_entry_data["song"].started = True
 
     def test_init_window(self):
-        """Test to use default or custom window
-        """
+        """Test to use default or custom window."""
         # default window
         with self.get_instance(
             {"kara_folder": gettempdir(), "vlc": {"use_default_window": True}}
@@ -155,8 +153,7 @@ class MediaPlayerVlcTestCase(TestCase):
             self.assertIsInstance(vlc_player.window, WindowManager)
 
     def test_set_callback(self):
-        """Test the assignation of a callback
-        """
+        """Test the assignation of a callback."""
         with self.get_instance() as (vlc_player, _, _):
             # create a callback function
             callback = MagicMock()
@@ -172,7 +169,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @skipIf(vlc is None, "VLC not installed")
     def test_set_vlc_callback(self):
-        """Test the assignation of a callback to a VLC event
+        """Test the assignation of a callback to a VLC event.
 
         We have also to mock the event manager method because there is no way
         with the VLC library to know which callback is associated to a given
@@ -207,8 +204,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch("dakara_player.media_player.vlc.libvlc_get_version")
     def test_get_version_long_4_digits(self, mocked_libvlc_get_version):
-        """Test to get the VLC version when it is long and contains 4 digits
-        """
+        """Test to get the VLC version when it is long and contains 4 digits."""
         # mock the version of VLC
         mocked_libvlc_get_version.return_value = b"3.0.11.1 Vetinari"
 
@@ -220,8 +216,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch("dakara_player.media_player.vlc.libvlc_get_version")
     def test_get_version_long(self, mocked_libvlc_get_version):
-        """Test to get the VLC version when it is long
-        """
+        """Test to get the VLC version when it is long."""
         # mock the version of VLC
         mocked_libvlc_get_version.return_value = b"3.0.11 Vetinari"
 
@@ -233,8 +228,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch("dakara_player.media_player.vlc.libvlc_get_version")
     def test_get_version_not_found(self, mocked_libvlc_get_version):
-        """Test to get the VLC version when it is not available
-        """
+        """Test to get the VLC version when it is not available."""
         # mock the version of VLC
         mocked_libvlc_get_version.return_value = b"none"
 
@@ -244,8 +238,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(MediaPlayerVlc, "get_version")
     def test_check_version(self, mocked_get_version):
-        """Test to check recent enough version VLC
-        """
+        """Test to check recent enough version VLC."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the version of VLC
             mocked_get_version.return_value = parse("3.0.0")
@@ -255,8 +248,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(MediaPlayerVlc, "get_version")
     def test_check_version_old(self, mocked_get_version):
-        """Test to check old version of VLC
-        """
+        """Test to check old version of VLC."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the version of VLC
             mocked_get_version.return_value = parse("2.0.0")
@@ -267,8 +259,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(MediaPlayerVlc, "get_version")
     def test_check_version_3013(self, mocked_get_version):
-        """Test to check VLC version 3.0.13
-        """
+        """Test to check VLC version 3.0.13."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the version of VLC
             mocked_get_version.return_value = parse("3.0.13")
@@ -287,8 +278,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(MediaPlayerVlc, "get_version")
     def test_check_version_3014(self, mocked_get_version):
-        """Test to check VLC version 3.0.14
-        """
+        """Test to check VLC version 3.0.14."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the version of VLC
             mocked_get_version.return_value = parse("3.0.14")
@@ -307,8 +297,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(Path, "exists")
     def test_check_kara_folder_path(self, mocked_exists):
-        """Test to check if the kara folder exists
-        """
+        """Test to check if the kara folder exists."""
         with self.get_instance() as (vlc_player, _, _):
             # pretend the directory exists
             mocked_exists.return_value = True
@@ -321,8 +310,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(Path, "exists")
     def test_check_kara_folder_path_does_not_exist(self, mocked_exists):
-        """Test to check if the kara folder does not exist
-        """
+        """Test to check if the kara folder does not exist."""
         with self.get_instance() as (vlc_player, _, _):
             # pretend the directory does not exist
             mocked_exists.return_value = False
@@ -349,8 +337,7 @@ class MediaPlayerVlcTestCase(TestCase):
         mocked_open,
         mocked_get_id,
     ):
-        """Test to load the instance
-        """
+        """Test to load the instance."""
         with self.get_instance() as (
             vlc_player,
             (_, mocked_background_loader, mocked_text_generator),
@@ -379,8 +366,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(Path, "exists")
     def test_set_playlist_entry_error_file(self, mocked_exists):
-        """Test to set a playlist entry that does not exist
-        """
+        """Test to set a playlist entry that does not exist."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the system call
             mocked_exists.return_value = False
@@ -431,8 +417,7 @@ class MediaPlayerVlcTestCase(TestCase):
         mocked_get_metadata,
         mocked_set_metadata,
     ):
-        """Test to set a playlist entry
-        """
+        """Test to set a playlist entry."""
         with self.get_instance() as (vlc_player, (_, mocked_background_loader, _), _):
             # setup mocks
             mocked_exists.return_value = True
@@ -473,8 +458,7 @@ class MediaPlayerVlcTestCase(TestCase):
         mocked_get_number_tracks,
         mocked_get_audio_tracks_id,
     ):
-        """Test to add instrumental file
-        """
+        """Test to add instrumental file."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             video_path = Path(gettempdir()) / "video"
             audio_path = Path(gettempdir()) / "audio"
@@ -516,8 +500,7 @@ class MediaPlayerVlcTestCase(TestCase):
     def test_manage_instrumental_file_error_slaves_add(
         self, mocked_get_instrumental_file, mocked_get_number_tracks,
     ):
-        """Test to be unable to add instrumental file
-        """
+        """Test to be unable to add instrumental file."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             video_path = Path(gettempdir()) / "video"
             audio_path = Path(gettempdir()) / "audio"
@@ -565,9 +548,12 @@ class MediaPlayerVlcTestCase(TestCase):
         mocked_get_number_tracks,
         mocked_get_audio_tracks_id,
     ):
-        """Test add instrumental track
-        """
-        with self.get_instance() as (vlc_player, (mocked_instance, _, _,), _):
+        """Test add instrumental track."""
+        with self.get_instance() as (
+            vlc_player,
+            (mocked_instance, _, _,),
+            _,
+        ):
             video_path = Path(gettempdir()) / "video"
 
             # pre assertions
@@ -607,8 +593,7 @@ class MediaPlayerVlcTestCase(TestCase):
     def test_manage_instrumental_no_instrumental_found(
         self, mocked_get_instrumental_file, mocked_get_audio_tracks_id
     ):
-        """Test to cannot find instrumental
-        """
+        """Test to cannot find instrumental."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             video_path = Path(gettempdir()) / "video"
 
@@ -644,8 +629,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_set_pause_idle(self, mocked_is_playing_this):
-        """Test to set pause when the player is idle
-        """
+        """Test to set pause when the player is idle."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             player = mocked_instance.media_player_new.return_value
 
@@ -664,8 +648,7 @@ class MediaPlayerVlcTestCase(TestCase):
     def test_handle_end_reached_transition(
         self, mocked_is_playing_this, mocked_create_thread
     ):
-        """Test song end callback after a transition screen
-        """
+        """Test song end callback after a transition screen."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
             vlc_player.playlist_entry_data["song"].started = False
@@ -701,8 +684,7 @@ class MediaPlayerVlcTestCase(TestCase):
     def test_handle_end_reached_song(
         self, mocked_is_playing_this, mocked_create_thread
     ):
-        """Test song end callback after a song
-        """
+        """Test song end callback after a song."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
 
@@ -727,8 +709,7 @@ class MediaPlayerVlcTestCase(TestCase):
     def test_handle_end_reached_idle(
         self, mocked_is_playing_this, mocked_create_thread
     ):
-        """Test song end callback after an idle screen
-        """
+        """Test song end callback after an idle screen."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
 
@@ -754,8 +735,7 @@ class MediaPlayerVlcTestCase(TestCase):
     def test_handle_end_reached_invalid(
         self, mocked_is_playing_this, mocked_create_thread
     ):
-        """Test song end callback on invalid state
-        """
+        """Test song end callback on invalid state."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
 
@@ -780,8 +760,7 @@ class MediaPlayerVlcTestCase(TestCase):
     @patch.object(MediaPlayerVlc, "skip")
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_encountered_error(self, mocked_is_playing_this, mocked_skip):
-        """Test error callback
-        """
+        """Test error callback."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
 
@@ -812,8 +791,7 @@ class MediaPlayerVlcTestCase(TestCase):
     @patch.object(MediaPlayerVlc, "get_timing")
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_playing_unpause(self, mocked_is_playing_this, mocked_get_timing):
-        """Test playing callback when unpausing
-        """
+        """Test playing callback when unpausing."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
 
@@ -841,8 +819,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_playing_transition_starts(self, mocked_is_playing_this):
-        """Test playing callback when transition starts
-        """
+        """Test playing callback when transition starts."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player, started=False)
 
@@ -880,8 +857,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_playing_song(self, mocked_is_playing_this):
-        """Test playing callback when song starts
-        """
+        """Test playing callback when song starts."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
             vlc_player.playlist_entry_data["song"].started = False
@@ -918,8 +894,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_playing_media_starts_track_id(self, mocked_is_playing_this):
-        """Test playing callback when media starts with requested track ID
-        """
+        """Test playing callback when media starts with requested track ID."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             mocked_player = mocked_instance.media_player_new.return_value
             self.set_playlist_entry(vlc_player)
@@ -954,8 +929,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_playing_idle_starts(self, mocked_is_playing_this):
-        """Test playing callback when idle screen starts
-        """
+        """Test playing callback when idle screen starts."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the call
             mocked_is_playing_this.side_effect = [False, False, False, False, True]
@@ -986,8 +960,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_playing_invalid(self, mocked_is_playing_this):
-        """Test playing callback on invalid state
-        """
+        """Test playing callback on invalid state."""
         with self.get_instance() as (vlc_player, _, _):
             # setup mock
             mocked_is_playing_this.return_value = False
@@ -1004,8 +977,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(MediaPlayerVlc, "get_timing")
     def test_handle_paused(self, mocked_get_timing):
-        """Test paused callback
-        """
+        """Test paused callback."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
 
@@ -1031,8 +1003,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch("dakara_player.media_player.base.get_user_directory")
     def test_custom_backgrounds(self, mocked_get_user_directory):
-        """Test to instanciate with custom backgrounds
-        """
+        """Test to instanciate with custom backgrounds."""
         mocked_get_user_directory.return_value = Path("custom")
 
         # create object
@@ -1059,15 +1030,13 @@ class MediaPlayerVlcTestCase(TestCase):
             )
 
     def test_default_durations(self):
-        """Test to instanciate with default durations
-        """
+        """Test to instanciate with default durations."""
         with self.get_instance() as (vlc_player, _, _):
             # assert the instance
             self.assertDictEqual(vlc_player.durations, {"transition": 10, "idle": 20})
 
     def test_custom_durations(self):
-        """Test to instanciate with custom durations
-        """
+        """Test to instanciate with custom durations."""
         with self.get_instance({"durations": {"transition_duration": 5}}) as (
             vlc_player,
             _,
@@ -1079,8 +1048,7 @@ class MediaPlayerVlcTestCase(TestCase):
     @patch("dakara_player.media_player.base.PLAYER_CLOSING_DURATION", 0)
     @patch.object(MediaPlayerVlc, "stop_player")
     def test_slow_close(self, mocked_stop_player):
-        """Test to close VLC when it takes a lot of time
-        """
+        """Test to close VLC when it takes a lot of time."""
         with self.get_instance() as (vlc_player, _, _):
             mocked_stop_player.side_effect = lambda: sleep(1)
 
@@ -1094,8 +1062,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(TextGenerator, "get_text")
     def test_generate_text_invalid(self, mocked_get_text):
-        """Test to generate invalid text screen
-        """
+        """Test to generate invalid text screen."""
         with self.get_instance() as (vlc_player, _, _):
             with self.assertRaisesRegex(
                 ValueError, "Unexpected action to generate text for: none"
@@ -1110,8 +1077,7 @@ class MediaPlayerVlcTestCase(TestCase):
         mocked_get_text.assert_not_called()
 
     def test_play_invalid(self):
-        """Test to play invalid action
-        """
+        """Test to play invalid action."""
         with self.get_instance() as (vlc_player, _, _):
             with self.assertRaisesRegex(ValueError, "Unexpected action to play: none"):
                 vlc_player.play("none")
@@ -1119,8 +1085,7 @@ class MediaPlayerVlcTestCase(TestCase):
             vlc_player.player.play.assert_not_called()
 
     def test_set_window_none(self):
-        """Test to use default window
-        """
+        """Test to use default window."""
         with self.get_instance() as (vlc_player, _, _):
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
                 vlc_player.set_window(None)
@@ -1132,8 +1097,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch("dakara_player.media_player.vlc.sys.platform", "linux")
     def test_set_window_linux(self):
-        """Test to use X window
-        """
+        """Test to use X window."""
         with self.get_instance() as (vlc_player, _, _):
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
                 vlc_player.set_window(99)
@@ -1145,8 +1109,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch("dakara_player.media_player.vlc.sys.platform", "win32")
     def test_set_window_windows(self):
-        """Test to use Win API window
-        """
+        """Test to use Win API window."""
         with self.get_instance() as (vlc_player, _, _):
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
                 vlc_player.set_window(99)
@@ -1162,8 +1125,7 @@ class MediaPlayerVlcTestCase(TestCase):
     @patch("dakara_player.media_player.base.get_user_directory", autospec=True)
     @patch("dakara_player.media_player.vlc.sys.platform", "other")
     def test_set_window_other(self, mocked_get_user_directory):
-        """Test to set window on unknown platform
-        """
+        """Test to set window on unknown platform."""
         with self.get_instance() as (vlc_player, _, _):
             with self.assertRaises(NotImplementedError):
                 vlc_player.set_window(99)
@@ -1171,10 +1133,10 @@ class MediaPlayerVlcTestCase(TestCase):
 
 @patch("dakara_player.media_player.vlc.METADATA_KEYS_COUNT", 10)
 class SetMetadataTestCase(TestCase):
-    """Test the set_metadata function"""
+    """Test the set_metadata function."""
 
     def test_set_first(self):
-        """Test to set metadata in first field"""
+        """Test to set metadata in first field."""
         media = MagicMock()
         media.get_meta.return_value = None
 
@@ -1183,7 +1145,7 @@ class SetMetadataTestCase(TestCase):
         media.set_meta.assert_called_with(0, '{"data": "value"}')
 
     def test_set_second(self):
-        """Test to set metadata in second field"""
+        """Test to set metadata in second field."""
         media = MagicMock()
         media.get_meta.side_effect = ["value", None]
 
@@ -1192,7 +1154,7 @@ class SetMetadataTestCase(TestCase):
         media.set_meta.assert_called_with(1, '{"data": "value"}')
 
     def test_set_fail(self):
-        """Test error when unable to set metadata in any field"""
+        """Test error when unable to set metadata in any field."""
         media = MagicMock()
         media.get_meta.return_value = "value"
 
@@ -1202,31 +1164,31 @@ class SetMetadataTestCase(TestCase):
 
 @patch("dakara_player.media_player.vlc.METADATA_KEYS_COUNT", 10)
 class GetMetadataTestCase(TestCase):
-    """Test the get_metadata function"""
+    """Test the get_metadata function."""
 
     def test_get_first(self):
-        """Test to get metadata from first field"""
+        """Test to get metadata from first field."""
         media = MagicMock()
         media.get_meta.return_value = '{"data": "value"}'
 
         self.assertEqual(get_metadata(media), {"data": "value"})
 
     def test_get_second_none(self):
-        """Test to get metadata from second field with first being none"""
+        """Test to get metadata from second field with first being none."""
         media = MagicMock()
         media.get_meta.side_effect = [None, '{"data": "value"}']
 
         self.assertEqual(get_metadata(media), {"data": "value"})
 
     def test_get_second_text(self):
-        """Test to get metadata from second field with first being text"""
+        """Test to get metadata from second field with first being text."""
         media = MagicMock()
         media.get_meta.side_effect = ["value", '{"data": "value"}']
 
         self.assertEqual(get_metadata(media), {"data": "value"})
 
     def test_get_fail(self):
-        """Test error when unable to get metadata from any field"""
+        """Test error when unable to get metadata from any field."""
         media = MagicMock()
         media.get_meta.return_value = "value"
 

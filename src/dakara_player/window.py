@@ -1,6 +1,8 @@
+"""Manage a window."""
+
 import logging
 from abc import ABC, abstractmethod
-from threading import Thread, Event
+from threading import Event, Thread
 
 try:
     import tkinter
@@ -13,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseWindowManager(ABC):
-    """Abstract class for window manager
+    """Abstract class for window manager.
 
     Args:
         title (str): Title of the window.
@@ -26,10 +28,14 @@ class BaseWindowManager(ABC):
     @staticmethod
     @abstractmethod
     def is_available():
-        """Tell if this window manager can be initialized
+        """Tell if this window manager can be initialized.
 
         Returns:
             bool: True if the window managen can be initialized.
+
+
+        Raises:
+            WindowManagerNotAvailableError: If no window manager is available.
         """
 
     def __init__(self, title="No title", fullscreen=False, disabled=False):
@@ -52,17 +58,15 @@ class BaseWindowManager(ABC):
 
     @abstractmethod
     def open(self):
-        """Open the window
-        """
+        """Open the window."""
 
     @abstractmethod
     def close(self):
-        """Close the window
-        """
+        """Close the window."""
 
     @abstractmethod
     def get_id(self):
-        """Get window ID
+        """Get window ID.
 
         Retuns:
             int: ID of the window.
@@ -70,7 +74,7 @@ class BaseWindowManager(ABC):
 
 
 class DummyWindowManager(BaseWindowManager):
-    """Dummy window manager
+    """Dummy window manager.
 
     It never creates a window and is always available.
 
@@ -84,7 +88,7 @@ class DummyWindowManager(BaseWindowManager):
 
     @staticmethod
     def is_available():
-        """Tell if this window manager can be initialized
+        """Tell if this window manager can be initialized.
 
         Returns:
             bool: True if the window managen can be initialized.
@@ -92,15 +96,13 @@ class DummyWindowManager(BaseWindowManager):
         return True
 
     def open(self):
-        """Open the window
-        """
+        """Open the window."""
 
     def close(self):
-        """Close the window
-        """
+        """Close the window."""
 
     def get_id(self):
-        """Get window ID
+        """Get window ID.
 
         Retuns:
             int: ID of the window.
@@ -109,20 +111,20 @@ class DummyWindowManager(BaseWindowManager):
 
 
 class TkWindowManager(BaseWindowManager):
-    """Tkinter window manager
+    """Tkinter window manager.
 
     Uses the Python default GUI library Tkinter.
 
     The window is created in a separate thread and checks every
     `ACTUALIZE_INTERVAL` if it has to close (using an event set by the `close`
     method). This indirect approach works well, even if the window doesn't
-    close immediately at shutdown. A more direct approach was attempted using
+    close immediately at shutdown. A more direct approach was tried using
     `generate_event`, but this messes up the destruction order and leads to a
     crash of the interpreter. Using `quit` instead of `destroy` as a workaround
     was problematic for tests, as the method doesn't cleanup after itself,
     making inpossible to close a second window.
 
-    See: https://stackoverflow.com/q/66529633/4584444
+    See: Https://stackoverflow.com/q/66529633/4584444
 
     Args:
         title (str): Title of the window.
@@ -135,7 +137,7 @@ class TkWindowManager(BaseWindowManager):
 
     @staticmethod
     def is_available():
-        """Tell if this window manager can be initialized
+        """Tell if this window manager can be initialized.
 
         Returns:
             bool: True if the window managen can be initialized.
@@ -150,14 +152,13 @@ class TkWindowManager(BaseWindowManager):
         self.id = None
 
     def create_window(self):
-        """Create the window
+        """Create the window.
 
         Must be called in its own thread.
         """
 
         class TkWindow(tkinter.Tk):
-            """Custom Tk window
-            """
+            """Custom Tk window."""
 
             def __init__(self, stop, title, fullscreen, *args, **kwargs):
                 super().__init__(*args, **kwargs)
@@ -169,8 +170,7 @@ class TkWindowManager(BaseWindowManager):
                 self.after(TkWindowManager.ACTUALIZE_INTERVAL, self.actualize)
 
             def actualize(self):
-                """Check if the window has to be closed periodically
-                """
+                """Check if the window has to be closed periodically."""
                 if self.stop.is_set():
                     self.destroy()
                     return
@@ -189,21 +189,19 @@ class TkWindowManager(BaseWindowManager):
         window.mainloop()
 
     def open(self):
-        """Open the window
-        """
+        """Open the window."""
         logger.debug("Creating Tk window")
         self.window_thread.start()
 
     def close(self):
-        """Close the window
-        """
+        """Close the window."""
         self.ready.wait()
         logger.debug("Closing Tk window")
         self.stop.set()
         self.window_thread.join()
 
     def get_id(self):
-        """Get window ID
+        """Get window ID.
 
         Retuns:
             int: ID of the window.
@@ -214,7 +212,7 @@ class TkWindowManager(BaseWindowManager):
 
 
 def get_window_manager_class():
-    """Give an available window manager class
+    """Give an available window manager class.
 
     Returns:
         BaseWindowManager: Tries to return `TkWindowManager`, fallbacks to
@@ -227,10 +225,9 @@ def get_window_manager_class():
 
 
 WindowManager = get_window_manager_class()
-"""BaseWindowManager: Available window manager class
+"""BaseWindowManager: Available window manager class.
 """
 
 
 class WindowManagerNotAvailableError(Exception):
-    """Error when initializing an unavailable window manager
-    """
+    """Error when initializing an unavailable window manager."""

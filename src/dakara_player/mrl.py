@@ -1,3 +1,5 @@
+"""Manage MRL."""
+
 import pathlib
 from urllib.parse import unquote, urlparse
 
@@ -5,7 +7,7 @@ from path import Path
 
 
 def mrl_to_path(file_mrl):
-    """Convert a MRL to a filesystem path
+    """Convert a MRL to a filesystem path.
 
     File path is stored as MRL inside a media object, we have to bring it back
     to a more classic looking path format.
@@ -26,7 +28,7 @@ def mrl_to_path(file_mrl):
 
 
 def path_to_mrl(file_path):
-    """Convert a filesystem path to MRL
+    """Convert a filesystem path to MRL.
 
     Args:
         file_path (path.Path or str): Path to the resource.

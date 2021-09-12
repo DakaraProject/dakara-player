@@ -1,3 +1,5 @@
+"""Load fonts on user level for the media players."""
+
 import ctypes
 import logging
 import sys
@@ -13,17 +15,16 @@ except ImportError:
 
 from dakara_base.exceptions import DakaraError
 
-
 logger = logging.getLogger(__name__)
 
 FONT_EXTENSIONS = (".ttf", ".otf")
 
 
 def get_font_loader_class():
-    """Get the font loader associated to the current platform
+    """Get the font loader associated to the current platform.
 
     Returns:
-        FontLoader: specialized version of the font loader class.
+        FontLoader: Specialized version of the font loader class.
     """
     if "linux" in sys.platform:
         return FontLoaderLinux
@@ -37,7 +38,7 @@ def get_font_loader_class():
 
 
 class FontLoader(ABC):
-    """Abstract font loader
+    """Abstract font loader.
 
     Must be specialized for a given OS.
 
@@ -58,11 +59,11 @@ class FontLoader(ABC):
 
     @abstractmethod
     def load(self):
-        """Load the fonts"""
+        """Load the fonts."""
 
     @abstractmethod
     def unload(self):
-        """Unload the loaded fonts"""
+        """Unload the loaded fonts."""
 
     def __enter__(self):
         return self
@@ -71,10 +72,10 @@ class FontLoader(ABC):
         self.unload()
 
     def get_font_name_list(self):
-        """Give font names in font package
+        """Give name of package fonts.
 
         Returns:
-            list of str: list of font names.
+            list of str: List of font names.
         """
         logger.debug("Scanning fonts directory")
         font_file_name_list = [
@@ -98,7 +99,7 @@ class FontLoader(ABC):
 
 
 class FontLoaderLinux(FontLoader):
-    """Font loader for Linux
+    """Font loader for Linux.
 
     It symlinks fonts to load in the user fonts directory. On exit, it
     removes the created symlinks.
@@ -132,7 +133,7 @@ class FontLoaderLinux(FontLoader):
         self.fonts_loaded = {}
 
     def load(self):
-        """Load the fonts"""
+        """Load the fonts."""
         # ensure that the user font directory exists
         self.FONT_DIR_USER.expanduser().mkdir_p()
 
@@ -145,10 +146,10 @@ class FontLoaderLinux(FontLoader):
             self.load_font(font_file_path, system_font_path_list, user_font_path_list)
 
     def load_font(self, font_file_path, system_font_path_list, user_font_path_list):
-        """Load the provided font
+        """Load the provided font.
 
         Args:
-            font_file_path (path.Path): absolute path of the font to load.
+            font_file_path (path.Path): Absolute path of the font to load.
             system_font_path_list (list of path.Path): List of absolute paths
                 of system fonts.
             user_font_path_list (list of path.Path): List of absolute paths of
@@ -191,12 +192,12 @@ class FontLoaderLinux(FontLoader):
         )
 
     def unload(self):
-        """Remove loaded fonts"""
+        """Remove loaded fonts."""
         for font_file_name in self.fonts_loaded.copy():
             self.unload_font(font_file_name)
 
     def unload_font(self, font_file_name):
-        """Remove the provided font
+        """Remove the provided font.
 
         Args:
             font_file_name (str): Name of the font to unload.
@@ -216,7 +217,7 @@ class FontLoaderLinux(FontLoader):
 
 
 class FontLoaderWindows(FontLoader):
-    """Font loader for Windows
+    """Font loader for Windows.
 
     It uses the gdi32 library to dynamically load and unload fonts for the
     current session.
@@ -254,15 +255,15 @@ class FontLoaderWindows(FontLoader):
             )
 
     def load(self):
-        """Load the fonts"""
+        """Load the fonts."""
         for font_file_path in self.get_font_path_iterator():
             self.load_font(font_file_path)
 
     def load_font(self, font_file_path):
-        """Load the provided font
+        """Load the provided font.
 
         Args:
-            font_file_path (path.Path): absolute path of the font to load.
+            font_file_path (path.Path): Absolute path of the font to load.
         """
         success = ctypes.windll.gdi32.AddFontResourceW(font_file_path)
         if success:
@@ -273,12 +274,12 @@ class FontLoaderWindows(FontLoader):
         logger.warning("Font '%s' cannot be loaded", font_file_path.name)
 
     def unload(self):
-        """Remove loaded fonts"""
+        """Remove loaded fonts."""
         for font_file_name in self.fonts_loaded.copy():
             self.unload_font(font_file_name)
 
     def unload_font(self, font_file_name):
-        """Remove the provided font
+        """Remove the provided font.
 
         Args:
             font_file_name (str): Name of the font to unload.

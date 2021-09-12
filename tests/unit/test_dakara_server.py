@@ -10,8 +10,7 @@ from dakara_player.dakara_server import (
 
 
 class DakaraServerHTTPConnectionTestCase(TestCase):
-    """Test the HTTP connection with the server
-    """
+    """Test the HTTP connection with the server."""
 
     def setUp(self):
         # create a token
@@ -35,19 +34,16 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
         self.set_token()
 
     def set_token(self):
-        """Set the token for the test client
-        """
+        """Set the token for the test client."""
         self.dakara_server.token = "Token"
 
     def test_init_url(self):
-        """Test the object has the correct URL
-        """
+        """Test the object has the correct URL."""
         self.assertEqual(self.dakara_server.server_url, self.url)
 
     @patch.object(DakaraServerHTTPConnection, "post")
     def test_create_player_error_successful(self, mocked_post):
-        """Test to report an error sucessfuly
-        """
+        """Test to report an error sucessfuly."""
         # call the method
         with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.create_player_error(42, "message")
@@ -70,8 +66,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "post")
     def test_create_player_error_failed(self, mocked_post):
-        """Test to report an invalid error
-        """
+        """Test to report an invalid error."""
         # call the method
         with self.assertRaises(AssertionError):
             self.dakara_server.create_player_error(None, "message")
@@ -81,8 +76,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_finished_successful(self, mocked_put):
-        """Test to report that a playlist entry finished
-        """
+        """Test to report that a playlist entry finished."""
         # call the method
         with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.update_finished(42)
@@ -105,8 +99,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_finished_failed(self, mocked_put):
-        """Test to report that an invalid playlist entry finished
-        """
+        """Test to report that an invalid playlist entry finished."""
         # call the method
         with self.assertRaises(AssertionError):
             self.dakara_server.update_finished(None)
@@ -116,8 +109,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_started_transition_successful(self, mocked_put):
-        """Test to report that a playlist entry transition started
-        """
+        """Test to report that a playlist entry transition started."""
         # call the method
         with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.update_started_transition(42)
@@ -143,8 +135,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_started_transition_failed(self, mocked_put):
-        """Test to report that an invalid playlist entry transition started
-        """
+        """Test to report that an invalid playlist entry transition started."""
         # call the method
         with self.assertRaises(AssertionError):
             self.dakara_server.update_started_transition(None)
@@ -154,8 +145,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_started_song_successful(self, mocked_put):
-        """Test to report that a playlist entry song started
-        """
+        """Test to report that a playlist entry song started."""
         # call the method
         with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.update_started_song(42)
@@ -180,8 +170,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_started_song_failed(self, mocked_put):
-        """Test to report that an invalid playlist entry song started
-        """
+        """Test to report that an invalid playlist entry song started."""
         # call the method
         with self.assertRaises(AssertionError):
             self.dakara_server.update_started_song(None)
@@ -191,8 +180,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_could_not_play_successful(self, mocked_put):
-        """Test to report that a playlist entry could not be played
-        """
+        """Test to report that a playlist entry could not be played."""
         # call the method
         with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.update_could_not_play(42)
@@ -215,8 +203,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_could_not_play_failed(self, mocked_put):
-        """Test to report that an invalid playlist entry could not be played
-        """
+        """Test to report that an invalid playlist entry could not be played."""
         # call the method
         with self.assertRaises(AssertionError):
             self.dakara_server.update_could_not_play(None)
@@ -226,8 +213,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_paused_successful(self, mocked_put):
-        """Test to report that the player paused
-        """
+        """Test to report that the player paused."""
         # call the method
         with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.update_paused(42, 424242)
@@ -250,8 +236,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_paused_failed(self, mocked_put):
-        """Test to report that the player paused with incorrect entry
-        """
+        """Test to report that the player paused with incorrect entry."""
         # call the method
         with self.assertRaises(AssertionError):
             self.dakara_server.update_paused(None, 424242)
@@ -261,8 +246,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_resumed_successful(self, mocked_put):
-        """Test to report that the player resumed playing
-        """
+        """Test to report that the player resumed playing."""
         # call the method
         with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.update_resumed(42, 424242)
@@ -285,8 +269,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerHTTPConnection, "put")
     def test_update_resumed_failed(self, mocked_put):
-        """Test to report that the player resumed playing with incorrect entry
-        """
+        """Test to report that the player resumed playing with incorrect entry."""
         # call the method
         with self.assertRaises(AssertionError):
             self.dakara_server.update_resumed(None, 424242)
@@ -296,8 +279,7 @@ class DakaraServerHTTPConnectionTestCase(TestCase):
 
 
 class DakaraServerWebSocketConnectionTestCase(TestCase):
-    """Test the WebSocket connection with the server
-    """
+    """Test the WebSocket connection with the server."""
 
     def setUp(self):
         # create a mock websocket
@@ -329,14 +311,12 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         )
 
     def test_init_url(self):
-        """Test the URL of the created object
-        """
+        """Test the URL of the created object."""
         self.assertEqual(self.dakara_server.server_url, self.url)
 
     @patch.object(DakaraServerWebSocketConnection, "send_ready")
     def test_on_connected(self, mocked_send_ready):
-        """Test the callback on connection open
-        """
+        """Test the callback on connection open."""
         # call the method
         self.dakara_server.on_connected()
 
@@ -345,8 +325,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerWebSocketConnection, "create_timer")
     def test_on_connection_lost(self, mocked_create_timer):
-        """Test the callback on connection lost
-        """
+        """Test the callback on connection lost."""
         # mock the callback
         mocked_connection_lost = MagicMock()
         self.dakara_server.set_callback("connection_lost", mocked_connection_lost)
@@ -360,8 +339,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         mocked_create_timer.assert_called_once_with(ANY, ANY)
 
     def test_receive_idle(self):
-        """Test the receive idle event method
-        """
+        """Test the receive idle event method."""
         # mock the callback
         mocked_idle_callback = MagicMock()
         self.dakara_server.set_callback("idle", mocked_idle_callback)
@@ -379,8 +357,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         mocked_idle_callback.assert_called_once_with()
 
     def test_receive_playlist_entry(self):
-        """Test the receive new playlist entry event method
-        """
+        """Test the receive new playlist entry event method."""
         content = {"id": 0, "song": None}
 
         # mock the callback
@@ -406,8 +383,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
         mocked_playlist_entry_callback.assert_called_with(content)
 
     def test_receive_command(self):
-        """Test the receive command event method
-        """
+        """Test the receive command event method."""
         content = {"command": "command_value"}
 
         # mock the callback
@@ -432,8 +408,7 @@ class DakaraServerWebSocketConnectionTestCase(TestCase):
 
     @patch.object(DakaraServerWebSocketConnection, "send")
     def test_send_ready(self, mocked_send):
-        """Test to notify the server that the player is ready
-        """
+        """Test to notify the server that the player is ready."""
         # call the command
         with self.assertLogs("dakara_player.dakara_server", "DEBUG") as logger:
             self.dakara_server.send_ready()

@@ -1,3 +1,5 @@
+"""Manage background images for media players."""
+
 import logging
 
 try:
@@ -9,12 +11,11 @@ except ImportError:
 from dakara_base.exceptions import DakaraError
 from path import Path
 
-
 logger = logging.getLogger(__name__)
 
 
 class BackgroundLoader:
-    """Loader for backgrounds
+    """Loader for backgrounds.
 
     It finds background files in a custom directory and fallbacks to a package
     resource. Each found background file is copied to a destination directory.
@@ -51,19 +52,19 @@ class BackgroundLoader:
         }
 
     Args:
-        destination (path.Path): where to copy found background files.
-        package (str): package checked for backgrounds by default.
-        directory (path.Path): custom directory checked for backgrounds.
-        filenames (dict): dictionary of background filenames. The key is the
+        destination (path.Path): Where to copy found background files.
+        package (str): Package checked for backgrounds by default.
+        directory (path.Path): Custom directory checked for backgrounds.
+        filenames (dict): Dictionary of background filenames. The key is the
             background name, the value the background file name.
 
     Attributes:
-        backgrounds (dict): dictionary of background file paths. The key is
+        backgrounds (dict): Dictionary of background file paths. The key is
             the background name, the value the background file path.
-        destination (path.Path): where to copy found background files.
-        package (str): package checked for backgrounds by default.
-        directory (path.Path): custom directory checked for backgrounds.
-        filenames (dict): dictionary of background filenames. The key is the
+        destination (path.Path): Where to copy found background files.
+        package (str): Package checked for backgrounds by default.
+        directory (path.Path): Custom directory checked for backgrounds.
+        filenames (dict): Dictionary of background filenames. The key is the
             background name, the value the background file name.
     """
 
@@ -77,8 +78,7 @@ class BackgroundLoader:
         self.backgrounds = {}
 
     def load(self):
-        """Load the backgrounds
-        """
+        """Load the backgrounds."""
         logger.debug("Loading backgrounds")
         for name, file_name in self.filenames.items():
             self.backgrounds[name] = self.get_background_path(name, file_name)
@@ -87,10 +87,11 @@ class BackgroundLoader:
         """Get the accurate path of one background
 
         Args:
-            file_name (str): name of the background file.
+            background_name (str): Name of the background.
+            file_name (str): Name of the background file.
 
         Returns:
-            path.Path: absolute path to the background file.
+            path.Path: Absolute path to the background file.
         """
         # trying to load from custom directory
         if self.directory:
@@ -119,5 +120,4 @@ class BackgroundLoader:
 
 
 class BackgroundNotFoundError(DakaraError, FileNotFoundError):
-    """Error raised when a background cannot be found
-    """
+    """Error raised when a background cannot be found"""
