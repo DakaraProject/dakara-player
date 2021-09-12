@@ -46,7 +46,8 @@ class DakaraWorkerTestCase(TestCase):
 
         # assert effect on logs
         self.assertListEqual(
-            logger.output, ["DEBUG:dakara_player.dakara_player:Starting Dakara worker"],
+            logger.output,
+            ["DEBUG:dakara_player.dakara_player:Starting Dakara worker"],
         )
 
     def test_get_media_player_class_vlc(self):
@@ -102,7 +103,8 @@ class DakaraWorkerTestCase(TestCase):
     @patch("dakara_player.dakara_player.MediaPlayerVlc", autospec=True)
     @patch("dakara_player.dakara_player.DakaraServerHTTPConnection", autospec=True)
     @patch(
-        "dakara_player.dakara_player.DakaraServerWebSocketConnection", autospec=True,
+        "dakara_player.dakara_player.DakaraServerWebSocketConnection",
+        autospec=True,
     )
     @patch("dakara_player.dakara_player.DakaraManager", autospec=True)
     def test_run(

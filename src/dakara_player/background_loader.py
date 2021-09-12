@@ -69,7 +69,11 @@ class BackgroundLoader:
     """
 
     def __init__(
-        self, destination, package, directory=None, filenames=None,
+        self,
+        destination,
+        package,
+        directory=None,
+        filenames=None,
     ):
         self.destination = destination
         self.package = package

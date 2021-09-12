@@ -113,7 +113,8 @@ class MediaPlayerVlc(MediaPlayer):
             window_manager_class = WindowManager
 
         self.window = window_manager_class(
-            title="Dakara Player VLC", fullscreen=self.fullscreen,
+            title="Dakara Player VLC",
+            fullscreen=self.fullscreen,
         )
 
         # VLC objects

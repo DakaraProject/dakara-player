@@ -40,7 +40,8 @@ class BackgroundLoaderTestCase(TestCase):
 
         # assert the backgrounds
         self.assertDictEqual(
-            loader.backgrounds, {"idle": self.destination / "idle.png"},
+            loader.backgrounds,
+            {"idle": self.destination / "idle.png"},
         )
 
         # assert logs

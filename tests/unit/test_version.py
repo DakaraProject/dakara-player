@@ -25,7 +25,9 @@ class CheckVersionTestCase(TestCase):
         """Test to display the version for a non release."""
         with self.assertLogs("dakara_player.version", "DEBUG") as logger:
             with patch.multiple(
-                "dakara_player.version", __version__="0.1.0-dev", __date__="1970-01-01",
+                "dakara_player.version",
+                __version__="0.1.0-dev",
+                __date__="1970-01-01",
             ):
                 check_version()
 

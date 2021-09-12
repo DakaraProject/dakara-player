@@ -54,7 +54,9 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @contextmanager
     def get_instance(
-        self, config=None, tempdir=None,
+        self,
+        config=None,
+        tempdir=None,
     ):
         """Get a heavily mocked instance of MediaPlayerVlc.
 
@@ -498,7 +500,9 @@ class MediaPlayerVlcTestCase(TestCase):
     @patch.object(MediaPlayerVlc, "get_number_tracks")
     @patch.object(MediaPlayerVlc, "get_instrumental_file")
     def test_manage_instrumental_file_error_slaves_add(
-        self, mocked_get_instrumental_file, mocked_get_number_tracks,
+        self,
+        mocked_get_instrumental_file,
+        mocked_get_number_tracks,
     ):
         """Test to be unable to add instrumental file."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
@@ -551,7 +555,11 @@ class MediaPlayerVlcTestCase(TestCase):
         """Test add instrumental track."""
         with self.get_instance() as (
             vlc_player,
-            (mocked_instance, _, _,),
+            (
+                mocked_instance,
+                _,
+                _,
+            ),
             _,
         ):
             video_path = Path(gettempdir()) / "video"

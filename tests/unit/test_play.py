@@ -179,7 +179,8 @@ class CreateConfigTestCase(TestCase):
 
         # assert the logs
         self.assertListEqual(
-            logger.output, ["INFO:dakara_player.commands.play:Please edit this file"],
+            logger.output,
+            ["INFO:dakara_player.commands.play:Please edit this file"],
         )
 
         # assert the call

@@ -135,7 +135,8 @@ class MediaPlayerMpvModelTestCase(TestCase):
         }
 
     def get_instance(
-        self, config=None,
+        self,
+        config=None,
     ):
         """Get a heavily mocked instance of the desired subclass of MediaPlayerMpv.
 

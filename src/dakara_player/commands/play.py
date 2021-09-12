@@ -76,7 +76,9 @@ def get_parser():
     create_resource_subparser.set_defaults(function=create_resources)
 
     create_resource_subparser.add_argument(
-        "--force", help="overwrite existing files if any", action="store_true",
+        "--force",
+        help="overwrite existing files if any",
+        action="store_true",
     )
 
     return parser

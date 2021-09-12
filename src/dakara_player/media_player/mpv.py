@@ -90,7 +90,8 @@ class MediaPlayerMpv(MediaPlayer, ABC):
         """
         player = mpv.MPV()
         match = re.search(
-            r"mpv (\d+\.\d+\.\d+)(?:\+git\.(\d{8})T(\d{6})\..*)?", player.mpv_version,
+            r"mpv (\d+\.\d+\.\d+)(?:\+git\.(\d{8})T(\d{6})\..*)?",
+            player.mpv_version,
         )
         player.terminate()
 

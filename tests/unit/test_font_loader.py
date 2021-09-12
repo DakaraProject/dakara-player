@@ -239,7 +239,10 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
     @patch.object(Path, "copy", autospec=True)
     @patch.object(Path, "islink", autospec=True)
     def test_load_font_user_link_dead_install(
-        self, mocked_islink, mocked_copy, mocked_unlink,
+        self,
+        mocked_islink,
+        mocked_copy,
+        mocked_unlink,
     ):
         """Test to load one font which is in user directory as dead link."""
         # prepare the mock
