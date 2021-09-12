@@ -5,8 +5,7 @@ from dakara_player.dakara_manager import DakaraManager
 
 
 class DakaraManagerTestCase(TestCase):
-    """Test the dakara manager class
-    """
+    """Test the dakara manager class."""
 
     def setUp(self):
         # create a mock font loader
@@ -30,8 +29,7 @@ class DakaraManagerTestCase(TestCase):
         )
 
     def test_start_idle(self):
-        """Test to launch the dakara manager when there is nothing to play
-        """
+        """Test to launch the dakara manager when there is nothing to play."""
         # call the methods and prevent to run as thread
         self.dakara_manager.play_idle_screen()
 
@@ -40,8 +38,7 @@ class DakaraManagerTestCase(TestCase):
         self.media_player.set_playlist_entry.assert_not_called()
 
     def test_start_play_playlist_entry(self):
-        """Test to launch the dakara manager when there is something to play
-        """
+        """Test to launch the dakara manager when there is something to play."""
         playlist_entry = {"id": 42}
 
         # call the methods and prevent to run as thread
@@ -52,8 +49,7 @@ class DakaraManagerTestCase(TestCase):
         self.media_player.set_playlist_entry.assert_called_once_with(playlist_entry)
 
     def test_handle_error(self):
-        """Test the callback called on error
-        """
+        """Test the callback called on error."""
         # call the method
         self.dakara_manager.handle_error(999, "message")
 
@@ -63,8 +59,7 @@ class DakaraManagerTestCase(TestCase):
         )
 
     def test_handle_finished(self):
-        """Test the callback called on song end
-        """
+        """Test the callback called on song end."""
         # call the method
         self.dakara_manager.handle_finished(999)
 
@@ -72,8 +67,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_server_http.update_finished.assert_called_once_with(999)
 
     def test_handle_started_transition(self):
-        """Test the callback called on transition start
-        """
+        """Test the callback called on transition start."""
         # call the method
         self.dakara_manager.handle_started_transition(999)
 
@@ -81,8 +75,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_server_http.update_started_transition.assert_called_once_with(999)
 
     def test_handle_started_song(self):
-        """Test the callback called on song start
-        """
+        """Test the callback called on song start."""
         # call the method
         self.dakara_manager.handle_started_song(999)
 
@@ -90,8 +83,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_server_http.update_started_song.assert_called_once_with(999)
 
     def test_handle_could_not_play(self):
-        """Test the callback called when a playlist entry could not play
-        """
+        """Test the callback called when a playlist entry could not play."""
         # call the method
         self.dakara_manager.handle_could_not_play(999)
 
@@ -99,8 +91,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_server_http.update_could_not_play.assert_called_once_with(999)
 
     def test_handle_paused(self):
-        """Test the callback called when the player is paused
-        """
+        """Test the callback called when the player is paused."""
         # call the method
         self.dakara_manager.handle_paused(999, 10)
 
@@ -108,8 +99,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_server_http.update_paused.assert_called_once_with(999, 10)
 
     def test_handle_resumed(self):
-        """Test the callback called when the player resumed playing
-        """
+        """Test the callback called when the player resumed playing."""
         # call the method
         self.dakara_manager.handle_resumed(999, 10)
 
@@ -117,8 +107,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_server_http.update_resumed.assert_called_once_with(999, 10)
 
     def test_do_command_successful(self):
-        """Test the command manager for valid commands
-        """
+        """Test the command manager for valid commands."""
         # mock the playlist entry ID
         self.dakara_manager.media_player.playing_id = 42
 
@@ -144,8 +133,7 @@ class DakaraManagerTestCase(TestCase):
         self.media_player.skip.assert_called_with()
 
     def test_do_command_error(self):
-        """Test the command manager for an invalid command
-        """
+        """Test the command manager for an invalid command."""
         # call the method
         with self.assertRaises(AssertionError):
             self.dakara_manager.do_command("invalid")

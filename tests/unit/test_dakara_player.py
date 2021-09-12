@@ -9,9 +9,8 @@ from dakara_player.dakara_player import (
     DakaraWorker,
     UnsupportedMediaPlayerError,
 )
-from dakara_player.media_player.vlc import MediaPlayerVlc
 from dakara_player.media_player.mpv import MediaPlayerMpv
-
+from dakara_player.media_player.vlc import MediaPlayerVlc
 
 CONFIG = {
     "player": {
@@ -34,12 +33,10 @@ CONFIG = {
 
 
 class DakaraWorkerTestCase(TestCase):
-    """Test the `DakaraWorker` class
-    """
+    """Test the `DakaraWorker` class."""
 
     def test_init(self):
-        """Test to create the object
-        """
+        """Test to create the object."""
         stop = Event()
         errors = Queue()
 
@@ -49,12 +46,12 @@ class DakaraWorkerTestCase(TestCase):
 
         # assert effect on logs
         self.assertListEqual(
-            logger.output, ["DEBUG:dakara_player.dakara_player:Starting Dakara worker"],
+            logger.output,
+            ["DEBUG:dakara_player.dakara_player:Starting Dakara worker"],
         )
 
     def test_get_media_player_class_vlc(self):
-        """Test to get VLC as media player
-        """
+        """Test to get VLC as media player."""
         stop = Event()
         errors = Queue()
         config = deepcopy(CONFIG)
@@ -66,8 +63,7 @@ class DakaraWorkerTestCase(TestCase):
         self.assertIs(media_player_class, MediaPlayerVlc)
 
     def test_get_media_player_class_mpv(self):
-        """Test to get MPV as media player
-        """
+        """Test to get MPV as media player."""
         stop = Event()
         errors = Queue()
         config = deepcopy(CONFIG)
@@ -79,8 +75,7 @@ class DakaraWorkerTestCase(TestCase):
         self.assertIs(media_player_class, MediaPlayerMpv.from_version)
 
     def test_get_media_player_class_default(self):
-        """Test to get the default media player
-        """
+        """Test to get the default media player."""
         stop = Event()
         errors = Queue()
 
@@ -90,8 +85,7 @@ class DakaraWorkerTestCase(TestCase):
         self.assertIs(media_player_class, MediaPlayerVlc)
 
     def test_get_media_player_class_unsupported(self):
-        """Test to get an unsupported media player
-        """
+        """Test to get an unsupported media player."""
         stop = Event()
         errors = Queue()
         config = deepcopy(CONFIG)
@@ -109,7 +103,8 @@ class DakaraWorkerTestCase(TestCase):
     @patch("dakara_player.dakara_player.MediaPlayerVlc", autospec=True)
     @patch("dakara_player.dakara_player.DakaraServerHTTPConnection", autospec=True)
     @patch(
-        "dakara_player.dakara_player.DakaraServerWebSocketConnection", autospec=True,
+        "dakara_player.dakara_player.DakaraServerWebSocketConnection",
+        autospec=True,
     )
     @patch("dakara_player.dakara_player.DakaraManager", autospec=True)
     def test_run(
@@ -121,8 +116,7 @@ class DakaraWorkerTestCase(TestCase):
         mocked_font_loader_class,
         mocked_temporary_directory_class,
     ):
-        """Test a dummy run
-        """
+        """Test a dummy run."""
         # create mock instances
         mocked_dakara_server_websocket = (
             mocked_dakara_server_websocket_class.return_value.__enter__.return_value
@@ -179,12 +173,10 @@ class DakaraWorkerTestCase(TestCase):
 
 
 class DakaraPlayerTestCase(TestCase):
-    """Test the `DakaraPlayer` class
-    """
+    """Test the `DakaraPlayer` class."""
 
     def test_init(self):
-        """Test to create the object
-        """
+        """Test to create the object."""
         with self.assertLogs("dakara_player.dakara_player", "DEBUG") as logger:
             DakaraPlayer(CONFIG)
 
@@ -195,8 +187,7 @@ class DakaraPlayerTestCase(TestCase):
 
     @patch("dakara_player.dakara_player.check_version")
     def test_load(self, mocked_check_version):
-        """Test to perform side-effect actions
-        """
+        """Test to perform side-effect actions."""
         dakara_player = DakaraPlayer(CONFIG)
         dakara_player.load()
 
@@ -205,8 +196,7 @@ class DakaraPlayerTestCase(TestCase):
 
     @patch.object(DakaraPlayer, "run_safe")
     def test_run(self, mocked_run_safe):
-        """Test a dummy run
-        """
+        """Test a dummy run."""
         dakara_player = DakaraPlayer(CONFIG)
         dakara_player.run()
 

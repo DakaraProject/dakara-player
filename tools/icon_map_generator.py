@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
-import re
-import os
 import json
+import os
+import re
 from argparse import ArgumentParser
-
 
 CSS_ICON_NAME_PARSER = r"""\.fa-([^:]*?):(?=[^}]*?content:\s*['"](.*?)['"])"""
 
 
 def generate(css_file, json_file):
-    """Generate a file that contains code for character names
-    """
+    """Generate a file that contains code for character names"""
     # check css_file exists
     if not os.path.isfile(css_file):
         raise FileNotFoundError("File '{}' not found".format(css_file))
@@ -39,8 +37,7 @@ def generate(css_file, json_file):
 
 
 def get_arg_parser():
-    """Create the parser
-    """
+    """Create the parser"""
     parser = ArgumentParser("Icon map generator")
 
     parser.add_argument(

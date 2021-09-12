@@ -1,6 +1,8 @@
+"""Load fonts on user level for the media players."""
+
 import logging
-import sys
 import os
+import sys
 from abc import ABC, abstractmethod
 from contextlib import ExitStack
 
@@ -19,10 +21,10 @@ FONT_EXTENSIONS = (".ttf", ".otf")
 
 
 def get_font_loader_class():
-    """Get the font loader associated to the current platform
+    """Get the font loader associated to the current platform.
 
     Returns:
-        FontLoader: specialized version of the font loader class.
+        FontLoader: Specialized version of the font loader class.
     """
     if "linux" in sys.platform:
         return FontLoaderLinux
@@ -36,7 +38,7 @@ def get_font_loader_class():
 
 
 class FontLoader(ABC):
-    """Abstract font loader
+    """Abstract font loader.
 
     Must be specialized for a given OS.
     """
@@ -49,13 +51,11 @@ class FontLoader(ABC):
 
     @abstractmethod
     def load(self):
-        """Load the fonts
-        """
+        """Load the fonts."""
 
     @abstractmethod
     def unload(self):
-        """Unload the loaded fonts
-        """
+        """Unload the loaded fonts."""
 
     def __enter__(self):
         return self
@@ -64,10 +64,10 @@ class FontLoader(ABC):
         self.unload()
 
     def get_font_name_list(self):
-        """Extract font names in font directory
+        """Extract font names in font directory.
 
         Returns:
-            list of str: list of font names.
+            list of str: List of font names.
         """
         logger.debug("Scanning fonts directory")
         return [
@@ -78,7 +78,7 @@ class FontLoader(ABC):
 
 
 class FontLoaderLinux(FontLoader):
-    """Font loader for Linux
+    """Font loader for Linux.
 
     It symlinks fonts to load in the user fonts directory. On exit, it
     removes the created symlinks.
@@ -103,8 +103,7 @@ class FontLoaderLinux(FontLoader):
         self.fonts_loaded = []
 
     def load(self):
-        """Load the fonts
-        """
+        """Load the fonts."""
         # ensure that the user font directory exists
         try:
             os.mkdir(self.FONT_DIR_USER.expanduser())
@@ -116,18 +115,17 @@ class FontLoaderLinux(FontLoader):
         self.load_from_resources_directory()
 
     def load_from_resources_directory(self):
-        """Load all the fonts situated in the resources font directory
-        """
+        """Load all the fonts situated in the resources font directory."""
         font_file_name_list = self.get_font_name_list()
 
         logger.debug("Found %i font(s) to load", len(font_file_name_list))
         self.load_from_list(font_file_name_list)
 
     def load_from_list(self, font_file_name_list):
-        """Load the provided list of fonts
+        """Load the provided list of fonts.
 
         Args:
-            font_file_name_list (list of str): list of name of the fonts to
+            font_file_name_list (list of str): List of name of the fonts to
                 load.
         """
         # display list of fonts
@@ -142,10 +140,10 @@ class FontLoaderLinux(FontLoader):
                 self.load_font(Path(font_file_path))
 
     def load_font(self, font_file_path):
-        """Load the provided font
+        """Load the provided font.
 
         Args:
-            font_file_path (path.Path): absolute path of the font to load.
+            font_file_path (path.Path): Absolute path of the font to load.
         """
         # get font file name
         font_file_name = font_file_path.basename()
@@ -187,16 +185,15 @@ class FontLoaderLinux(FontLoader):
         )
 
     def unload(self):
-        """Remove loaded fonts
-        """
+        """Remove loaded fonts."""
         for font_path in self.fonts_loaded.copy():
             self.unload_font(font_path)
 
     def unload_font(self, font_path):
-        """Remove the provided font
+        """Remove the provided font.
 
         Args:
-            font_path (str): absolute path of the font to unload.
+            font_path (str): Absolute path of the font to unload.
         """
         try:
             font_path.unlink()
@@ -208,7 +205,7 @@ class FontLoaderLinux(FontLoader):
 
 
 class FontLoaderWindows(FontLoader):
-    """Font loader for Windows
+    """Font loader for Windows.
 
     It cannot do anything, since it is impossible to load fonts on Windows
     programatically, as for now. It simply asks the user to do so.
@@ -231,7 +228,7 @@ class FontLoaderWindows(FontLoader):
         self.output = output or sys.stdout
 
     def load(self):
-        """Prompt the user to load the fonts
+        """Prompt the user to load the fonts.
 
         Since there seems to be no workable way to load fonts on Windows
         through Python, we ask the user to do it by themselve.
@@ -251,6 +248,5 @@ class FontLoaderWindows(FontLoader):
             input()
 
     def unload(self):
-        """Promt the user to remove the fonts
-        """
+        """Promt the user to remove the fonts."""
         self.output.write("You can now remove the installed fonts\n")

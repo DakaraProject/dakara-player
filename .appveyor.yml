@@ -57,24 +57,21 @@ for:
 
     test_script:
       # run tests
-      - "if $INTEGRATION_TEST; then python -m coverage run -m pytest -v; else python -m coverage run -m pytest -v tests/unit; fi"
+      - "if $INTEGRATION_TEST; then python -m pytest -v --cov-report term; else python -m pytest -v --cov-report term tests/unit; fi"
 
       # run commands
       - "python -m dakara_player --version"
       - "dakara-play --version"
 
       # run code formatting tests
+      - "python -m isort . --check"
       - "python -m black . --check"
       - "python -m flake8"
 
     after_test:
-      # show coverage stats
-      - "python -m coverage report -m"
-
       # upload coverage stats to codecov.io
       # codecov token is stored in appveyor settings
-      - "python -m coverage xml"
-      - "python -m codecov -X gcov --file coverage.xml"
+      - "python -m codecov"
 
   - matrix:
       only:
@@ -104,20 +101,17 @@ for:
 
     test_script:
       # run tests
-      - "if %INTEGRATION_TEST% == true (py -%PYTHON% -m coverage run -m pytest -v) else (py -%PYTHON% -m coverage run -m pytest -v tests/unit)"
+      - "if %INTEGRATION_TEST% == true (py -%PYTHON% -m pytest -v --cov-report term) else (py -%PYTHON% -m pytest -v --cov-report term tests/unit)"
 
       # run commands
       - "py -%PYTHON% -m dakara_player --version"
 
       # run code formatting tests
+      - "py -%PYTHON% -m isort . --check"
       - "py -%PYTHON% -m black . --check"
       - "py -%PYTHON% -m flake8"
 
     after_test:
-      # show coverage stats
-      - "py -%PYTHON% -m coverage report -m"
-
       # upload coverage stats to codecov.io
       # codecov token is stored in appveyor settings
-      - "py -%PYTHON% -m coverage xml"
-      - "py -%PYTHON% -m codecov -X gcov --file coverage.xml"
+      - "py -%PYTHON% -m codecov"

@@ -1,16 +1,18 @@
+"""Player."""
+
 import logging
 from contextlib import ExitStack
 
-from dakara_base.safe_workers import Runner, WorkerSafeThread
 from dakara_base.exceptions import DakaraError
+from dakara_base.safe_workers import Runner, WorkerSafeThread
 from path import TempDir
 
-from dakara_player.font_loader import get_font_loader_class
 from dakara_player.dakara_manager import DakaraManager
 from dakara_player.dakara_server import (
     DakaraServerHTTPConnection,
     DakaraServerWebSocketConnection,
 )
+from dakara_player.font_loader import get_font_loader_class
 from dakara_player.media_player.mpv import MediaPlayerMpv
 from dakara_player.media_player.vlc import MediaPlayerVlc
 from dakara_player.version import check_version
@@ -26,19 +28,19 @@ logger = logging.getLogger(__name__)
 
 
 class DakaraPlayer(Runner):
-    """Class associated with the main thread
+    """Class associated with the main thread.
 
     It simply starts, launchs the worker and waits for it to terminate or for a
     user Ctrl+C to be fired.
     """
 
     def init_runner(self, config):
-        """Initialization
+        """Initialization.
 
         Creates the worker stop event.
 
         Args:
-            config (dict): configuration for the program.
+            config (dict): Configuration for the program.
         """
         # store arguments
         self.config = config
@@ -47,31 +49,29 @@ class DakaraPlayer(Runner):
         logger.debug("Started main")
 
     def load(self):
-        """Execute side-effect actions
-        """
+        """Execute side-effect actions."""
         # check version
         check_version()
 
     def run(self):
-        """Launch the worker and wait for the end
-        """
+        """Launch the worker and wait for the end."""
         self.run_safe(DakaraWorker, self.config)
 
 
 class DakaraWorker(WorkerSafeThread):
-    """Class associated with the worker thread
+    """Class associated with the worker thread.
 
     It simply starts, loads configuration, set the different worker, launches
     the main thread and waits for the end.
     """
 
     def init_worker(self, config):
-        """Initialization
+        """Initialization.
 
         Load the config and set the logger loglevel.
 
         Args:
-            config (dict): configuration for the program.
+            config (dict): Configuration for the program.
         """
         self.config = config
 
@@ -82,7 +82,7 @@ class DakaraWorker(WorkerSafeThread):
         logger.debug("Starting Dakara worker")
 
     def get_media_player_class(self):
-        """Get the class of the requested media player
+        """Get the class of the requested media player.
 
         Fallback to VLC if none was provided in config. If the requested media
         player is not known, raise an error.
@@ -102,7 +102,7 @@ class DakaraWorker(WorkerSafeThread):
             ) from error
 
     def run(self):
-        """Worker main method
+        """Worker main method.
 
         It sets up the different workers and uses them as context managers,
         which guarantee that their different clean methods will be called
@@ -173,5 +173,4 @@ class DakaraWorker(WorkerSafeThread):
 
 
 class UnsupportedMediaPlayerError(DakaraError):
-    """Raised if an unknown media player is requested
-    """
+    """Raised if an unknown media player is requested."""

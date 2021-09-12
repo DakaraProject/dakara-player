@@ -19,8 +19,9 @@ fi
 version_number=$1
 dev_version_number=$2-dev
 version_date=$(date -I -u)
+version_year=$(date +%Y -u)
 
-# patch version in setup.cfg
+# patch version and date in setup.cfg
 setup_file=setup.cfg
 sed -i "s/^version = .*$/version = $version_number/" $setup_file
 
@@ -38,8 +39,12 @@ sed -i "/^## Unreleased$/a \\
 appveyor_file=.appveyor.yml
 sed -i "s/^version: .*-{build}$/version: $version_number-{build}/" $appveyor_file
 
+# change year in license file
+license_file=LICENSE
+sed -i -e "s/(c) [0-9]\{4\}/(c) $version_year/" $license_file
+
 # create commit and tag
-git add $setup_file $version_file $changelog_file $appveyor_file
+git add $setup_file $version_file $changelog_file $appveyor_file $license_file
 git commit -m "Version $version_number" --no-verify
 git tag "$version_number"
 
