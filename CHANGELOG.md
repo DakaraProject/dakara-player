@@ -30,8 +30,13 @@
 
 ## Unreleased
 
+### Added
+
+- Fonts are automatically installed on Windows.
+
 ### Changed
 
+- Fonts are searched in system and user directories recursively.
 - Name of the command changed from `dakara-play` to `dakara-player`.
 - Play command moved from `dakara-play` to `dakara-player play`.
 

@@ -147,7 +147,7 @@ class DakaraWorkerTestCase(TestCase):
 
         # assert the call
         mocked_temporary_directory_class.assert_called_with(suffix=".dakara")
-        mocked_font_loader_class.assert_called_with()
+        mocked_font_loader_class.assert_called_with("dakara_player.resources.fonts")
         mocked_font_loader.load.assert_called_with()
         mocked_vlc_player_class.assert_called_with(stop, errors, CONFIG["player"], ANY)
         mocked_vlc_player.load.assert_called_with()
