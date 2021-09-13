@@ -3,40 +3,40 @@ from unittest.mock import call, patch
 
 from path import Path
 
-from dakara_player import user_resource_files
+from dakara_player import user_resources
 
 
 class GetUserDirectoryTestCase(TestCase):
     """Test the get_user_directory function."""
 
-    @patch("dakara_player.user_resource_files.sys.platform", "linux")
+    @patch("dakara_player.user_resources.sys.platform", "linux")
     def test_get_linux(self):
         """Test get user directory on Linux."""
         self.assertIn(
             Path(".local") / "share" / "dakara" / "player",
-            user_resource_files.get_user_directory().expand(),
+            user_resources.get_user_directory().expand(),
         )
 
-    @patch("dakara_player.user_resource_files.sys.platform", "win32")
+    @patch("dakara_player.user_resources.sys.platform", "win32")
     def test_get_windows(self):
         """Test get user directory on Windows."""
         self.assertIn(
-            Path("Dakara") / "player", user_resource_files.get_user_directory().expand()
+            Path("Dakara") / "player", user_resources.get_user_directory().expand()
         )
 
-    @patch("dakara_player.user_resource_files.sys.platform", "unknown")
+    @patch("dakara_player.user_resources.sys.platform", "unknown")
     def test_get_unknown(self):
         """Test get user directory on unknown OS."""
         with self.assertRaises(NotImplementedError):
-            user_resource_files.get_user_directory().expand()
+            user_resources.get_user_directory().expand()
 
 
 class CopyResourceTestCase(TestCase):
     """Test the copy_resource function."""
 
     @patch.object(Path, "copy", autospec=True)
-    @patch("dakara_player.user_resource_files.path", autospec=True)
-    @patch("dakara_player.user_resource_files.contents", autospec=True)
+    @patch("dakara_player.user_resources.path", autospec=True)
+    @patch("dakara_player.user_resources.contents", autospec=True)
     @patch.object(Path, "makedirs_p", autospec=True)
     @patch.object(Path, "exists", autospec=True)
     def test_copy(
@@ -55,9 +55,7 @@ class CopyResourceTestCase(TestCase):
             "path/to/file2.ext",
         ]
 
-        user_resource_files.copy_resource(
-            "package.resources", Path("destination"), False
-        )
+        user_resources.copy_resource("package.resources", Path("destination"), False)
 
         mocked_exists.assert_called_with(Path("destination"))
         mocked_makedirs_p.assert_called_with(Path("destination"))
@@ -69,10 +67,10 @@ class CopyResourceTestCase(TestCase):
             ]
         )
 
-    @patch("dakara_player.user_resource_files.input")
+    @patch("dakara_player.user_resources.input")
     @patch.object(Path, "copy", autospec=True)
-    @patch("dakara_player.user_resource_files.path", autospec=True)
-    @patch("dakara_player.user_resource_files.contents", autospec=True)
+    @patch("dakara_player.user_resources.path", autospec=True)
+    @patch("dakara_player.user_resources.contents", autospec=True)
     @patch.object(Path, "makedirs_p", autospec=True)
     @patch.object(Path, "exists", autospec=True)
     def test_copy_existing_abort(
@@ -93,19 +91,17 @@ class CopyResourceTestCase(TestCase):
         ]
         mocked_input.return_value = "no"
 
-        user_resource_files.copy_resource(
-            "package.resources", Path("destination"), False
-        )
+        user_resources.copy_resource("package.resources", Path("destination"), False)
 
         mocked_exists.assert_called_with(Path("destination"))
         mocked_makedirs_p.assert_not_called()
         mocked_contents.assert_not_called()
         mocked_copy.assert_not_called()
 
-    @patch("dakara_player.user_resource_files.input")
+    @patch("dakara_player.user_resources.input")
     @patch.object(Path, "copy", autospec=True)
-    @patch("dakara_player.user_resource_files.path", autospec=True)
-    @patch("dakara_player.user_resource_files.contents", autospec=True)
+    @patch("dakara_player.user_resources.path", autospec=True)
+    @patch("dakara_player.user_resources.contents", autospec=True)
     @patch.object(Path, "makedirs_p", autospec=True)
     @patch.object(Path, "exists", autospec=True)
     def test_copy_existing_abort_invalid(
@@ -126,19 +122,17 @@ class CopyResourceTestCase(TestCase):
         ]
         mocked_input.return_value = "aaa"
 
-        user_resource_files.copy_resource(
-            "package.resources", Path("destination"), False
-        )
+        user_resources.copy_resource("package.resources", Path("destination"), False)
 
         mocked_exists.assert_called_with(Path("destination"))
         mocked_makedirs_p.assert_not_called()
         mocked_contents.assert_not_called()
         mocked_copy.assert_not_called()
 
-    @patch("dakara_player.user_resource_files.input")
+    @patch("dakara_player.user_resources.input")
     @patch.object(Path, "copy", autospec=True)
-    @patch("dakara_player.user_resource_files.path", autospec=True)
-    @patch("dakara_player.user_resource_files.contents", autospec=True)
+    @patch("dakara_player.user_resources.path", autospec=True)
+    @patch("dakara_player.user_resources.contents", autospec=True)
     @patch.object(Path, "makedirs_p", autospec=True)
     @patch.object(Path, "exists", autospec=True)
     def test_copy_existing_overwrite(
@@ -159,9 +153,7 @@ class CopyResourceTestCase(TestCase):
         ]
         mocked_input.return_value = "yes"
 
-        user_resource_files.copy_resource(
-            "package.resources", Path("destination"), False
-        )
+        user_resources.copy_resource("package.resources", Path("destination"), False)
 
         mocked_exists.assert_called_with(Path("destination"))
         mocked_makedirs_p.assert_called_with(Path("destination"))
@@ -173,10 +165,10 @@ class CopyResourceTestCase(TestCase):
             ]
         )
 
-    @patch("dakara_player.user_resource_files.input")
+    @patch("dakara_player.user_resources.input")
     @patch.object(Path, "copy", autospec=True)
-    @patch("dakara_player.user_resource_files.path", autospec=True)
-    @patch("dakara_player.user_resource_files.contents", autospec=True)
+    @patch("dakara_player.user_resources.path", autospec=True)
+    @patch("dakara_player.user_resources.contents", autospec=True)
     @patch.object(Path, "makedirs_p", autospec=True)
     @patch.object(Path, "exists", autospec=True)
     def test_copy_existing_force(
@@ -196,9 +188,7 @@ class CopyResourceTestCase(TestCase):
             "path/to/file2.ext",
         ]
 
-        user_resource_files.copy_resource(
-            "package.resources", Path("destination"), True
-        )
+        user_resources.copy_resource("package.resources", Path("destination"), True)
 
         mocked_input.assert_not_called()
         mocked_exists.assert_not_called()
@@ -212,8 +202,8 @@ class CopyResourceTestCase(TestCase):
         )
 
 
-@patch("dakara_player.user_resource_files.get_user_directory", autospec=True)
-@patch("dakara_player.user_resource_files.copy_resource", autospec=True)
+@patch("dakara_player.user_resources.get_user_directory", autospec=True)
+@patch("dakara_player.user_resources.copy_resource", autospec=True)
 class CreateResourceFilesTestCase(TestCase):
     """Test the create_resource_files function."""
 
@@ -223,8 +213,8 @@ class CreateResourceFilesTestCase(TestCase):
     ):
         """Test to create resource files."""
         mocked_get_user_directory.return_value = Path("directory")
-        with self.assertLogs("dakara_player.user_resource_files", "DEBUG") as logger:
-            user_resource_files.create_resource_files()
+        with self.assertLogs("dakara_player.user_resources", "DEBUG") as logger:
+            user_resources.create_resource_files()
 
         mocked_makedirs_p.assert_called_with(Path("directory"))
         mocked_copy_resource.assert_has_calls(
@@ -245,7 +235,7 @@ class CreateResourceFilesTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "INFO:dakara_player.user_resource_files:Resource files "
+                "INFO:dakara_player.user_resources:Resource files "
                 "created in 'directory'"
             ],
         )

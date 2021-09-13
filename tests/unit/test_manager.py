@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import MagicMock
 
-from dakara_player.dakara_manager import DakaraManager
+from dakara_player.manager import DakaraManager
 
 
 class DakaraManagerTestCase(TestCase):

@@ -9,9 +9,9 @@ from dakara_base.safe_workers import Worker
 from path import Path
 
 from dakara_player.audio import get_audio_files
-from dakara_player.background_loader import BackgroundLoader
-from dakara_player.text_generator import TextGenerator
-from dakara_player.user_resource_files import get_user_directory
+from dakara_player.background import BackgroundLoader
+from dakara_player.text import TextGenerator
+from dakara_player.user_resources import get_user_directory
 from dakara_player.version import __version__
 
 TRANSITION_BG_NAME = "transition.png"
@@ -57,10 +57,10 @@ class MediaPlayer(Worker, ABC):
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
         text_paths (dict of path.Path): Path of the different text screens.
-        text_generator (dakara_player.text_generator.TextGenerator): Text
+        text_generator (dakara_player.text.TextGenerator): Text
             generator instance.
         background_loader
-        (dakara_player.background_loader.BackgroundLoader): Background
+        (dakara_player.background.BackgroundLoader): Background
             loader instance.
     """
 

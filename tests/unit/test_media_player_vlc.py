@@ -28,7 +28,7 @@ from dakara_player.media_player.vlc import (
     set_metadata,
 )
 from dakara_player.mrl import path_to_mrl
-from dakara_player.text_generator import TextGenerator
+from dakara_player.text import TextGenerator
 from dakara_player.window import DummyWindowManager, WindowManager
 
 

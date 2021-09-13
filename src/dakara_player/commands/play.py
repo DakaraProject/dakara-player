@@ -14,7 +14,7 @@ from dakara_base.config import (
 from dakara_base.exceptions import DakaraError
 
 from dakara_player import DakaraPlayer
-from dakara_player.user_resource_files import create_resource_files
+from dakara_player.user_resources import create_resource_files
 from dakara_player.version import __date__, __version__
 
 CONFIG_FILE = "player.yaml"

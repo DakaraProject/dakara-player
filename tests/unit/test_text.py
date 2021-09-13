@@ -10,7 +10,7 @@ try:
 except ImportError:
     from importlib_resources import path
 
-from dakara_player.text_generator import (
+from dakara_player.text import (
     TemplateNotFoundError,
     TextGenerator,
     separate_package_last_directory,
@@ -35,7 +35,7 @@ class TextGeneratorTestCase(TestCase):
         mocked_load_templates.assert_called_once_with()
 
     @patch.object(Path_pathlib, "read_text", autospec=True)
-    @patch("dakara_player.text_generator.json.loads", autospec=True)
+    @patch("dakara_player.text.json.loads", autospec=True)
     def test_load_icon_map(self, mocked_loads, mocked_read_text):
         """Test to load the icon map."""
         # create the mock
@@ -58,10 +58,10 @@ class TextGeneratorTestCase(TestCase):
         mocked_loads.assert_called_with(mocked_read_text.return_value)
 
     @patch.object(TextGenerator, "check_template", autospec=True)
-    @patch("dakara_player.text_generator.ChoiceLoader", autospec=True)
-    @patch("dakara_player.text_generator.PackageLoader", autospec=True)
-    @patch("dakara_player.text_generator.FileSystemLoader", autospec=True)
-    @patch("dakara_player.text_generator.Environment", autospec=True)
+    @patch("dakara_player.text.ChoiceLoader", autospec=True)
+    @patch("dakara_player.text.PackageLoader", autospec=True)
+    @patch("dakara_player.text.FileSystemLoader", autospec=True)
+    @patch("dakara_player.text.Environment", autospec=True)
     def test_load_templates(
         self,
         mocked_environment_class,
@@ -147,14 +147,14 @@ class TextGeneratorTestCase(TestCase):
             mocked_loader_default,
         ]
 
-        with self.assertLogs("dakara_player.text_generator", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.text", "DEBUG") as logger:
             text_generator = TextGenerator("package", filenames={"idle": "idle.ass"})
             text_generator.check_template("idle", "idle.ass")
 
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.text_generator:Loading custom idle text "
+                "DEBUG:dakara_player.text:Loading custom idle text "
                 "template file 'idle.ass'"
             ],
         )
@@ -172,14 +172,14 @@ class TextGeneratorTestCase(TestCase):
             mocked_loader_default,
         ]
 
-        with self.assertLogs("dakara_player.text_generator", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.text", "DEBUG") as logger:
             text_generator = TextGenerator("package", filenames={"idle": "idle.ass"})
             text_generator.check_template("idle", "idle.ass")
 
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.text_generator:Loading default idle "
+                "DEBUG:dakara_player.text:Loading default idle "
                 "text template file 'idle.ass'"
             ],
         )
