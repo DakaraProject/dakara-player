@@ -128,7 +128,9 @@ class DakaraWorker(WorkerSafeThread):
             tempdir = stack.enter_context(TempDir(suffix=".dakara"))
 
             # font loader
-            font_loader = stack.enter_context(FontLoader())
+            font_loader = stack.enter_context(
+                FontLoader("dakara_player.resources.fonts")
+            )
             font_loader.load()
 
             # media player

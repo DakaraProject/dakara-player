@@ -30,6 +30,14 @@
 
 ## Unreleased
 
+### Added
+
+- Fonts are automatically installed on Windows.
+
+### Changed
+
+- Fonts are searched in system and user directories recursively.
+
 ## 1.7.0 - 2021-06-20
 
 ### Update notes
