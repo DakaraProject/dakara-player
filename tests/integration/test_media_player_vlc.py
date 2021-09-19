@@ -104,6 +104,15 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
         self.assertNotEqual(METADATA_KEYS_COUNT, 0)
 
     @func_set_timeout(TIMEOUT)
+    def test_start(self):
+        """Test the initial state of the player without instructions."""
+        with self.get_instance() as (mpv_player, _, _):
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertFalse(mpv_player.is_playing_this("idle"))
+            self.assertFalse(mpv_player.is_playing_this("transition"))
+            self.assertFalse(mpv_player.is_playing_this("song"))
+
+    @func_set_timeout(TIMEOUT)
     def test_play_idle(self):
         """Test to display the idle screen."""
         with self.get_instance() as (vlc_player, temp, _):
