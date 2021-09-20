@@ -248,7 +248,13 @@ class MediaPlayerVlc(MediaPlayer):
             bool: True if VLC is playing the requested type.
         """
         media = self.player.get_media()
+
+        # if no media is in the player
         if not media:
+            return False
+
+        # if no playlist entry is supposed to play
+        if what in ("transition", "song") and not self.playlist_entry_data[what].media:
             return False
 
         return get_metadata(media)["type"] == what

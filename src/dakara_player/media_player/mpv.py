@@ -295,7 +295,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             bool: True if mpv is playing the requested type.
 
         Raises:
-            AssertError: If too many intries are present in the mpv internal
+            AssertError: If too many entries are present in the mpv internal
                 playlist.
         """
         playlist = self.player.playlist
@@ -306,12 +306,14 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         assert len(playlist) == 1, "Too many entries in mpv internal playlist"
 
         media = playlist[0]
-        path = media.get("filename")
+        media_path = media.get("filename")
 
         if what == "idle":
-            return path == self.background_loader.backgrounds["idle"]
+            return media_path == self.background_loader.backgrounds["idle"]
 
-        return path == self.playlist_entry_data[what].path
+        return (
+            media_path == self.playlist_entry_data[what].path and media_path is not None
+        )
 
     def play(self, what):
         """Request mpv to play something.
