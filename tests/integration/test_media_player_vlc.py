@@ -221,6 +221,19 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
                 self.playlist_entry1["id"]
             )
 
+            # assert the player is playing a song
+            self.assertFalse(vlc_player.is_playing_this("transition"))
+            self.assertTrue(vlc_player.is_playing_this("song"))
+            self.assertFalse(vlc_player.is_playing_this("idle"))
+
+            # wait for the media to end
+            self.wait(lambda: not vlc_player.is_playing())
+
+            # assert the player is not playing anything
+            self.assertFalse(vlc_player.is_playing_this("transition"))
+            self.assertFalse(vlc_player.is_playing_this("song"))
+            self.assertFalse(vlc_player.is_playing_this("idle"))
+
     @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry_instrumental_track(self):
         """Test to play a playlist entry using instrumental track."""
