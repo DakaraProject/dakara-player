@@ -56,7 +56,7 @@ def get_parser():
     play_subparser = subparser.add_parser(
         "play",
         description="Run the player",
-        help="Run the player",
+        help="run the player",
     )
     play_subparser.set_defaults(function=play)
 
@@ -64,7 +64,7 @@ def get_parser():
     create_config_subparser = subparser.add_parser(
         "create-config",
         description="Create a new config file in user directory",
-        help="Create a new config file in user directory",
+        help="create a new config file in user directory",
     )
     create_config_subparser.set_defaults(function=create_config)
 
@@ -79,7 +79,7 @@ def get_parser():
         "create-resources",
         description="Create resource files in user directory "
         "(for background screens, text templates)",
-        help="Create resource files in user directory",
+        help="create resource files in user directory",
     )
     create_resource_subparser.set_defaults(function=create_resources)
 
