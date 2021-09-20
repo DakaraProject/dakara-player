@@ -121,6 +121,9 @@ class DakaraManager:
 
     def play_idle_screen(self):
         """Play the idle screen."""
+        # skip currently playing file if any
+        self.media_player.skip(no_callback=True)
+
         self.media_player.play("idle")
 
     def do_command(self, command):
