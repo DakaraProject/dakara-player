@@ -410,16 +410,22 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         logger.info("Resuming play")
         self.player.pause = False
 
-    def skip(self):
+    def skip(self, no_callback=False):
         """Request to skip the current media.
 
         Can only work on transition screens or songs. mpv should
         continue playing, but media has to be considered already finished.
+
+        Args:
+            no_callback (bool): If True, no callback to signal the song has
+                finished will be executed.
         """
         if self.is_playing_this("transition") or self.is_playing_this("song"):
             logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
             self.player_data["skip"] = True
-            self.callbacks["finished"](self.playlist_entry["id"])
+            if not no_callback:
+                self.callbacks["finished"](self.playlist_entry["id"])
+
             self.clear_playlist_entry()
 
     def stop_player(self):
@@ -773,7 +779,9 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
         if what == "idle":
             return media_path == self.background_loader.backgrounds["idle"]
 
-        return media_path == self.playlist_entry_data[what].path
+        return (
+            media_path == self.playlist_entry_data[what].path and media_path is not None
+        )
 
     @safe
     def handle_end_file(self, event):

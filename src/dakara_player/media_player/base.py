@@ -265,11 +265,15 @@ class MediaPlayer(Worker, ABC):
         """
 
     @abstractmethod
-    def skip(self):
+    def skip(self, no_callback=False):
         """Request to skip the current media.
 
         Can only work on transition screens or songs. The media player should
         continue playing, but media has to be considered already finished.
+
+        Args:
+            no_callback (bool): If True, no callback to signal the song has
+                finished will be executed.
 
         Must be overriden.
         """

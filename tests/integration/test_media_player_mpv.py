@@ -92,6 +92,17 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             sleep(self.DELAY)
 
     @func_set_timeout(TIMEOUT)
+    def test_start(self):
+        """Test the initial state of the player without instructions."""
+        with self.get_instance() as (mpv_player, _, _):
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.playlist_entry_data["transition"].path)
+            self.assertIsNone(mpv_player.playlist_entry_data["song"].path)
+            self.assertFalse(mpv_player.is_playing_this("idle"))
+            self.assertFalse(mpv_player.is_playing_this("transition"))
+            self.assertFalse(mpv_player.is_playing_this("song"))
+
+    @func_set_timeout(TIMEOUT)
     def test_play_idle(self):
         """Test to display the idle screen."""
         with self.get_instance() as (mpv_player, temp, _):
@@ -650,3 +661,51 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # check media
             self.assertIsNotNone(mpv_player.player.path)
             self.assertEqual(mpv_player.player.path, self.song1_path)
+
+    @func_set_timeout(TIMEOUT)
+    def test_play_idle_after_playlist_paused(self):
+        """Test to request idle screen when playing a playlist entry on pause."""
+        with self.get_instance() as (mpv_player, _, _):
+            # mock the callbacks
+            mpv_player.set_callback("started_transition", MagicMock())
+            mpv_player.set_callback("started_song", MagicMock())
+            mpv_player.set_callback("finished", MagicMock())
+            mpv_player.set_callback("pause", MagicMock())
+            mpv_player.set_callback("resumed", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.player.path)
+
+            # request initial playlist entry to play
+            mpv_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(mpv_player, "song")
+
+            # post assertions for song
+            self.assertIsNotNone(mpv_player.playlist_entry)
+
+            # check media
+            self.assertIsNotNone(mpv_player.player.path)
+            self.assertEqual(mpv_player.player.path, self.song1_path)
+
+            # pause song
+            mpv_player.pause(True)
+
+            # wait for the media to be paused
+            self.wait_is_paused(mpv_player)
+
+            mpv_player.skip(no_callback=True)
+
+            # call the method
+            mpv_player.play("idle")
+
+            # wait for the idle screen to start
+            self.wait_is_playing(mpv_player, "idle")
+
+            # post assertions
+            self.assertIsNotNone(mpv_player.player.path)
+
+            # assert the call
+            mpv_player.callbacks["resumed"].assert_not_called()
