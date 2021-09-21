@@ -34,7 +34,7 @@ class HTTPClientDakara(HTTPClient):
     """
 
     @authenticated
-    def create_player_error(self, playlist_entry_id, message):
+    def post_player_error(self, playlist_entry_id, message):
         """Report an error to the server.
 
         Args:
@@ -62,7 +62,7 @@ class HTTPClientDakara(HTTPClient):
         )
 
     @authenticated
-    def update_finished(self, playlist_entry_id):
+    def put_status_finished(self, playlist_entry_id):
         """Report that a playlist entry has finished.
 
         Args:
@@ -85,7 +85,7 @@ class HTTPClientDakara(HTTPClient):
         )
 
     @authenticated
-    def update_started_transition(self, playlist_entry_id):
+    def put_status_started_transition(self, playlist_entry_id):
         """Report that the transition of a playlist entry has started.
 
         Args:
@@ -114,7 +114,7 @@ class HTTPClientDakara(HTTPClient):
         )
 
     @authenticated
-    def update_started_song(self, playlist_entry_id):
+    def put_status_started_song(self, playlist_entry_id):
         """Report that the song of a playlist entry has started.
 
         Args:
@@ -140,7 +140,7 @@ class HTTPClientDakara(HTTPClient):
         )
 
     @authenticated
-    def update_could_not_play(self, playlist_entry_id):
+    def put_status_could_not_play(self, playlist_entry_id):
         """Report that a playlist entry could not play.
 
         Args:
@@ -164,7 +164,7 @@ class HTTPClientDakara(HTTPClient):
         )
 
     @authenticated
-    def update_paused(self, playlist_entry_id, timing):
+    def put_status_paused(self, playlist_entry_id, timing):
         """Report that the player is paused.
 
         Args:
@@ -190,7 +190,7 @@ class HTTPClientDakara(HTTPClient):
         )
 
     @authenticated
-    def update_resumed(self, playlist_entry_id, timing):
+    def put_status_resumed(self, playlist_entry_id, timing):
         """Report that the player resumed playing.
 
         Args:

@@ -39,11 +39,11 @@ class HTTPClientDakaraTestCase(TestCase):
         self.assertEqual(self.http_client.server_url, self.url)
 
     @patch.object(HTTPClientDakara, "post")
-    def test_create_player_error_successful(self, mocked_post):
+    def test_post_player_error_successful(self, mocked_post):
         """Test to report an error sucessfuly."""
         # call the method
         with self.assertLogs("dakara_player.web_client", "DEBUG") as logger:
-            self.http_client.create_player_error(42, "message")
+            self.http_client.post_player_error(42, "message")
 
         # assert the effect on logs
         self.assertListEqual(
@@ -62,21 +62,21 @@ class HTTPClientDakaraTestCase(TestCase):
         )
 
     @patch.object(HTTPClientDakara, "post")
-    def test_create_player_error_failed(self, mocked_post):
+    def test_post_player_error_failed(self, mocked_post):
         """Test to report an invalid error."""
         # call the method
         with self.assertRaises(AssertionError):
-            self.http_client.create_player_error(None, "message")
+            self.http_client.post_player_error(None, "message")
 
         # assert the call
         mocked_post.assert_not_called()
 
     @patch.object(HTTPClientDakara, "put")
-    def test_update_finished_successful(self, mocked_put):
+    def test_put_status_finished_successful(self, mocked_put):
         """Test to report that a playlist entry finished."""
         # call the method
         with self.assertLogs("dakara_player.web_client", "DEBUG") as logger:
-            self.http_client.update_finished(42)
+            self.http_client.put_status_finished(42)
 
         # assert the effect on logs
         self.assertListEqual(
@@ -95,21 +95,21 @@ class HTTPClientDakaraTestCase(TestCase):
         )
 
     @patch.object(HTTPClientDakara, "put")
-    def test_update_finished_failed(self, mocked_put):
+    def test_put_status_finished_failed(self, mocked_put):
         """Test to report that an invalid playlist entry finished."""
         # call the method
         with self.assertRaises(AssertionError):
-            self.http_client.update_finished(None)
+            self.http_client.put_status_finished(None)
 
         # assert the call
         mocked_put.assert_not_called()
 
     @patch.object(HTTPClientDakara, "put")
-    def test_update_started_transition_successful(self, mocked_put):
+    def test_put_status_started_transition_successful(self, mocked_put):
         """Test to report that a playlist entry transition started."""
         # call the method
         with self.assertLogs("dakara_player.web_client", "DEBUG") as logger:
-            self.http_client.update_started_transition(42)
+            self.http_client.put_status_started_transition(42)
 
         # assert the effect on logs
         self.assertListEqual(
@@ -131,21 +131,21 @@ class HTTPClientDakaraTestCase(TestCase):
         )
 
     @patch.object(HTTPClientDakara, "put")
-    def test_update_started_transition_failed(self, mocked_put):
+    def test_put_status_started_transition_failed(self, mocked_put):
         """Test to report that an invalid playlist entry transition started."""
         # call the method
         with self.assertRaises(AssertionError):
-            self.http_client.update_started_transition(None)
+            self.http_client.put_status_started_transition(None)
 
         # assert the call
         mocked_put.assert_not_called()
 
     @patch.object(HTTPClientDakara, "put")
-    def test_update_started_song_successful(self, mocked_put):
+    def test_put_status_started_song_successful(self, mocked_put):
         """Test to report that a playlist entry song started."""
         # call the method
         with self.assertLogs("dakara_player.web_client", "DEBUG") as logger:
-            self.http_client.update_started_song(42)
+            self.http_client.put_status_started_song(42)
 
         # assert the effect on logs
         self.assertListEqual(
@@ -166,21 +166,21 @@ class HTTPClientDakaraTestCase(TestCase):
         )
 
     @patch.object(HTTPClientDakara, "put")
-    def test_update_started_song_failed(self, mocked_put):
+    def test_put_status_started_song_failed(self, mocked_put):
         """Test to report that an invalid playlist entry song started."""
         # call the method
         with self.assertRaises(AssertionError):
-            self.http_client.update_started_song(None)
+            self.http_client.put_status_started_song(None)
 
         # assert the call
         mocked_put.assert_not_called()
 
     @patch.object(HTTPClientDakara, "put")
-    def test_update_could_not_play_successful(self, mocked_put):
+    def test_put_status_could_not_play_successful(self, mocked_put):
         """Test to report that a playlist entry could not be played."""
         # call the method
         with self.assertLogs("dakara_player.web_client", "DEBUG") as logger:
-            self.http_client.update_could_not_play(42)
+            self.http_client.put_status_could_not_play(42)
 
         # assert the effect on logs
         self.assertListEqual(
@@ -199,21 +199,21 @@ class HTTPClientDakaraTestCase(TestCase):
         )
 
     @patch.object(HTTPClientDakara, "put")
-    def test_update_could_not_play_failed(self, mocked_put):
+    def test_put_status_could_not_play_failed(self, mocked_put):
         """Test to report that an invalid playlist entry could not be played."""
         # call the method
         with self.assertRaises(AssertionError):
-            self.http_client.update_could_not_play(None)
+            self.http_client.put_status_could_not_play(None)
 
         # assert the call
         mocked_put.assert_not_called()
 
     @patch.object(HTTPClientDakara, "put")
-    def test_update_paused_successful(self, mocked_put):
+    def test_put_status_paused_successful(self, mocked_put):
         """Test to report that the player paused."""
         # call the method
         with self.assertLogs("dakara_player.web_client", "DEBUG") as logger:
-            self.http_client.update_paused(42, 424242)
+            self.http_client.put_status_paused(42, 424242)
 
         # assert the effect on logs
         self.assertListEqual(
@@ -232,21 +232,21 @@ class HTTPClientDakaraTestCase(TestCase):
         )
 
     @patch.object(HTTPClientDakara, "put")
-    def test_update_paused_failed(self, mocked_put):
+    def test_put_status_paused_failed(self, mocked_put):
         """Test to report that the player paused with incorrect entry."""
         # call the method
         with self.assertRaises(AssertionError):
-            self.http_client.update_paused(None, 424242)
+            self.http_client.put_status_paused(None, 424242)
 
         # assert the call
         mocked_put.assert_not_called()
 
     @patch.object(HTTPClientDakara, "put")
-    def test_update_resumed_successful(self, mocked_put):
+    def test_put_status_resumed_successful(self, mocked_put):
         """Test to report that the player resumed playing."""
         # call the method
         with self.assertLogs("dakara_player.web_client", "DEBUG") as logger:
-            self.http_client.update_resumed(42, 424242)
+            self.http_client.put_status_resumed(42, 424242)
 
         # assert the effect on logs
         self.assertListEqual(
@@ -265,11 +265,11 @@ class HTTPClientDakaraTestCase(TestCase):
         )
 
     @patch.object(HTTPClientDakara, "put")
-    def test_update_resumed_failed(self, mocked_put):
+    def test_put_status_resumed_failed(self, mocked_put):
         """Test to report that the player resumed playing with incorrect entry."""
         # call the method
         with self.assertRaises(AssertionError):
-            self.http_client.update_resumed(None, 424242)
+            self.http_client.put_status_resumed(None, 424242)
 
         # assert the call
         mocked_put.assert_not_called()

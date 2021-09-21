@@ -52,7 +52,7 @@ class DakaraManager:
             playlist_entry_id (int): Playlist entry ID.
             message (str): Text describing the error.
         """
-        self.client_http.create_player_error(playlist_entry_id, message)
+        self.client_http.post_player_error(playlist_entry_id, message)
 
     def handle_finished(self, playlist_entry_id):
         """Callback when a playlist entry finishes.
@@ -60,7 +60,7 @@ class DakaraManager:
         Args:
             playlist_entry_id (int): Playlist entry ID.
         """
-        self.client_http.update_finished(playlist_entry_id)
+        self.client_http.put_status_finished(playlist_entry_id)
 
     def handle_started_transition(self, playlist_entry_id):
         """Callback when the transition of a playlist entry starts.
@@ -68,7 +68,7 @@ class DakaraManager:
         Args:
             playlist_entry_id (int): Playlist entry ID.
         """
-        self.client_http.update_started_transition(playlist_entry_id)
+        self.client_http.put_status_started_transition(playlist_entry_id)
 
     def handle_started_song(self, playlist_entry_id):
         """Callback when the song of a playlist entry starts.
@@ -76,7 +76,7 @@ class DakaraManager:
         Args:
             playlist_entry_id (int): Playlist entry ID.
         """
-        self.client_http.update_started_song(playlist_entry_id)
+        self.client_http.put_status_started_song(playlist_entry_id)
 
     def handle_could_not_play(self, playlist_entry_id):
         """Callback when a playlist entry could not play.
@@ -84,7 +84,7 @@ class DakaraManager:
         Args:
             playlist_entry_id (int): Playlist entry ID.
         """
-        self.client_http.update_could_not_play(playlist_entry_id)
+        self.client_http.put_status_could_not_play(playlist_entry_id)
 
     def handle_paused(self, playlist_entry_id, timing):
         """Callback when the player is paused.
@@ -93,7 +93,7 @@ class DakaraManager:
             playlist_entry_id (int): Playlist entry ID.
             timing (int): Position of the player in seconds.
         """
-        self.client_http.update_paused(playlist_entry_id, timing)
+        self.client_http.put_status_paused(playlist_entry_id, timing)
 
     def handle_resumed(self, playlist_entry_id, timing):
         """Callback when the player resumed playing.
@@ -102,7 +102,7 @@ class DakaraManager:
             playlist_entry_id (int): Playlist entry ID.
             timing (int): Position of the player in seconds.
         """
-        self.client_http.update_resumed(playlist_entry_id, timing)
+        self.client_http.put_status_resumed(playlist_entry_id, timing)
 
     def play_playlist_entry(self, playlist_entry):
         """Play the requested playlist entry.
