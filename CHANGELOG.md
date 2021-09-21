@@ -37,6 +37,13 @@
 ### Changed
 
 - Fonts are searched in system and user directories recursively.
+- Name of the command changed from `dakara-play` to `dakara-player`.
+- Play command moved from `dakara-play` to `dakara-player play`.
+
+### Fixed
+
+- Stopping the karaoke when a song is paused using mpv was sending a resumed callback to the server, that was rejected.
+  This behavior was fixed.
 
 ## 1.7.0 - 2021-06-20
 

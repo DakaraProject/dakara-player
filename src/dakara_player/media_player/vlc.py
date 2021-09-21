@@ -247,7 +247,17 @@ class MediaPlayerVlc(MediaPlayer):
         Returns:
             bool: True if VLC is playing the requested type.
         """
-        return get_metadata(self.player.get_media())["type"] == what
+        media = self.player.get_media()
+
+        # if no media is in the player
+        if not media:
+            return False
+
+        # if no playlist entry is supposed to play
+        if what in ("transition", "song") and not self.playlist_entry_data[what].media:
+            return False
+
+        return get_metadata(media)["type"] == what
 
     def play(self, what):
         """Request VLC to play something.
@@ -321,15 +331,21 @@ class MediaPlayerVlc(MediaPlayer):
         logger.info("Resuming play")
         self.player.play()
 
-    def skip(self):
+    def skip(self, no_callback=False):
         """Request to skip the current media.
 
         Can only work on transition screens or songs. VLC should continue
         playing, but media has to be considered already finished.
+
+        Args:
+            no_callback (bool): If True, no callback to signal the song has
+                finished will be executed.
         """
         if self.is_playing_this("transition") or self.is_playing_this("song"):
-            self.callbacks["finished"](self.playlist_entry["id"])
             logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
+            if not no_callback:
+                self.callbacks["finished"](self.playlist_entry["id"])
+
             self.clear_playlist_entry()
 
     def stop_player(self):
