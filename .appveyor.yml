@@ -61,7 +61,7 @@ for:
 
       # run commands
       - "python -m dakara_player --version"
-      - "dakara-play --version"
+      - "dakara-player --version"
 
       # run code formatting tests
       - "python -m isort . --check"

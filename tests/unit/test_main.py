@@ -7,7 +7,13 @@ from dakara_base.exceptions import DakaraError
 from path import Path
 
 from dakara_player import DakaraPlayer
-from dakara_player.commands import play
+from dakara_player.__main__ import (
+    create_config,
+    create_resources,
+    get_parser,
+    main,
+    play,
+)
 
 
 class GetParserTestCase(TestCase):
@@ -15,35 +21,35 @@ class GetParserTestCase(TestCase):
 
     def test(self):
         """Test a parser is created."""
-        parser = play.get_parser()
+        parser = get_parser()
         self.assertIsNotNone(parser)
 
-    def test_main_function(self):
-        """Test the parser calls play by default."""
+    def test_play_function(self):
+        """Test the parser calls play when prompted."""
         # call the function
-        parser = play.get_parser()
-        args = parser.parse_args([])
+        parser = get_parser()
+        args = parser.parse_args(["play"])
 
         # check the function
-        self.assertIs(args.function, play.play)
+        self.assertIs(args.function, play)
 
     def test_create_config_function(self):
         """Test the parser calls create_config when prompted."""
         # call the function
-        parser = play.get_parser()
+        parser = get_parser()
         args = parser.parse_args(["create-config"])
 
         # check the function
-        self.assertIs(args.function, play.create_config)
+        self.assertIs(args.function, create_config)
 
     def test_create_resources_function(self):
         """Test the parser calls create_resources when prompted."""
         # call the function
-        parser = play.get_parser()
+        parser = get_parser()
         args = parser.parse_args(["create-resources"])
 
         # check the function
-        self.assertIs(args.function, play.create_resources)
+        self.assertIs(args.function, create_resources)
 
 
 class PlayTestCase(TestCase):
@@ -51,9 +57,9 @@ class PlayTestCase(TestCase):
 
     @patch.object(DakaraPlayer, "run")
     @patch.object(DakaraPlayer, "load")
-    @patch("dakara_player.commands.play.load_config")
-    @patch("dakara_player.commands.play.get_config_file")
-    @patch("dakara_player.commands.play.create_logger")
+    @patch("dakara_player.__main__.load_config")
+    @patch("dakara_player.__main__.get_config_file")
+    @patch("dakara_player.__main__.create_logger")
     def test_play_config_not_found(
         self,
         mocked_create_logger,
@@ -72,7 +78,7 @@ class PlayTestCase(TestCase):
             ConfigNotFoundError,
             "Config file not found, please run 'dakara-play create-config'",
         ):
-            play.play(Namespace(debug=False, force=False, progress=True))
+            play(Namespace(debug=False, force=False, progress=True))
 
         # assert the call
         mocked_load.assert_not_called()
@@ -80,10 +86,10 @@ class PlayTestCase(TestCase):
 
     @patch.object(DakaraPlayer, "run")
     @patch.object(DakaraPlayer, "load")
-    @patch("dakara_player.commands.play.set_loglevel")
-    @patch("dakara_player.commands.play.load_config")
-    @patch("dakara_player.commands.play.get_config_file")
-    @patch("dakara_player.commands.play.create_logger")
+    @patch("dakara_player.__main__.set_loglevel")
+    @patch("dakara_player.__main__.load_config")
+    @patch("dakara_player.__main__.get_config_file")
+    @patch("dakara_player.__main__.create_logger")
     def test_play_config_incomplete(
         self,
         mocked_create_logger,
@@ -109,14 +115,14 @@ class PlayTestCase(TestCase):
 
         # call the function
         with self.assertRaisesRegex(DakaraError, "Config-related error"):
-            with self.assertLogs("dakara_player.commands.play") as logger:
-                play.play(Namespace(debug=False, force=False, progress=True))
+            with self.assertLogs("dakara_player.__main__") as logger:
+                play(Namespace(debug=False, force=False, progress=True))
 
         # assert the logs
         self.assertListEqual(
             logger.output,
             [
-                "WARNING:dakara_player.commands.play:Config may be incomplete, "
+                "WARNING:dakara_player.__main__:Config may be incomplete, "
                 "please check '{}'".format(Path("path") / "to" / "config")
             ],
         )
@@ -127,10 +133,10 @@ class PlayTestCase(TestCase):
 
     @patch.object(DakaraPlayer, "load")
     @patch.object(DakaraPlayer, "run")
-    @patch("dakara_player.commands.play.set_loglevel")
-    @patch("dakara_player.commands.play.load_config")
-    @patch("dakara_player.commands.play.get_config_file")
-    @patch("dakara_player.commands.play.create_logger")
+    @patch("dakara_player.__main__.set_loglevel")
+    @patch("dakara_player.__main__.load_config")
+    @patch("dakara_player.__main__.get_config_file")
+    @patch("dakara_player.__main__.create_logger")
     def test_play(
         self,
         mocked_create_logger,
@@ -154,7 +160,7 @@ class PlayTestCase(TestCase):
         mocked_load_config.return_value = config
 
         # call the function
-        play.play(Namespace(debug=False))
+        play(Namespace(debug=False))
 
         # assert the call
         mocked_create_logger.assert_called_with()
@@ -169,18 +175,18 @@ class PlayTestCase(TestCase):
 class CreateConfigTestCase(TestCase):
     """Test the create-config action."""
 
-    @patch("dakara_player.commands.play.create_logger")
-    @patch("dakara_player.commands.play.create_config_file")
+    @patch("dakara_player.__main__.create_logger")
+    @patch("dakara_player.__main__.create_config_file")
     def test_create_config(self, mocked_create_config_file, mocked_create_logger):
         """Test a simple create-config action."""
         # call the function
-        with self.assertLogs("dakara_player.commands.play") as logger:
-            play.create_config(Namespace(force=False))
+        with self.assertLogs("dakara_player.__main__") as logger:
+            create_config(Namespace(force=False))
 
         # assert the logs
         self.assertListEqual(
             logger.output,
-            ["INFO:dakara_player.commands.play:Please edit this file"],
+            ["INFO:dakara_player.__main__:Please edit this file"],
         )
 
         # assert the call
@@ -195,18 +201,18 @@ class CreateConfigTestCase(TestCase):
 class CreateResourcesTestCase(TestCase):
     """Test the create-resources action."""
 
-    @patch("dakara_player.commands.play.create_logger")
-    @patch("dakara_player.commands.play.create_resource_files")
+    @patch("dakara_player.__main__.create_logger")
+    @patch("dakara_player.__main__.create_resource_files")
     def test_create_config(self, mocked_create_resource_files, mocked_create_logger):
         """Test a simple create-resources action."""
         # call the function
-        with self.assertLogs("dakara_player.commands.play") as logger:
-            play.create_resources(Namespace(force=False))
+        with self.assertLogs("dakara_player.__main__") as logger:
+            create_resources(Namespace(force=False))
 
         # assert the logs
         self.assertListEqual(
             logger.output,
-            ["INFO:dakara_player.commands.play:You can now customize those files"],
+            ["INFO:dakara_player.__main__:You can now customize those files"],
         )
 
         # assert the call
@@ -216,7 +222,7 @@ class CreateResourcesTestCase(TestCase):
         mocked_create_resource_files.assert_called_with(False)
 
 
-@patch("dakara_player.commands.play.exit")
+@patch("dakara_player.__main__.exit")
 @patch.object(ArgumentParser, "parse_args")
 class MainTestCase(TestCase):
     """Test the main action."""
@@ -228,7 +234,7 @@ class MainTestCase(TestCase):
         mocked_parse_args.return_value = Namespace(function=function, debug=False)
 
         # call the function
-        play.main()
+        main()
 
         # assert the call
         function.assert_called_with(ANY)
@@ -243,16 +249,14 @@ class MainTestCase(TestCase):
         mocked_parse_args.return_value = Namespace(function=function, debug=False)
 
         # call the function
-        with self.assertLogs("dakara_player.commands.play", "DEBUG") as logger:
-            play.main()
+        with self.assertLogs("dakara_player.__main__", "DEBUG") as logger:
+            main()
 
         # assert the call
         mocked_exit.assert_called_with(1)
 
         # assert the logs
-        self.assertListEqual(
-            logger.output, ["CRITICAL:dakara_player.commands.play:error"]
-        )
+        self.assertListEqual(logger.output, ["CRITICAL:dakara_player.__main__:error"])
 
     def test_known_error_debug(self, mocked_parse_args, mocked_exit):
         """Test a known error exit in debug mode."""
@@ -264,7 +268,7 @@ class MainTestCase(TestCase):
 
         # call the function
         with self.assertRaisesRegex(DakaraError, "error message"):
-            play.main()
+            main()
 
         # assert the call
         mocked_exit.assert_not_called()
@@ -278,8 +282,8 @@ class MainTestCase(TestCase):
         mocked_parse_args.return_value = Namespace(function=function, debug=False)
 
         # call the function
-        with self.assertLogs("dakara_player.commands.play", "DEBUG") as logger:
-            play.main()
+        with self.assertLogs("dakara_player.__main__", "DEBUG") as logger:
+            main()
 
         # assert the call
         mocked_exit.assert_called_with(128)
@@ -289,7 +293,7 @@ class MainTestCase(TestCase):
             logger.output,
             [
                 ANY,
-                "CRITICAL:dakara_player.commands.play:Please fill a bug report at "
+                "CRITICAL:dakara_player.__main__:Please fill a bug report at "
                 "https://github.com/DakaraProject/dakara-player/issues",
             ],
         )
@@ -304,7 +308,7 @@ class MainTestCase(TestCase):
 
         # call the function
         with self.assertRaisesRegex(Exception, "error message"):
-            play.main()
+            main()
 
         # assert the call
         mocked_exit.assert_not_called()
