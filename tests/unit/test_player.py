@@ -4,13 +4,9 @@ from threading import Event
 from unittest import TestCase
 from unittest.mock import ANY, patch
 
-from dakara_player.dakara_player import (
-    DakaraPlayer,
-    DakaraWorker,
-    UnsupportedMediaPlayerError,
-)
 from dakara_player.media_player.mpv import MediaPlayerMpv
 from dakara_player.media_player.vlc import MediaPlayerVlc
+from dakara_player.player import DakaraPlayer, DakaraWorker, UnsupportedMediaPlayerError
 
 CONFIG = {
     "player": {
@@ -41,13 +37,13 @@ class DakaraWorkerTestCase(TestCase):
         errors = Queue()
 
         # create Dakara worker
-        with self.assertLogs("dakara_player.dakara_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.player", "DEBUG") as logger:
             DakaraWorker(stop, errors, CONFIG)
 
         # assert effect on logs
         self.assertListEqual(
             logger.output,
-            ["DEBUG:dakara_player.dakara_player:Starting Dakara worker"],
+            ["DEBUG:dakara_player.player:Starting Dakara worker"],
         )
 
     def test_get_media_player_class_vlc(self):
@@ -98,20 +94,20 @@ class DakaraWorkerTestCase(TestCase):
         ):
             worker.get_media_player_class()
 
-    @patch("dakara_player.dakara_player.TempDir", autospec=True)
-    @patch("dakara_player.dakara_player.FontLoader", autospec=True)
-    @patch("dakara_player.dakara_player.MediaPlayerVlc", autospec=True)
-    @patch("dakara_player.dakara_player.DakaraServerHTTPConnection", autospec=True)
+    @patch("dakara_player.player.TempDir", autospec=True)
+    @patch("dakara_player.player.FontLoader", autospec=True)
+    @patch("dakara_player.player.MediaPlayerVlc", autospec=True)
+    @patch("dakara_player.player.HTTPClientDakara", autospec=True)
     @patch(
-        "dakara_player.dakara_player.DakaraServerWebSocketConnection",
+        "dakara_player.player.WebSocketClientDakara",
         autospec=True,
     )
-    @patch("dakara_player.dakara_player.DakaraManager", autospec=True)
+    @patch("dakara_player.player.DakaraManager", autospec=True)
     def test_run(
         self,
         mocked_dakara_manager_class,
-        mocked_dakara_server_websocket_class,
-        mocked_dakara_server_http_class,
+        mocked_dakara_websocket_client_class,
+        mocked_dakara_http_client_class,
         mocked_vlc_player_class,
         mocked_font_loader_class,
         mocked_temporary_directory_class,
@@ -119,9 +115,9 @@ class DakaraWorkerTestCase(TestCase):
         """Test a dummy run."""
         # create mock instances
         mocked_dakara_server_websocket = (
-            mocked_dakara_server_websocket_class.return_value.__enter__.return_value
+            mocked_dakara_websocket_client_class.return_value.__enter__.return_value
         )
-        mocked_dakara_server_http = mocked_dakara_server_http_class.return_value
+        mocked_dakara_server_http = mocked_dakara_http_client_class.return_value
         mocked_dakara_server_http.get_token_header.return_value = "token"
         mocked_vlc_player = mocked_vlc_player_class.return_value.__enter__.return_value
         mocked_font_loader = (
@@ -140,7 +136,7 @@ class DakaraWorkerTestCase(TestCase):
 
         # call the method
         with patch.dict(
-            "dakara_player.dakara_player.MEDIA_PLAYER_CLASSES",
+            "dakara_player.player.MEDIA_PLAYER_CLASSES",
             {"vlc": mocked_vlc_player_class},
         ):
             dakara_worker.run()
@@ -151,12 +147,12 @@ class DakaraWorkerTestCase(TestCase):
         mocked_font_loader.load.assert_called_with()
         mocked_vlc_player_class.assert_called_with(stop, errors, CONFIG["player"], ANY)
         mocked_vlc_player.load.assert_called_with()
-        mocked_dakara_server_http_class.assert_called_with(
+        mocked_dakara_http_client_class.assert_called_with(
             CONFIG["server"], endpoint_prefix="api/", mute_raise=True
         )
         mocked_dakara_server_http.authenticate.assert_called_with()
         mocked_dakara_server_http.get_token_header.assert_called_with()
-        mocked_dakara_server_websocket_class.assert_called_with(
+        mocked_dakara_websocket_client_class.assert_called_with(
             stop,
             errors,
             CONFIG["server"],
@@ -177,15 +173,13 @@ class DakaraPlayerTestCase(TestCase):
 
     def test_init(self):
         """Test to create the object."""
-        with self.assertLogs("dakara_player.dakara_player", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.player", "DEBUG") as logger:
             DakaraPlayer(CONFIG)
 
         # assert effect on logs
-        self.assertListEqual(
-            logger.output, ["DEBUG:dakara_player.dakara_player:Started main"]
-        )
+        self.assertListEqual(logger.output, ["DEBUG:dakara_player.player:Started main"])
 
-    @patch("dakara_player.dakara_player.check_version")
+    @patch("dakara_player.player.check_version")
     def test_load(self, mocked_check_version):
         """Test to perform side-effect actions."""
         dakara_player = DakaraPlayer(CONFIG)

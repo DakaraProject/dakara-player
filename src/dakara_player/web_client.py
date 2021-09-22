@@ -9,12 +9,12 @@ from dakara_base.websocket_client import WebSocketClient
 logger = logging.getLogger(__name__)
 
 
-class DakaraServerHTTPConnection(HTTPClient):
-    """Object representing a HTTP connection with the Dakara server.
+class HTTPClientDakara(HTTPClient):
+    """HTTP client connected to the Dakara server.
 
     Example of use:
 
-    >>> http_connection = DakaraServerHTTPConnection(
+    >>> http_client = HTTPClientDakara(
     ...     {
     ...         "address": "www.example.com",
     ...         "port": 8080,
@@ -24,17 +24,17 @@ class DakaraServerHTTPConnection(HTTPClient):
     ...     enpoint_prefix="api/",
     ...     mute_raise=True,
     ... )
-    >>> http_connection.authenticate()
+    >>> http_client.authenticate()
 
     Args:
-        config (dict): Config of the server.
+        config (dict): Config of the client.
         endpoint_prefix (str): Prefix of the endpoint, added to the URL.
-        mute_raise (bool): If true, no exception will be raised when performing
-            connections with the server (but authentication), only logged.
+        mute_raise (bool): If true, no exception will be raised when sending
+            requests to the server (but authentication), only logged.
     """
 
     @authenticated
-    def create_player_error(self, playlist_entry_id, message):
+    def post_player_error(self, playlist_entry_id, message):
         """Report an error to the server.
 
         Args:
@@ -62,7 +62,7 @@ class DakaraServerHTTPConnection(HTTPClient):
         )
 
     @authenticated
-    def update_finished(self, playlist_entry_id):
+    def put_status_finished(self, playlist_entry_id):
         """Report that a playlist entry has finished.
 
         Args:
@@ -85,7 +85,7 @@ class DakaraServerHTTPConnection(HTTPClient):
         )
 
     @authenticated
-    def update_started_transition(self, playlist_entry_id):
+    def put_status_started_transition(self, playlist_entry_id):
         """Report that the transition of a playlist entry has started.
 
         Args:
@@ -114,7 +114,7 @@ class DakaraServerHTTPConnection(HTTPClient):
         )
 
     @authenticated
-    def update_started_song(self, playlist_entry_id):
+    def put_status_started_song(self, playlist_entry_id):
         """Report that the song of a playlist entry has started.
 
         Args:
@@ -140,7 +140,7 @@ class DakaraServerHTTPConnection(HTTPClient):
         )
 
     @authenticated
-    def update_could_not_play(self, playlist_entry_id):
+    def put_status_could_not_play(self, playlist_entry_id):
         """Report that a playlist entry could not play.
 
         Args:
@@ -164,7 +164,7 @@ class DakaraServerHTTPConnection(HTTPClient):
         )
 
     @authenticated
-    def update_paused(self, playlist_entry_id, timing):
+    def put_status_paused(self, playlist_entry_id, timing):
         """Report that the player is paused.
 
         Args:
@@ -190,7 +190,7 @@ class DakaraServerHTTPConnection(HTTPClient):
         )
 
     @authenticated
-    def update_resumed(self, playlist_entry_id, timing):
+    def put_status_resumed(self, playlist_entry_id, timing):
         """Report that the player resumed playing.
 
         Args:
@@ -216,8 +216,8 @@ class DakaraServerHTTPConnection(HTTPClient):
         )
 
 
-class DakaraServerWebSocketConnection(WebSocketClient):
-    """Object representing the WebSocket connection with the Dakara server.
+class WebSocketClientDakara(WebSocketClient):
+    """WebSocket client connected to the Dakara server.
 
     Example of use:
 
@@ -227,30 +227,30 @@ class DakaraServerWebSocketConnection(WebSocketClient):
     ...     "login": "player",
     ...     "password": "pass"
     ... }
-    >>> http_connection = DakaraServerWebSocketConnection(
+    >>> http_client = HTTPClientDakara(
     ...     config,
     ...     enpoint_prefix="api/",
     ... )
-    >>> http_connection.authenticate()
-    >>> header = http_connection.get_token_header()
+    >>> http_client.authenticate()
+    >>> header = http_client.get_token_header()
     >>> from thread import Event
     >>> from queue import Queue
     >>> stop = Event()
     >>> errors = Queue()
-    >>> ws_connection = DakaraServerWebSocketConnection(
+    >>> ws_client = WebSocketClientDakara(
     ...     stop,
     ...     errors,
     ...     config,
     ...     enpoint="ws/playlist",
     ...     header=header
     ... )
-    >>> ws_connection.run()
+    >>> ws_client.run()
 
     Args:
         stop (Event): Event to stop the program.
         errors (Queue): Queue of errors.
         config (dict): Configuration for the server, the same as
-            DakaraServerHTTPConnection.
+            HTTPClientDakara.
         endpoint (str): Enpoint of the WebSocket connection, added to the URL.
         header (dict): Header containing the authentication token.
     """

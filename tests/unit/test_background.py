@@ -3,10 +3,10 @@ from unittest.mock import patch
 
 from path import Path
 
-from dakara_player.background_loader import BackgroundLoader, BackgroundNotFoundError
+from dakara_player.background import BackgroundLoader, BackgroundNotFoundError
 
 
-@patch("dakara_player.background_loader.path", autospec=True)
+@patch("dakara_player.background.path", autospec=True)
 @patch.object(Path, "copy", autospec=True)
 @patch.object(Path, "exists", autospec=True)
 class BackgroundLoaderTestCase(TestCase):
@@ -35,7 +35,7 @@ class BackgroundLoaderTestCase(TestCase):
         self.assertDictEqual(loader.backgrounds, {})
 
         # load the backgrounds
-        with self.assertLogs("dakara_player.background_loader", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.background", "DEBUG") as logger:
             loader.load()
 
         # assert the backgrounds
@@ -48,8 +48,8 @@ class BackgroundLoaderTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.background_loader:Loading backgrounds",
-                "DEBUG:dakara_player.background_loader:Loading default "
+                "DEBUG:dakara_player.background:Loading backgrounds",
+                "DEBUG:dakara_player.background:Loading default "
                 "idle background file 'idle.png'",
             ],
         )
@@ -75,7 +75,7 @@ class BackgroundLoaderTestCase(TestCase):
         )
 
         # load the backgrounds
-        with self.assertLogs("dakara_player.background_loader", "DEBUG") as logger:
+        with self.assertLogs("dakara_player.background", "DEBUG") as logger:
             loader.load()
 
         # assert the backgrounds
@@ -87,8 +87,8 @@ class BackgroundLoaderTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_player.background_loader:Loading backgrounds",
-                "DEBUG:dakara_player.background_loader:Loading custom idle "
+                "DEBUG:dakara_player.background:Loading backgrounds",
+                "DEBUG:dakara_player.background:Loading custom idle "
                 "background file 'idle.png'",
             ],
         )

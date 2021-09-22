@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import MagicMock
 
-from dakara_player.dakara_manager import DakaraManager
+from dakara_player.manager import DakaraManager
 
 
 class DakaraManagerTestCase(TestCase):
@@ -15,17 +15,17 @@ class DakaraManagerTestCase(TestCase):
         self.media_player = MagicMock()
 
         # create a mock Dakara HTTP server
-        self.dakara_server_http = MagicMock()
+        self.client_http = MagicMock()
 
         # create a mock Dakara websocket server
-        self.dakara_server_websocket = MagicMock()
+        self.client_websocket = MagicMock()
 
         # create a Dakara manager
         self.dakara_manager = DakaraManager(
             self.font_loader,
             self.media_player,
-            self.dakara_server_http,
-            self.dakara_server_websocket,
+            self.client_http,
+            self.client_websocket,
         )
 
     def test_start_idle(self):
@@ -54,9 +54,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_error(999, "message")
 
         # call assertions
-        self.dakara_server_http.create_player_error.assert_called_once_with(
-            999, "message"
-        )
+        self.client_http.post_player_error.assert_called_once_with(999, "message")
 
     def test_handle_finished(self):
         """Test the callback called on song end."""
@@ -64,7 +62,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_finished(999)
 
         # call assertions
-        self.dakara_server_http.update_finished.assert_called_once_with(999)
+        self.client_http.put_status_finished.assert_called_once_with(999)
 
     def test_handle_started_transition(self):
         """Test the callback called on transition start."""
@@ -72,7 +70,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_started_transition(999)
 
         # call assertions
-        self.dakara_server_http.update_started_transition.assert_called_once_with(999)
+        self.client_http.put_status_started_transition.assert_called_once_with(999)
 
     def test_handle_started_song(self):
         """Test the callback called on song start."""
@@ -80,7 +78,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_started_song(999)
 
         # call assertions
-        self.dakara_server_http.update_started_song.assert_called_once_with(999)
+        self.client_http.put_status_started_song.assert_called_once_with(999)
 
     def test_handle_could_not_play(self):
         """Test the callback called when a playlist entry could not play."""
@@ -88,7 +86,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_could_not_play(999)
 
         # call assertions
-        self.dakara_server_http.update_could_not_play.assert_called_once_with(999)
+        self.client_http.put_status_could_not_play.assert_called_once_with(999)
 
     def test_handle_paused(self):
         """Test the callback called when the player is paused."""
@@ -96,7 +94,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_paused(999, 10)
 
         # call assertions
-        self.dakara_server_http.update_paused.assert_called_once_with(999, 10)
+        self.client_http.put_status_paused.assert_called_once_with(999, 10)
 
     def test_handle_resumed(self):
         """Test the callback called when the player resumed playing."""
@@ -104,7 +102,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.handle_resumed(999, 10)
 
         # call assertions
-        self.dakara_server_http.update_resumed.assert_called_once_with(999, 10)
+        self.client_http.put_status_resumed.assert_called_once_with(999, 10)
 
     def test_do_command_successful(self):
         """Test the command manager for valid commands."""

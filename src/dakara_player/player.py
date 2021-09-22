@@ -7,15 +7,12 @@ from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Runner, WorkerSafeThread
 from path import TempDir
 
-from dakara_player.dakara_manager import DakaraManager
-from dakara_player.dakara_server import (
-    DakaraServerHTTPConnection,
-    DakaraServerWebSocketConnection,
-)
-from dakara_player.font_loader import get_font_loader_class
+from dakara_player.font import get_font_loader_class
+from dakara_player.manager import DakaraManager
 from dakara_player.media_player.mpv import MediaPlayerMpv
 from dakara_player.media_player.vlc import MediaPlayerVlc
 from dakara_player.version import check_version
+from dakara_player.web_client import HTTPClientDakara, WebSocketClientDakara
 
 FontLoader = get_font_loader_class()
 
@@ -142,15 +139,15 @@ class DakaraWorker(WorkerSafeThread):
             media_player.load()
 
             # communication with the dakara HTTP server
-            dakara_server_http = DakaraServerHTTPConnection(
+            http_client = HTTPClientDakara(
                 self.config["server"], endpoint_prefix="api/", mute_raise=True
             )
-            dakara_server_http.authenticate()
-            token_header = dakara_server_http.get_token_header()
+            http_client.authenticate()
+            token_header = http_client.get_token_header()
 
             # communication with the dakara WebSocket server
-            dakara_server_websocket = stack.enter_context(
-                DakaraServerWebSocketConnection(
+            websocket_client = stack.enter_context(
+                WebSocketClientDakara(
                     self.stop,
                     self.errors,
                     self.config["server"],
@@ -161,11 +158,11 @@ class DakaraWorker(WorkerSafeThread):
 
             # manager for the precedent workers
             dakara_manager = DakaraManager(  # noqa F841
-                font_loader, media_player, dakara_server_http, dakara_server_websocket
+                font_loader, media_player, http_client, websocket_client
             )
 
             # start the worker timer
-            dakara_server_websocket.timer.start()
+            websocket_client.timer.start()
 
             # wait for stop event
             self.stop.wait()

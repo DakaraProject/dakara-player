@@ -12,24 +12,21 @@ class DakaraManager:
     different elements of the project with simple commands.
 
     Args:
-        font_loader (font_loader.FontLoader): Object for font
+        font_loader (font.FontLoader): Object for font
             installation/deinstallation.
         media_player (media_player.MediaPlayer): Interface to VLC.
-        dakara_server_http (dakara_server.DakaraServerHTTPConnection):
-            interface to the Dakara server for the HTTP protocol.
-        dakara_server_websocket
-            (dakara_server.DakaraServerWebSocketConnection): Interface to the
+        client_http (web_client.HTTPClientDakara): Client for the Dakara server
+            for the HTTP protocol.
+        client_websocket (web_client.WebSocketClientDakara): Client for the
             Dakara server for the Websocket protocol.
     """
 
-    def __init__(
-        self, font_loader, media_player, dakara_server_http, dakara_server_websocket
-    ):
+    def __init__(self, font_loader, media_player, client_http, client_websocket):
         # set modules up
         self.font_loader = font_loader
         self.media_player = media_player
-        self.dakara_server_http = dakara_server_http
-        self.dakara_server_websocket = dakara_server_websocket
+        self.client_http = client_http
+        self.client_websocket = client_websocket
 
         # set player callbacks
         self.media_player.set_callback(
@@ -43,14 +40,10 @@ class DakaraManager:
         self.media_player.set_callback("error", self.handle_error)
 
         # set dakara server websocket callbacks
-        self.dakara_server_websocket.set_callback("idle", self.play_idle_screen)
-        self.dakara_server_websocket.set_callback(
-            "playlist_entry", self.play_playlist_entry
-        )
-        self.dakara_server_websocket.set_callback("command", self.do_command)
-        self.dakara_server_websocket.set_callback(
-            "connection_lost", self.play_idle_screen
-        )
+        self.client_websocket.set_callback("idle", self.play_idle_screen)
+        self.client_websocket.set_callback("playlist_entry", self.play_playlist_entry)
+        self.client_websocket.set_callback("command", self.do_command)
+        self.client_websocket.set_callback("connection_lost", self.play_idle_screen)
 
     def handle_error(self, playlist_entry_id, message):
         """Callback when a media player error occurs.
@@ -59,7 +52,7 @@ class DakaraManager:
             playlist_entry_id (int): Playlist entry ID.
             message (str): Text describing the error.
         """
-        self.dakara_server_http.create_player_error(playlist_entry_id, message)
+        self.client_http.post_player_error(playlist_entry_id, message)
 
     def handle_finished(self, playlist_entry_id):
         """Callback when a playlist entry finishes.
@@ -67,7 +60,7 @@ class DakaraManager:
         Args:
             playlist_entry_id (int): Playlist entry ID.
         """
-        self.dakara_server_http.update_finished(playlist_entry_id)
+        self.client_http.put_status_finished(playlist_entry_id)
 
     def handle_started_transition(self, playlist_entry_id):
         """Callback when the transition of a playlist entry starts.
@@ -75,7 +68,7 @@ class DakaraManager:
         Args:
             playlist_entry_id (int): Playlist entry ID.
         """
-        self.dakara_server_http.update_started_transition(playlist_entry_id)
+        self.client_http.put_status_started_transition(playlist_entry_id)
 
     def handle_started_song(self, playlist_entry_id):
         """Callback when the song of a playlist entry starts.
@@ -83,7 +76,7 @@ class DakaraManager:
         Args:
             playlist_entry_id (int): Playlist entry ID.
         """
-        self.dakara_server_http.update_started_song(playlist_entry_id)
+        self.client_http.put_status_started_song(playlist_entry_id)
 
     def handle_could_not_play(self, playlist_entry_id):
         """Callback when a playlist entry could not play.
@@ -91,7 +84,7 @@ class DakaraManager:
         Args:
             playlist_entry_id (int): Playlist entry ID.
         """
-        self.dakara_server_http.update_could_not_play(playlist_entry_id)
+        self.client_http.put_status_could_not_play(playlist_entry_id)
 
     def handle_paused(self, playlist_entry_id, timing):
         """Callback when the player is paused.
@@ -100,7 +93,7 @@ class DakaraManager:
             playlist_entry_id (int): Playlist entry ID.
             timing (int): Position of the player in seconds.
         """
-        self.dakara_server_http.update_paused(playlist_entry_id, timing)
+        self.client_http.put_status_paused(playlist_entry_id, timing)
 
     def handle_resumed(self, playlist_entry_id, timing):
         """Callback when the player resumed playing.
@@ -109,7 +102,7 @@ class DakaraManager:
             playlist_entry_id (int): Playlist entry ID.
             timing (int): Position of the player in seconds.
         """
-        self.dakara_server_http.update_resumed(playlist_entry_id, timing)
+        self.client_http.put_status_resumed(playlist_entry_id, timing)
 
     def play_playlist_entry(self, playlist_entry):
         """Play the requested playlist entry.
