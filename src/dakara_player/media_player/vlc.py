@@ -372,7 +372,7 @@ class MediaPlayerVlc(MediaPlayer):
         if not self.is_playing_this("song"):
             return
 
-        timing = self.player.get_time() - BACK_FORWARD_DURATION * 1000
+        timing = int(self.player.get_time() - BACK_FORWARD_DURATION * 1000)
 
         if timing < 0:
             timing = 0
@@ -390,7 +390,7 @@ class MediaPlayerVlc(MediaPlayer):
         if not self.is_playing_this("song"):
             return
 
-        timing = self.player.get_time() + BACK_FORWARD_DURATION * 1000
+        timing = int(self.player.get_time() + BACK_FORWARD_DURATION * 1000)
 
         if timing > self.player.get_media().get_duration():
             self.skip()
