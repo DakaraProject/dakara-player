@@ -104,6 +104,14 @@ class DakaraManagerTestCase(TestCase):
         # call assertions
         self.client_http.put_status_resumed.assert_called_once_with(999, 10)
 
+    def test_handle_updated_timing(self):
+        """Test the callback called when the player updated its timing."""
+        # call the method
+        self.dakara_manager.handle_updated_timing(999, 10)
+
+        # call assertions
+        self.client_http.put_status_update_timing.assert_called_once_with(999, 10)
+
     def test_do_command_successful(self):
         """Test the command manager for valid commands."""
         # mock the playlist entry ID

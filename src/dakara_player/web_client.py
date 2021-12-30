@@ -229,7 +229,7 @@ class HTTPClientDakara(HTTPClient):
         """
         assert playlist_entry_id is not None, "Entry with ID None is invalid"
 
-        logger.debug("Telling the server the player updated its timing")
+        logger.debug("Telling the server that the player updated its timing")
 
         self.put(
             endpoint="playlist/player/status/",
@@ -238,7 +238,7 @@ class HTTPClientDakara(HTTPClient):
                 "playlist_entry_id": playlist_entry_id,
                 "timing": timing,
             },
-            message_on_error="Unable to report the player updated its timing",
+            message_on_error="Unable to report that the player updated its timing",
         )
 
 

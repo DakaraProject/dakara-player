@@ -288,6 +288,73 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
             logger.output, ["INFO:dakara_player.media_player.mpv:mpv 0.32.0"]
         )
 
+    @patch.object(MediaPlayerMpvOld, "is_playing_this")
+    def test_restart_transition(self, mocked_is_playing_this):
+        """Test to restart on transition screen."""
+        mpv_player, (mocked_instance, _, _), _ = self.get_instance()
+        player = mocked_instance.media_player_new.return_value
+
+        # mock
+        mocked_is_playing_this.return_value = False
+        player.time_pos = 42
+
+        # call method
+        mpv_player.restart()
+
+        # assert call
+        self.assertEqual(player.time_pos, 42)
+        mocked_is_playing_this.assert_called_with("song")
+
+    @patch.object(MediaPlayerMpvOld, "is_playing_this")
+    @patch.object(MediaPlayerMpvOld, "clear_playlist_entry")
+    def test_skip_idle(self, mocked_clear_playlist_entry, mocked_is_playing_this):
+        """Test to skip on idle screen."""
+        mpv_player, (mocked_instance, _, _), _ = self.get_instance()
+
+        # mock
+        mocked_is_playing_this.return_value = False
+
+        # call method
+        mpv_player.skip(True)
+
+        # assert call
+        mpv_player.clear_playlist_entry.assert_not_called()
+        mocked_is_playing_this.assert_has_calls([call("transition"), call("song")])
+
+    @patch.object(MediaPlayerMpvOld, "is_playing_this")
+    def test_back_transition(self, mocked_is_playing_this):
+        """Test to rewind on transition screen."""
+        mpv_player, (mocked_instance, _, _), _ = self.get_instance()
+        player = mocked_instance.media_player_new.return_value
+
+        # mock
+        mocked_is_playing_this.return_value = False
+        player.time_pos = 42
+
+        # call method
+        mpv_player.back()
+
+        # assert call
+        self.assertEqual(player.time_pos, 42)
+        mocked_is_playing_this.assert_called_with("song")
+
+    @patch.object(MediaPlayerMpvOld, "is_playing_this")
+    def test_forward_transition(self, mocked_is_playing_this):
+        """Test to advance on transition screen."""
+        mpv_player, (mocked_instance, _, _), _ = self.get_instance()
+        player = mocked_instance.media_player_new.return_value
+
+        # mock
+        mocked_is_playing_this.return_value = False
+        player.time_pos = 42
+
+        # call method
+        mpv_player.forward()
+
+        # assert call
+        self.assertEqual(player.time_pos, 42)
+        mocked_is_playing_this.assert_called_with("song")
+
     @patch.object(MediaPlayerMpvOld, "clear_playlist_entry")
     @patch.object(MediaPlayerMpvOld, "play")
     def test_handle_end_file_transition(self, mocked_play, mocked_clear_playlist_entry):

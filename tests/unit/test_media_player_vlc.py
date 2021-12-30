@@ -651,6 +651,69 @@ class MediaPlayerVlcTestCase(TestCase):
             player.pause.assert_not_called()
             mocked_is_playing_this.assert_called_with("idle")
 
+    @patch.object(MediaPlayerVlc, "is_playing_this")
+    def test_restart_transition(self, mocked_is_playing_this):
+        """Test to restart on transition screen."""
+        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
+            player = mocked_instance.media_player_new.return_value
+
+            # mock
+            mocked_is_playing_this.return_value = False
+
+            # call method
+            vlc_player.restart()
+
+            # assert call
+            player.set_time.assert_not_called()
+            mocked_is_playing_this.assert_called_with("song")
+
+    @patch.object(MediaPlayerVlc, "is_playing_this")
+    @patch.object(MediaPlayerVlc, "clear_playlist_entry")
+    def test_skip_idle(self, mocked_clear_playlist_entry, mocked_is_playing_this):
+        """Test to skip on idle screen."""
+        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
+            # mock
+            mocked_is_playing_this.return_value = False
+
+            # call method
+            vlc_player.skip(True)
+
+            # assert call
+            vlc_player.clear_playlist_entry.assert_not_called()
+            mocked_is_playing_this.assert_has_calls([call("transition"), call("song")])
+
+    @patch.object(MediaPlayerVlc, "is_playing_this")
+    def test_back_transition(self, mocked_is_playing_this):
+        """Test to rewind on transition screen."""
+        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
+            player = mocked_instance.media_player_new.return_value
+
+            # mock
+            mocked_is_playing_this.return_value = False
+
+            # call method
+            vlc_player.back()
+
+            # assert call
+            player.set_time.assert_not_called()
+            mocked_is_playing_this.assert_called_with("song")
+
+    @patch.object(MediaPlayerVlc, "is_playing_this")
+    def test_forward_transition(self, mocked_is_playing_this):
+        """Test to advance on transition screen."""
+        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
+            player = mocked_instance.media_player_new.return_value
+
+            # mock
+            mocked_is_playing_this.return_value = False
+
+            # call method
+            vlc_player.forward()
+
+            # assert call
+            player.set_time.assert_not_called()
+            mocked_is_playing_this.assert_called_with("song")
+
     @patch.object(MediaPlayerVlc, "create_thread")
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_end_reached_transition(

@@ -274,6 +274,39 @@ class HTTPClientDakaraTestCase(TestCase):
         # assert the call
         mocked_put.assert_not_called()
 
+    @patch.object(HTTPClientDakara, "put")
+    def test_put_status_updated_timing_successful(self, mocked_put):
+        """Test to report that the player updated its timing."""
+        # call the method
+        with self.assertLogs("dakara_player.web_client", "DEBUG") as logger:
+            self.http_client.put_status_update_timing(42, 424242)
+
+        # assert the effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player.web_client:"
+                "Telling the server that the player updated its timing"
+            ],
+        )
+
+        # assert the call
+        mocked_put.assert_called_with(
+            endpoint="playlist/player/status/",
+            data={"event": "updated_timing", "playlist_entry_id": 42, "timing": 424242},
+            message_on_error="Unable to report that the player updated its timing",
+        )
+
+    @patch.object(HTTPClientDakara, "put")
+    def test_put_status_updated_timing_failed(self, mocked_put):
+        """Test to report that the player updated its timing with incorrect entry."""
+        # call the method
+        with self.assertRaises(AssertionError):
+            self.http_client.put_status_update_timing(None, 424242)
+
+        # assert the call
+        mocked_put.assert_not_called()
+
 
 class WebSocketClientDakaraTestCase(TestCase):
     """Test the WebSocket client."""
