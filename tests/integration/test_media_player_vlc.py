@@ -513,6 +513,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             # request to restart media
             vlc_player.restart()
 
+            # check timing is 0
+            self.assertAlmostEqual(vlc_player.player.get_time(), 0, 0)
+
             # check the song is not stopped
             self.assertIsNotNone(vlc_player.playlist_entry)
             vlc_player.callbacks["finished"].assert_not_called()
@@ -668,9 +671,6 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertAlmostEqual(timing1 - timing2, BACK_FORWARD_DURATION, 1)
 
     @func_set_timeout(TIMEOUT)
-    @patch(
-        "dakara_player.media_player.vlc.BACK_FORWARD_DURATION", BACK_FORWARD_DURATION
-    )
     def test_back_song_before_start(self):
         """Test to rewind a playlist entry before its start."""
         with self.get_instance() as (vlc_player, _, _):
@@ -693,14 +693,11 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
             self.assertIsNotNone(vlc_player.playlist_entry)
 
-            # do not wait
-            timing = vlc_player.player.get_time() / 1000
-
             # request playlist entry to rewind
             vlc_player.back()
 
-            # check timing is earlier than previously
-            self.assertLess(vlc_player.player.get_time() / 1000, timing)
+            # check timing is 0
+            self.assertAlmostEqual(vlc_player.player.get_time(), 0, 0)
 
     @func_set_timeout(TIMEOUT)
     @patch(

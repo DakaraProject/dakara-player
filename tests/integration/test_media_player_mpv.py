@@ -416,7 +416,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # request playlist entry to restart
             mpv_player.restart()
 
-            # check timing is earlier than previously
+            # check timing is 0
             self.assertAlmostEqual(mpv_player.player.time_pos, 0, 0)
 
             # check the song is not stopped
@@ -761,9 +761,6 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             )
 
     @func_set_timeout(TIMEOUT)
-    @patch(
-        "dakara_player.media_player.mpv.BACK_FORWARD_DURATION", BACK_FORWARD_DURATION
-    )
     def test_back_song_before_start(self):
         """Test to rewind a playlist entry before its start."""
         with self.get_instance() as (mpv_player, _, _):
@@ -784,14 +781,11 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # post assertions for song
             self.assertIsNotNone(mpv_player.playlist_entry)
 
-            # do not wait
-            timing = mpv_player.player.time_pos
-
             # request playlist entry to rewind
             mpv_player.back()
 
-            # check timing is earlier than previously
-            self.assertLess(mpv_player.player.time_pos, timing)
+            # check timing is 0
+            self.assertAlmostEqual(mpv_player.player.time_pos, 0, 0)
 
     @func_set_timeout(TIMEOUT)
     @patch(
