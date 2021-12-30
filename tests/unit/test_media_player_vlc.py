@@ -366,12 +366,12 @@ class MediaPlayerVlcTestCase(TestCase):
                 logger.output, ["INFO:dakara_player.media_player.vlc:VLC 3.0.0 NoName"]
             )
 
-    @patch.object(Path, "exists")
-    def test_set_playlist_entry_error_file(self, mocked_exists):
+    @patch.object(Path, "isfile")
+    def test_set_playlist_entry_error_file(self, mocked_isfile):
         """Test to set a playlist entry that does not exist."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the system call
-            mocked_exists.return_value = False
+            mocked_isfile.return_value = False
 
             # mock the callbacks
             vlc_player.set_callback("could_not_play", MagicMock())
@@ -385,7 +385,7 @@ class MediaPlayerVlcTestCase(TestCase):
                 vlc_player.set_playlist_entry(self.playlist_entry)
 
             # call assertions
-            mocked_exists.assert_called_once_with()
+            mocked_isfile.assert_called_once_with()
 
             # post assertions
             self.assertIsNone(vlc_player.playlist_entry)
@@ -409,10 +409,10 @@ class MediaPlayerVlcTestCase(TestCase):
     @patch.object(MediaPlayerVlc, "manage_instrumental")
     @patch.object(MediaPlayerVlc, "play")
     @patch.object(MediaPlayerVlc, "generate_text")
-    @patch.object(Path, "exists")
+    @patch.object(Path, "isfile")
     def test_set_playlist_entry(
         self,
-        mocked_exists,
+        mocked_isfile,
         mocked_generate_text,
         mocked_play,
         mocked_manage_instrumental,
@@ -422,7 +422,7 @@ class MediaPlayerVlcTestCase(TestCase):
         """Test to set a playlist entry."""
         with self.get_instance() as (vlc_player, (_, mocked_background_loader, _), _):
             # setup mocks
-            mocked_exists.return_value = True
+            mocked_isfile.return_value = True
             mocked_background_loader.backgrounds = {
                 "transition": Path(gettempdir()) / "transition.png"
             }
@@ -446,7 +446,7 @@ class MediaPlayerVlcTestCase(TestCase):
             vlc_player.callbacks["error"].assert_not_called()
 
             # assert mocks
-            mocked_exists.assert_called_with()
+            mocked_isfile.assert_called_with()
             mocked_generate_text.assert_called_with("transition")
             mocked_play.assert_called_with("transition")
             mocked_manage_instrumental.assert_not_called()

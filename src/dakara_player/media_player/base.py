@@ -298,7 +298,7 @@ class MediaPlayer(Worker, ABC):
         """
         file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
 
-        if not file_path.exists():
+        if not file_path.isfile():
             logger.error("File not found '%s'", file_path)
             self.callbacks["error"](playlist_entry["id"], "File not found")
             self.callbacks["could_not_play"](playlist_entry["id"])
