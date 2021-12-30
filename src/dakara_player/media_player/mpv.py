@@ -449,7 +449,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         """Request to rewind a few seconds back in the media.
 
         Can only work on songs. It cannot rewind before the beginning of the
-        media.
+        media. In that case, restart the song.
         """
         if not self.is_playing_this("song"):
             return
@@ -457,7 +457,8 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         timing = self.player.time_pos - BACK_FORWARD_DURATION
 
         if timing < 0:
-            timing = 0
+            self.restart()
+            return
 
         logger.info("Rewinding in time")
         self.player.time_pos = timing

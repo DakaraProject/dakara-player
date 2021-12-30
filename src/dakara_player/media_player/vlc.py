@@ -367,7 +367,7 @@ class MediaPlayerVlc(MediaPlayer):
         """Request to rewind a few seconds back in the media.
 
         Can only work on songs. It cannot rewind before the beginning of the
-        media.
+        media. In that case, restart the song.
         """
         if not self.is_playing_this("song"):
             return
@@ -375,7 +375,8 @@ class MediaPlayerVlc(MediaPlayer):
         timing = int(self.player.get_time() - BACK_FORWARD_DURATION * 1000)
 
         if timing < 0:
-            timing = 0
+            self.restart()
+            return
 
         logger.info("Rewinding in time")
         self.player.set_time(timing)
