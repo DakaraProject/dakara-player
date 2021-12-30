@@ -14,6 +14,7 @@ except ImportError:
     mpv = None
 
 from dakara_player.media_player.base import (
+    BACK_FORWARD_DURATION,
     InvalidStateError,
     MediaPlayer,
     VersionNotFoundError,
@@ -412,6 +413,18 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         logger.info("Resuming play")
         self.player.pause = False
 
+    def restart(self):
+        """Request to restart the current media.
+
+        Can only work on songs.
+        """
+        if not self.is_playing_this("song"):
+            return
+
+        logger.info("Restarting song")
+        self.player.time_pos = 0
+        self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
+
     def skip(self, no_callback=False):
         """Request to skip the current media.
 
@@ -422,13 +435,52 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             no_callback (bool): If True, no callback to signal the song has
                 finished will be executed.
         """
-        if self.is_playing_this("transition") or self.is_playing_this("song"):
-            logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
-            self.player_data["skip"] = True
-            if not no_callback:
-                self.callbacks["finished"](self.playlist_entry["id"])
+        if not (self.is_playing_this("transition") or self.is_playing_this("song")):
+            return
 
-            self.clear_playlist_entry()
+        logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
+        self.player_data["skip"] = True
+        if not no_callback:
+            self.callbacks["finished"](self.playlist_entry["id"])
+
+        self.clear_playlist_entry()
+
+    def back(self):
+        """Request to rewind a few seconds back in the media.
+
+        Can only work on songs. It cannot rewind before the beginning of the
+        media.
+        """
+        if not self.is_playing_this("song"):
+            return
+
+        timing = self.player.time_pos - BACK_FORWARD_DURATION
+
+        if timing < 0:
+            timing = 0
+
+        logger.info("Rewinding in time")
+        self.player.time_pos = timing
+        self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
+
+    def forward(self):
+        """Request to advance a few seconds in the media.
+
+        Can only work on songs. It cannot advance passed the end of the media.
+        In that case, skip the song.
+        """
+        if not self.is_playing_this("song"):
+            return
+
+        timing = self.player.time_pos + BACK_FORWARD_DURATION
+
+        if timing > self.player.duration:
+            self.skip()
+            return
+
+        logger.info("Advancing in time")
+        self.player.time_pos = timing
+        self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
 
     def stop_player(self):
         """Request to stop mpv."""

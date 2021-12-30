@@ -215,6 +215,32 @@ class HTTPClientDakara(HTTPClient):
             message_on_error="Unable to report that the player resumed playing",
         )
 
+    @authenticated
+    def put_status_update_timing(self, playlist_entry_id, timing):
+        """Report that the player updated its timing.
+
+        Args:
+            playlist_entry_id (int): ID of the playlist entry. Must not be
+                `None`.
+            timing (int): Progress of the player in seconds.
+
+        Raises:
+            AssertError: If `playlist_entry_id` is `None`.
+        """
+        assert playlist_entry_id is not None, "Entry with ID None is invalid"
+
+        logger.debug("Telling the server the player updated its timing")
+
+        self.put(
+            endpoint="playlist/player/status/",
+            data={
+                "event": "updated_timing",
+                "playlist_entry_id": playlist_entry_id,
+                "timing": timing,
+            },
+            message_on_error="Unable to report the player updated its timing",
+        )
+
 
 class WebSocketClientDakara(WebSocketClient):
     """WebSocket client connected to the Dakara server.

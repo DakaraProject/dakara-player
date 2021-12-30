@@ -3,7 +3,7 @@ from queue import Queue
 from threading import Event
 from time import sleep
 from unittest import skipUnless
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from func_timeout import func_set_timeout
 from path import TempDir
@@ -16,6 +16,8 @@ from dakara_player.media_player.base import (
 )
 from dakara_player.media_player.mpv import MediaPlayerMpv
 from tests.integration.base import TestCasePollerKara
+
+BACK_FORWARD_DURATION = 0.2
 
 
 @skipUnless(MediaPlayerMpv.is_available(), "mpv not installed")
@@ -386,6 +388,47 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.callbacks["resumed"].assert_not_called()
 
     @func_set_timeout(TIMEOUT)
+    def test_restart_song(self):
+        """Test to restart a playlist entry."""
+        with self.get_instance() as (mpv_player, _, _):
+            # mock the callbacks
+            mpv_player.set_callback("started_transition", MagicMock())
+            mpv_player.set_callback("started_song", MagicMock())
+            mpv_player.set_callback("finished", MagicMock())
+            mpv_player.set_callback("updated_timing", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.player.path)
+
+            # request playlist entry to play
+            mpv_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(mpv_player, "song")
+
+            # post assertions for song
+            self.assertIsNotNone(mpv_player.playlist_entry)
+
+            # wait a bit for the player to play
+            self.wait(lambda: mpv_player.player.time_pos >= BACK_FORWARD_DURATION)
+
+            # request playlist entry to restart
+            mpv_player.restart()
+
+            # check timing is earlier than previously
+            self.assertAlmostEqual(mpv_player.player.time_pos, 0, 0)
+
+            # check the song is not stopped
+            self.assertIsNotNone(mpv_player.playlist_entry)
+            mpv_player.callbacks["finished"].assert_not_called()
+
+            # assert callback
+            mpv_player.callbacks["updated_timing"].assert_called_with(
+                self.playlist_entry1["id"], 0
+            )
+
+    @func_set_timeout(TIMEOUT)
     def test_skip_song(self):
         """Test to skip a playlist entry."""
         with self.get_instance() as (mpv_player, _, _):
@@ -674,6 +717,153 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # check media
             self.assertIsNotNone(mpv_player.player.path)
             self.assertEqual(mpv_player.player.path, self.song1_path)
+
+    @func_set_timeout(TIMEOUT)
+    @patch(
+        "dakara_player.media_player.mpv.BACK_FORWARD_DURATION", BACK_FORWARD_DURATION
+    )
+    def test_back_song(self):
+        """Test to rewind a playlist entry."""
+        with self.get_instance() as (mpv_player, _, _):
+            # mock the callbacks
+            mpv_player.set_callback("started_transition", MagicMock())
+            mpv_player.set_callback("started_song", MagicMock())
+            mpv_player.set_callback("updated_timing", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.player.path)
+
+            # request playlist entry to play
+            mpv_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(mpv_player, "song")
+
+            # post assertions for song
+            self.assertIsNotNone(mpv_player.playlist_entry)
+
+            # wait a bit for the player to play
+            self.wait(lambda: mpv_player.player.time_pos >= BACK_FORWARD_DURATION * 2)
+            timing1 = mpv_player.player.time_pos
+
+            # request playlist entry to rewind
+            mpv_player.back()
+
+            # check timing is earlier than previously
+            timing2 = mpv_player.player.time_pos
+            self.assertLess(timing2, timing1)
+            self.assertAlmostEqual(timing1 - timing2, BACK_FORWARD_DURATION, 1)
+
+            # assert callback
+            mpv_player.callbacks["updated_timing"].assert_called_with(
+                self.playlist_entry1["id"], int(timing2)
+            )
+
+    @func_set_timeout(TIMEOUT)
+    @patch(
+        "dakara_player.media_player.mpv.BACK_FORWARD_DURATION", BACK_FORWARD_DURATION
+    )
+    def test_back_song_before_start(self):
+        """Test to rewind a playlist entry before its start."""
+        with self.get_instance() as (mpv_player, _, _):
+            # mock the callbacks
+            mpv_player.set_callback("started_transition", MagicMock())
+            mpv_player.set_callback("started_song", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.player.path)
+
+            # request playlist entry to play
+            mpv_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(mpv_player, "song")
+
+            # post assertions for song
+            self.assertIsNotNone(mpv_player.playlist_entry)
+
+            # do not wait
+            timing = mpv_player.player.time_pos
+
+            # request playlist entry to rewind
+            mpv_player.back()
+
+            # check timing is earlier than previously
+            self.assertLess(mpv_player.player.time_pos, timing)
+
+    @func_set_timeout(TIMEOUT)
+    @patch(
+        "dakara_player.media_player.mpv.BACK_FORWARD_DURATION", BACK_FORWARD_DURATION
+    )
+    def test_forward_song(self):
+        """Test to advance a playlist entry."""
+        with self.get_instance() as (mpv_player, _, _):
+            # mock the callbacks
+            mpv_player.set_callback("started_transition", MagicMock())
+            mpv_player.set_callback("started_song", MagicMock())
+            mpv_player.set_callback("updated_timing", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.player.path)
+
+            # request playlist entry to play
+            mpv_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(mpv_player, "song")
+
+            # post assertions for song
+            self.assertIsNotNone(mpv_player.playlist_entry)
+
+            # wait a bit for the player to play
+            self.wait(lambda: mpv_player.player.time_pos >= BACK_FORWARD_DURATION * 2)
+            timing1 = mpv_player.player.time_pos
+
+            # request playlist entry to advance
+            mpv_player.forward()
+
+            # check timing is later than previously
+            timing2 = mpv_player.player.time_pos
+            self.assertGreater(timing2, timing1)
+            self.assertAlmostEqual(timing2 - timing1, BACK_FORWARD_DURATION, 1)
+
+            # assert callback
+            mpv_player.callbacks["updated_timing"].assert_called_with(
+                self.playlist_entry1["id"], int(timing2)
+            )
+
+    @func_set_timeout(TIMEOUT)
+    def test_forward_song_after_end(self):
+        """Test to advance a playlist entry after its end."""
+        with self.get_instance() as (mpv_player, _, _):
+            # mock the callbacks
+            mpv_player.set_callback("started_transition", MagicMock())
+            mpv_player.set_callback("started_song", MagicMock())
+            mpv_player.set_callback("finished", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.player.path)
+
+            # request playlist entry to play
+            mpv_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(mpv_player, "song")
+
+            # post assertions for song
+            self.assertIsNotNone(mpv_player.playlist_entry)
+
+            # request playlist entry to advance
+            mpv_player.forward()
+
+            # check the song has finished
+            mpv_player.callbacks["finished"].assert_called_with(
+                self.playlist_entry1["id"]
+            )
 
     @func_set_timeout(TIMEOUT)
     def test_play_idle_after_playlist_paused(self):

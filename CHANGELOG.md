@@ -33,6 +33,7 @@
 ### Added
 
 - Fonts are automatically installed on Windows.
+- Songs can be restarted, rewinded, or advanced during playback.
 
 ### Changed
 

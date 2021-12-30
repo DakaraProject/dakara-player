@@ -20,6 +20,7 @@ except (ImportError, OSError):
     libvlc_get_version = None
 
 from dakara_player.media_player.base import (
+    BACK_FORWARD_DURATION,
     InvalidStateError,
     MediaPlayer,
     VersionNotFoundError,
@@ -331,6 +332,18 @@ class MediaPlayerVlc(MediaPlayer):
         logger.info("Resuming play")
         self.player.play()
 
+    def restart(self):
+        """Request to restart the current media.
+
+        Can only work on songs.
+        """
+        if not self.is_playing_this("song"):
+            return
+
+        logger.info("Restarting song")
+        self.player.set_time(0)
+        self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
+
     def skip(self, no_callback=False):
         """Request to skip the current media.
 
@@ -341,12 +354,51 @@ class MediaPlayerVlc(MediaPlayer):
             no_callback (bool): If True, no callback to signal the song has
                 finished will be executed.
         """
-        if self.is_playing_this("transition") or self.is_playing_this("song"):
-            logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
-            if not no_callback:
-                self.callbacks["finished"](self.playlist_entry["id"])
+        if not (self.is_playing_this("transition") or self.is_playing_this("song")):
+            return
 
-            self.clear_playlist_entry()
+        logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
+        if not no_callback:
+            self.callbacks["finished"](self.playlist_entry["id"])
+
+        self.clear_playlist_entry()
+
+    def back(self):
+        """Request to rewind a few seconds back in the media.
+
+        Can only work on songs. It cannot rewind before the beginning of the
+        media.
+        """
+        if not self.is_playing_this("song"):
+            return
+
+        timing = self.player.get_time() - BACK_FORWARD_DURATION * 1000
+
+        if timing < 0:
+            timing = 0
+
+        logger.info("Rewinding in time")
+        self.player.set_time(timing)
+        self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
+
+    def forward(self):
+        """Request to advance a few seconds in the media.
+
+        Can only work on songs. It cannot advance passed the end of the media.
+        In that case, skip the song.
+        """
+        if not self.is_playing_this("song"):
+            return
+
+        timing = self.player.get_time() + BACK_FORWARD_DURATION * 1000
+
+        if timing > self.player.get_media().get_duration():
+            self.skip()
+            return
+
+        logger.info("Advancing in time")
+        self.player.set_time(timing)
+        self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
 
     def stop_player(self):
         """Request to stop VLC."""

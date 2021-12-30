@@ -24,6 +24,8 @@ IDLE_DURATION = 300
 
 PLAYER_CLOSING_DURATION = 3
 
+BACK_FORWARD_DURATION = 10
+
 
 logger = logging.getLogger(__name__)
 
@@ -265,6 +267,15 @@ class MediaPlayer(Worker, ABC):
         """
 
     @abstractmethod
+    def restart(self):
+        """Request to restart the current media.
+
+        Can only work on songs.
+
+        Must be overriden.
+        """
+
+    @abstractmethod
     def skip(self, no_callback=False):
         """Request to skip the current media.
 
@@ -274,6 +285,23 @@ class MediaPlayer(Worker, ABC):
         Args:
             no_callback (bool): If True, no callback to signal the song has
                 finished will be executed.
+
+        Must be overriden.
+        """
+
+    @abstractmethod
+    def back(self):
+        """Request to rewind a few seconds back in the media.
+
+        Can only work on songs. It cannot rewind before the beginning of the media.
+
+        Must be overriden.
+        """
+
+    def forward(self):
+        """Request to advance a few seconds in the media.
+
+        Can only work on songs. It cannot advance passed the end of the media.
 
         Must be overriden.
         """
@@ -394,6 +422,7 @@ class MediaPlayer(Worker, ABC):
         self.set_callback("paused", lambda playlist_entry_id, timing: None)
         self.set_callback("resumed", lambda playlist_entry_id, timing: None)
         self.set_callback("error", lambda playlist_entry_id, message: None)
+        self.set_callback("updated_timing", lambda playlist_entry_id, timing: None)
 
     def exit_worker(self, *args, **kwargs):
         """Exit the worker.

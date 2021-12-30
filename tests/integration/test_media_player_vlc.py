@@ -2,7 +2,7 @@ from contextlib import ExitStack, contextmanager
 from queue import Queue
 from threading import Event
 from unittest import skipIf, skipUnless
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 try:
     import vlc
@@ -17,6 +17,8 @@ from dakara_player.media_player.base import IDLE_BG_NAME, TRANSITION_BG_NAME
 from dakara_player.media_player.vlc import METADATA_KEYS_COUNT, MediaPlayerVlc
 from dakara_player.mrl import mrl_to_path
 from tests.integration.base import TestCasePollerKara
+
+BACK_FORWARD_DURATION = 0.5
 
 
 @skipUnless(MediaPlayerVlc.is_available(), "VLC not installed")
@@ -106,11 +108,11 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     @func_set_timeout(TIMEOUT)
     def test_start(self):
         """Test the initial state of the player without instructions."""
-        with self.get_instance() as (mpv_player, _, _):
-            self.assertIsNone(mpv_player.playlist_entry)
-            self.assertFalse(mpv_player.is_playing_this("idle"))
-            self.assertFalse(mpv_player.is_playing_this("transition"))
-            self.assertFalse(mpv_player.is_playing_this("song"))
+        with self.get_instance() as (vlc_player, _, _):
+            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertFalse(vlc_player.is_playing_this("idle"))
+            self.assertFalse(vlc_player.is_playing_this("transition"))
+            self.assertFalse(vlc_player.is_playing_this("song"))
 
     @func_set_timeout(TIMEOUT)
     def test_play_idle(self):
@@ -479,6 +481,48 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.callbacks["resumed"].assert_not_called()
 
     @func_set_timeout(TIMEOUT)
+    def test_restart_song(self):
+        """Test to restart a playlist entry."""
+        with self.get_instance() as (vlc_player, _, _):
+            # mock the callbacks
+            vlc_player.set_callback("started_transition", MagicMock())
+            vlc_player.set_callback("started_song", MagicMock())
+            vlc_player.set_callback("finished", MagicMock())
+            vlc_player.set_callback("updated_timing", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.player.get_media())
+            self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
+
+            # request playlist entry to play
+            vlc_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(vlc_player, "song")
+
+            # post assertions for song
+            self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
+            self.assertIsNotNone(vlc_player.playlist_entry)
+
+            # wait a bit for the player to play
+            self.wait(
+                lambda: vlc_player.player.get_time() >= BACK_FORWARD_DURATION * 1000
+            )
+
+            # request to restart media
+            vlc_player.restart()
+
+            # check the song is not stopped
+            self.assertIsNotNone(vlc_player.playlist_entry)
+            vlc_player.callbacks["finished"].assert_not_called()
+
+            # assert callback
+            vlc_player.callbacks["updated_timing"].assert_called_with(
+                self.playlist_entry1["id"], 0
+            )
+
+    @func_set_timeout(TIMEOUT)
     def test_skip_song(self):
         """Test to skip a playlist entry."""
         with self.get_instance() as (vlc_player, _, _):
@@ -581,3 +625,157 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             # check media path
             file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song2_path)
+
+    @func_set_timeout(TIMEOUT)
+    @patch(
+        "dakara_player.media_player.vlc.BACK_FORWARD_DURATION", BACK_FORWARD_DURATION
+    )
+    def test_back_song(self):
+        """Test to rewind a playlist entry."""
+        with self.get_instance() as (vlc_player, _, _):
+            # mock the callbacks
+            vlc_player.set_callback("started_transition", MagicMock())
+            vlc_player.set_callback("started_song", MagicMock())
+            vlc_player.set_callback("updated_timing", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.player.get_media())
+            self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
+
+            # request playlist entry to play
+            vlc_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(vlc_player, "song")
+
+            # post assertions for song
+            self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
+            self.assertIsNotNone(vlc_player.playlist_entry)
+
+            # wait a bit for the player to play
+            self.wait(
+                lambda: vlc_player.player.get_time() >= BACK_FORWARD_DURATION * 2 * 1000
+            )
+            timing1 = vlc_player.player.get_time() / 1000
+
+            # request playlist entry to rewind
+            vlc_player.back()
+
+            # check timing is earlier than previously
+            timing2 = vlc_player.player.get_time() / 1000
+            self.assertLess(timing2, timing1)
+            self.assertAlmostEqual(timing1 - timing2, BACK_FORWARD_DURATION, 1)
+
+    @func_set_timeout(TIMEOUT)
+    @patch(
+        "dakara_player.media_player.vlc.BACK_FORWARD_DURATION", BACK_FORWARD_DURATION
+    )
+    def test_back_song_before_start(self):
+        """Test to rewind a playlist entry before its start."""
+        with self.get_instance() as (vlc_player, _, _):
+            # mock the callbacks
+            vlc_player.set_callback("started_transition", MagicMock())
+            vlc_player.set_callback("started_song", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.player.get_media())
+            self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
+
+            # request playlist entry to play
+            vlc_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(vlc_player, "song")
+
+            # post assertions for song
+            self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
+            self.assertIsNotNone(vlc_player.playlist_entry)
+
+            # do not wait
+            timing = vlc_player.player.get_time() / 1000
+
+            # request playlist entry to rewind
+            vlc_player.back()
+
+            # check timing is earlier than previously
+            self.assertLess(vlc_player.player.get_time() / 1000, timing)
+
+    @func_set_timeout(TIMEOUT)
+    @patch(
+        "dakara_player.media_player.vlc.BACK_FORWARD_DURATION", BACK_FORWARD_DURATION
+    )
+    def test_forward_song(self):
+        """Test to advance a playlist entry."""
+        with self.get_instance() as (vlc_player, _, _):
+            # mock the callbacks
+            vlc_player.set_callback("started_transition", MagicMock())
+            vlc_player.set_callback("started_song", MagicMock())
+            vlc_player.set_callback("updated_timing", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.player.get_media())
+            self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
+
+            # request playlist entry to play
+            vlc_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(vlc_player, "song")
+
+            # post assertions for song
+            self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
+            self.assertIsNotNone(vlc_player.playlist_entry)
+
+            # wait a bit for the player to play
+            self.wait(
+                lambda: vlc_player.player.get_time() >= BACK_FORWARD_DURATION * 2 * 1000
+            )
+            timing1 = vlc_player.player.get_time() / 1000
+
+            # request playlist entry to advance
+            vlc_player.forward()
+
+            # check timing is earlier than previously
+            timing2 = vlc_player.player.get_time() / 1000
+            self.assertGreater(timing2, timing1)
+            self.assertAlmostEqual(timing2 - timing1, BACK_FORWARD_DURATION, 1)
+
+            # assert callback
+            vlc_player.callbacks["updated_timing"].assert_called_with(
+                self.playlist_entry1["id"], int(timing2)
+            )
+
+    @func_set_timeout(TIMEOUT)
+    def test_forward_song_after_end(self):
+        """Test to advance a playlist entry after its end."""
+        with self.get_instance() as (vlc_player, _, _):
+            # mock the callbacks
+            vlc_player.set_callback("started_transition", MagicMock())
+            vlc_player.set_callback("started_song", MagicMock())
+            vlc_player.set_callback("finished", MagicMock())
+
+            # pre assertions
+            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.player.get_media())
+            self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
+
+            # request playlist entry to play
+            vlc_player.set_playlist_entry(self.playlist_entry1)
+
+            # wait for the media to start
+            self.wait_is_playing(vlc_player, "song")
+
+            # post assertions for song
+            self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
+            self.assertIsNotNone(vlc_player.playlist_entry)
+
+            # request playlist entry to advance
+            vlc_player.forward()
+
+            # check the song has finished
+            vlc_player.callbacks["finished"].assert_called_with(
+                self.playlist_entry1["id"]
+            )
