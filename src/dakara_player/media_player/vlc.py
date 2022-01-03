@@ -20,7 +20,6 @@ except (ImportError, OSError):
     libvlc_get_version = None
 
 from dakara_player.media_player.base import (
-    BACK_FORWARD_DURATION,
     InvalidStateError,
     MediaPlayer,
     VersionNotFoundError,
@@ -373,7 +372,7 @@ class MediaPlayerVlc(MediaPlayer):
         if not self.is_playing_this("song"):
             return
 
-        timing = int(self.player.get_time() - BACK_FORWARD_DURATION * 1000)
+        timing = int(self.player.get_time() - self.durations["back_forward"] * 1000)
 
         if timing < 0:
             self.restart()
@@ -392,7 +391,7 @@ class MediaPlayerVlc(MediaPlayer):
         if not self.is_playing_this("song"):
             return
 
-        timing = int(self.player.get_time() + BACK_FORWARD_DURATION * 1000)
+        timing = int(self.player.get_time() + self.durations["back_forward"] * 1000)
 
         if timing > self.player.get_media().get_duration():
             self.skip()

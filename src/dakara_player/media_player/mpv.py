@@ -14,7 +14,6 @@ except ImportError:
     mpv = None
 
 from dakara_player.media_player.base import (
-    BACK_FORWARD_DURATION,
     InvalidStateError,
     MediaPlayer,
     VersionNotFoundError,
@@ -457,7 +456,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         if not self.is_playing_this("song"):
             return
 
-        timing = self.player.time_pos - BACK_FORWARD_DURATION
+        timing = self.player.time_pos - self.durations["back_forward"]
 
         if timing < 0:
             self.restart()
@@ -476,7 +475,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         if not self.is_playing_this("song"):
             return
 
-        timing = self.player.time_pos + BACK_FORWARD_DURATION
+        timing = self.player.time_pos + self.durations["back_forward"]
 
         if timing > self.player.duration:
             self.skip()

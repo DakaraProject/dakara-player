@@ -3,7 +3,7 @@ from queue import Queue
 from threading import Event
 from time import sleep
 from unittest import skipUnless
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from func_timeout import func_set_timeout
 from path import TempDir
@@ -44,7 +44,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
         exit.
 
         Args:
-            config (dict): Configuration passed to the constructor.
+            config (dict): Extra configuration passed to the constructor.
             check_error (bool): If true, check if the player stop event is not
                 set and the error queue is empty at the end.
 
@@ -54,19 +54,21 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
                 path.Path: Path of the temporary directory;
                 unittest.case._LoggingWatcher: Captured output.
         """
-        if not config:
-            config = {
-                "kara_folder": self.kara_folder,
-                "fullscreen": self.fullscreen,
-                "mpv": {"vo": "null", "ao": "null"},
-            }
+        config_full = {
+            "kara_folder": self.kara_folder,
+            "fullscreen": self.fullscreen,
+            "mpv": {"vo": "null", "ao": "null"},
+        }
+
+        if config:
+            config_full.update(config)
 
         with TempDir() as temp:
             try:
                 with ExitStack() as stack:
                     mpv_player = stack.enter_context(
                         MediaPlayerMpv.from_version(
-                            Event(), Queue(), config, temp, warn_long_exit=False
+                            Event(), Queue(), config_full, temp, warn_long_exit=False
                         )
                     )
                     output = stack.enter_context(
@@ -720,12 +722,11 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertEqual(mpv_player.player.path, self.song1_path)
 
     @func_set_timeout(TIMEOUT)
-    @patch(
-        "dakara_player.media_player.mpv.BACK_FORWARD_DURATION", BACK_FORWARD_DURATION
-    )
     def test_back_song(self):
         """Test to rewind a playlist entry."""
-        with self.get_instance() as (mpv_player, _, _):
+        with self.get_instance(
+            {"durations": {"back_forward_duration": BACK_FORWARD_DURATION}}
+        ) as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("started_transition", MagicMock())
             mpv_player.set_callback("started_song", MagicMock())
@@ -789,12 +790,11 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertAlmostEqual(mpv_player.player.time_pos, 0, 0)
 
     @func_set_timeout(TIMEOUT)
-    @patch(
-        "dakara_player.media_player.mpv.BACK_FORWARD_DURATION", BACK_FORWARD_DURATION
-    )
     def test_forward_song(self):
         """Test to advance a playlist entry."""
-        with self.get_instance() as (mpv_player, _, _):
+        with self.get_instance(
+            {"durations": {"back_forward_duration": BACK_FORWARD_DURATION}}
+        ) as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("started_transition", MagicMock())
             mpv_player.set_callback("started_song", MagicMock())

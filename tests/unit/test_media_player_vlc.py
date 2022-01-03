@@ -1104,7 +1104,9 @@ class MediaPlayerVlcTestCase(TestCase):
         """Test to instanciate with default durations."""
         with self.get_instance() as (vlc_player, _, _):
             # assert the instance
-            self.assertDictEqual(vlc_player.durations, {"transition": 10, "idle": 20})
+            self.assertDictEqual(
+                vlc_player.durations, {"transition": 10, "idle": 20, "back_forward": 10}
+            )
 
     def test_custom_durations(self):
         """Test to instanciate with custom durations."""
@@ -1114,7 +1116,9 @@ class MediaPlayerVlcTestCase(TestCase):
             _,
         ):
             # assert the instance
-            self.assertDictEqual(vlc_player.durations, {"transition": 5, "idle": 20})
+            self.assertDictEqual(
+                vlc_player.durations, {"transition": 5, "idle": 20, "back_forward": 10}
+            )
 
     @patch("dakara_player.media_player.base.PLAYER_CLOSING_DURATION", 0)
     @patch.object(MediaPlayerVlc, "stop_player")

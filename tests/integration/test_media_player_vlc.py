@@ -2,7 +2,7 @@ from contextlib import ExitStack, contextmanager
 from queue import Queue
 from threading import Event
 from unittest import skipIf, skipUnless
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 try:
     import vlc
@@ -57,7 +57,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
         exit.
 
         Args:
-            config (dict): Configuration passed to the constructor.
+            config (dict): Extra configuration passed to the constructor.
             check_error (bool): If true, check if the player stop event is not
                 set and the error queue is empty at the end.
 
@@ -68,21 +68,25 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
                 unittest.case._LoggingWatcher: Captured output.
         """
 
-        if not config:
-            config = {
-                "kara_folder": self.kara_folder,
-                "fullscreen": self.fullscreen,
-                "vlc": {
-                    "instance_parameters": self.instance_parameters,
-                    "media_parameters": self.media_parameters,
-                    "use_default_window": self.use_default_window,
-                },
-            }
+        config_full = {
+            "kara_folder": self.kara_folder,
+            "fullscreen": self.fullscreen,
+            "vlc": {
+                "instance_parameters": self.instance_parameters,
+                "media_parameters": self.media_parameters,
+                "use_default_window": self.use_default_window,
+            },
+        }
+
+        if config:
+            config_full.update(config)
 
         with ExitStack() as stack:
             temp = stack.enter_context(TempDir())
             vlc_player = stack.enter_context(
-                MediaPlayerVlc(Event(), Queue(), config, temp, warn_long_exit=False)
+                MediaPlayerVlc(
+                    Event(), Queue(), config_full, temp, warn_long_exit=False
+                )
             )
             output = stack.enter_context(
                 self.assertLogs("dakara_player.media_player.vlc", "DEBUG")
@@ -631,12 +635,11 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertEqual(file_path, self.song2_path)
 
     @func_set_timeout(TIMEOUT)
-    @patch(
-        "dakara_player.media_player.vlc.BACK_FORWARD_DURATION", BACK_FORWARD_DURATION
-    )
     def test_back_song(self):
         """Test to rewind a playlist entry."""
-        with self.get_instance() as (vlc_player, _, _):
+        with self.get_instance(
+            {"player": {"durations": {"back_forward_duration": BACK_FORWARD_DURATION}}}
+        ) as (vlc_player, _, _):
             # mock the callbacks
             vlc_player.set_callback("started_transition", MagicMock())
             vlc_player.set_callback("started_song", MagicMock())
@@ -701,12 +704,11 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertAlmostEqual(vlc_player.player.get_time(), 0, 0)
 
     @func_set_timeout(TIMEOUT)
-    @patch(
-        "dakara_player.media_player.vlc.BACK_FORWARD_DURATION", BACK_FORWARD_DURATION
-    )
     def test_forward_song(self):
         """Test to advance a playlist entry."""
-        with self.get_instance() as (vlc_player, _, _):
+        with self.get_instance(
+            {"player": {"durations": {"back_forward_duration": BACK_FORWARD_DURATION}}}
+        ) as (vlc_player, _, _):
             # mock the callbacks
             vlc_player.set_callback("started_transition", MagicMock())
             vlc_player.set_callback("started_song", MagicMock())

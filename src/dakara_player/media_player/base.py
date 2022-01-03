@@ -109,6 +109,9 @@ class MediaPlayer(Worker, ABC):
             "transition": config_durations.get(
                 "transition_duration", TRANSITION_DURATION
             ),
+            "back_forward": config_durations.get(
+                "back_forward_duration", BACK_FORWARD_DURATION
+            ),
         }
 
         # set text paths
