@@ -127,7 +127,7 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.media_player.pause.reset_mock()
 
         # call the method for pause
-        self.dakara_manager.do_command("play")
+        self.dakara_manager.do_command("resume")
 
         # assert the call
         self.dakara_manager.media_player.pause.assert_called_with(False)

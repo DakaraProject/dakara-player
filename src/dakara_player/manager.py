@@ -140,7 +140,7 @@ class DakaraManager:
         """
         assert command in (
             "pause",
-            "play",
+            "resume",
             "restart",
             "skip",
             "back",
@@ -151,7 +151,7 @@ class DakaraManager:
             self.media_player.pause(True)
             return
 
-        if command == "play":
+        if command == "resume":
             self.media_player.pause(False)
             return
 
