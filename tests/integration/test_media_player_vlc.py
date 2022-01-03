@@ -638,7 +638,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     def test_back_song(self):
         """Test to rewind a playlist entry."""
         with self.get_instance(
-            {"player": {"durations": {"back_forward_duration": BACK_FORWARD_DURATION}}}
+            {"durations": {"back_forward_duration": BACK_FORWARD_DURATION}}
         ) as (vlc_player, _, _):
             # mock the callbacks
             vlc_player.set_callback("started_transition", MagicMock())
@@ -707,7 +707,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     def test_forward_song(self):
         """Test to advance a playlist entry."""
         with self.get_instance(
-            {"player": {"durations": {"back_forward_duration": BACK_FORWARD_DURATION}}}
+            {"durations": {"back_forward_duration": BACK_FORWARD_DURATION}}
         ) as (vlc_player, _, _):
             # mock the callbacks
             vlc_player.set_callback("started_transition", MagicMock())
