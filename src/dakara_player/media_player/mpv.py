@@ -384,26 +384,29 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         raise ValueError("Unexpected action to play: {}".format(what))
 
-    def pause(self, pause):
+    def pause(self):
         """Request mpv to pause or unpause.
 
         Can only work on transition screens or songs. Pausing should have no
-        effect if mpv is already paused, unpausing should have no
-        effect if mpv is already unpaused.
-
-        Args:
-            paused (bool): If True, pause mpv.
+        effect if mpv is already paused.
         """
         if self.is_playing_this("idle"):
             return
 
-        if pause:
-            if self.is_paused():
-                logger.debug("Player already in pause")
-                return
+        if self.is_paused():
+            logger.debug("Player already in pause")
+            return
 
-            logger.info("Setting pause")
-            self.player.pause = True
+        logger.info("Setting pause")
+        self.player.pause = True
+
+    def resume(self):
+        """Request mpv to resume playing.
+
+        Can only work on transition screens or songs. Resuming should have no
+        effect if mpv is already playing.
+        """
+        if self.is_playing_this("idle"):
             return
 
         if not self.is_paused():

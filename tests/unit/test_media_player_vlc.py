@@ -645,7 +645,7 @@ class MediaPlayerVlcTestCase(TestCase):
             mocked_is_playing_this.return_value = True
 
             # call method
-            vlc_player.pause(True)
+            vlc_player.pause()
 
             # assert call
             player.pause.assert_not_called()
@@ -861,8 +861,8 @@ class MediaPlayerVlcTestCase(TestCase):
 
     @patch.object(MediaPlayerVlc, "get_timing")
     @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_playing_unpause(self, mocked_is_playing_this, mocked_get_timing):
-        """Test playing callback when unpausing."""
+    def test_handle_playing_resumed(self, mocked_is_playing_this, mocked_get_timing):
+        """Test playing callback when resuming."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
 

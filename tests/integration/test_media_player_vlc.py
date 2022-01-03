@@ -372,7 +372,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
     @func_set_timeout(TIMEOUT)
     def test_pause(self):
-        """Test to pause and unpause the player."""
+        """Test to pause and resume the player."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the callbacks
             vlc_player.set_callback("paused", MagicMock())
@@ -385,7 +385,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(vlc_player, "song")
 
             # call the method to pause the player
-            vlc_player.pause(True)
+            vlc_player.pause()
             timing = vlc_player.get_timing()
 
             # wait for the player to be paused
@@ -401,12 +401,11 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.callbacks["resumed"].assert_not_called()
 
             # reset the mocks
-            vlc_player.callbacks["resumed"].assert_not_called()
             vlc_player.callbacks["paused"].reset_mock()
             vlc_player.callbacks["resumed"].reset_mock()
 
             # call the method to resume the player
-            vlc_player.pause(False)
+            vlc_player.resume()
 
             # wait for the player to play again
             self.wait_is_playing(vlc_player)
@@ -433,7 +432,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(vlc_player, "song")
 
             # call the method to pause the player
-            vlc_player.pause(True)
+            vlc_player.pause()
 
             # wait for the player to be paused
             self.wait_is_paused(vlc_player)
@@ -447,7 +446,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.callbacks["resumed"].reset_mock()
 
             # re-call the method to pause the player
-            vlc_player.pause(True)
+            vlc_player.pause()
+
+            # wait again for the player to be paused
             self.wait_is_paused(vlc_player)
 
             # assert the callback
@@ -459,7 +460,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.callbacks["resumed"].reset_mock()
 
             # call the method to resume the player
-            vlc_player.pause(False)
+            vlc_player.resume()
 
             # wait for the player to play again
             self.wait_is_playing(vlc_player)
@@ -473,7 +474,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.callbacks["resumed"].reset_mock()
 
             # re-call the method to resume the player
-            vlc_player.pause(False)
+            vlc_player.resume()
             self.wait_is_playing(vlc_player)
 
             # assert the callback

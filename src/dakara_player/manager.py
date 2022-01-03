@@ -147,12 +147,4 @@ class DakaraManager:
             "forward",
         ), "Unknown command requested: '{}'".format(command)
 
-        if command == "pause":
-            self.media_player.pause(True)
-            return
-
-        if command == "resume":
-            self.media_player.pause(False)
-            return
-
         getattr(self.media_player, command)()

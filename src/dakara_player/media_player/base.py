@@ -253,17 +253,23 @@ class MediaPlayer(Worker, ABC):
         """
 
     @abstractmethod
-    def pause(self, paused):
-        """Request the media player to pause or unpause.
+    def pause(self):
+        """Request the media player to pause.
 
         Can only work on transition screens or songs. Pausing should have no
-        effect if the media player is already paused, unpausing should have no
-        effect if the media player is already unpaused.
+        effect if the media player is already paused.
 
         Must be overriden.
+        """
 
-        Args:
-            paused (bool): If True, pause the media player.
+    @abstractmethod
+    def resume(self):
+        """Request the media player to resume playing.
+
+        Can only work on transition screens or songs. Resuming should have no
+        effect if the media player is already playing.
+
+        Must be overriden.
         """
 
     @abstractmethod

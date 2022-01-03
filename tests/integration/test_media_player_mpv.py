@@ -292,7 +292,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # call the method to pause the player
-            mpv_player.pause(True)
+            mpv_player.pause()
             timing = mpv_player.get_timing()
 
             # wait for the player to be paused
@@ -308,12 +308,11 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.callbacks["resumed"].assert_not_called()
 
             # reset the mocks
-            mpv_player.callbacks["resumed"].assert_not_called()
             mpv_player.callbacks["paused"].reset_mock()
             mpv_player.callbacks["resumed"].reset_mock()
 
             # call the method to resume the player
-            mpv_player.pause(False)
+            mpv_player.resume()
 
             # wait for the player to play again
             self.wait_is_playing(mpv_player)
@@ -340,7 +339,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # call the method to pause the player
-            mpv_player.pause(True)
+            mpv_player.pause()
 
             # wait for the player to be paused
             self.wait_is_paused(mpv_player)
@@ -354,7 +353,9 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.callbacks["resumed"].reset_mock()
 
             # re-call the method to pause the player
-            mpv_player.pause(True)
+            mpv_player.pause()
+
+            # wait again for the player to be paused
             self.wait_is_paused(mpv_player)
 
             # assert the callback
@@ -366,7 +367,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.callbacks["resumed"].reset_mock()
 
             # call the method to resume the player
-            mpv_player.pause(False)
+            mpv_player.resume()
 
             # wait for the player to play again
             self.wait_is_playing(mpv_player)
@@ -380,7 +381,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.callbacks["resumed"].reset_mock()
 
             # re-call the method to resume the player
-            mpv_player.pause(False)
+            mpv_player.resume()
             self.wait_is_playing(mpv_player)
 
             # assert the callback
@@ -558,7 +559,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertEqual(mpv_player.player.path, self.song1_path)
 
             # pause song
-            mpv_player.pause(True)
+            mpv_player.pause()
 
             # wait for the media to be paused
             self.wait_is_paused(mpv_player)
@@ -623,7 +624,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertEqual(mpv_player.player.path, self.song1_path)
 
             # pause song
-            mpv_player.pause(True)
+            mpv_player.pause()
 
             # wait for the media to be paused
             self.wait_is_paused(mpv_player)
@@ -888,7 +889,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertEqual(mpv_player.player.path, self.song1_path)
 
             # pause song
-            mpv_player.pause(True)
+            mpv_player.pause()
 
             # wait for the media to be paused
             self.wait_is_paused(mpv_player)

@@ -301,28 +301,29 @@ class MediaPlayerVlc(MediaPlayer):
         self.player.set_media(media)
         self.player.play()
 
-    def pause(self, paused):
-        """Request VLC to pause or unpause.
+    def pause(self):
+        """Request VLC to pause.
 
         Can only work on transition screens or songs. Pausing should have no
-        effect if VLC is already paused, unpausing should have no
-        effect if VLC is already unpaused.
-
-        Must be overriden.
-
-        Args:
-            paused (bool): If True, pause VLC.
+        effect if VLC is already paused.
         """
         if self.is_playing_this("idle"):
             return
 
-        if paused:
-            if self.is_paused():
-                logger.debug("Player already in pause")
-                return
+        if self.is_paused():
+            logger.debug("Player already in pause")
+            return
 
-            logger.info("Setting pause")
-            self.player.pause()
+        logger.info("Setting pause")
+        self.player.pause()
+
+    def resume(self):
+        """Request VLC to resume playing.
+
+        Can only work on transition screens or songs. Resuming should have no
+        effect if VLC is already playing.
+        """
+        if self.is_playing_this("idle"):
             return
 
         if not self.is_paused():

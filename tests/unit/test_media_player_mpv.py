@@ -630,7 +630,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mocked_get_timing.assert_called_with()
 
     @patch.object(MediaPlayerMpvOld, "get_timing")
-    def test_handle_unpause(self, mocked_get_timing):
+    def test_handle_resumed(self, mocked_get_timing):
         """Test unpause callback."""
         # create instance
         mpv_player, _, _ = self.get_instance()
