@@ -3,7 +3,7 @@ from queue import Queue
 from tempfile import gettempdir
 from threading import Event
 from unittest import TestCase
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 from packaging.version import Version
 from path import Path
@@ -243,18 +243,16 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         """Test to get timing."""
         mpv_player, (mocked_player, _, _), _ = self.get_instance()
         mocked_player.time_pos = 42.42
-        mocked_is_playing_this.return_value = False
+        mocked_is_playing_this.side_effect = lambda what: what == "song"
 
         self.assertEqual(mpv_player.get_timing(), 42)
-
-        mocked_is_playing_this.assert_has_calls([call("idle"), call("transition")])
 
     @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_get_timing_idle(self, mocked_is_playing_this):
         """Test to get timing when idle."""
         mpv_player, (mocked_player, _, _), _ = self.get_instance()
         mocked_player.time_pos = 42.42
-        mocked_is_playing_this.side_effect = [True, False]
+        mocked_is_playing_this.side_effect = lambda what: what == "idle"
 
         self.assertEqual(mpv_player.get_timing(), 0)
 
@@ -263,7 +261,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         """Test to get timing when in transition."""
         mpv_player, (mocked_player, _, _), _ = self.get_instance()
         mocked_player.time_pos = 42.42
-        mocked_is_playing_this.side_effect = [False, True]
+        mocked_is_playing_this.side_effect = lambda what: what == "transition"
 
         self.assertEqual(mpv_player.get_timing(), 0)
 
@@ -295,7 +293,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         player = mocked_instance.media_player_new.return_value
 
         # mock
-        mocked_is_playing_this.return_value = False
+        mocked_is_playing_this.side_effect = lambda what: what == "transition"
         player.time_pos = 42
 
         # call method
@@ -303,7 +301,6 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
 
         # assert call
         self.assertEqual(player.time_pos, 42)
-        mocked_is_playing_this.assert_called_with("song")
 
     @patch.object(MediaPlayerMpvOld, "is_playing_this")
     @patch.object(MediaPlayerMpvOld, "clear_playlist_entry")
@@ -312,14 +309,13 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mpv_player, (mocked_instance, _, _), _ = self.get_instance()
 
         # mock
-        mocked_is_playing_this.return_value = False
+        mocked_is_playing_this.side_effect = lambda what: what == "idle"
 
         # call method
         mpv_player.skip(True)
 
         # assert call
         mpv_player.clear_playlist_entry.assert_not_called()
-        mocked_is_playing_this.assert_has_calls([call("transition"), call("song")])
 
     @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_back_transition(self, mocked_is_playing_this):
@@ -328,7 +324,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         player = mocked_instance.media_player_new.return_value
 
         # mock
-        mocked_is_playing_this.return_value = False
+        mocked_is_playing_this.side_effect = lambda what: what == "transition"
         player.time_pos = 42
 
         # call method
@@ -336,7 +332,6 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
 
         # assert call
         self.assertEqual(player.time_pos, 42)
-        mocked_is_playing_this.assert_called_with("song")
 
     @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_forward_transition(self, mocked_is_playing_this):
@@ -345,7 +340,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         player = mocked_instance.media_player_new.return_value
 
         # mock
-        mocked_is_playing_this.return_value = False
+        mocked_is_playing_this.side_effect = lambda what: what == "transition"
         player.time_pos = 42
 
         # call method
@@ -353,7 +348,6 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
 
         # assert call
         self.assertEqual(player.time_pos, 42)
-        mocked_is_playing_this.assert_called_with("song")
 
     @patch.object(MediaPlayerMpvOld, "clear_playlist_entry")
     @patch.object(MediaPlayerMpvOld, "play")
@@ -481,7 +475,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         self.set_playlist_entry(mpv_player)
 
         # create mocks
-        mocked_is_playing_this.return_value = True
+        mocked_is_playing_this.side_effect = lambda what: what == "transition"
 
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
@@ -502,7 +496,6 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
             self.playlist_entry["id"]
         )
         mpv_player.callbacks["started_song"].assert_not_called()
-        mocked_is_playing_this.assert_called_with("transition")
 
     @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_handle_start_file_song(self, mocked_is_playing_this):
@@ -514,7 +507,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         self.set_playlist_entry(mpv_player)
 
         # create mocks
-        mocked_is_playing_this.side_effect = [False, True]
+        mocked_is_playing_this.side_effect = lambda what: what == "song"
 
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
@@ -541,7 +534,6 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mpv_player.callbacks["started_song"].assert_called_with(
             self.playlist_entry["id"]
         )
-        mocked_is_playing_this.assert_has_calls([call("transition"), call("song")])
 
     @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_handle_start_file_idle(self, mocked_is_playing_this):
@@ -553,7 +545,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         self.set_playlist_entry(mpv_player)
 
         # create mocks
-        mocked_is_playing_this.side_effect = [False, False, True]
+        mocked_is_playing_this.side_effect = lambda what: what == "idle"
 
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
@@ -571,9 +563,6 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         # assert the call
         mpv_player.callbacks["started_transition"].assert_not_called()
         mpv_player.callbacks["started_song"].assert_not_called()
-        mocked_is_playing_this.assert_has_calls(
-            [call("transition"), call("song"), call("idle")]
-        )
 
     @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_handle_start_file_unknown(self, mocked_is_playing_this):

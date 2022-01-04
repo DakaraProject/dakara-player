@@ -5,7 +5,7 @@ from tempfile import gettempdir
 from threading import Event
 from time import sleep
 from unittest import TestCase, skipIf
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 try:
     import vlc
@@ -20,6 +20,7 @@ from dakara_player.media_player.base import (
     InvalidStateError,
     KaraFolderNotFound,
     VersionNotFoundError,
+    on_playing_this,
 )
 from dakara_player.media_player.vlc import (
     MediaPlayerVlc,
@@ -32,10 +33,8 @@ from dakara_player.text import TextGenerator
 from dakara_player.window import DummyWindowManager, WindowManager
 
 
-@patch("dakara_player.media_player.base.TRANSITION_DURATION", 10)
-@patch("dakara_player.media_player.base.IDLE_DURATION", 20)
-class MediaPlayerVlcTestCase(TestCase):
-    """Test the VLC player class unitary."""
+class BaseTestCase(TestCase):
+    """Base test case to provid a mocked instance of MediaPlayerVlc."""
 
     def setUp(self):
         # create playlist entry ID
@@ -115,6 +114,12 @@ class MediaPlayerVlcTestCase(TestCase):
                     mocked_text_generator_class,
                 ),
             )
+
+
+@patch("dakara_player.media_player.base.TRANSITION_DURATION", 10)
+@patch("dakara_player.media_player.base.IDLE_DURATION", 20)
+class MediaPlayerVlcTestCase(BaseTestCase):
+    """Test the VLC player class unitary."""
 
     def set_playlist_entry(self, vlc_player, started=True):
         """Set a playlist entry and make the player play it.
@@ -642,14 +647,13 @@ class MediaPlayerVlcTestCase(TestCase):
             player = mocked_instance.media_player_new.return_value
 
             # mock
-            mocked_is_playing_this.return_value = True
+            mocked_is_playing_this.side_effect = lambda what: what == "idle"
 
             # call method
             vlc_player.pause()
 
             # assert call
             player.pause.assert_not_called()
-            mocked_is_playing_this.assert_called_with("idle")
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_restart_transition(self, mocked_is_playing_this):
@@ -658,14 +662,13 @@ class MediaPlayerVlcTestCase(TestCase):
             player = mocked_instance.media_player_new.return_value
 
             # mock
-            mocked_is_playing_this.return_value = False
+            mocked_is_playing_this.side_effect = lambda what: what == "transition"
 
             # call method
             vlc_player.restart()
 
             # assert call
             player.set_time.assert_not_called()
-            mocked_is_playing_this.assert_called_with("song")
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     @patch.object(MediaPlayerVlc, "clear_playlist_entry")
@@ -673,14 +676,13 @@ class MediaPlayerVlcTestCase(TestCase):
         """Test to skip on idle screen."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             # mock
-            mocked_is_playing_this.return_value = False
+            mocked_is_playing_this.side_effect = lambda what: what == "idle"
 
             # call method
             vlc_player.skip(True)
 
             # assert call
             vlc_player.clear_playlist_entry.assert_not_called()
-            mocked_is_playing_this.assert_has_calls([call("transition"), call("song")])
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_back_transition(self, mocked_is_playing_this):
@@ -689,14 +691,13 @@ class MediaPlayerVlcTestCase(TestCase):
             player = mocked_instance.media_player_new.return_value
 
             # mock
-            mocked_is_playing_this.return_value = False
+            mocked_is_playing_this.side_effect = lambda what: what == "transition"
 
             # call method
             vlc_player.back()
 
             # assert call
             player.set_time.assert_not_called()
-            mocked_is_playing_this.assert_called_with("song")
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_forward_transition(self, mocked_is_playing_this):
@@ -705,14 +706,13 @@ class MediaPlayerVlcTestCase(TestCase):
             player = mocked_instance.media_player_new.return_value
 
             # mock
-            mocked_is_playing_this.return_value = False
+            mocked_is_playing_this.side_effect = lambda what: what == "transition"
 
             # call method
             vlc_player.forward()
 
             # assert call
             player.set_time.assert_not_called()
-            mocked_is_playing_this.assert_called_with("song")
 
     @patch.object(MediaPlayerVlc, "create_thread")
     @patch.object(MediaPlayerVlc, "is_playing_this")
@@ -725,7 +725,7 @@ class MediaPlayerVlcTestCase(TestCase):
             vlc_player.playlist_entry_data["song"].started = False
 
             # mock the call
-            mocked_is_playing_this.return_value = True
+            mocked_is_playing_this.side_effect = lambda what: what == "transition"
             vlc_player.set_callback("finished", MagicMock())
 
             # call the method
@@ -748,7 +748,6 @@ class MediaPlayerVlcTestCase(TestCase):
             mocked_create_thread.assert_called_with(
                 target=vlc_player.play, args=("song",)
             )
-            mocked_is_playing_this.assert_called_with("transition")
 
     @patch.object(MediaPlayerVlc, "create_thread")
     @patch.object(MediaPlayerVlc, "is_playing_this")
@@ -761,7 +760,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # mock the call
             vlc_player.set_callback("finished", MagicMock())
-            mocked_is_playing_this.side_effect = [False, True]
+            mocked_is_playing_this.side_effect = lambda what: what == "song"
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG"):
@@ -773,7 +772,6 @@ class MediaPlayerVlcTestCase(TestCase):
             # assert the call
             vlc_player.callbacks["finished"].assert_called_with(42)
             mocked_create_thread.assert_not_called()
-            mocked_is_playing_this.assert_has_calls([call("transition"), call("song")])
 
     @patch.object(MediaPlayerVlc, "create_thread")
     @patch.object(MediaPlayerVlc, "is_playing_this")
@@ -786,7 +784,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # mock the call
             vlc_player.set_callback("finished", MagicMock())
-            mocked_is_playing_this.side_effect = [False, False, True]
+            mocked_is_playing_this.side_effect = lambda what: what == "idle"
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG"):
@@ -796,9 +794,6 @@ class MediaPlayerVlcTestCase(TestCase):
             vlc_player.callbacks["finished"].assert_not_called()
             mocked_create_thread.assert_called_with(
                 target=vlc_player.play, args=("idle",)
-            )
-            mocked_is_playing_this.assert_has_calls(
-                [call("transition"), call("song"), call("idle")]
             )
 
     @patch.object(MediaPlayerVlc, "create_thread")
@@ -836,6 +831,7 @@ class MediaPlayerVlcTestCase(TestCase):
             self.set_playlist_entry(vlc_player)
 
             # mock the call
+            mocked_is_playing_this.side_effect = lambda what: what == "song"
             vlc_player.set_callback("error", MagicMock())
 
             # call the method
@@ -868,7 +864,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # mock the call
             vlc_player.set_callback("resumed", MagicMock())
-            mocked_is_playing_this.return_value = True
+            mocked_is_playing_this.side_effect = lambda what: what == "song"
             mocked_get_timing.return_value = 25
 
             # call the method
@@ -886,7 +882,7 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # assert the call
             vlc_player.callbacks["resumed"].assert_called_with(42, 25)
-            mocked_is_playing_this.assert_called_with("transition")
+            mocked_is_playing_this.assert_called_with("song")
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_playing_transition_starts(self, mocked_is_playing_this):
@@ -896,7 +892,8 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # mock the call
             vlc_player.set_callback("started_transition", MagicMock())
-            mocked_is_playing_this.side_effect = [False, False, True]
+            vlc_player.playlist_entry_data["transition"].started = False
+            mocked_is_playing_this.side_effect = lambda what: what == "transition"
 
             # pre assert
             self.assertFalse(vlc_player.playlist_entry_data["transition"].started)
@@ -922,9 +919,6 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # assert the call
             vlc_player.callbacks["started_transition"].assert_called_with(42)
-            mocked_is_playing_this.assert_has_calls(
-                [call("transition"), call("song"), call("transition")]
-            )
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_playing_song(self, mocked_is_playing_this):
@@ -935,7 +929,9 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # mock the call
             vlc_player.set_callback("started_song", MagicMock())
-            mocked_is_playing_this.side_effect = [False, False, False, True]
+            vlc_player.playlist_entry_data["transition"].started = True
+            vlc_player.playlist_entry_data["song"].started = False
+            mocked_is_playing_this.side_effect = lambda what: what == "song"
 
             # pre assert
             self.assertFalse(vlc_player.playlist_entry_data["song"].started)
@@ -959,9 +955,6 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # assert the call
             vlc_player.callbacks["started_song"].assert_called_with(42)
-            mocked_is_playing_this.assert_has_calls(
-                [call("transition"), call("song"), call("transition"), call("song")]
-            )
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_playing_media_starts_track_id(self, mocked_is_playing_this):
@@ -973,7 +966,9 @@ class MediaPlayerVlcTestCase(TestCase):
 
             # mock the call
             vlc_player.set_callback("started_song", MagicMock())
-            mocked_is_playing_this.side_effect = [False, False, False, True]
+            vlc_player.playlist_entry_data["transition"].started = True
+            vlc_player.playlist_entry_data["song"].started = False
+            mocked_is_playing_this.side_effect = lambda what: what == "song"
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
@@ -994,16 +989,15 @@ class MediaPlayerVlcTestCase(TestCase):
             # assert the call
             vlc_player.callbacks["started_song"].assert_called_with(42)
             mocked_player.audio_set_track.assert_called_with(99)
-            mocked_is_playing_this.assert_has_calls(
-                [call("transition"), call("song"), call("transition"), call("song")]
-            )
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_playing_idle_starts(self, mocked_is_playing_this):
         """Test playing callback when idle screen starts."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the call
-            mocked_is_playing_this.side_effect = [False, False, False, False, True]
+            vlc_player.playlist_entry_data["transition"].started = False
+            vlc_player.playlist_entry_data["song"].started = False
+            mocked_is_playing_this.side_effect = lambda what: what == "idle"
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
@@ -1016,17 +1010,6 @@ class MediaPlayerVlcTestCase(TestCase):
                     "DEBUG:dakara_player.media_player.vlc:Playing callback called",
                     "DEBUG:dakara_player.media_player.vlc:Playing idle screen",
                 ],
-            )
-
-            # assert the call
-            mocked_is_playing_this.assert_has_calls(
-                [
-                    call("transition"),
-                    call("song"),
-                    call("transition"),
-                    call("song"),
-                    call("idle"),
-                ]
             )
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
@@ -1269,3 +1252,43 @@ class GetMetadataTestCase(TestCase):
 
         with self.assertRaises(ValueError):
             get_metadata(media)
+
+
+@patch.object(MediaPlayerVlc, "is_playing_this")
+class OnPlayingThisTestCase(BaseTestCase):
+    """Test the decorator for returning early if the player is playing
+    something else."""
+
+    def test_in_list(self, mocked_is_playing_this):
+        """Test an action in the list of accepted actions."""
+        function = MagicMock()
+        mocked_is_playing_this.side_effect = lambda what: what == "song"
+
+        function_decorated = on_playing_this(["transition", "song"])(function)
+
+        with self.get_instance() as (player, _, _):
+            function_decorated(player)
+
+            function.assert_called_with(player)
+
+    def test_not_in_list(self, mocked_is_playing_this):
+        """Test an action not in the list of accepted actions."""
+        function = MagicMock()
+        mocked_is_playing_this.side_effect = lambda what: what == "idle"
+
+        function_decorated = on_playing_this(["transition", "song"])(function)
+
+        with self.get_instance() as (player, _, _):
+            self.assertIsNone(function_decorated(player))
+
+            function.assert_not_called()
+
+    def test_not_in_list_default_return(self, mocked_is_playing_this):
+        """Test an action not in the list of accepted actions."""
+        function = MagicMock()
+        mocked_is_playing_this.side_effect = lambda what: what == "idle"
+
+        function_decorated = on_playing_this(["transition", "song"], 42)(function)
+
+        with self.get_instance() as (player, _, _):
+            self.assertEqual(function_decorated(player), 42)

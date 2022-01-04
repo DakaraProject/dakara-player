@@ -503,6 +503,31 @@ class MediaPlayer(Worker, ABC):
         return self.text_paths[what]
 
 
+def on_playing_this(what_list, default_return=None):
+    """Decorator for methods that necessitate the player to be playing
+    something specifically.
+
+    Args:
+        what_list (list): List of possible states.
+        default_return (any): Value to return if the state is different.
+    """
+
+    def decorator(function):
+        def wrap(self, *args, **kwargs):
+            for what in what_list:
+                if self.is_playing_this(what):
+                    break
+
+            else:
+                return default_return
+
+            return function(self, *args, **kwargs)
+
+        return wrap
+
+    return decorator
+
+
 class KaraFolderNotFound(DakaraError):
     """Error raised when the kara folder cannot be found."""
 
