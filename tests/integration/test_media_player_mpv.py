@@ -17,7 +17,7 @@ from dakara_player.media_player.base import (
 from dakara_player.media_player.mpv import MediaPlayerMpv
 from tests.integration.base import TestCasePollerKara
 
-BACK_FORWARD_DURATION = 0.2
+REWIND_FAST_FORWARD_DURATION = 0.2
 
 
 @skipUnless(MediaPlayerMpv.is_available(), "mpv not installed")
@@ -414,7 +414,9 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(mpv_player.playlist_entry)
 
             # wait a bit for the player to play
-            self.wait(lambda: mpv_player.player.time_pos >= BACK_FORWARD_DURATION)
+            self.wait(
+                lambda: mpv_player.player.time_pos >= REWIND_FAST_FORWARD_DURATION
+            )
 
             # request playlist entry to restart
             mpv_player.restart()
@@ -722,10 +724,14 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertEqual(mpv_player.player.path, self.song1_path)
 
     @func_set_timeout(TIMEOUT)
-    def test_back_song(self):
+    def test_rewind_song(self):
         """Test to rewind a playlist entry."""
         with self.get_instance(
-            {"durations": {"back_forward_duration": BACK_FORWARD_DURATION}}
+            {
+                "durations": {
+                    "rewind_fast_forward_duration": REWIND_FAST_FORWARD_DURATION
+                }
+            }
         ) as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("started_transition", MagicMock())
@@ -746,16 +752,18 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(mpv_player.playlist_entry)
 
             # wait a bit for the player to play
-            self.wait(lambda: mpv_player.player.time_pos >= BACK_FORWARD_DURATION * 2)
+            self.wait(
+                lambda: mpv_player.player.time_pos >= REWIND_FAST_FORWARD_DURATION * 2
+            )
             timing1 = mpv_player.player.time_pos
 
             # request playlist entry to rewind
-            mpv_player.back()
+            mpv_player.rewind()
 
             # check timing is earlier than previously
             timing2 = mpv_player.player.time_pos
             self.assertLess(timing2, timing1)
-            self.assertAlmostEqual(timing1 - timing2, BACK_FORWARD_DURATION, 1)
+            self.assertAlmostEqual(timing1 - timing2, REWIND_FAST_FORWARD_DURATION, 1)
 
             # assert callback
             mpv_player.callbacks["updated_timing"].assert_called_with(
@@ -763,7 +771,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             )
 
     @func_set_timeout(TIMEOUT)
-    def test_back_song_before_start(self):
+    def test_rewind_song_before_start(self):
         """Test to rewind a playlist entry before its start."""
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
@@ -784,16 +792,20 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(mpv_player.playlist_entry)
 
             # request playlist entry to rewind
-            mpv_player.back()
+            mpv_player.rewind()
 
             # check timing is 0
             self.assertAlmostEqual(mpv_player.player.time_pos, 0, 0)
 
     @func_set_timeout(TIMEOUT)
-    def test_forward_song(self):
+    def test_fast_forward_song(self):
         """Test to advance a playlist entry."""
         with self.get_instance(
-            {"durations": {"back_forward_duration": BACK_FORWARD_DURATION}}
+            {
+                "durations": {
+                    "rewind_fast_forward_duration": REWIND_FAST_FORWARD_DURATION
+                }
+            }
         ) as (mpv_player, _, _):
             # mock the callbacks
             mpv_player.set_callback("started_transition", MagicMock())
@@ -814,16 +826,18 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(mpv_player.playlist_entry)
 
             # wait a bit for the player to play
-            self.wait(lambda: mpv_player.player.time_pos >= BACK_FORWARD_DURATION * 2)
+            self.wait(
+                lambda: mpv_player.player.time_pos >= REWIND_FAST_FORWARD_DURATION * 2
+            )
             timing1 = mpv_player.player.time_pos
 
             # request playlist entry to advance
-            mpv_player.forward()
+            mpv_player.fast_forward()
 
             # check timing is later than previously
             timing2 = mpv_player.player.time_pos
             self.assertGreater(timing2, timing1)
-            self.assertAlmostEqual(timing2 - timing1, BACK_FORWARD_DURATION, 1)
+            self.assertAlmostEqual(timing2 - timing1, REWIND_FAST_FORWARD_DURATION, 1)
 
             # assert callback
             mpv_player.callbacks["updated_timing"].assert_called_with(
@@ -831,7 +845,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             )
 
     @func_set_timeout(TIMEOUT)
-    def test_forward_song_after_end(self):
+    def test_fast_forward_song_after_end(self):
         """Test to advance a playlist entry after its end."""
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
@@ -853,7 +867,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(mpv_player.playlist_entry)
 
             # request playlist entry to advance
-            mpv_player.forward()
+            mpv_player.fast_forward()
 
             # check the song has finished
             mpv_player.callbacks["finished"].assert_called_with(

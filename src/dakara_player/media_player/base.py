@@ -24,7 +24,7 @@ IDLE_DURATION = 300
 
 PLAYER_CLOSING_DURATION = 3
 
-BACK_FORWARD_DURATION = 10
+REWIND_FAST_FORWARD_DURATION = 10
 
 
 logger = logging.getLogger(__name__)
@@ -109,8 +109,8 @@ class MediaPlayer(Worker, ABC):
             "transition": config_durations.get(
                 "transition_duration", TRANSITION_DURATION
             ),
-            "back_forward": config_durations.get(
-                "back_forward_duration", BACK_FORWARD_DURATION
+            "rewind_fast_forward": config_durations.get(
+                "rewind_fast_forward_duration", REWIND_FAST_FORWARD_DURATION
             ),
         }
 
@@ -299,16 +299,16 @@ class MediaPlayer(Worker, ABC):
         """
 
     @abstractmethod
-    def back(self):
-        """Request to rewind a few seconds back in the media.
+    def rewind(self):
+        """Request to rewind a few seconds the media.
 
         Can only work on songs. It cannot rewind before the beginning of the media.
 
         Must be overriden.
         """
 
-    def forward(self):
-        """Request to advance a few seconds in the media.
+    def fast_forward(self):
+        """Request to fast forward a few seconds the media.
 
         Can only work on songs. It cannot advance passed the end of the media.
 

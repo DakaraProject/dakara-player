@@ -416,7 +416,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         Can only work on songs.
         """
-        logger.info("Restarting song")
+        logger.info("Restarting media")
         self.player.time_pos = 0
         self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
 
@@ -439,36 +439,36 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         self.clear_playlist_entry()
 
     @on_playing_this(["song"])
-    def back(self):
-        """Request to rewind a few seconds back in the media.
+    def rewind(self):
+        """Request to rewind a few seconds the media.
 
         Can only work on songs. It cannot rewind before the beginning of the
         media. In that case, restart the song.
         """
-        timing = self.player.time_pos - self.durations["back_forward"]
+        timing = self.player.time_pos - self.durations["rewind_fast_forward"]
 
         if timing < 0:
             self.restart()
             return
 
-        logger.info("Rewinding in time")
+        logger.info("Rewinding media")
         self.player.time_pos = timing
         self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
 
     @on_playing_this(["song"])
-    def forward(self):
-        """Request to advance a few seconds in the media.
+    def fast_forward(self):
+        """Request to fast forward a few seconds the media.
 
         Can only work on songs. It cannot advance passed the end of the media.
         In that case, skip the song.
         """
-        timing = self.player.time_pos + self.durations["back_forward"]
+        timing = self.player.time_pos + self.durations["rewind_fast_forward"]
 
         if timing > self.player.duration:
             self.skip()
             return
 
-        logger.info("Advancing in time")
+        logger.info("Fast forwarding media")
         self.player.time_pos = timing
         self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
 

@@ -685,7 +685,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             vlc_player.clear_playlist_entry.assert_not_called()
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_back_transition(self, mocked_is_playing_this):
+    def test_rewind_transition(self, mocked_is_playing_this):
         """Test to rewind on transition screen."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             player = mocked_instance.media_player_new.return_value
@@ -694,13 +694,13 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             mocked_is_playing_this.side_effect = lambda what: what == "transition"
 
             # call method
-            vlc_player.back()
+            vlc_player.rewind()
 
             # assert call
             player.set_time.assert_not_called()
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_forward_transition(self, mocked_is_playing_this):
+    def test_fast_forward_transition(self, mocked_is_playing_this):
         """Test to advance on transition screen."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             player = mocked_instance.media_player_new.return_value
@@ -709,7 +709,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             mocked_is_playing_this.side_effect = lambda what: what == "transition"
 
             # call method
-            vlc_player.forward()
+            vlc_player.fast_forward()
 
             # assert call
             player.set_time.assert_not_called()
@@ -1088,7 +1088,8 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         with self.get_instance() as (vlc_player, _, _):
             # assert the instance
             self.assertDictEqual(
-                vlc_player.durations, {"transition": 10, "idle": 20, "back_forward": 10}
+                vlc_player.durations,
+                {"transition": 10, "idle": 20, "rewind_fast_forward": 10},
             )
 
     def test_custom_durations(self):
@@ -1100,7 +1101,8 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         ):
             # assert the instance
             self.assertDictEqual(
-                vlc_player.durations, {"transition": 5, "idle": 20, "back_forward": 10}
+                vlc_player.durations,
+                {"transition": 5, "idle": 20, "rewind_fast_forward": 10},
             )
 
     @patch("dakara_player.media_player.base.PLAYER_CLOSING_DURATION", 0)

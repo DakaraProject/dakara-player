@@ -318,7 +318,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mpv_player.clear_playlist_entry.assert_not_called()
 
     @patch.object(MediaPlayerMpvOld, "is_playing_this")
-    def test_back_transition(self, mocked_is_playing_this):
+    def test_rewind_transition(self, mocked_is_playing_this):
         """Test to rewind on transition screen."""
         mpv_player, (mocked_instance, _, _), _ = self.get_instance()
         player = mocked_instance.media_player_new.return_value
@@ -328,13 +328,13 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         player.time_pos = 42
 
         # call method
-        mpv_player.back()
+        mpv_player.rewind()
 
         # assert call
         self.assertEqual(player.time_pos, 42)
 
     @patch.object(MediaPlayerMpvOld, "is_playing_this")
-    def test_forward_transition(self, mocked_is_playing_this):
+    def test_fast_forward_transition(self, mocked_is_playing_this):
         """Test to advance on transition screen."""
         mpv_player, (mocked_instance, _, _), _ = self.get_instance()
         player = mocked_instance.media_player_new.return_value
@@ -344,7 +344,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         player.time_pos = 42
 
         # call method
-        mpv_player.forward()
+        mpv_player.fast_forward()
 
         # assert call
         self.assertEqual(player.time_pos, 42)

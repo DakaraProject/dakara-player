@@ -333,7 +333,7 @@ class MediaPlayerVlc(MediaPlayer):
 
         Can only work on songs.
         """
-        logger.info("Restarting song")
+        logger.info("Restarting media")
         self.player.set_time(0)
         self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
 
@@ -355,36 +355,40 @@ class MediaPlayerVlc(MediaPlayer):
         self.clear_playlist_entry()
 
     @on_playing_this(["song"])
-    def back(self):
-        """Request to rewind a few seconds back in the media.
+    def rewind(self):
+        """Request to rewind a few seconds the media.
 
         Can only work on songs. It cannot rewind before the beginning of the
         media. In that case, restart the song.
         """
-        timing = int(self.player.get_time() - self.durations["back_forward"] * 1000)
+        timing = int(
+            self.player.get_time() - self.durations["rewind_fast_forward"] * 1000
+        )
 
         if timing < 0:
             self.restart()
             return
 
-        logger.info("Rewinding in time")
+        logger.info("Rewinding media")
         self.player.set_time(timing)
         self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
 
     @on_playing_this(["song"])
-    def forward(self):
-        """Request to advance a few seconds in the media.
+    def fast_forward(self):
+        """Request to fast forward a few seconds the media.
 
         Can only work on songs. It cannot advance passed the end of the media.
         In that case, skip the song.
         """
-        timing = int(self.player.get_time() + self.durations["back_forward"] * 1000)
+        timing = int(
+            self.player.get_time() + self.durations["rewind_fast_forward"] * 1000
+        )
 
         if timing > self.player.get_media().get_duration():
             self.skip()
             return
 
-        logger.info("Advancing in time")
+        logger.info("Fast forwarding media")
         self.player.set_time(timing)
         self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
 

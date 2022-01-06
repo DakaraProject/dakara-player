@@ -143,8 +143,8 @@ class DakaraManager:
             "resume",
             "restart",
             "skip",
-            "back",
-            "forward",
+            "rewind",
+            "fast_forward",
         ), "Unknown command requested: '{}'".format(command)
 
         getattr(self.media_player, command)()
