@@ -1,26 +1,48 @@
 """Command line interface to run the player."""
 
 import logging
+import sys
 from argparse import ArgumentParser
 
 from dakara_base.config import (
+    Config,
     ConfigNotFoundError,
     create_config_file,
     create_logger,
-    get_config_file,
-    load_config,
     set_loglevel,
 )
-from dakara_base.exceptions import DakaraError
+from dakara_base.directory import directories
+from dakara_base.exceptions import (
+    DakaraError,
+    generate_exception_handler,
+    handle_all_exceptions,
+)
+from dakara_base.http_client import ParameterError
 
 from dakara_player import DakaraPlayer
 from dakara_player.user_resources import create_resource_files
 from dakara_player.version import __date__, __version__
 
 CONFIG_FILE = "player.yaml"
+CONFIG_PREFIX = "DAKARA"
 
 
 logger = logging.getLogger(__name__)
+handle_config_not_found = generate_exception_handler(
+    ConfigNotFoundError, "Please run 'dakara-player create-config'"
+)
+handle_config_incomplete = generate_exception_handler(
+    DakaraError,
+    "Config may be incomplete, please check '{}'".format(
+        directories.user_config_dir / CONFIG_FILE
+    ),
+)
+handle_parameter_error = generate_exception_handler(
+    ParameterError,
+    "Config may be incomplete, please check '{}'".format(
+        directories.user_config_dir / CONFIG_FILE
+    ),
+)
 
 
 def get_parser():
@@ -98,38 +120,22 @@ def play(args):
     Args:
         args (argparse.Namespace): Arguments from command line.
     """
-    create_logger()
+    with handle_config_not_found():
+        create_logger()
+        config = Config(CONFIG_PREFIX)
+        config.load_file(directories.user_config_dir / CONFIG_FILE)
+        config.check_mandatory_keys(["player", "server"])
+        config.set_debug(args.debug)
+        set_loglevel(config)
 
-    # load the config, display help to create config if it fails
-    try:
-        config = load_config(
-            get_config_file(CONFIG_FILE),
-            args.debug,
-            mandatory_keys=["player", "server"],
-        )
-
-    except ConfigNotFoundError as error:
-        raise ConfigNotFoundError(
-            "{}, please run 'dakara-play create-config'".format(error)
-        ) from error
-
-    set_loglevel(config)
     dakara = DakaraPlayer(config)
 
-    # load the feeder, consider that the config is incomplete if it fails
-    try:
+    with handle_config_incomplete():
         dakara.load()
 
-    except DakaraError:
-        logger.warning(
-            "Config may be incomplete, please check '{}'".format(
-                get_config_file(CONFIG_FILE)
-            )
-        )
-        raise
-
-    # run the player
-    dakara.run()
+    # catch HTTP client missing credentials
+    with handle_parameter_error():
+        dakara.run()
 
 
 def create_config(args):
@@ -159,30 +165,11 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
 
-    try:
+    with handle_all_exceptions(
+        bugtracker_url="https://github.com/DakaraProject/dakara-player/issues",
+        logger=logger,
+        debug=args.debug,
+    ) as exit_value:
         args.function(args)
-        value = 0
 
-    except DakaraError as error:
-        if args.debug:
-            raise
-
-        logger.critical(error)
-        value = 1
-
-    except BaseException as error:
-        if args.debug:
-            raise
-
-        logger.exception("Unexpected error: %s", str(error))
-        logger.critical(
-            "Please fill a bug report at "
-            "https://github.com/DakaraProject/dakara-player/issues"
-        )
-        value = 128
-
-    exit(value)
-
-
-if __name__ == "__main__":
-    main()
+    sys.exit(exit_value.value)
