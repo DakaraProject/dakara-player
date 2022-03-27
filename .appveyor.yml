@@ -15,8 +15,6 @@ branches:
 environment:
   # setup tests matrix
   matrix:
-    - PYTHON: "3.6"
-      INTEGRATION_TEST: false
     - PYTHON: "3.7"
       INTEGRATION_TEST: false
     - PYTHON: "3.8"
