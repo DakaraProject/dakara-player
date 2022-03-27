@@ -7,7 +7,7 @@
 Please ensure you have a recent enough version of `setuptools`:
 
 ```sh
-pip install --upgrade "setuptools>=40.0"
+pip install --upgrade "setuptools>=46.4.0"
 ```
 
 Install the dependencies with:
