@@ -14,7 +14,7 @@ class DakaraManager:
     Args:
         font_loader (font.FontLoader): Object for font
             installation/deinstallation.
-        media_player (media_player.MediaPlayer): Interface to VLC.
+        media_player (media_player.MediaPlayer): Interface to the media player.
         client_http (web_client.HTTPClientDakara): Client for the Dakara server
             for the HTTP protocol.
         client_websocket (web_client.WebSocketClientDakara): Client for the

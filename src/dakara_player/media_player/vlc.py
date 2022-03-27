@@ -58,12 +58,12 @@ class MediaPlayerVlc(MediaPlayer):
         errors (queue.Queue): Error queue to communicate the exception to the
             main thread.
         player_name (str): Name of VLC.
-        fullscreen (bool): If True, VLC will be fullscreen.
+        fullscreen (bool): If `True`, VLC will be fullscreen.
         kara_folder_path (path.Path): Path to the karaoke folder.
         playlist_entry (dict): Playlist entyr object.
         callbacks (dict): High level callbacks associated with the media
             player.
-        warn_long_exit (bool): If True, display a warning message if the media
+        warn_long_exit (bool): If `True`, display a warning message if the media
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
         text_paths (dict of path.Path): Path of the different text screens.
@@ -87,7 +87,7 @@ class MediaPlayerVlc(MediaPlayer):
         """Indicate if VLC is available.
 
         Returns:
-            bool: True if VLC is useable.
+            bool: `True` if VLC is useable.
         """
         return vlc is not None and vlc.Instance() is not None
 
@@ -225,7 +225,7 @@ class MediaPlayerVlc(MediaPlayer):
         """Query if VLC is playing something.
 
         Returns:
-            bool: True if VLC is playing something.
+            bool: `True` if VLC is playing something.
         """
         return self.player.get_state() == vlc.State.Playing
 
@@ -245,7 +245,7 @@ class MediaPlayerVlc(MediaPlayer):
                 not if it is actually playing it (it can be in pause).
 
         Returns:
-            bool: True if VLC is playing the requested type.
+            bool: `True` if VLC is playing the requested type.
         """
         media = self.player.get_media()
 
@@ -310,7 +310,7 @@ class MediaPlayerVlc(MediaPlayer):
         Must be overriden.
 
         Args:
-            paused (bool): If True, pause VLC.
+            paused (bool): If `True`, pause VLC.
         """
         if self.is_playing_this("idle"):
             return
@@ -338,7 +338,7 @@ class MediaPlayerVlc(MediaPlayer):
         playing, but media has to be considered already finished.
 
         Args:
-            no_callback (bool): If True, no callback to signal the song has
+            no_callback (bool): If `True`, no callback to signal the song has
                 finished will be executed.
         """
         if self.is_playing_this("transition") or self.is_playing_this("song"):
@@ -368,7 +368,7 @@ class MediaPlayerVlc(MediaPlayer):
         Args:
             playlist_entry (dict): Playlist entry object.
             file_path (path.Path): Absolute path to the song file.
-            autoplay (bool): If True, start to play transition screen as soon
+            autoplay (bool): If `True`, start to play transition screen as soon
                 as possible (i.e. as soon as the transition screen media is
                 ready). The song media is prepared when the transition screen
                 is playing.

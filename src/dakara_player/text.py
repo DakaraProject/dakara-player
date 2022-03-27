@@ -137,7 +137,7 @@ class TextGenerator:
 
         Raises:
             TemplateNotFoundError: If the template can neither be found on
-            custom loader, nor default loader.
+                custom loader, nor default loader.
         """
         loader_custom, loader_default = self.get_environment_loaders()
 

@@ -9,8 +9,8 @@ from path import Path
 def mrl_to_path(file_mrl):
     """Convert a MRL to a filesystem path.
 
-    File path is stored as MRL inside a media object, we have to bring it back
-    to a more classic looking path format.
+    VLC stores file paths as MRL, we have to bring it back to a more classic
+    looking path format.
 
     Args:
         file_mrl (str): Path to the resource within MRL format.
