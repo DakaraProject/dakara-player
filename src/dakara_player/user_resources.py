@@ -39,7 +39,7 @@ def copy_resource(resource, destination, force):
     Args:
         resource (str): Resource to copy.
         destination (path.Path): Directory where to copy the resource.
-        force (bool): If the destination exists and this flag is set to True,
+        force (bool): If the destination exists and this flag is set to `True`,
             overwrite the destination.
     """
     if not force and destination.exists():

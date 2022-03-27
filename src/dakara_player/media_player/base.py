@@ -48,12 +48,12 @@ class MediaPlayer(Worker, ABC):
         errors (queue.Queue): Error queue to communicate the exception to the
             main thread.
         player_name (str): Name of the media player.
-        fullscreen (bool): If True, the media player will be fullscreen.
+        fullscreen (bool): If `True`, the media player will be fullscreen.
         kara_folder_path (path.Path): Path to the karaoke folder.
         playlist_entry (dict): Playlist entyr object.
         callbacks (dict): High level callbacks associated with the media
             player.
-        warn_long_exit (bool): If True, display a warning message if the media
+        warn_long_exit (bool): If `True`, display a warning message if the media
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
         text_paths (dict of path.Path): Path of the different text screens.
@@ -74,7 +74,7 @@ class MediaPlayer(Worker, ABC):
         Must be overriden.
 
         Returns:
-            bool: True if the media player is useable.
+            bool: `True` if the media player is useable.
         """
 
     def init_worker(self, config, tempdir, warn_long_exit=True):
@@ -86,7 +86,7 @@ class MediaPlayer(Worker, ABC):
         Args:
             config (dict): Dictionary of configuration.
             tempdir (path.Path): Path of the temporary directory.
-            warn_long_exit (bool): If True, the class will display a warning
+            warn_long_exit (bool): If `True`, the class will display a warning
                 message if the media player takes too long to stop.
         """
         self.check_is_available()
@@ -209,7 +209,7 @@ class MediaPlayer(Worker, ABC):
         Must be overriden.
 
         Returns:
-            bool: True if the media player is playing something.
+            bool: `True` if the media player is playing something.
         """
 
     @abstractmethod
@@ -219,7 +219,7 @@ class MediaPlayer(Worker, ABC):
         Must be overriden.
 
         Returns:
-            bool: True if the media player is paused.
+            bool: `True` if the media player is paused.
         """
 
     @abstractmethod
@@ -234,7 +234,7 @@ class MediaPlayer(Worker, ABC):
                 in pause).
 
         Returns:
-            bool: True if the media player is playing the requested type.
+            bool: `True` if the media player is playing the requested type.
         """
 
     @abstractmethod
@@ -261,7 +261,7 @@ class MediaPlayer(Worker, ABC):
         Must be overriden.
 
         Args:
-            paused (bool): If True, pause the media player.
+            paused (bool): If `True`, pause the media player.
         """
 
     @abstractmethod
@@ -272,7 +272,7 @@ class MediaPlayer(Worker, ABC):
         continue playing, but media has to be considered already finished.
 
         Args:
-            no_callback (bool): If True, no callback to signal the song has
+            no_callback (bool): If `True`, no callback to signal the song has
                 finished will be executed.
 
         Must be overriden.
@@ -293,7 +293,7 @@ class MediaPlayer(Worker, ABC):
 
         Args:
             playlist_entry (dict): Playlist entry object.
-            autoplay (bool): If True, start to play transition screen as soon
+            autoplay (bool): If `True`, start to play transition screen as soon
                 as possible.
         """
         file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
@@ -321,7 +321,7 @@ class MediaPlayer(Worker, ABC):
         Args:
             playlist_entry (dict): Playlist entry object.
             file_path (path.Path): Absolute path to the song file.
-            autoplay (bool): If True, start to play transition screen as soon
+            autoplay (bool): If `True`, start to play transition screen as soon
                 as possible (i.e. as soon as the transition screen media is
                 ready). The song media is prepared when the transition screen
                 is playing.
@@ -398,7 +398,7 @@ class MediaPlayer(Worker, ABC):
     def exit_worker(self, *args, **kwargs):
         """Exit the worker.
 
-        If `warn_long_exit` was True during initialization, send a warning
+        If `warn_long_exit` was `True` during initialization, send a warning
         after `PLAYER_CLOSING_DURATION` seconds if the worker is not closed
         yet.
         """
@@ -428,7 +428,7 @@ class MediaPlayer(Worker, ABC):
             what (str): What text screen to generate.
             kwargs (dict): Extra arguments passed to the different text
                 screens. For transition screen, accepts the `fade_in` boolean,
-                which is True by default. If False, the transition screen will
+                which is `True` by default. If `False`, the transition screen will
                 have no fade in effect.
 
         Returns:

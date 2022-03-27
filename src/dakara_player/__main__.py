@@ -19,7 +19,7 @@ from dakara_base.exceptions import (
 )
 from dakara_base.http_client import ParameterError
 
-from dakara_player import DakaraPlayer
+from dakara_player.player import DakaraPlayer
 from dakara_player.user_resources import create_resource_files
 from dakara_player.version import __date__, __version__
 

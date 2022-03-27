@@ -19,8 +19,8 @@ class BaseWindowManager(ABC):
 
     Args:
         title (str): Title of the window.
-        fullscreen (bool): If true, the window is fullscreen.
-        disabled (bool): If True, no window are displayed.
+        fullscreen (bool): If `True`, the window is fullscreen.
+        disabled (bool): If `True`, no window are displayed.
     """
 
     GREETINGS = "Abstract window manager selected"
@@ -31,7 +31,7 @@ class BaseWindowManager(ABC):
         """Tell if this window manager can be initialized.
 
         Returns:
-            bool: True if the window managen can be initialized.
+            bool: `True` if the window managen can be initialized.
 
 
         Raises:
@@ -80,8 +80,8 @@ class DummyWindowManager(BaseWindowManager):
 
     Args:
         title (str): Title of the window.
-        fullscreen (bool): If true, the window is fullscreen.
-        disabled (bool): If True, no window are displayed.
+        fullscreen (bool): If `True`, the window is fullscreen.
+        disabled (bool): If `True`, no window are displayed.
     """
 
     GREETINGS = "Dummy window manager selected"
@@ -91,7 +91,7 @@ class DummyWindowManager(BaseWindowManager):
         """Tell if this window manager can be initialized.
 
         Returns:
-            bool: True if the window managen can be initialized.
+            bool: `True` if the window managen can be initialized.
         """
         return True
 
@@ -105,7 +105,7 @@ class DummyWindowManager(BaseWindowManager):
         """Get window ID.
 
         Retuns:
-            int: ID of the window.
+            None: The ID is always `None`.
         """
         return None
 
@@ -122,14 +122,15 @@ class TkWindowManager(BaseWindowManager):
     `generate_event`, but this messes up the destruction order and leads to a
     crash of the interpreter. Using `quit` instead of `destroy` as a workaround
     was problematic for tests, as the method doesn't cleanup after itself,
-    making inpossible to close a second window.
+    making impossible to close a second window.
 
-    See: Https://stackoverflow.com/q/66529633/4584444
+    See:
+        https://stackoverflow.com/q/66529633/4584444
 
     Args:
         title (str): Title of the window.
-        fullscreen (bool): If true, the window is fullscreen.
-        disabled (bool): If True, no window are displayed.
+        fullscreen (bool): If `True`, the window is fullscreen.
+        disabled (bool): If `True`, no window are displayed.
     """
 
     GREETINGS = "Tk window selected"
@@ -140,7 +141,7 @@ class TkWindowManager(BaseWindowManager):
         """Tell if this window manager can be initialized.
 
         Returns:
-            bool: True if the window managen can be initialized.
+            bool: `True` if the window managen can be initialized.
         """
         return tkinter is not None
 

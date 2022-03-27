@@ -13,6 +13,7 @@ from dakara_player.__main__ import (
     main,
     play,
 )
+from dakara_player.player import DakaraPlayer
 
 
 class GetParserTestCase(TestCase):
