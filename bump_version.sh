@@ -16,6 +16,13 @@ then
     exit 1
 fi
 
+# check the repo is clean
+if [[ $(git status --porcelain) ]]
+then
+    >&2 echo 'Error: the repository is not clean, commit unstaged files'
+    exit 1
+fi
+
 version_number=$1
 dev_version_number=$2-dev
 version_date=$(date -I -u)
