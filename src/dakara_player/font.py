@@ -105,7 +105,8 @@ class FontLoaderLinux(FontLoader):
     exit. Using symbolic links is not safe as the location of the package fonts
     may not be permanent (see `importlib.resources.path` for more info).
 
-    See: https://docs.python.org/3/library/importlib.html#importlib.resources.path
+    See:
+        https://docs.python.org/3/library/importlib.html#importlib.resources.path
 
     Example of use:
 

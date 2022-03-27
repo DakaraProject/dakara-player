@@ -18,17 +18,18 @@ class BackgroundLoader:
     """Loader for backgrounds.
 
     It finds background files in a custom directory and fallbacks to a package
-    resource. Each found background file is copied to a destination directory.
+    resource. Each background file found is copied to a destination directory.
     If the loader cannot find a file, an exception is raised.
 
     By instance, given you have the following directory structure:
-        - `package.default`
-            - `idle.png`
-            - `transition.png`
-            - `other.png`
-        - `/directory/custom`
-            - `transition.png`
-            - `something.png`
+
+    - `package.default`
+        - `idle.png`
+        - `transition.png`
+        - `other.png`
+    - `/directory/custom`
+        - `transition.png`
+        - `something.png`
 
     and you use the following configuration:
     >>> loader = BackgroundLoader(

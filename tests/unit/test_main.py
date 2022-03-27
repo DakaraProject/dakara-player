@@ -6,7 +6,6 @@ from dakara_base.config import ConfigNotFoundError
 from dakara_base.exceptions import DakaraError
 from path import Path
 
-from dakara_player import DakaraPlayer
 from dakara_player.__main__ import (
     create_config,
     create_resources,
@@ -14,6 +13,7 @@ from dakara_player.__main__ import (
     main,
     play,
 )
+from dakara_player.player import DakaraPlayer
 
 
 class GetParserTestCase(TestCase):

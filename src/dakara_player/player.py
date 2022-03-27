@@ -108,11 +108,12 @@ class DakaraWorker(WorkerSafeThread):
         Then it starts the polling thread and waits for the end.
 
         When `run` is called, the end can come for several reasons:
-            * the main thread (who calls the worker thread) has caught a Ctrl+C
-              from the user;
-            * an exception has been raised within the `run` method (directly in
-              the worker thread);
-            * an exception has been raised within the polling thread.
+
+        * the main thread (who calls the worker thread) has caught a Ctrl+C
+          from the user;
+        * an exception has been raised within the `run` method (directly in
+          the worker thread);
+        * an exception has been raised within the polling thread.
         """
         # get the different workers as context managers
         # ExitStack makes the management of multiple context managers simpler

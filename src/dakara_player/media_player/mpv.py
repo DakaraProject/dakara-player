@@ -55,7 +55,7 @@ class MediaPlayerMpv(MediaPlayer, ABC):
         Try the detection `PLAYER_IS_AVAILABLE_ATTEMPTS` times.
 
         Returns:
-            bool: True if mpv is useable.
+            bool: `True` if mpv is useable.
         """
         if mpv is None:
             return False
@@ -153,12 +153,12 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         errors (queue.Queue): Error queue to communicate the exception to the
             main thread.
         player_name (str): Name of mpv.
-        fullscreen (bool): If True, mpv will be fullscreen.
+        fullscreen (bool): If `True`, mpv will be fullscreen.
         kara_folder_path (path.Path): Path to the karaoke folder.
         playlist_entry (dict): Playlist entyr object.
         callbacks (dict): High level callbacks associated with the media
             player.
-        warn_long_exit (bool): If True, display a warning message if the media
+        warn_long_exit (bool): If `True`, display a warning message if the media
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
         text_paths (dict of path.Path): Path of the different text screens.
@@ -249,7 +249,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         """Query if mpv is playing something.
 
         Returns:
-            bool: True if mpv is playing something.
+            bool: `True` if mpv is playing something.
 
         Raises:
             AssertError: If too many intries are present in the mpv internal
@@ -273,7 +273,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         """Query if mpv is paused.
 
         Returns:
-            bool: True if mpv is paused.
+            bool: `True` if mpv is paused.
         """
         return self.player.pause
 
@@ -292,7 +292,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
                 not if it is actually playing it (it can be in pause).
 
         Returns:
-            bool: True if mpv is playing the requested type.
+            bool: `True` if mpv is playing the requested type.
 
         Raises:
             AssertError: If too many entries are present in the mpv internal
@@ -391,7 +391,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         effect if mpv is already unpaused.
 
         Args:
-            paused (bool): If True, pause mpv.
+            paused (bool): If `True`, pause mpv.
         """
         if self.is_playing_this("idle"):
             return
@@ -419,7 +419,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         continue playing, but media has to be considered already finished.
 
         Args:
-            no_callback (bool): If True, no callback to signal the song has
+            no_callback (bool): If `True`, no callback to signal the song has
                 finished will be executed.
         """
         if self.is_playing_this("transition") or self.is_playing_this("song"):
@@ -446,7 +446,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         Args:
             playlist_entry (dict): Playlist entry object.
             file_path (path.Path): Absolute path to the song file.
-            autoplay (bool): If True, start to play transition screen as soon
+            autoplay (bool): If `True`, start to play transition screen as soon
                 as possible (i.e. as soon as the transition screen media is
                 ready). The song media is prepared when the transition screen
                 is playing.
@@ -710,12 +710,12 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
         errors (queue.Queue): Error queue to communicate the exception to the
             main thread.
         player_name (str): Name of mpv.
-        fullscreen (bool): If True, mpv will be fullscreen.
+        fullscreen (bool): If `True`, mpv will be fullscreen.
         kara_folder_path (path.Path): Path to the karaoke folder.
         playlist_entry (dict): Playlist entyr object.
         callbacks (dict): High level callbacks associated with the media
             player.
-        warn_long_exit (bool): If True, display a warning message if the media
+        warn_long_exit (bool): If `True`, display a warning message if the media
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
         text_paths (dict of path.Path): Path of the different text screens.
@@ -734,7 +734,7 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
         """Query if mpv is playing something.
 
         Returns:
-            bool: True if mpv is playing something.
+            bool: `True` if mpv is playing something.
         """
         # query if the player is currently playing
         if self.is_paused():
@@ -751,7 +751,7 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
             id (int): ID of the track in mpv internal playlist.
 
         Returns:
-            bool: True if mpv was playing the requested track.
+            bool: `True` if mpv was playing the requested track.
 
         Raises:
             AssertError: If zero or more than one entries correspond to the
@@ -774,7 +774,7 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
             media_path (path.Path): Optional media path.
 
         Returns:
-            bool: True if mpv is playing the requested type.
+            bool: `True` if mpv is playing the requested type.
         """
         media_path = media_path or self.player.path
 

@@ -24,7 +24,7 @@ def is_audio_file(file_path):
         file_path (path.Path): Path of the file to investigate.
 
     Returns:
-        bool: True if the file is an audio file, False otherwise.
+        bool: `True` if the file is an audio file, `False` otherwise.
     """
     kind = filetype.guess(str(file_path))
     if not kind:
