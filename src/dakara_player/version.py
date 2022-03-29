@@ -1,11 +1,14 @@
-"""Version of the program."""
+"""Version of the program.
+
+The version and date module variables are automatically updated by
+`bump_version.sh`.
+"""
 
 import logging
 
-import importlib_metadata
 from pkg_resources import parse_version
 
-__version__ = importlib_metadata.version("dakaraplayer")
+__version__ = "1.8.0-dev"
 __date__ = "2021-06-20"
 
 logger = logging.getLogger(__name__)

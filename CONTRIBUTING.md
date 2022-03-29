@@ -7,7 +7,7 @@
 Please ensure you have a recent enough version of `setuptools`:
 
 ```sh
-pip install --upgrade "setuptools>=40.0"
+pip install --upgrade "setuptools>=46.4.0"
 ```
 
 Install the dependencies with:
@@ -17,6 +17,14 @@ pip install -e ".[tests]"
 ```
 
 This installs the normal dependencies of the package plus the dependencies for tests.
+
+### Documentation
+
+Documentation is built with [pdoc](https://pdoc.dev/) with the command:
+
+```sh
+pdoc --docformat=google -o doc/ ./src/dakara_player
+```
 
 ### Tests
 
