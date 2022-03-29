@@ -2,6 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
+from functools import wraps
 from threading import Timer
 
 from dakara_base.exceptions import DakaraError
@@ -510,9 +511,11 @@ def on_playing_this(what_list, default_return=None):
     Args:
         what_list (list): List of possible states.
         default_return (any): Value to return if the state is different.
+            Default to `None`.
     """
 
     def decorator(function):
+        @wraps(function)
         def wrap(self, *args, **kwargs):
             for what in what_list:
                 if self.is_playing_this(what):
