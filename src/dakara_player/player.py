@@ -143,6 +143,7 @@ class DakaraWorker(WorkerSafeThread):
             http_client = HTTPClientDakara(
                 self.config["server"], endpoint_prefix="api/", mute_raise=True
             )
+            http_client.load()
             http_client.authenticate()
             token_header = http_client.get_token_header()
 

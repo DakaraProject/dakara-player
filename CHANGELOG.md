@@ -47,6 +47,10 @@
 - Stopping the karaoke when a song is paused using mpv was sending a resumed callback to the server, that was rejected.
   This behavior was fixed.
 
+### Removed
+
+- Dropped support of Python 3.6.
+
 ## 1.7.0 - 2021-06-20
 
 ### Update notes
