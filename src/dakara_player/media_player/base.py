@@ -2,6 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
+from functools import wraps
 from threading import Timer
 
 from dakara_base.exceptions import DakaraError
@@ -23,6 +24,8 @@ IDLE_TEXT_NAME = "idle.ass"
 IDLE_DURATION = 300
 
 PLAYER_CLOSING_DURATION = 3
+
+REWIND_FAST_FORWARD_DURATION = 10
 
 
 logger = logging.getLogger(__name__)
@@ -106,6 +109,9 @@ class MediaPlayer(Worker, ABC):
             "idle": IDLE_DURATION,
             "transition": config_durations.get(
                 "transition_duration", TRANSITION_DURATION
+            ),
+            "rewind_fast_forward": config_durations.get(
+                "rewind_fast_forward_duration", REWIND_FAST_FORWARD_DURATION
             ),
         }
 
@@ -251,17 +257,32 @@ class MediaPlayer(Worker, ABC):
         """
 
     @abstractmethod
-    def pause(self, paused):
-        """Request the media player to pause or unpause.
+    def pause(self):
+        """Request the media player to pause.
 
         Can only work on transition screens or songs. Pausing should have no
-        effect if the media player is already paused, unpausing should have no
-        effect if the media player is already unpaused.
+        effect if the media player is already paused.
 
         Must be overriden.
+        """
 
-        Args:
-            paused (bool): If `True`, pause the media player.
+    @abstractmethod
+    def resume(self):
+        """Request the media player to resume playing.
+
+        Can only work on transition screens or songs. Resuming should have no
+        effect if the media player is already playing.
+
+        Must be overriden.
+        """
+
+    @abstractmethod
+    def restart(self):
+        """Request to restart the current media.
+
+        Can only work on songs.
+
+        Must be overriden.
         """
 
     @abstractmethod
@@ -274,6 +295,23 @@ class MediaPlayer(Worker, ABC):
         Args:
             no_callback (bool): If `True`, no callback to signal the song has
                 finished will be executed.
+
+        Must be overriden.
+        """
+
+    @abstractmethod
+    def rewind(self):
+        """Request to rewind a few seconds the media.
+
+        Can only work on songs. It cannot rewind before the beginning of the media.
+
+        Must be overriden.
+        """
+
+    def fast_forward(self):
+        """Request to fast forward a few seconds the media.
+
+        Can only work on songs. It cannot advance passed the end of the media.
 
         Must be overriden.
         """
@@ -298,7 +336,7 @@ class MediaPlayer(Worker, ABC):
         """
         file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
 
-        if not file_path.exists():
+        if not file_path.isfile():
             logger.error("File not found '%s'", file_path)
             self.callbacks["error"](playlist_entry["id"], "File not found")
             self.callbacks["could_not_play"](playlist_entry["id"])
@@ -394,6 +432,7 @@ class MediaPlayer(Worker, ABC):
         self.set_callback("paused", lambda playlist_entry_id, timing: None)
         self.set_callback("resumed", lambda playlist_entry_id, timing: None)
         self.set_callback("error", lambda playlist_entry_id, message: None)
+        self.set_callback("updated_timing", lambda playlist_entry_id, timing: None)
 
     def exit_worker(self, *args, **kwargs):
         """Exit the worker.
@@ -463,6 +502,33 @@ class MediaPlayer(Worker, ABC):
         self.text_paths[what].write_text(text, encoding="utf-8")
 
         return self.text_paths[what]
+
+
+def on_playing_this(what_list, default_return=None):
+    """Decorator for methods that necessitate the player to be playing
+    something specifically.
+
+    Args:
+        what_list (list): List of possible states.
+        default_return (any): Value to return if the state is different.
+            Default to `None`.
+    """
+
+    def decorator(function):
+        @wraps(function)
+        def wrap(self, *args, **kwargs):
+            for what in what_list:
+                if self.is_playing_this(what):
+                    break
+
+            else:
+                return default_return
+
+            return function(self, *args, **kwargs)
+
+        return wrap
+
+    return decorator
 
 
 class KaraFolderNotFound(DakaraError):

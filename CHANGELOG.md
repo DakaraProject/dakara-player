@@ -33,6 +33,8 @@
 ### Added
 
 - Fonts are automatically installed on Windows.
+- Songs can be restarted, rewound, or fast forwarded during playback.
+  Duration of the rewind/fast forward jump is 10 seconds by default and can be customized in the config file using the `player.durations.rewind_fast_forward_duration` key.
 
 ### Changed
 

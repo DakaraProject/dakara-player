@@ -38,6 +38,7 @@ class DakaraManager:
         self.media_player.set_callback("paused", self.handle_paused)
         self.media_player.set_callback("resumed", self.handle_resumed)
         self.media_player.set_callback("error", self.handle_error)
+        self.media_player.set_callback("updated_timing", self.handle_updated_timing)
 
         # set dakara server websocket callbacks
         self.client_websocket.set_callback("idle", self.play_idle_screen)
@@ -104,6 +105,15 @@ class DakaraManager:
         """
         self.client_http.put_status_resumed(playlist_entry_id, timing)
 
+    def handle_updated_timing(self, playlist_entry_id, timing):
+        """Callback when the player updated its timing.
+
+        Args:
+            playlist_entry_id (int): Playlist entry ID.
+            timing (int): Position of the player in seconds.
+        """
+        self.client_http.put_status_update_timing(playlist_entry_id, timing)
+
     def play_playlist_entry(self, playlist_entry):
         """Play the requested playlist entry.
 
@@ -130,17 +140,11 @@ class DakaraManager:
         """
         assert command in (
             "pause",
-            "play",
+            "resume",
+            "restart",
             "skip",
+            "rewind",
+            "fast_forward",
         ), "Unknown command requested: '{}'".format(command)
 
-        if command == "pause":
-            self.media_player.pause(True)
-            return
-
-        if command == "play":
-            self.media_player.pause(False)
-            return
-
-        if command == "skip":
-            self.media_player.skip()
+        getattr(self.media_player, command)()

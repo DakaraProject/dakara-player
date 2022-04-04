@@ -23,6 +23,7 @@ from dakara_player.media_player.base import (
     InvalidStateError,
     MediaPlayer,
     VersionNotFoundError,
+    on_playing_this,
 )
 from dakara_player.mrl import mrl_to_path, path_to_mrl
 
@@ -144,6 +145,7 @@ class MediaPlayerVlc(MediaPlayer):
         # print VLC version
         logger.info("VLC %s", self.get_version())
 
+    @on_playing_this(["song"], default_return=0)
     def get_timing(self):
         """Get VLC timing.
 
@@ -151,9 +153,6 @@ class MediaPlayerVlc(MediaPlayer):
             int: Current song timing in seconds if a song is playing, or 0 when
                 idle or during transition screen.
         """
-        if self.is_playing_this("idle") or self.is_playing_this("transition"):
-            return 0
-
         timing = self.player.get_time()
 
         # correct the way VLC handles when it hasn't started to play yet
@@ -300,30 +299,27 @@ class MediaPlayerVlc(MediaPlayer):
         self.player.set_media(media)
         self.player.play()
 
-    def pause(self, paused):
-        """Request VLC to pause or unpause.
+    @on_playing_this(["transition", "song"])
+    def pause(self):
+        """Request VLC to pause.
 
         Can only work on transition screens or songs. Pausing should have no
-        effect if VLC is already paused, unpausing should have no
-        effect if VLC is already unpaused.
-
-        Must be overriden.
-
-        Args:
-            paused (bool): If `True`, pause VLC.
+        effect if VLC is already paused.
         """
-        if self.is_playing_this("idle"):
+        if self.is_paused():
+            logger.debug("Player already in pause")
             return
 
-        if paused:
-            if self.is_paused():
-                logger.debug("Player already in pause")
-                return
+        logger.info("Setting pause")
+        self.player.pause()
 
-            logger.info("Setting pause")
-            self.player.pause()
-            return
+    @on_playing_this(["transition", "song"])
+    def resume(self):
+        """Request VLC to resume playing.
 
+        Can only work on transition screens or songs. Resuming should have no
+        effect if VLC is already playing.
+        """
         if not self.is_paused():
             logger.debug("Player already playing")
             return
@@ -331,6 +327,17 @@ class MediaPlayerVlc(MediaPlayer):
         logger.info("Resuming play")
         self.player.play()
 
+    @on_playing_this(["song"])
+    def restart(self):
+        """Request to restart the current media.
+
+        Can only work on songs.
+        """
+        logger.info("Restarting media")
+        self.player.set_time(0)
+        self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
+
+    @on_playing_this(["transition", "song"])
     def skip(self, no_callback=False):
         """Request to skip the current media.
 
@@ -341,12 +348,49 @@ class MediaPlayerVlc(MediaPlayer):
             no_callback (bool): If `True`, no callback to signal the song has
                 finished will be executed.
         """
-        if self.is_playing_this("transition") or self.is_playing_this("song"):
-            logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
-            if not no_callback:
-                self.callbacks["finished"](self.playlist_entry["id"])
+        logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
+        if not no_callback:
+            self.callbacks["finished"](self.playlist_entry["id"])
 
-            self.clear_playlist_entry()
+        self.clear_playlist_entry()
+
+    @on_playing_this(["song"])
+    def rewind(self):
+        """Request to rewind a few seconds the media.
+
+        Can only work on songs. It cannot rewind before the beginning of the
+        media. In that case, restart the song.
+        """
+        timing = int(
+            self.player.get_time() - self.durations["rewind_fast_forward"] * 1000
+        )
+
+        if timing < 0:
+            self.restart()
+            return
+
+        logger.info("Rewinding media")
+        self.player.set_time(timing)
+        self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
+
+    @on_playing_this(["song"])
+    def fast_forward(self):
+        """Request to fast forward a few seconds the media.
+
+        Can only work on songs. It cannot advance passed the end of the media.
+        In that case, skip the song.
+        """
+        timing = int(
+            self.player.get_time() + self.durations["rewind_fast_forward"] * 1000
+        )
+
+        if timing > self.player.get_media().get_duration():
+            self.skip()
+            return
+
+        logger.info("Fast forwarding media")
+        self.player.set_time(timing)
+        self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
 
     def stop_player(self):
         """Request to stop VLC."""

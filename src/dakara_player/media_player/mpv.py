@@ -17,6 +17,7 @@ from dakara_player.media_player.base import (
     InvalidStateError,
     MediaPlayer,
     VersionNotFoundError,
+    on_playing_this,
 )
 
 logger = logging.getLogger(__name__)
@@ -224,6 +225,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         # handle image transitions as videos
         self.player.demuxer_lavf_o = "loop=1"
 
+    @on_playing_this(["song"], default_return=0)
     def get_timing(self):
         """Get mpv timing.
 
@@ -231,9 +233,6 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             int: Current song timing in seconds if a song is playing, or 0 when
                 idle or during transition screen.
         """
-        if self.is_playing_this("idle") or self.is_playing_this("transition"):
-            return 0
-
         timing = self.player.time_pos or 0
 
         return int(timing)
@@ -383,28 +382,27 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         raise ValueError("Unexpected action to play: {}".format(what))
 
-    def pause(self, pause):
+    @on_playing_this(["transition", "song"])
+    def pause(self):
         """Request mpv to pause or unpause.
 
         Can only work on transition screens or songs. Pausing should have no
-        effect if mpv is already paused, unpausing should have no
-        effect if mpv is already unpaused.
-
-        Args:
-            paused (bool): If `True`, pause mpv.
+        effect if mpv is already paused.
         """
-        if self.is_playing_this("idle"):
+        if self.is_paused():
+            logger.debug("Player already in pause")
             return
 
-        if pause:
-            if self.is_paused():
-                logger.debug("Player already in pause")
-                return
+        logger.info("Setting pause")
+        self.player.pause = True
 
-            logger.info("Setting pause")
-            self.player.pause = True
-            return
+    @on_playing_this(["transition", "song"])
+    def resume(self):
+        """Request mpv to resume playing.
 
+        Can only work on transition screens or songs. Resuming should have no
+        effect if mpv is already playing.
+        """
         if not self.is_paused():
             logger.debug("Player already playing")
             return
@@ -412,6 +410,17 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         logger.info("Resuming play")
         self.player.pause = False
 
+    @on_playing_this(["song"])
+    def restart(self):
+        """Request to restart the current media.
+
+        Can only work on songs.
+        """
+        logger.info("Restarting media")
+        self.player.time_pos = 0
+        self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
+
+    @on_playing_this(["transition", "song"])
     def skip(self, no_callback=False):
         """Request to skip the current media.
 
@@ -422,13 +431,46 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             no_callback (bool): If `True`, no callback to signal the song has
                 finished will be executed.
         """
-        if self.is_playing_this("transition") or self.is_playing_this("song"):
-            logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
-            self.player_data["skip"] = True
-            if not no_callback:
-                self.callbacks["finished"](self.playlist_entry["id"])
+        logger.info("Skipping '%s'", self.playlist_entry["song"]["title"])
+        self.player_data["skip"] = True
+        if not no_callback:
+            self.callbacks["finished"](self.playlist_entry["id"])
 
-            self.clear_playlist_entry()
+        self.clear_playlist_entry()
+
+    @on_playing_this(["song"])
+    def rewind(self):
+        """Request to rewind a few seconds the media.
+
+        Can only work on songs. It cannot rewind before the beginning of the
+        media. In that case, restart the song.
+        """
+        timing = self.player.time_pos - self.durations["rewind_fast_forward"]
+
+        if timing < 0:
+            self.restart()
+            return
+
+        logger.info("Rewinding media")
+        self.player.time_pos = timing
+        self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
+
+    @on_playing_this(["song"])
+    def fast_forward(self):
+        """Request to fast forward a few seconds the media.
+
+        Can only work on songs. It cannot advance passed the end of the media.
+        In that case, skip the song.
+        """
+        timing = self.player.time_pos + self.durations["rewind_fast_forward"]
+
+        if timing > self.player.duration:
+            self.skip()
+            return
+
+        logger.info("Fast forwarding media")
+        self.player.time_pos = timing
+        self.callbacks["updated_timing"](self.playlist_entry["id"], self.get_timing())
 
     def stop_player(self):
         """Request to stop mpv."""

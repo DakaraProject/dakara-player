@@ -104,6 +104,14 @@ class DakaraManagerTestCase(TestCase):
         # call assertions
         self.client_http.put_status_resumed.assert_called_once_with(999, 10)
 
+    def test_handle_updated_timing(self):
+        """Test the callback called when the player updated its timing."""
+        # call the method
+        self.dakara_manager.handle_updated_timing(999, 10)
+
+        # call assertions
+        self.client_http.put_status_update_timing.assert_called_once_with(999, 10)
+
     def test_do_command_successful(self):
         """Test the command manager for valid commands."""
         # mock the playlist entry ID
@@ -113,16 +121,16 @@ class DakaraManagerTestCase(TestCase):
         self.dakara_manager.do_command("pause")
 
         # assert the call
-        self.dakara_manager.media_player.pause.assert_called_with(True)
+        self.media_player.pause.assert_called_with()
 
         # reset the mock
-        self.dakara_manager.media_player.pause.reset_mock()
+        self.media_player.pause.reset_mock()
 
-        # call the method for pause
-        self.dakara_manager.do_command("play")
+        # call the method for resume
+        self.dakara_manager.do_command("resume")
 
         # assert the call
-        self.dakara_manager.media_player.pause.assert_called_with(False)
+        self.media_player.resume.assert_called_with()
 
         # call the method for skip
         self.dakara_manager.do_command("skip")

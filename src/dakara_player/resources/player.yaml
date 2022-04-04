@@ -126,6 +126,10 @@ player:
     # Default is 2 seconds.
     # transition_duration: 2
 
+    # Interval of the jump when rewinding or advancing a media.
+    # Default is 10 seconds.
+    # rewind_fast_forward_duration: 10
+
 # Parameters for the server
 server:
   # Server address (host and port given at the same time)
