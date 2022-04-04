@@ -14,7 +14,7 @@ except ImportError:
     from importlib_resources import path
 
 
-ICON_MAP_FILE = "font-awesome.json"
+ICON_MAP_FILE = "line-awesome.json"
 
 LINK_TYPE_NAMES = {
     "OP": "Opening",

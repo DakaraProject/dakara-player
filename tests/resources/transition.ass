@@ -18,17 +18,17 @@ Style: playlist-entry-detail-icon,Roboto Light,40,&H00A01286,&H00191919,&H003333
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 Dialogue: 0,0:00:00.00,0:00:05.00,title,,0,0,0,,{\fad(500, 0)}Song title
 
-Dialogue: 0,0:00:00.10,0:00:05.00,song-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome}{\fs50}​
+Dialogue: 0,0:00:00.10,0:00:05.00,song-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnla-solid-900}{\fs50}​
 Dialogue: 1,0:00:00.10,0:00:05.00,song-detail-text,,0,0,0,,{\fad(500, 0)}Artist name
 
 
-Dialogue: 0,0:00:00.20,0:00:05.00,song-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome}{\fs50}​
+Dialogue: 0,0:00:00.20,0:00:05.00,song-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnla-solid-900}{\fs50}​
 Dialogue: 1,0:00:00.20,0:00:05.00,song-detail-text,,0,0,0,,{\fad(500, 0)}Work title {\alpha&H80&}Subtitle of the work{\r} OP1
 
-Dialogue: 0,0:00:00.10,0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome}{\fs50}​
+Dialogue: 0,0:00:00.10,0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnla-solid-900}{\fs50}​
 Dialogue: 1,0:00:00.10,0:00:05.00,playlist-entry-detail-text,,0,0,0,,{\fad(500, 0)}User
 
-Dialogue: 0,0:00:00.20,0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome}{\fs50}​
+Dialogue: 0,0:00:00.20,0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnla-solid-900}{\fs50}​
 
 
 ; We have decided to use subtitle files for text display with media players
@@ -62,7 +62,7 @@ Dialogue: 0,0:00:00.20,0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 
 ;                             "name": "name of the type of work",
 ;                             "name_plural": "plural form of the name",
 ;                             "query_name": "query name form of the name",
-;                             "icon_name": "FontAwesome name of the icon",
+;                             "icon_name": "Line Awesome name of the icon",
 ;                         }
 ;                     },
 ;                     "link_type": "type of relation betwoon the song and the work",
@@ -82,7 +82,7 @@ Dialogue: 0,0:00:00.20,0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 
 ; }
 
 ; Icon name can be used with the filter `icon` to get an actual icon (you have to
-; set the font as Fontawesome). Long name of the link type is obtained with the
+; set the font as Line Awesome). Long name of the link type is obtained with the
 ; `link_type_name` filter.
 
 ; You will notice the special character "​" (zero width space, U+200B, may

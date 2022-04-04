@@ -301,7 +301,7 @@ class TextGeneratorIntegrationTestCase(TestCase):
         # check file content
         with path("tests.resources", "idle.ass") as file:
             idle_text_content = file.read_text(encoding="utf8")
-            self.assertEqual(idle_text_content, result)
+            self.assertEqual(idle_text_content.rstrip(), result.rstrip())
 
     def test_get_transition_text(self):
         """Test the generation of a transition text."""
@@ -313,7 +313,7 @@ class TextGeneratorIntegrationTestCase(TestCase):
         # check file content
         with path("tests.resources", "transition.ass") as file:
             transition_text_content = file.read_text(encoding="utf8")
-            self.assertEqual(transition_text_content, result)
+            self.assertEqual(transition_text_content.rstrip(), result.rstrip())
 
 
 class SeparatePackageLastDirectoryTestCase(TestCase):
