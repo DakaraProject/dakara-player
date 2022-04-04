@@ -128,7 +128,7 @@ player:
 
     # Interval of the jump when rewinding or advancing a media.
     # Default is 10 seconds.
-    # back_forward_duration: 10
+    # rewind_fast_forward_duration: 10
 
 # Parameters for the server
 server:
