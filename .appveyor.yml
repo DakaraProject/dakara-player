@@ -85,7 +85,7 @@ for:
 
     install:
       # install system dependencies if requested
-      - "if %INTEGRATION_TEST% == true (cinst vlc --force --version=3.0.12)"
+      - "if %INTEGRATION_TEST% == true (cinst vlc)"
       - "if %INTEGRATION_TEST% == true (cinst mpv)"
 
       # the features used in setup.cfg require a recent enough version of setuptools

@@ -7,7 +7,7 @@ import sys
 
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
-from packaging.version import Version, parse
+from packaging.version import parse
 
 from dakara_player.window import DummyWindowManager, WindowManager
 
@@ -190,7 +190,7 @@ class MediaPlayerVlc(MediaPlayer):
         if version.major < 3:
             raise VlcTooOldError("VLC is too old (version 3 and higher supported)")
 
-        if version in (Version("3.0.13"), Version("3.0.14")):
+        if version.minor == 0 and 13 <= version.micro <= 16:
             logger.warning(
                 "This version of VLC is known to not work with Dakara player"
             )
