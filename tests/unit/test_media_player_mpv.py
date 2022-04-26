@@ -102,8 +102,9 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_get_class_from_version.assert_called_with(Version("0.27.0"))
         mocked_get_version.assert_called_with()
 
+    @patch.object(MediaPlayerMpv, "get_version")
     @patch.object(MediaPlayerMpv, "get_class_from_version")
-    def test_instanciate(self, mocked_get_class_from_version):
+    def test_instanciate(self, mocked_get_class_from_version, mocked_get_version):
         """Test to instanciate media player mpv class."""
         mocked_get_class_from_version.return_value = MagicMock()
 
