@@ -17,6 +17,7 @@ from dakara_player.media_player.mpv import (
     MediaPlayerMpv,
     MediaPlayerMpvOld,
     MediaPlayerMpvPost0330,
+    MediaPlayerMpvPost0340,
 )
 
 
@@ -61,35 +62,56 @@ class MediaPlayerMpvTestCase(TestCase):
         with self.assertRaisesRegex(VersionNotFoundError, "Unable to get mpv version"):
             MediaPlayerMpvOld.get_version()
 
+    def test_get_class_from_version(self):
+        """Test to get media player for various versions of mpv."""
+        versions = [
+            ("0.27.0", MediaPlayerMpvOld),
+            ("0.33.0", MediaPlayerMpvPost0330),
+            ("0.34.0", MediaPlayerMpvPost0340),
+        ]
+
+        for version, media_player_class in versions:
+            self.assertIs(
+                MediaPlayerMpv.get_class_from_version(Version(version)),
+                media_player_class,
+            )
+
     @patch.object(MediaPlayerMpv, "get_version")
-    def test_get_old(self, mocked_get_version):
-        """Test to get media player for old version of mpv."""
+    @patch.object(MediaPlayerMpv, "get_class_from_version")
+    def test_from_version_config(
+        self, mocked_get_class_from_version, mocked_get_version
+    ):
+        """Test to get version from config."""
+        MediaPlayerMpv.from_version(
+            None, None, {"mpv": {"force_version": "0.27.0"}}, None
+        )
+
+        mocked_get_class_from_version.assert_called_with(Version("0.27.0"))
+        mocked_get_version.assert_not_called()
+
+    @patch.object(MediaPlayerMpv, "get_version")
+    @patch.object(MediaPlayerMpv, "get_class_from_version")
+    def test_from_version_player(
+        self, mocked_get_class_from_version, mocked_get_version
+    ):
+        """Test to get version from player."""
         mocked_get_version.return_value = Version("0.27.0")
 
-        self.assertIs(MediaPlayerMpv.get_class_from_version(), MediaPlayerMpvOld)
+        MediaPlayerMpv.from_version(None, None, {"mpv": {}}, None)
+
+        mocked_get_class_from_version.assert_called_with(Version("0.27.0"))
+        mocked_get_version.assert_called_with()
 
     @patch.object(MediaPlayerMpv, "get_version")
-    def test_get_post_0330(self, mocked_get_version):
-        """Test to get media player for version of mpv newer than 0.33.0."""
-        mocked_get_version.return_value = Version("0.33.0")
-
-        self.assertIs(MediaPlayerMpv.get_class_from_version(), MediaPlayerMpvPost0330)
-
     @patch.object(MediaPlayerMpv, "get_class_from_version")
-    def test_instanciate(self, mocked_get_class_from_version):
+    def test_instanciate(self, mocked_get_class_from_version, mocked_get_version):
         """Test to instanciate media player mpv class."""
+        mocked_get_class_from_version.return_value = MagicMock()
 
-        class Dummy:
-            def __init__(self, *args, **kwargs):
-                self.args = args
-                self.kwargs = kwargs
-
-        mocked_get_class_from_version.return_value = Dummy
-
-        instance = MediaPlayerMpv.from_version(1, 2, v3=3, v4=4)
-        self.assertIsInstance(instance, Dummy)
-        self.assertEqual(instance.args, (1, 2))
-        self.assertEqual(instance.kwargs, {"v3": 3, "v4": 4})
+        MediaPlayerMpv.from_version(None, None, {}, "tmp")
+        mocked_get_class_from_version.return_value.assert_called_with(
+            None, None, {}, "tmp"
+        )
 
     @patch("dakara_player.media_player.mpv.mpv.MPV")
     def test_is_available_ok_direct(self, mocked_mpv_class):
@@ -402,6 +424,29 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mocked_play.assert_not_called()
         mocked_clear_playlist_entry.assert_called_with()
         mpv_player.callbacks["finished"].assert_called_with(self.playlist_entry["id"])
+
+    @patch.object(MediaPlayerMpvOld, "play")
+    def test_handle_end_file_song_too_fast(self, mocked_play):
+        """Test song end callback after a song with instantaneous response
+        from server.
+        """
+        # create instance
+        mpv_player, (mocked_player, _, _), _ = self.get_instance()
+        mpv_player.set_callback(
+            "finished", lambda _: self.set_playlist_entry(mpv_player, started=False)
+        )
+        self.set_playlist_entry(mpv_player)
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG"):
+            mpv_player.handle_end_file({"event": "end-file"})
+
+        # post asserts
+        self.assertTrue(mpv_player.errors.empty())
+        self.assertIsNotNone(mpv_player.playlist_entry_data["song"].path)
+
+        # assert the call
+        mocked_play.assert_not_called()
 
     @patch.object(MediaPlayerMpvOld, "clear_playlist_entry")
     @patch.object(MediaPlayerMpvOld, "play")
@@ -739,6 +784,31 @@ class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
         mocked_clear_playlist_entry.assert_called_with()
         mpv_player.callbacks["finished"].assert_called_with(self.playlist_entry["id"])
 
+    @patch.object(MediaPlayerMpvPost0330, "play")
+    def test_handle_end_file_song_too_fast(self, mocked_play):
+        """Test song end callback after a song with instantaneous response
+        from server.
+        """
+        # create instance
+        mpv_player, (mocked_player, _, _), _ = self.get_instance()
+        mpv_player.set_callback(
+            "finished", lambda _: self.set_playlist_entry(mpv_player, started=False)
+        )
+        self.set_playlist_entry(mpv_player)
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG"):
+            mpv_player.handle_end_file(
+                {"event": "end-file", "reason": "eof", "playlist_entry_id": 1}
+            )
+
+        # post asserts
+        self.assertTrue(mpv_player.errors.empty())
+        self.assertIsNotNone(mpv_player.playlist_entry_data["song"].path)
+
+        # assert the call
+        mocked_play.assert_not_called()
+
     @patch.object(MediaPlayerMpvPost0330, "clear_playlist_entry")
     @patch.object(MediaPlayerMpvPost0330, "play")
     def test_handle_end_file_other(self, mocked_play, mocked_clear_playlist_entry):
@@ -766,3 +836,94 @@ class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
         mocked_play.assert_not_called()
         mocked_clear_playlist_entry.assert_not_called()
         mpv_player.callbacks["finished"].assert_not_called()
+
+
+class MediaPlayerMpvPost0340TestCase(MediaPlayerMpvModelTestCase):
+    """Test the post 0.34.0 mpv player class unitary."""
+
+    mpv_player_class = MediaPlayerMpvPost0340
+
+    @patch.object(MediaPlayerMpvPost0340, "get_version")
+    def test_load_player(self, mocked_get_version):
+        """Test to load the instance."""
+        # create mock
+        mocked_get_version.return_value = "0.34.0"
+
+        # create instance
+        mpv_player, _, _ = self.get_instance()
+
+        # pre assert
+        self.assertFalse(mpv_player.player_data.get("initializing", False))
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
+            mpv_player.load_player()
+
+        # assert outcome
+        self.assertFalse(mpv_player.player_data.get("initializing", False))
+
+        # assert the calls
+        mocked_get_version.assert_called_with()
+
+        # assert the logs
+        self.assertListEqual(
+            logger.output, ["INFO:dakara_player.media_player.mpv:mpv 0.34.0"]
+        )
+
+    @patch.object(MediaPlayerMpvPost0340, "get_timing")
+    def test_handle_pause(self, mocked_get_timing):
+        """Test pause callback."""
+        # create instance
+        mpv_player, _, _ = self.get_instance()
+        mpv_player.set_callback("paused", MagicMock())
+        self.set_playlist_entry(mpv_player)
+
+        # create the mocks
+        mocked_get_timing.return_value = 42
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
+            mpv_player.handle_pause("pause", True)
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player.media_player.mpv:Pause callback called",
+                "DEBUG:dakara_player.media_player.mpv:Paused",
+            ],
+        )
+
+        # assert the call
+        mpv_player.callbacks["paused"].assert_called_with(self.playlist_entry["id"], 42)
+        mocked_get_timing.assert_called_with()
+
+    @patch.object(MediaPlayerMpvPost0340, "get_timing")
+    def test_handle_resumed(self, mocked_get_timing):
+        """Test unpause callback."""
+        # create instance
+        mpv_player, _, _ = self.get_instance()
+        mpv_player.set_callback("resumed", MagicMock())
+        self.set_playlist_entry(mpv_player)
+
+        # create the mocks
+        mocked_get_timing.return_value = 42
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
+            mpv_player.handle_pause("pause", False)
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player.media_player.mpv:Pause callback called",
+                "DEBUG:dakara_player.media_player.mpv:Resumed play",
+            ],
+        )
+
+        # assert the call
+        mpv_player.callbacks["resumed"].assert_called_with(
+            self.playlist_entry["id"], 42
+        )
+        mocked_get_timing.assert_called_with()

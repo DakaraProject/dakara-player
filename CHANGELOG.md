@@ -28,6 +28,7 @@
 - Security related fix.
 -->
 
+
 ## Unreleased
 
 ### Added
@@ -35,6 +36,8 @@
 - Fonts are automatically installed on Windows.
 - Songs can be restarted, rewound, or fast forwarded during playback.
   Duration of the rewind/fast forward jump is 10 seconds by default and can be customized in the config file using the `player.durations.rewind_fast_forward_duration` key.
+- Support of mpv 0.34.0 and above.
+- The user can force the version of mpv to use in config using the `player.mpv.force_version` key.
 
 ### Changed
 

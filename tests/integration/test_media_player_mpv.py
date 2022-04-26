@@ -24,7 +24,7 @@ REWIND_FAST_FORWARD_DURATION = 0.2
 class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
     """Test the mpv player class in real conditions."""
 
-    TIMEOUT = 30
+    TIMEOUT = 120
     DELAY = 0.2
 
     def setUp(self):

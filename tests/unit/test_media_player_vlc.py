@@ -265,42 +265,28 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 vlc_player.check_version()
 
     @patch.object(MediaPlayerVlc, "get_version")
-    def test_check_version_3013(self, mocked_get_version):
-        """Test to check VLC version 3.0.13."""
+    def test_check_version_problem(self, mocked_get_version):
+        """Test to check known problematic version of VLC."""
         with self.get_instance() as (vlc_player, _, _):
-            # mock the version of VLC
-            mocked_get_version.return_value = parse("3.0.13")
+            versions = ["3.0.13", "3.0.14", "3.0.15", "3.0.16"]
 
-            # call the method
-            with self.assertLogs("dakara_player.media_player.vlc", "WARNING") as logger:
-                vlc_player.check_version()
+            for version in versions:
+                # mock the version of VLC
+                mocked_get_version.return_value = parse(version)
 
-            self.assertListEqual(
-                logger.output,
-                [
-                    "WARNING:dakara_player.media_player.vlc:This version of VLC "
-                    "is known to not work with Dakara player"
-                ],
-            )
+                # call the method
+                with self.assertLogs(
+                    "dakara_player.media_player.vlc", "WARNING"
+                ) as logger:
+                    vlc_player.check_version()
 
-    @patch.object(MediaPlayerVlc, "get_version")
-    def test_check_version_3014(self, mocked_get_version):
-        """Test to check VLC version 3.0.14."""
-        with self.get_instance() as (vlc_player, _, _):
-            # mock the version of VLC
-            mocked_get_version.return_value = parse("3.0.14")
-
-            # call the method
-            with self.assertLogs("dakara_player.media_player.vlc", "WARNING") as logger:
-                vlc_player.check_version()
-
-            self.assertListEqual(
-                logger.output,
-                [
-                    "WARNING:dakara_player.media_player.vlc:This version of VLC "
-                    "is known to not work with Dakara player"
-                ],
-            )
+                self.assertListEqual(
+                    logger.output,
+                    [
+                        "WARNING:dakara_player.media_player.vlc:This version of VLC "
+                        "is known to not work with Dakara player"
+                    ],
+                )
 
     @patch.object(Path, "exists")
     def test_check_kara_folder_path(self, mocked_exists):
@@ -771,6 +757,34 @@ class MediaPlayerVlcTestCase(BaseTestCase):
 
             # assert the call
             vlc_player.callbacks["finished"].assert_called_with(42)
+            mocked_create_thread.assert_not_called()
+
+    @patch.object(MediaPlayerVlc, "create_thread")
+    @patch.object(MediaPlayerVlc, "is_playing_this")
+    def test_handle_end_reached_song_too_fast(
+        self, mocked_is_playing_this, mocked_create_thread
+    ):
+        """Test song end callback after a song with instantaneous response
+        from server.
+        """
+        with self.get_instance() as (vlc_player, _, _):
+            self.set_playlist_entry(vlc_player)
+
+            # mock the call
+            vlc_player.set_callback(
+                "finished", lambda _: self.set_playlist_entry(vlc_player, started=False)
+            )
+            mocked_is_playing_this.side_effect = lambda what: what == "song"
+
+            # call the method
+            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG"):
+                vlc_player.handle_end_reached("event")
+
+            # post assert
+            self.assertTrue(vlc_player.errors.empty())
+            self.assertIsNotNone(vlc_player.playlist_entry_data["song"].media)
+
+            # assert the call
             mocked_create_thread.assert_not_called()
 
     @patch.object(MediaPlayerVlc, "create_thread")

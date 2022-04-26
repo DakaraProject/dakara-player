@@ -366,7 +366,8 @@ class MediaPlayer(Worker, ABC):
         """
 
     def clear_playlist_entry(self):
-        """Clean playlist entry base data after being played."""
+        """Clean playlist entry base data."""
+        logger.debug("Clearing internal memory")
         self.playlist_entry = None
 
         self.clear_playlist_entry_player()

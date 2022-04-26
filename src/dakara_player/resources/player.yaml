@@ -70,6 +70,14 @@ player:
   #
   # mpv --list-options
   mpv:
+    # Force a certain version of mpv.
+    # The project uses mpv differently depending on its version, which is
+    # automatically guessed. You can force the project to use mpv according to
+    # a certain version. Keep in mind that using a different version than the
+    # real current one may lead to crashes. Modify this only if you know what
+    # you are doing.
+    # force_version: 0.34.0
+
     # Enable the debanding algorithm.
     # This greatly reduces the amount of visible banding, blocking and other
     # quantization artifacts, at the expense of very slightly blurring some of the
