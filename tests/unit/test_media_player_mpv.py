@@ -403,6 +403,29 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mocked_clear_playlist_entry.assert_called_with()
         mpv_player.callbacks["finished"].assert_called_with(self.playlist_entry["id"])
 
+    @patch.object(MediaPlayerMpvOld, "play")
+    def test_handle_end_file_song_too_fast(self, mocked_play):
+        """Test song end callback after a song with instantaneous response
+        from server.
+        """
+        # create instance
+        mpv_player, (mocked_player, _, _), _ = self.get_instance()
+        mpv_player.set_callback(
+            "finished", lambda _: self.set_playlist_entry(mpv_player, started=False)
+        )
+        self.set_playlist_entry(mpv_player)
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG"):
+            mpv_player.handle_end_file({"event": "end-file"})
+
+        # post asserts
+        self.assertTrue(mpv_player.errors.empty())
+        self.assertIsNotNone(mpv_player.playlist_entry_data["song"].path)
+
+        # assert the call
+        mocked_play.assert_not_called()
+
     @patch.object(MediaPlayerMpvOld, "clear_playlist_entry")
     @patch.object(MediaPlayerMpvOld, "play")
     def test_handle_end_file_other(self, mocked_play, mocked_clear_playlist_entry):
@@ -738,6 +761,31 @@ class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
         mocked_play.assert_not_called()
         mocked_clear_playlist_entry.assert_called_with()
         mpv_player.callbacks["finished"].assert_called_with(self.playlist_entry["id"])
+
+    @patch.object(MediaPlayerMpvPost0330, "play")
+    def test_handle_end_file_song_too_fast(self, mocked_play):
+        """Test song end callback after a song with instantaneous response
+        from server.
+        """
+        # create instance
+        mpv_player, (mocked_player, _, _), _ = self.get_instance()
+        mpv_player.set_callback(
+            "finished", lambda _: self.set_playlist_entry(mpv_player, started=False)
+        )
+        self.set_playlist_entry(mpv_player)
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG"):
+            mpv_player.handle_end_file(
+                {"event": "end-file", "reason": "eof", "playlist_entry_id": 1}
+            )
+
+        # post asserts
+        self.assertTrue(mpv_player.errors.empty())
+        self.assertIsNotNone(mpv_player.playlist_entry_data["song"].path)
+
+        # assert the call
+        mocked_play.assert_not_called()
 
     @patch.object(MediaPlayerMpvPost0330, "clear_playlist_entry")
     @patch.object(MediaPlayerMpvPost0330, "play")

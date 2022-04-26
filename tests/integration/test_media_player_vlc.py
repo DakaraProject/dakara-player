@@ -25,7 +25,7 @@ REWIND_FAST_FORWARD_DURATION = 0.5
 class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     """Test the VLC player class in real conditions."""
 
-    TIMEOUT = 30
+    TIMEOUT = 120
 
     def setUp(self):
         super().setUp()
