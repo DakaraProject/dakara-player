@@ -63,25 +63,18 @@ class MediaPlayerMpvTestCase(TestCase):
             MediaPlayerMpvOld.get_version()
 
     @patch.object(MediaPlayerMpv, "get_version")
-    def test_get_old(self, mocked_get_version):
-        """Test to get media player for old version of mpv."""
-        mocked_get_version.return_value = Version("0.27.0")
+    def test_get_class_from_version(self, mocked_get_version):
+        """Test to get media player for various versions of mpv."""
+        versions = [
+            ("0.27.0", MediaPlayerMpvOld),
+            ("0.33.0", MediaPlayerMpvPost0330),
+            ("0.34.0", MediaPlayerMpvPost0340),
+        ]
 
-        self.assertIs(MediaPlayerMpv.get_class_from_version(), MediaPlayerMpvOld)
+        for version, media_player_class in versions:
+            mocked_get_version.return_value = Version(version)
 
-    @patch.object(MediaPlayerMpv, "get_version")
-    def test_get_post_0330(self, mocked_get_version):
-        """Test to get media player for version of mpv newer than 0.33.0."""
-        mocked_get_version.return_value = Version("0.33.0")
-
-        self.assertIs(MediaPlayerMpv.get_class_from_version(), MediaPlayerMpvPost0330)
-
-    @patch.object(MediaPlayerMpv, "get_version")
-    def test_get_post_0340(self, mocked_get_version):
-        """Test to get media player for version of mpv newer than 0.34.0."""
-        mocked_get_version.return_value = Version("0.34.0")
-
-        self.assertIs(MediaPlayerMpv.get_class_from_version(), MediaPlayerMpvPost0340)
+            self.assertIs(MediaPlayerMpv.get_class_from_version(), media_player_class)
 
     @patch.object(MediaPlayerMpv, "get_class_from_version")
     def test_instanciate(self, mocked_get_class_from_version):
