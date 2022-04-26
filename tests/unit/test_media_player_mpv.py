@@ -105,18 +105,12 @@ class MediaPlayerMpvTestCase(TestCase):
     @patch.object(MediaPlayerMpv, "get_class_from_version")
     def test_instanciate(self, mocked_get_class_from_version):
         """Test to instanciate media player mpv class."""
+        mocked_get_class_from_version.return_value = MagicMock()
 
-        class Dummy:
-            def __init__(self, *args, **kwargs):
-                self.args = args
-                self.kwargs = kwargs
-
-        mocked_get_class_from_version.return_value = Dummy
-
-        instance = MediaPlayerMpv.from_version(1, 2, v3=3, v4=4)
-        self.assertIsInstance(instance, Dummy)
-        self.assertEqual(instance.args, (1, 2))
-        self.assertEqual(instance.kwargs, {"v3": 3, "v4": 4})
+        MediaPlayerMpv.from_version(None, None, {}, "tmp")
+        mocked_get_class_from_version.return_value.assert_called_with(
+            None, None, {}, "tmp"
+        )
 
     @patch("dakara_player.media_player.mpv.mpv.MPV")
     def test_is_available_ok_direct(self, mocked_mpv_class):
