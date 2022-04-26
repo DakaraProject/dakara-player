@@ -941,7 +941,7 @@ class MediaPlayerMpvPost0340(MediaPlayerMpvPost0330):
         to register an initializing state in memory, that will be unregistered
         as soon as possible (just after calling `load`).
         """
-        # binding property
+        # binding properties
         self.player_data["initializing"] = True
         self.player.bind_property_observer("pause", self.handle_pause)
 
@@ -950,13 +950,13 @@ class MediaPlayerMpvPost0340(MediaPlayerMpvPost0330):
         self.player.bind_event("start-file", self.handle_start_file)
 
     def is_initializing(self):
-        """Tell if mpv default callbacks are set.
+        """Tell if mpv is initializing.
 
-        This function is used to prevent execution of property observers just
-        after their binding.
+        This function is used to prevent execution of property observer
+        callbacks just after their binding.
 
         Returns:
-            Bool: `True` if initializing.
+            bool: `True` if initializing.
         """
         return self.player_data.get("initializing", False)
 
