@@ -134,7 +134,10 @@ class DakaraWorker(WorkerSafeThread):
             # media player
             media_player = stack.enter_context(
                 self.get_media_player_class()(
-                    self.stop, self.errors, self.config["player"], tempdir
+                    self.stop,
+                    self.errors,
+                    self.config["player"],
+                    tempdir,
                 )
             )
             media_player.load()

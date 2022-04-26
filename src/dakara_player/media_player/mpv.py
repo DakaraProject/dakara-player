@@ -105,18 +105,19 @@ class MediaPlayerMpv(MediaPlayer, ABC):
         raise VersionNotFoundError("Unable to get mpv version")
 
     @staticmethod
-    def get_class_from_version():
+    def get_class_from_version(version):
         """Get the mpv media player class according to installed version.
 
+        Args:
+            version (packaging.version.Version): Arbitrary mpv version to use.
+
         Returns:
-            MediaPlayerMpv: Will return the class adapted to the current version of mpv:
+            MediaPlayerMpv: Will return the class adapted to the version of mpv:
 
                 - `MediaPlayerMpvPost0340` if mpv newer than 0.34.0;
                 - `MediaPlayerMpvPost0330` if mpv newer than 0.33.0;
                 - `MediaPlayerMpvOld` as default.
         """
-        version = MediaPlayerMpv.get_version()
-
         if version >= Version("0.34.0"):
             logger.debug("Using post 0.34.0 API of mpv")
             return MediaPlayerMpvPost0340
@@ -136,7 +137,14 @@ class MediaPlayerMpv(MediaPlayer, ABC):
             MediaPlayer: Instance of the mpv media player for the correct
             version of mpv.
         """
-        return MediaPlayerMpv.get_class_from_version()(*args, **kwargs)
+        try:
+            config = kwargs.get("config") or args[2]
+            version = Version(config["mpv"]["force_version"])
+
+        except (KeyError, IndexError):
+            version = MediaPlayerMpv.get_version()
+
+        return MediaPlayerMpv.get_class_from_version(version)(*args, **kwargs)
 
 
 class MediaPlayerMpvOld(MediaPlayerMpv):

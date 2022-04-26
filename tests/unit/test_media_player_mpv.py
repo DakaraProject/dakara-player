@@ -62,8 +62,7 @@ class MediaPlayerMpvTestCase(TestCase):
         with self.assertRaisesRegex(VersionNotFoundError, "Unable to get mpv version"):
             MediaPlayerMpvOld.get_version()
 
-    @patch.object(MediaPlayerMpv, "get_version")
-    def test_get_class_from_version(self, mocked_get_version):
+    def test_get_class_from_version(self):
         """Test to get media player for various versions of mpv."""
         versions = [
             ("0.27.0", MediaPlayerMpvOld),
@@ -72,9 +71,36 @@ class MediaPlayerMpvTestCase(TestCase):
         ]
 
         for version, media_player_class in versions:
-            mocked_get_version.return_value = Version(version)
+            self.assertIs(
+                MediaPlayerMpv.get_class_from_version(Version(version)),
+                media_player_class,
+            )
 
-            self.assertIs(MediaPlayerMpv.get_class_from_version(), media_player_class)
+    @patch.object(MediaPlayerMpv, "get_version")
+    @patch.object(MediaPlayerMpv, "get_class_from_version")
+    def test_from_version_config(
+        self, mocked_get_class_from_version, mocked_get_version
+    ):
+        """Test to get version from config."""
+        MediaPlayerMpv.from_version(
+            None, None, {"mpv": {"force_version": "0.27.0"}}, None
+        )
+
+        mocked_get_class_from_version.assert_called_with(Version("0.27.0"))
+        mocked_get_version.assert_not_called()
+
+    @patch.object(MediaPlayerMpv, "get_version")
+    @patch.object(MediaPlayerMpv, "get_class_from_version")
+    def test_from_version_player(
+        self, mocked_get_class_from_version, mocked_get_version
+    ):
+        """Test to get version from player."""
+        mocked_get_version.return_value = Version("0.27.0")
+
+        MediaPlayerMpv.from_version(None, None, {"mpv": {}}, None)
+
+        mocked_get_class_from_version.assert_called_with(Version("0.27.0"))
+        mocked_get_version.assert_called_with()
 
     @patch.object(MediaPlayerMpv, "get_class_from_version")
     def test_instanciate(self, mocked_get_class_from_version):
