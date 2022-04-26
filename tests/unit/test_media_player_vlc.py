@@ -775,6 +775,34 @@ class MediaPlayerVlcTestCase(BaseTestCase):
 
     @patch.object(MediaPlayerVlc, "create_thread")
     @patch.object(MediaPlayerVlc, "is_playing_this")
+    def test_handle_end_reached_song_too_fast(
+        self, mocked_is_playing_this, mocked_create_thread
+    ):
+        """Test song end callback after a song with instantaneous response
+        from server.
+        """
+        with self.get_instance() as (vlc_player, _, _):
+            self.set_playlist_entry(vlc_player)
+
+            # mock the call
+            vlc_player.set_callback(
+                "finished", lambda _: self.set_playlist_entry(vlc_player, started=False)
+            )
+            mocked_is_playing_this.side_effect = lambda what: what == "song"
+
+            # call the method
+            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG"):
+                vlc_player.handle_end_reached("event")
+
+            # post assert
+            self.assertTrue(vlc_player.errors.empty())
+            self.assertIsNotNone(vlc_player.playlist_entry_data["song"].media)
+
+            # assert the call
+            mocked_create_thread.assert_not_called()
+
+    @patch.object(MediaPlayerVlc, "create_thread")
+    @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_handle_end_reached_idle(
         self, mocked_is_playing_this, mocked_create_thread
     ):
