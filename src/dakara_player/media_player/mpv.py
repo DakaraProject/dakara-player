@@ -109,10 +109,17 @@ class MediaPlayerMpv(MediaPlayer, ABC):
         """Get the mpv media player class according to installed version.
 
         Returns:
-            object: Will return `MediaPlayerMpvPost0330` if mpv version is
-            higher than 0.33.0, or `MediaPlayerMpvOld` otherwise.
+            MediaPlayerMpv: Will return the class adapted to the current version of mpv:
+
+                - `MediaPlayerMpvPost0340` if mpv newer than 0.34.0;
+                - `MediaPlayerMpvPost0330` if mpv newer than 0.33.0;
+                - `MediaPlayerMpvOld` as default.
         """
         version = MediaPlayerMpv.get_version()
+
+        if version >= Version("0.34.0"):
+            logger.debug("Using post 0.34.0 API of mpv")
+            return MediaPlayerMpvPost0340
 
         if version >= Version("0.33.0"):
             logger.debug("Using post 0.33.0 API of mpv")
@@ -200,7 +207,8 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         self.clear_playlist_entry_player()
 
         # player objects
-        self.player_data = {"skip": False}
+        self.player_data = {}
+        self.player_data["skip"] = False
 
     def load_player(self):
         """Perform actions with side effects for mpv initialization."""
@@ -873,6 +881,115 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
 
         # if no state can be determined, raise an error
         raise InvalidStateError("End file on an undeterminated state")
+
+
+class MediaPlayerMpvPost0340(MediaPlayerMpvPost0330):
+    """Class to manipulate newer mpv versions (>= 0.34.0).
+
+    The class can be used as a context manager that closes mpv
+    automatically on exit.
+
+    Any exception in callbacks make the application to crash.
+
+    Args:
+        stop (threading.Event): Stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): Error queue to communicate the exception to the
+            main thread.
+        config (dict): Dictionary of configuration.
+        tempdir (path.Path): Path of the temporary directory.
+
+    Attributes:
+        stop (threading.Event): Stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): Error queue to communicate the exception to the
+            main thread.
+        player_name (str): Name of mpv.
+        fullscreen (bool): If `True`, mpv will be fullscreen.
+        kara_folder_path (path.Path): Path to the karaoke folder.
+        playlist_entry (dict): Playlist entyr object.
+        callbacks (dict): High level callbacks associated with the media
+            player.
+        warn_long_exit (bool): If `True`, display a warning message if the media
+            player takes too long to stop.
+        durations (dict of int): Duration of the different screens in seconds.
+        text_paths (dict of path.Path): Path of the different text screens.
+        text_generator (dakara_player.text_generator.TextGenerator): Text
+            generator instance.
+        background_loader
+        (dakara_player.background_loader.BackgroundLoader): Background
+            loader instance.
+        player (mpv.MPV): Instance of mpv.
+        playlist_entry_data (dict): Extra data of the playlist entry.
+        player_data (dict): Extra data of the player. Used to store if the
+            player is initializing.
+    """
+
+    def set_mpv_default_callbacks(self):
+        """Set mpv default callbacks.
+
+        Some callbacks are binded to a property change, but mpv will call them
+        immediately. To prevent inappropriate callbacks to be called, we have
+        to register an initializing state in memory, that will be unregistered
+        as soon as possible (just after calling `load`).
+        """
+        # binding property
+        self.player_data["initializing"] = True
+        self.player.bind_property_observer("pause", self.handle_pause)
+
+        # binding events
+        self.player.bind_event("end-file", self.handle_end_file)
+        self.player.bind_event("start-file", self.handle_start_file)
+
+    def is_initializing(self):
+        """Tell if mpv default callbacks are set.
+
+        This function is used to prevent execution of property observers just
+        after their binding.
+
+        Returns:
+            Bool: `True` if initializing.
+        """
+        return self.player_data.get("initializing", False)
+
+    def load_player(self):
+        super().load_player()
+
+        # ensure initialization is done
+        self.player_data["initializing"] = False
+
+    @safe
+    def handle_pause(self, name, paused):
+        """Callback called when paused or unpaused.
+
+        Args:
+            name (str): Name of the property that changed. Should be `"pause"`.
+            paused (bool): `True` if paused, `False` otherwise.
+        """
+        assert name == "pause"
+
+        logger.debug("Pause callback called")
+
+        # invalidate call if initializing
+        if self.is_initializing():
+            logger.debug("Pause callback aborted")
+
+            return
+
+        if paused:
+            # call paused callback
+            self.callbacks["paused"](self.playlist_entry["id"], self.get_timing())
+
+            logger.debug("Paused")
+
+            return
+
+        if self.player_data["skip"]:
+            return
+
+        self.callbacks["resumed"](self.playlist_entry["id"], self.get_timing())
+
+        logger.debug("Resumed play")
 
 
 class Media:

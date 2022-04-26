@@ -17,6 +17,7 @@ from dakara_player.media_player.mpv import (
     MediaPlayerMpv,
     MediaPlayerMpvOld,
     MediaPlayerMpvPost0330,
+    MediaPlayerMpvPost0340,
 )
 
 
@@ -74,6 +75,13 @@ class MediaPlayerMpvTestCase(TestCase):
         mocked_get_version.return_value = Version("0.33.0")
 
         self.assertIs(MediaPlayerMpv.get_class_from_version(), MediaPlayerMpvPost0330)
+
+    @patch.object(MediaPlayerMpv, "get_version")
+    def test_get_post_0340(self, mocked_get_version):
+        """Test to get media player for version of mpv newer than 0.34.0."""
+        mocked_get_version.return_value = Version("0.34.0")
+
+        self.assertIs(MediaPlayerMpv.get_class_from_version(), MediaPlayerMpvPost0340)
 
     @patch.object(MediaPlayerMpv, "get_class_from_version")
     def test_instanciate(self, mocked_get_class_from_version):
@@ -814,3 +822,94 @@ class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
         mocked_play.assert_not_called()
         mocked_clear_playlist_entry.assert_not_called()
         mpv_player.callbacks["finished"].assert_not_called()
+
+
+class MediaPlayerMpvPost0340TestCase(MediaPlayerMpvModelTestCase):
+    """Test the post 0.34.0 mpv player class unitary."""
+
+    mpv_player_class = MediaPlayerMpvPost0340
+
+    @patch.object(MediaPlayerMpvPost0340, "get_version")
+    def test_load_player(self, mocked_get_version):
+        """Test to load the instance."""
+        # create mock
+        mocked_get_version.return_value = "0.34.0"
+
+        # create instance
+        mpv_player, _, _ = self.get_instance()
+
+        # pre assert
+        self.assertFalse(mpv_player.player_data.get("initializing", False))
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
+            mpv_player.load_player()
+
+        # assert outcome
+        self.assertFalse(mpv_player.player_data.get("initializing", False))
+
+        # assert the calls
+        mocked_get_version.assert_called_with()
+
+        # assert the logs
+        self.assertListEqual(
+            logger.output, ["INFO:dakara_player.media_player.mpv:mpv 0.34.0"]
+        )
+
+    @patch.object(MediaPlayerMpvPost0340, "get_timing")
+    def test_handle_pause(self, mocked_get_timing):
+        """Test pause callback."""
+        # create instance
+        mpv_player, _, _ = self.get_instance()
+        mpv_player.set_callback("paused", MagicMock())
+        self.set_playlist_entry(mpv_player)
+
+        # create the mocks
+        mocked_get_timing.return_value = 42
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
+            mpv_player.handle_pause("pause", True)
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player.media_player.mpv:Pause callback called",
+                "DEBUG:dakara_player.media_player.mpv:Paused",
+            ],
+        )
+
+        # assert the call
+        mpv_player.callbacks["paused"].assert_called_with(self.playlist_entry["id"], 42)
+        mocked_get_timing.assert_called_with()
+
+    @patch.object(MediaPlayerMpvPost0340, "get_timing")
+    def test_handle_resumed(self, mocked_get_timing):
+        """Test unpause callback."""
+        # create instance
+        mpv_player, _, _ = self.get_instance()
+        mpv_player.set_callback("resumed", MagicMock())
+        self.set_playlist_entry(mpv_player)
+
+        # create the mocks
+        mocked_get_timing.return_value = 42
+
+        # call the method
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
+            mpv_player.handle_pause("pause", False)
+
+        # assert effect on logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player.media_player.mpv:Pause callback called",
+                "DEBUG:dakara_player.media_player.mpv:Resumed play",
+            ],
+        )
+
+        # assert the call
+        mpv_player.callbacks["resumed"].assert_called_with(
+            self.playlist_entry["id"], 42
+        )
+        mocked_get_timing.assert_called_with()
