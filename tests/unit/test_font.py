@@ -559,6 +559,6 @@ class FontLoaderWindowsTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "WARNING:dakara_player.font:Font 'font_file.ttf' cannot " "be unloaded",
+                "WARNING:dakara_player.font:Font 'font_file.ttf' cannot be unloaded",
             ],
         )
