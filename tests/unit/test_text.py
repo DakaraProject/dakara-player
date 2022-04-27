@@ -126,13 +126,17 @@ class TextGeneratorTestCase(TestCase):
 
     def test_convert_link_type_name(self):
         """Test the convertion of a link type to its long name."""
-        # create object
-        text_generator = TextGenerator("package")
+        self.assertEqual(TextGenerator.convert_link_type_name("OP"), "Opening")
+        self.assertEqual(TextGenerator.convert_link_type_name("ED"), "Ending")
+        self.assertEqual(TextGenerator.convert_link_type_name("IN"), "Insert song")
+        self.assertEqual(TextGenerator.convert_link_type_name("IS"), "Image song")
 
-        self.assertEqual(text_generator.convert_link_type_name("OP"), "Opening")
-        self.assertEqual(text_generator.convert_link_type_name("ED"), "Ending")
-        self.assertEqual(text_generator.convert_link_type_name("IN"), "Insert song")
-        self.assertEqual(text_generator.convert_link_type_name("IS"), "Image song")
+    def test_convert_duration(self):
+        """Test the convertion of durations."""
+        self.assertEqual(TextGenerator.convert_duration(42), "0:42")
+        self.assertEqual(TextGenerator.convert_duration(425), "7:05")
+        self.assertEqual(TextGenerator.convert_duration(738), "12:18")
+        self.assertEqual(TextGenerator.convert_duration(3618), "1:00:18")
 
     @patch.object(TextGenerator, "get_environment_loaders", autospec=True)
     def test_check_template_custom(self, mocked_get_environment_loaders):
@@ -215,7 +219,8 @@ class TextGeneratorIntegrationTestCase(TestCase):
         self.playlist_entry = {
             "song": {
                 "title": "Song title",
-                "artists": [{"name": "Artist name"}],
+                "duration": 263,
+                "artists": [{"name": "Artist name"}, {"name": "Other artist"}],
                 "works": [
                     {
                         "work": {
