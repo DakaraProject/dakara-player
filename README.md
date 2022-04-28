@@ -19,7 +19,7 @@ Installation guidelines are provided over here:
 
 ### System requirements
 
-* Python3, for the magic to take place (supported versions: 3.7, 3.8 and 3.9).
+* Python3, for the magic to take place (supported versions: 3.7, 3.8, 3.9 and 3.10).
 
 At least one of there players:
 
@@ -27,7 +27,7 @@ At least one of there players:
 * [mpv](https://mpv.io/) (supported version: 0.27 and higher).
 
 For 64 bits operating systems, you must install the equivalent version of the requirements.
-Linux and Windows are supported.
+Linux, Mac and Windows are supported.
 
 ### Virtual environment
 

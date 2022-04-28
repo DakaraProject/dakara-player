@@ -2,6 +2,7 @@ version: 1.8.0-dev-{build}
 
 image:
   - Ubuntu
+  - macos
   - Visual Studio 2019
 
 build: false
@@ -20,6 +21,8 @@ environment:
     - PYTHON: "3.8"
       INTEGRATION_TEST: false
     - PYTHON: "3.9"
+      INTEGRATION_TEST: false
+    - PYTHON: "3.10"
       INTEGRATION_TEST: true
 
 for:
@@ -73,7 +76,56 @@ for:
 
   - matrix:
       only:
+        - image: macos
+          PYTHON: "3.10"
+
+    cache:
+      # enable cache for Python dependencies
+      - "$HOME/Library/Caches/pip"
+
+    init:
+      # load virtual env
+      - "source $HOME/venv$PYTHON/bin/activate"
+
+      # check current python version
+      - "python --version"
+
+    install:
+      # install system dependencies if requested
+      - "if $INTEGRATION_TEST; then brew install --cask vlc mpv; fi"
+
+      # the features used in setup.cfg require a recent enough version of setuptools
+      - "python -m pip install --upgrade \"setuptools>=46.4.0\""
+
+      # install dependencies for test
+      - "python -m pip install -e \".[tests]\""
+
+      # check dependencies version if requested
+      - "if $INTEGRATION_TEST; then vlc --version; fi"
+      - "if $INTEGRATION_TEST; then mpv --version; fi"
+
+    test_script:
+      # run tests
+      - "if $INTEGRATION_TEST; then python -m pytest -v --cov-report term; else python -m pytest -v --cov-report term tests/unit; fi"
+
+      # run commands
+      - "python -m dakara_player --version"
+      - "dakara-player --version"
+
+      # run code formatting tests
+      - "python -m isort . --check"
+      - "python -m black . --check"
+      - "python -m flake8"
+
+    after_test:
+      # upload coverage stats to codecov.io
+      # codecov token is stored in appveyor settings
+      - "python -m codecov"
+
+  - matrix:
+      only:
         - image: Visual Studio 2019
+          PYTHON: "3.10"
 
     cache:
       # enable cache for Python dependencies
