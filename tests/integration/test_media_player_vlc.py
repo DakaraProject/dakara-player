@@ -1,3 +1,4 @@
+import os
 from contextlib import ExitStack, contextmanager
 from queue import Queue
 from threading import Event
@@ -26,6 +27,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     """Test the VLC player class in real conditions."""
 
     TIMEOUT = 120
+    IS_IMPRECISE = os.environ.get("IMPRECISE_TEST")
 
     def setUp(self):
         super().setUp()
@@ -678,7 +680,10 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             # check timing is earlier than previously
             timing2 = vlc_player.player.get_time() / 1000
             self.assertLess(timing2, timing1)
-            self.assertAlmostEqual(timing1 - timing2, REWIND_FAST_FORWARD_DURATION, 1)
+            if not self.IS_IMPRECISE:
+                self.assertAlmostEqual(
+                    timing1 - timing2, REWIND_FAST_FORWARD_DURATION, 1
+                )
 
     @func_set_timeout(TIMEOUT)
     def test_rewind_song_before_start(self):
@@ -752,7 +757,10 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             # check timing is earlier than previously
             timing2 = vlc_player.player.get_time() / 1000
             self.assertGreater(timing2, timing1)
-            self.assertAlmostEqual(timing2 - timing1, REWIND_FAST_FORWARD_DURATION, 1)
+            if not self.IS_IMPRECISE:
+                self.assertAlmostEqual(
+                    timing2 - timing1, REWIND_FAST_FORWARD_DURATION, 1
+                )
 
             # assert callback
             vlc_player.callbacks["updated_timing"].assert_called_with(

@@ -24,6 +24,7 @@ environment:
       INTEGRATION_TEST: false
     - PYTHON: "3.10"
       INTEGRATION_TEST: true
+      IMPRECISE_TEST: true
 
 for:
   - matrix:
