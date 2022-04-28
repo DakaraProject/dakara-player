@@ -62,6 +62,10 @@ class TkWindowManagerTestCase(TestCase):
         platform.system() == "Linux" and "DISPLAY" not in os.environ,
         "No display detected on Linux",
     )
+    @skipIf(
+        platform.system() == "Darwin",
+        "Cannot be tested on Mac",
+    )
     def test_get_id(self):
         """Test to get Tk window ID."""
         with TkWindowManager(disabled=True) as window_manager:
