@@ -2,8 +2,8 @@
 
 import json
 import logging
+import platform
 import re
-import sys
 
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
@@ -726,18 +726,25 @@ class MediaPlayerVlc(MediaPlayer):
             logger.debug("Using VLC default window")
             return
 
-        if "linux" in sys.platform:
+        system = platform.system()
+
+        if system == "Linux":
             logger.debug("Associating X window to VLC")
             self.player.set_xwindow(id)
             return
 
-        if "win" in sys.platform:
+        if system == "Darwin":
+            logger.debug("Associating AppKit window to VLC")
+            self.player.set_nsobject(id)
+            return
+
+        if system == "Windows":
             logger.debug("Associating Win API window to VLC")
             self.player.set_hwnd(id)
             return
 
         raise NotImplementedError(
-            "This operating system ({}) is not currently supported".format(sys.platform)
+            "This operating system ({}) is not currently supported".format(system)
         )
 
 
