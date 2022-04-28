@@ -9,9 +9,9 @@ from dakara_player.mrl import mrl_to_path, path_to_mrl
 class MrlFunctionsTestCase(TestCase):
     """Test the MRL conversion functions."""
 
-    is_posix = os.name == "posix"
+    IS_POSIX = os.name == "posix"
 
-    @skipUnless(is_posix, "Tested on POSIX")
+    @skipUnless(IS_POSIX, "Tested on POSIX")
     def test_mrl_to_path_posix(self):
         """Test to convert MRL to path for POSIX."""
         path = mrl_to_path("file:///home/username/directory/file%20name.ext")
@@ -19,16 +19,20 @@ class MrlFunctionsTestCase(TestCase):
             path, Path("/") / "home" / "username" / "directory" / "file name.ext"
         )
 
-    @skipIf(is_posix, "Tested on Windows")
+    @skipIf(IS_POSIX, "Tested on Windows")
     def test_mrl_to_path_windows(self):
         """Test to convert MRL to path for Windows."""
         path = mrl_to_path("file:///C:/Users/username/directory/file%20name.ext")
         self.assertEqual(
             path,
-            Path("C:") / "Users" / "username" / "directory" / "file name.ext",
+            Path("C:/").normpath()
+            / "Users"
+            / "username"
+            / "directory"
+            / "file name.ext",
         )
 
-    @skipUnless(is_posix, "Tested on POSIX")
+    @skipUnless(IS_POSIX, "Tested on POSIX")
     def test_path_to_mrl_posix(self):
         """Test to convert path to MRL for POSIX."""
         mrl = path_to_mrl(
@@ -36,10 +40,14 @@ class MrlFunctionsTestCase(TestCase):
         )
         self.assertEqual(mrl, "file:///home/username/directory/file%20name.ext")
 
-    @skipIf(is_posix, "Tested on Windows")
+    @skipIf(IS_POSIX, "Tested on Windows")
     def test_path_to_mrl_windows(self):
         """Test to convert path to MRL for Windows."""
         mrl = path_to_mrl(
-            Path("C:") / "Users" / "username" / "directory" / "file name.ext"
+            Path("C:/").normpath()
+            / "Users"
+            / "username"
+            / "directory"
+            / "file name.ext"
         )
         self.assertEqual(mrl, "file:///C:/Users/username/directory/file%20name.ext")
