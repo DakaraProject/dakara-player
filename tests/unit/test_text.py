@@ -138,6 +138,11 @@ class TextGeneratorTestCase(TestCase):
         self.assertEqual(TextGenerator.convert_duration(738), "12:18")
         self.assertEqual(TextGenerator.convert_duration(3618), "1:00:18")
 
+    def test_convert_duration_undefined(self):
+        """Test the convertion of undefined durations."""
+        self.assertEqual(TextGenerator.convert_duration(None), "")
+        self.assertEqual(TextGenerator.convert_duration("undefined"), "undefined")
+
     @patch.object(TextGenerator, "get_environment_loaders", autospec=True)
     def test_check_template_custom(self, mocked_get_environment_loaders):
         """Test to find a custom template."""
