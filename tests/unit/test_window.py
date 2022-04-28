@@ -1,5 +1,5 @@
 import os
-import sys
+import platform
 from unittest import TestCase, skipIf, skipUnless
 from unittest.mock import patch
 
@@ -50,7 +50,7 @@ class TkWindowManagerTestCase(TestCase):
         self.assertFalse(TkWindowManager.is_available())
 
     @skipIf(
-        "linux" in sys.platform and "DISPLAY" not in os.environ,
+        platform.system() == "Linux" and "DISPLAY" not in os.environ,
         "No display detected on Linux",
     )
     def test_open_close(self):
@@ -59,7 +59,7 @@ class TkWindowManagerTestCase(TestCase):
             pass
 
     @skipIf(
-        "linux" in sys.platform and "DISPLAY" not in os.environ,
+        platform.system() == "Linux" and "DISPLAY" not in os.environ,
         "No display detected on Linux",
     )
     def test_get_id(self):
