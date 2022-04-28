@@ -28,11 +28,19 @@ class DummyWindowManagerTestCase(TestCase):
 
         mocked_is_available.assert_called_with()
 
+    @skipIf(
+        platform.system() == "Darwin",
+        "Cannot be tested on Mac",
+    )
     def test_open_close(self):
         """Test to open and close dummy window."""
         with DummyWindowManager():
             pass
 
+    @skipIf(
+        platform.system() == "Darwin",
+        "Cannot be tested on Mac",
+    )
     def test_get_id(self):
         """Test to get dummy window ID."""
         with DummyWindowManager() as window_manager:
