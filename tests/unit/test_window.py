@@ -28,19 +28,11 @@ class DummyWindowManagerTestCase(TestCase):
 
         mocked_is_available.assert_called_with()
 
-    @skipIf(
-        platform.system() == "Darwin",
-        "Cannot be tested on Mac",
-    )
     def test_open_close(self):
         """Test to open and close dummy window."""
         with DummyWindowManager():
             pass
 
-    @skipIf(
-        platform.system() == "Darwin",
-        "Cannot be tested on Mac",
-    )
     def test_get_id(self):
         """Test to get dummy window ID."""
         with DummyWindowManager() as window_manager:
@@ -60,6 +52,10 @@ class TkWindowManagerTestCase(TestCase):
     @skipIf(
         platform.system() == "Linux" and "DISPLAY" not in os.environ,
         "No display detected on Linux",
+    )
+    @skipIf(
+        platform.system() == "Darwin",
+        "Cannot be tested on Mac",
     )
     def test_open_close(self):
         """Test to open and close Tk window."""
