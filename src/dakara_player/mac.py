@@ -2,7 +2,7 @@ import os
 import sys
 import tkinter
 from ctypes import c_void_p, cdll
-from subprocess import DEVNULL, CalledProcessError, run
+from subprocess import CalledProcessError, run
 
 from path import Path
 
@@ -10,20 +10,6 @@ TK_LIBRARY_PATH = "TK_LIBRARY_PATH"
 BREW = "brew"
 BREW_PREFIX = "--prefix"
 LIB = "lib"
-
-
-def check_brew():
-    """Check Brew exists.
-
-    Returns:
-        bool: `True` if Brew is available, `False` otherwise.
-    """
-    try:
-        run([BREW], stdout=DEVNULL, stderr=DEVNULL)
-        return True
-
-    except FileNotFoundError:
-        return False
 
 
 def get_brew_prefix(formula):
@@ -63,11 +49,7 @@ def get_tcl_tk_lib_path():
     if TK_LIBRARY_PATH in os.environ:
         return Path(os.environ[TK_LIBRARY_PATH])
 
-    # if Brew is not installed, don't do anything
-    if not check_brew():
-        return None
-
-    # try to obtain the location of tk
+    # try to obtain the location of Tk from Brew
     prefix = get_brew_prefix("tcl-tk")
     if prefix is None:
         return None

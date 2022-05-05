@@ -1,32 +1,13 @@
 import os
-from subprocess import DEVNULL, CalledProcessError, CompletedProcess
+from subprocess import CalledProcessError, CompletedProcess
 from unittest import TestCase, skipUnless
 from unittest.mock import patch
 
 from path import Path
 
-from dakara_player.mac import (
-    check_brew,
-    get_brew_prefix,
-    get_tcl_tk_lib_path,
-    load_get_ns_view,
-)
+from dakara_player.mac import get_brew_prefix, get_tcl_tk_lib_path, load_get_ns_view
 
 POSIX = os.name == "posix"
-
-
-@patch("dakara_player.mac.run")
-class CheckBrewTestCase(TestCase):
-    def test_check(self, mocked_run):
-        """Test a positive call."""
-        self.assertTrue(check_brew())
-
-        mocked_run.assert_called_with(["brew"], stdout=DEVNULL, stderr=DEVNULL)
-
-    def test_check_not_found(self, mocked_run):
-        """Test a call with Brew not installed."""
-        mocked_run.side_effect = FileNotFoundError()
-        self.assertFalse(check_brew())
 
 
 @skipUnless(POSIX, "Tested on POSIX system only")
@@ -60,9 +41,8 @@ class GetBrewPrefixTestCase(TestCase):
 
 @skipUnless(POSIX, "Tested on POSIX system only")
 @patch("dakara_player.mac.get_brew_prefix")
-@patch("dakara_player.mac.check_brew")
 class GetTclTkLibPathTestCase(TestCase):
-    def test_get_environ(self, mocked_check_brew, mocked_get_brew_prefix):
+    def test_get_environ(self, mocked_get_brew_prefix):
         """Test to get lib from environment variable."""
         with patch.dict(
             "dakara_player.mac.os.environ",
@@ -73,12 +53,10 @@ class GetTclTkLibPathTestCase(TestCase):
                 get_tcl_tk_lib_path(), Path("/") / "path" / "to" / "formula" / "lib"
             )
 
-        mocked_check_brew.assert_not_called()
         mocked_get_brew_prefix.assert_not_called()
 
-    def test_get_brew(self, mocked_check_brew, mocked_get_brew_prefix):
+    def test_get_brew(self, mocked_get_brew_prefix):
         """Test to get lib from Brew."""
-        mocked_check_brew.return_value = True
         mocked_get_brew_prefix.return_value = Path("/") / "path" / "to" / "formula"
 
         with patch.dict(
@@ -90,22 +68,8 @@ class GetTclTkLibPathTestCase(TestCase):
                 get_tcl_tk_lib_path(), Path("/") / "path" / "to" / "formula" / "lib"
             )
 
-    def test_get_no_brew(self, mocked_check_brew, mocked_get_brew_prefix):
-        """Test when Brew is not available."""
-        mocked_check_brew.return_value = False
-
-        with patch.dict(
-            "dakara_player.mac.os.environ",
-            {},
-            clear=True,
-        ):
-            self.assertIsNone(get_tcl_tk_lib_path())
-
-        mocked_get_brew_prefix.assert_not_called()
-
-    def test_get_brew_no_prefix(self, mocked_check_brew, mocked_get_brew_prefix):
+    def test_get_brew_no_prefix(self, mocked_get_brew_prefix):
         """Test when Brew formula does not exist."""
-        mocked_check_brew.return_value = True
         mocked_get_brew_prefix.return_value = None
 
         with patch.dict(
