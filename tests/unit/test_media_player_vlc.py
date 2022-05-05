@@ -1182,8 +1182,9 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 ["DEBUG:dakara_player.media_player.vlc:Associating X window to VLC"],
             )
 
+    @patch("dakara_player.media_player.vlc.load_get_ns_view")
     @patch("dakara_player.media_player.vlc.platform.system", return_value="Darwin")
-    def test_set_window_mac(self, mocked_system):
+    def test_set_window_mac(self, mocked_system, mocked_load_get_ns_view):
         """Test to use AppKit window."""
         with self.get_instance() as (vlc_player, _, _):
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
@@ -1195,6 +1196,10 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                     "DEBUG:dakara_player.media_player.vlc:Associating AppKit window "
                     "to VLC"
                 ],
+            )
+
+            vlc_player.player.set_nsobject.assert_called_with(
+                mocked_load_get_ns_view.return_value.return_value
             )
 
     @patch("dakara_player.media_player.vlc.platform.system", return_value="Windows")

@@ -9,6 +9,7 @@ from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
 from packaging.version import parse
 
+from dakara_player.mac import load_get_ns_view
 from dakara_player.window import DummyWindowManager, WindowManager
 
 try:
@@ -735,7 +736,8 @@ class MediaPlayerVlc(MediaPlayer):
 
         if system == "Darwin":
             logger.debug("Associating AppKit window to VLC")
-            self.player.set_nsobject(id)
+            get_ns_view = load_get_ns_view()
+            self.player.set_nsobject(get_ns_view(id))
             return
 
         if system == "Windows":
