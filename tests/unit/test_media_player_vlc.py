@@ -322,8 +322,10 @@ class MediaPlayerVlcTestCase(BaseTestCase):
     @patch.object(MediaPlayerVlc, "check_version")
     @patch.object(MediaPlayerVlc, "set_vlc_default_callbacks")
     @patch.object(MediaPlayerVlc, "get_version")
+    @patch.object(MediaPlayerVlc, "set_window")
     def test_load(
         self,
+        mocked_set_window,
         mocked_get_version,
         mocked_set_vlc_default_callback,
         mocked_check_version,
@@ -352,6 +354,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             mocked_set_vlc_default_callback.assert_called_with()
             mocked_open.assert_called_with()
             mocked_get_id.assert_called_with()
+            mocked_set_window.assert_called_with(mocked_get_id.return_value)
 
             # assert logs
             self.assertListEqual(
