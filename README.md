@@ -35,6 +35,12 @@ It is strongly recommended to use the Dakara player within a virtual environment
 
 ### Install
 
+Please ensure you have a recent enough version of `setuptools`:
+
+```sh
+pip install --upgrade "setuptools>=46.4.0"
+```
+
 Install the package with:
 
 ```sh
@@ -73,7 +79,7 @@ dakara-player create-config
 python -m dakara_player create-config
 ```
 
-and complete it with your values. The file is stored in your user space: `~/.config/dakara` on Linux or `$APPDATA\Dakara` on Windows.
+and complete it with your values. The file is stored in your user space: `~/.config/dakara` on Linux, `~/Library/Preferences/dakara` on Mac, or `$APPDATA\DakaraProject\dakara` on Windows.
 
 ## Customization
 
