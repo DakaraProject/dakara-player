@@ -44,7 +44,7 @@ def get_brew_prefix(formula):
             text=True,
         )
 
-    except CalledProcessError:
+    except (CalledProcessError, FileNotFoundError):
         return None
 
     return Path(outcome.stdout.strip())

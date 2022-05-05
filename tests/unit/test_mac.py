@@ -57,6 +57,11 @@ class GetBrewPrefixTestCase(TestCase):
         )
         self.assertIsNone(get_brew_prefix("formula"))
 
+    def test_get_not_found(self, mocked_run):
+        """Test to get the prefix of a formula when Brew is not installed."""
+        mocked_run.side_effect = FileNotFoundError()
+        self.assertIsNone(get_brew_prefix("formula"))
+
 
 @skipUnless(POSIX, "Tested on POSIX system only")
 @patch("dakara_player.mac.get_brew_prefix")
