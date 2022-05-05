@@ -736,7 +736,12 @@ class MediaPlayerVlc(MediaPlayer):
 
         if system == "Darwin":
             logger.debug("Associating AppKit window to VLC")
-            get_ns_view = load_get_ns_view()
+            get_ns_view, found = load_get_ns_view()
+            if not found:
+                logger.error(
+                    "Failed to associate AppKit window to VLC, application may crash"
+                )
+
             self.player.set_nsobject(get_ns_view(id))
             return
 

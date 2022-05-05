@@ -120,19 +120,24 @@ class LoadGetNsViewTestCase(TestCase):
     def test_load_standard(self, mocked_get_tcl_tk_lib_path, mocked_cdll):
         """Test load from standard location."""
         mocked_get_tcl_tk_lib_path.return_value = None
-        self.assertIsNotNone(load_get_ns_view())
+        function, found = load_get_ns_view()
+        self.assertIsNotNone(function)
+        self.assertTrue(found)
         mocked_cdll.LoadLibrary.assert_called_with("/usr/lib/libtk0.0.dylib")
 
     def test_load_custom(self, mocked_get_tcl_tk_lib_path, mocked_cdll):
         """Test load from custom location."""
         mocked_get_tcl_tk_lib_path.return_value = Path("/") / "path" / "to" / "lib"
-        self.assertIsNotNone(load_get_ns_view())
+        function, found = load_get_ns_view()
+        self.assertIsNotNone(function)
+        self.assertTrue(found)
         mocked_cdll.LoadLibrary.assert_called_with("/path/to/lib/libtk0.0.dylib")
 
     def test_load_fail(self, mocked_get_tcl_tk_lib_path, mocked_cdll):
         """Test load from custom location."""
         mocked_get_tcl_tk_lib_path.return_value = None
         mocked_cdll.LoadLibrary.side_effect = OSError()
-        function = load_get_ns_view()
+        function, found = load_get_ns_view()
         self.assertIsNotNone(function)
         self.assertIsNone(function(None))
+        self.assertFalse(found)

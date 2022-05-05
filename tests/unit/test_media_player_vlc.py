@@ -1186,6 +1186,8 @@ class MediaPlayerVlcTestCase(BaseTestCase):
     @patch("dakara_player.media_player.vlc.platform.system", return_value="Darwin")
     def test_set_window_mac(self, mocked_system, mocked_load_get_ns_view):
         """Test to use AppKit window."""
+        function = MagicMock()
+        mocked_load_get_ns_view.return_value = function, True
         with self.get_instance() as (vlc_player, _, _):
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
                 vlc_player.set_window(99)
@@ -1198,8 +1200,26 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 ],
             )
 
-            vlc_player.player.set_nsobject.assert_called_with(
-                mocked_load_get_ns_view.return_value.return_value
+            vlc_player.player.set_nsobject.assert_called_with(function.return_value)
+
+    @patch("dakara_player.media_player.vlc.load_get_ns_view")
+    @patch("dakara_player.media_player.vlc.platform.system", return_value="Darwin")
+    def test_set_window_mac_error(self, mocked_system, mocked_load_get_ns_view):
+        """Test when AppKit window cannot be used."""
+        function = MagicMock()
+        mocked_load_get_ns_view.return_value = function, False
+        with self.get_instance() as (vlc_player, _, _):
+            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
+                vlc_player.set_window(99)
+
+            self.assertListEqual(
+                logger.output,
+                [
+                    "DEBUG:dakara_player.media_player.vlc:Associating AppKit window "
+                    "to VLC",
+                    "ERROR:dakara_player.media_player.vlc:Failed to associate AppKit "
+                    "window to VLC, application may crash",
+                ],
             )
 
     @patch("dakara_player.media_player.vlc.platform.system", return_value="Windows")

@@ -84,7 +84,10 @@ def load_get_ns_view():
         https://github.com/oaubert/python-vlc/blob/38a90baf1d6c1e9a6131433ec3819766f308612c/examples/tkvlc.py#L52
 
     Returns:
-        function: Function to get NSView object.
+        tuple: Contains:
+
+        - function: Function to get NSView object.
+        - bool: `True` if the function was found, `False` otherwise.
     """
 
     # libtk = cdll.LoadLibrary(ctypes.util.find_library('tk'))
@@ -117,9 +120,13 @@ def load_get_ns_view():
         _GetNSView.restype = c_void_p
         _GetNSView.argtypes = (c_void_p,)
 
+        found = True
+
     except (NameError, OSError):  # image or symbol not found
 
         def _GetNSView(unused):
             return None
 
-    return _GetNSView
+        found = False
+
+    return _GetNSView, found
