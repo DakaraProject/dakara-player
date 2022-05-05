@@ -19,7 +19,8 @@ Installation guidelines are provided over here:
 
 ### System requirements
 
-* Python3, for the magic to take place (supported versions: 3.7, 3.8, 3.9 and 3.10).
+* Python3, for the magic to take place (supported versions: 3.7, 3.8, 3.9 and 3.10);
+* Tcl-Tk on Mac if you want to use VLC and if Python was installed with Brew (see note bellow).
 
 At least one of there players:
 
@@ -28,6 +29,12 @@ At least one of there players:
 
 For 64 bits operating systems, you must install the equivalent version of the requirements.
 Linux, Mac and Windows are supported.
+
+### Note for Mac users
+
+Tk has to be used to create a window for VLC, as it cannot do it automatically, unlike on the other supported operating systems.
+If you have installed Python using Brew, the Tk library may not be installed, so you have to install it manually.
+The library should be located automatically, but you can indicate its location with the environment variable `TK_LIBRARY_PATH`.
 
 ### Virtual environment
 
