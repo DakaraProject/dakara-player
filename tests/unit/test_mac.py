@@ -15,22 +15,17 @@ from dakara_player.mac import (
 POSIX = os.name == "posix"
 
 
-@patch("dakara_player.mac.check_call")
+@patch("dakara_player.mac.run")
 class CheckBrewTestCase(TestCase):
-    def test_check(self, mocked_check_call):
+    def test_check(self, mocked_run):
         """Test a positive call."""
         self.assertTrue(check_brew())
 
-        mocked_check_call.assert_called_with(["brew"], stdout=DEVNULL, stderr=DEVNULL)
+        mocked_run.assert_called_with(["brew"], stdout=DEVNULL, stderr=DEVNULL)
 
-    def test_check_fail(self, mocked_check_call):
-        """Test a negative call."""
-        mocked_check_call.side_effect = CalledProcessError(returncode=255, cmd="brew")
-        self.assertFalse(check_brew())
-
-    def test_check_not_found(self, mocked_check_call):
+    def test_check_not_found(self, mocked_run):
         """Test a call with Brew not installed."""
-        mocked_check_call.side_effect = FileNotFoundError()
+        mocked_run.side_effect = FileNotFoundError()
         self.assertFalse(check_brew())
 
 
