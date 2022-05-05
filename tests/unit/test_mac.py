@@ -1,5 +1,5 @@
 import os
-from subprocess import CalledProcessError, CompletedProcess
+from subprocess import DEVNULL, CalledProcessError, CompletedProcess
 from unittest import TestCase, skipUnless
 from unittest.mock import patch
 
@@ -21,11 +21,16 @@ class CheckBrewTestCase(TestCase):
         """Test a positive call."""
         self.assertTrue(check_brew())
 
-        mocked_check_call.assert_called_with(["brew"])
+        mocked_check_call.assert_called_with(["brew"], stdout=DEVNULL, stderr=DEVNULL)
 
     def test_check_fail(self, mocked_check_call):
         """Test a negative call."""
         mocked_check_call.side_effect = CalledProcessError(returncode=255, cmd="brew")
+        self.assertFalse(check_brew())
+
+    def test_check_not_found(self, mocked_check_call):
+        """Test a call with Brew not installed."""
+        mocked_check_call.side_effect = FileNotFoundError()
         self.assertFalse(check_brew())
 
 

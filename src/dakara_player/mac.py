@@ -2,7 +2,7 @@ import os
 import sys
 import tkinter
 from ctypes import c_void_p, cdll
-from subprocess import CalledProcessError, check_call, run
+from subprocess import DEVNULL, CalledProcessError, check_call, run
 
 from path import Path
 
@@ -19,10 +19,10 @@ def check_brew():
         bool: `True` if Brew is available, `False` otherwise.
     """
     try:
-        check_call([BREW])
+        check_call([BREW], stdout=DEVNULL, stderr=DEVNULL)
         return True
 
-    except CalledProcessError:
+    except (CalledProcessError, FileNotFoundError):
         return False
 
 
