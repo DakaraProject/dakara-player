@@ -9,9 +9,6 @@ from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
 from packaging.version import parse
 
-from dakara_player.mac import load_get_ns_view
-from dakara_player.window import DummyWindowManager, WindowManager
-
 try:
     import vlc
     from vlc import libvlc_get_version
@@ -107,18 +104,6 @@ class MediaPlayerVlc(MediaPlayer):
         config_vlc = config.get("vlc") or {}
         self.media_parameters = config_vlc.get("media_parameters") or []
 
-        # window for VLC
-        if config_vlc.get("use_default_window", False):
-            window_manager_class = DummyWindowManager
-
-        else:
-            window_manager_class = WindowManager
-
-        self.window = window_manager_class(
-            title="Dakara Player VLC",
-            fullscreen=self.fullscreen,
-        )
-
         # VLC objects
         self.instance = vlc.Instance(config_vlc.get("instance_parameters") or [])
         self.player = self.instance.media_player_new()
@@ -137,8 +122,7 @@ class MediaPlayerVlc(MediaPlayer):
         self.check_version()
 
         # assign window to VLC
-        self.window.open()
-        self.set_window(self.window.get_id())
+        self.set_window()
 
         # set VLC callbacks
         self.set_vlc_default_callbacks()
@@ -399,9 +383,6 @@ class MediaPlayerVlc(MediaPlayer):
         logger.info("Stopping player")
         self.player.stop()
         logger.debug("Stopped player")
-
-        # closing window
-        self.window.close()
 
     def set_playlist_entry_player(self, playlist_entry, file_path, autoplay):
         """Prepare playlist entry data to be played.
@@ -714,44 +695,43 @@ class MediaPlayerVlc(MediaPlayer):
 
         logger.debug("Paused")
 
-    def set_window(self, id):
+    def set_window(self):
         """Associate an existing window to VLC
-
-        Args:
-            id (int): ID of the window.
 
         Raises:
             NotImplementedError: If the current platform is not supported.
         """
-        if id is None:
-            logger.debug("Using VLC default window")
-            return
-
+        window = self.window_comm.get()
         system = platform.system()
+
+        if window is None:
+            logger.debug("Using VLC default window")
+
+            if system == "Darwin":
+                logger.error(
+                    "VLC cannot create a window by itself on Mac, "
+                    "the application may crash"
+                )
+
+            return
 
         if system == "Linux":
             logger.debug("Associating X window to VLC")
-            self.player.set_xwindow(id)
+            self.player.set_xwindow(window)
             return
 
         if system == "Darwin":
             logger.debug("Associating AppKit window to VLC")
-            get_ns_view, found = load_get_ns_view()
-            if not found:
-                logger.error(
-                    "Failed to associate AppKit window to VLC, application may crash"
-                )
-
-            self.player.set_nsobject(get_ns_view(id))
+            self.player.set_nsobject(window)
             return
 
         if system == "Windows":
             logger.debug("Associating Win API window to VLC")
-            self.player.set_hwnd(id)
+            self.player.set_hwnd(window)
             return
 
         raise NotImplementedError(
-            "This operating system ({}) is not currently supported".format(system)
+            f"This operating system ({system}) is not currently supported"
         )
 
 

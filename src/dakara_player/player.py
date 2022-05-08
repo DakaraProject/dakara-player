@@ -2,6 +2,7 @@
 
 import logging
 from contextlib import ExitStack
+from queue import Queue
 
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Runner, WorkerSafeThread
@@ -13,11 +14,12 @@ from dakara_player.media_player.mpv import MediaPlayerMpv
 from dakara_player.media_player.vlc import MediaPlayerVlc
 from dakara_player.version import check_version
 from dakara_player.web_client import HTTPClientDakara, WebSocketClientDakara
+from dakara_player.window import DummyWindowManager, get_window_manager_class
 
 FontLoader = get_font_loader_class()
 
 MEDIA_PLAYER_CLASSES = {
-    "mpv": MediaPlayerMpv.from_version,
+    "mpv": MediaPlayerMpv,
     "vlc": MediaPlayerVlc,
 }
 
@@ -52,7 +54,7 @@ class DakaraPlayer(Runner):
 
     def run(self):
         """Launch the worker and wait for the end."""
-        self.run_safe(DakaraWorker, self.config)
+        self.run_safe(DakaraWorker, args=(self.config,))
 
 
 class DakaraWorker(WorkerSafeThread):
@@ -72,8 +74,11 @@ class DakaraWorker(WorkerSafeThread):
         """
         self.config = config
 
+        # communication queue for the window
+        self.window_comm = Queue()
+
         # set thread
-        self.thread = self.create_thread(target=self.run)
+        self.thread = self.create_thread(target=self.run_thread)
 
         # inform the user
         logger.debug("Starting Dakara worker")
@@ -91,14 +96,46 @@ class DakaraWorker(WorkerSafeThread):
         media_player_name = self.config["player"].get("player_name", "vlc")
 
         try:
-            return MEDIA_PLAYER_CLASSES[media_player_name.lower()]
+            media_player_class = MEDIA_PLAYER_CLASSES[media_player_name.lower()]
 
         except KeyError as error:
             raise UnsupportedMediaPlayerError(
                 "No media player for '{}'".format(media_player_name)
             ) from error
 
-    def run(self):
+        if media_player_class is MediaPlayerMpv:
+            return media_player_class.get_class(self.config["player"])
+
+        return media_player_class
+
+    def get_window_class(self):
+        try:
+            # get a working window manager class for VLC if
+            if self.config["player"].get(
+                "player_name", "vlc"
+            ).lower() == "vlc" and not self.config["player"]["vlc"].get(
+                "use_default_window", False
+            ):
+                logger.debug("Requesting a window manager for VLC")
+                return get_window_manager_class()
+
+            return DummyWindowManager
+
+        except KeyError:
+            return DummyWindowManager
+
+    def run_main(self):
+        media_player_class = self.get_media_player_class()
+        window = self.get_window_class()(
+            stop=self.stop,
+            errors=self.errors,
+            comm=self.window_comm,
+            title=f"Dakara Player {media_player_class.player_name}",
+            fullscreen=self.config["player"].get("fullscreen", False),
+        )
+        window.run_forever()
+
+    def run_thread(self):
         """Worker main method.
 
         It sets up the different workers and uses them as context managers,
@@ -136,6 +173,7 @@ class DakaraWorker(WorkerSafeThread):
                 self.get_media_player_class()(
                     self.stop,
                     self.errors,
+                    self.window_comm,
                     self.config["player"],
                     tempdir,
                 )

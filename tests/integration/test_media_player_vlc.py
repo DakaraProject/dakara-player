@@ -87,12 +87,13 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             temp = stack.enter_context(TempDir())
             vlc_player = stack.enter_context(
                 MediaPlayerVlc(
-                    Event(), Queue(), config_full, temp, warn_long_exit=False
+                    Event(), Queue(), Queue(), config_full, temp, warn_long_exit=False
                 )
             )
             output = stack.enter_context(
                 self.assertLogs("dakara_player.media_player.vlc", "DEBUG")
             )
+            vlc_player.window_comm.put(None)
             vlc_player.load()
 
             yield vlc_player, temp, output

@@ -69,8 +69,13 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             try:
                 with ExitStack() as stack:
                     mpv_player = stack.enter_context(
-                        MediaPlayerMpv.from_version(
-                            Event(), Queue(), config_full, temp, warn_long_exit=False
+                        MediaPlayerMpv.get_class()(
+                            Event(),
+                            Queue(),
+                            Queue(),
+                            config_full,
+                            temp,
+                            warn_long_exit=False,
                         )
                     )
                     output = stack.enter_context(

@@ -80,7 +80,7 @@ class MediaPlayer(Worker, ABC):
             bool: `True` if the media player is useable.
         """
 
-    def init_worker(self, config, tempdir, warn_long_exit=True):
+    def init_worker(self, window_comm, config, tempdir, warn_long_exit=True):
         """Initialize the base objects of the media player.
 
         Actions performed in this method should not have any side effects
@@ -93,6 +93,9 @@ class MediaPlayer(Worker, ABC):
                 message if the media player takes too long to stop.
         """
         self.check_is_available()
+
+        # window communication queue
+        self.window_comm = window_comm
 
         # karaoke parameters
         self.fullscreen = config.get("fullscreen", False)
