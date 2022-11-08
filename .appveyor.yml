@@ -16,13 +16,12 @@ environment:
   # setup tests matrix
   matrix:
     - PYTHON: "3.7"
-      INTEGRATION_TEST: false
     - PYTHON: "3.8"
-      INTEGRATION_TEST: false
     - PYTHON: "3.9"
-      INTEGRATION_TEST: false
     - PYTHON: "3.10"
+    - PYTHON: "3.11"
       INTEGRATION_TEST: true
+      WINDOWS_TEST: true
 
 for:
   - matrix:
@@ -76,7 +75,7 @@ for:
   - matrix:
       only:
         - image: Visual Studio 2019
-          PYTHON: "3.10"
+          WINDOWS_TEST: true
 
     cache:
       # enable cache for Python dependencies

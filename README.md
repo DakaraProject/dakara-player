@@ -19,7 +19,7 @@ Installation guidelines are provided over here:
 
 ### System requirements
 
-* Python3, for the magic to take place (supported versions: 3.7, 3.8, 3.9, and 3.10).
+* Python3, for the magic to take place (supported versions: 3.7, 3.8, 3.9, 3.10 and 3.11).
 
 At least one of there players:
 
