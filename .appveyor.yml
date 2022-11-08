@@ -20,6 +20,8 @@ environment:
     - PYTHON: "3.8"
       INTEGRATION_TEST: false
     - PYTHON: "3.9"
+      INTEGRATION_TEST: false
+    - PYTHON: "3.10"
       INTEGRATION_TEST: true
 
 for:
@@ -74,6 +76,7 @@ for:
   - matrix:
       only:
         - image: Visual Studio 2019
+          PYTHON: "3.10"
 
     cache:
       # enable cache for Python dependencies
