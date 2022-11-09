@@ -13,6 +13,9 @@ branches:
     - develop
 
 environment:
+  INTEGRATION_TEST: false
+  WINDOWS_TEST: false
+
   # setup tests matrix
   matrix:
     - PYTHON: "3.7"
