@@ -45,7 +45,7 @@ for:
     install:
       # install system dependencies if requested
       - "if $INTEGRATION_TEST; then sudo apt-get -qq update; fi"
-      - "if $INTEGRATION_TEST; then sudo apt-get -q install -y vlc mpv; fi"
+      - "if $INTEGRATION_TEST; then sudo apt-get -qq install -y vlc mpv; fi"
 
       # the features used in setup.cfg require a recent enough version of setuptools
       - "python -m pip install --upgrade \"setuptools>=46.4.0\""
