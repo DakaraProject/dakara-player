@@ -2,7 +2,7 @@
 
 import ctypes
 import logging
-import sys
+import platform
 from abc import ABC, abstractmethod
 
 from path import Path
@@ -26,14 +26,16 @@ def get_font_loader_class():
     Returns:
         FontLoader: Specialized version of the font loader class.
     """
-    if "linux" in sys.platform:
+    system = platform.system()
+
+    if system == "Linux":
         return FontLoaderLinux
 
-    if "win" in sys.platform:
+    if system == "Windows":
         return FontLoaderWindows
 
     raise NotImplementedError(
-        "This operating system ({}) is not currently supported".format(sys.platform)
+        "This operating system ({}) is not currently supported".format(system)
     )
 
 
@@ -136,14 +138,30 @@ class FontLoaderLinux(FontLoader):
         # create list of fonts
         self.fonts_loaded = {}
 
+    def get_system_font_path_list(self):
+        """Retrieve the list of system fonts.
+
+        Returns:
+            list of path.Path: List of font paths.
+        """
+        return list(self.FONT_DIR_SYSTEM.walkfiles())
+
+    def get_user_font_path_list(self):
+        """Retrieve the list of user fonts.
+
+        Returns:
+            list of path.Path: List of font paths.
+        """
+        return list(self.FONT_DIR_USER.expanduser().walkfiles())
+
     def load(self):
         """Load the fonts."""
         # ensure that the user font directory exists
         self.FONT_DIR_USER.expanduser().mkdir_p()
 
         # get system and user font files
-        system_font_path_list = list(self.FONT_DIR_SYSTEM.walkfiles())
-        user_font_path_list = list(self.FONT_DIR_USER.expanduser().walkfiles())
+        system_font_path_list = self.get_system_font_path_list()
+        user_font_path_list = self.get_user_font_path_list()
 
         # load fonts
         for font_file_path in self.get_font_path_iterator():
