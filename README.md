@@ -63,7 +63,9 @@ dakara-player play
 python -m dakara_player play
 ```
 
-One instance of the Dakara server should be running. For more help:
+One instance of the Dakara server should be running.
+
+For more help:
 
 ```sh
 dakara-player -h
@@ -81,7 +83,13 @@ python -m dakara_player create-config
 
 and complete it with your values. The file is stored in your user space: `~/.config/dakara` on Linux, or `$APPDATA\DakaraProject\dakara` on Windows.
 
-## Customization
+### Configuration
+
+The configuration is created with the previously cited command. Several aspect of the player can be configured with this file. Please check with the file documentation.
+
+Authentication to the server can only be done with a player token that can be generated and copied from the web client. Please note that only a playlist manager can generate such a player token.
+
+### Customization
 
 The different text screens used when the player is idle, or before a song, can be customized, both for the background and the text template.
 The program looks for custom files at startup in the user directory: `~/.local/share/dakara/player` on Linux or `$APPDATA\DakaraProject\dakara\player` on Windows.
