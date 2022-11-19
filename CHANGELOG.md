@@ -58,6 +58,8 @@ mv $env:APPDATA\Dakara $env:APPDATA\DakaraProject\dakara
 - Fonts are searched in system and user directories recursively.
 - Name of the command changed from `dakara-play` to `dakara-player`.
 - Play command moved from `dakara-play` to `dakara-player play`.
+- A better font icon is used (especially with a singer-style microphone).
+- Elements displayed on the transition screen use now the same layout as on the web client.
 
 ### Fixed
 

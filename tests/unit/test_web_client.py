@@ -403,7 +403,7 @@ class WebSocketClientDakaraTestCase(TestCase):
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
-            ["DEBUG:dakara_player.web_client:" "Received new playlist entry 0 order"],
+            ["DEBUG:dakara_player.web_client:Received new playlist entry 0 order"],
         )
 
         # assert the call
@@ -424,7 +424,7 @@ class WebSocketClientDakaraTestCase(TestCase):
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
-            ["DEBUG:dakara_player.web_client:" "Received command command_value order"],
+            ["DEBUG:dakara_player.web_client:Received command command_value order"],
         )
 
         # assert the call

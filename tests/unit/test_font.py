@@ -547,7 +547,6 @@ class FontLoaderWindowsTestCase(TestCase):
 
         # pre assert there is one font loaded
         self.assertEqual(len(font_loader.fonts_loaded), 1)
-        print(font_loader.fonts_loaded)
 
         # call the method
         with self.assertLogs("dakara_player.font", "DEBUG") as logger:
@@ -560,6 +559,6 @@ class FontLoaderWindowsTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "WARNING:dakara_player.font:Font 'font_file.ttf' cannot " "be unloaded",
+                "WARNING:dakara_player.font:Font 'font_file.ttf' cannot be unloaded",
             ],
         )

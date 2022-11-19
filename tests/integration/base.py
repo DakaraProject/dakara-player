@@ -101,21 +101,21 @@ class TestCaseKara(TestCase):
         # create playlist entry
         self.playlist_entry1 = {
             "id": 42,
-            "song": {"title": "Song 1", "file_path": self.song1_path},
+            "song": {"title": "Song 1", "file_path": self.song1_path, "duration": 60},
             "owner": "me",
             "use_instrumental": False,
         }
 
         self.playlist_entry2 = {
             "id": 43,
-            "song": {"title": "Song 2", "file_path": self.song2_path},
+            "song": {"title": "Song 2", "file_path": self.song2_path, "duration": 60},
             "owner": "me",
             "use_instrumental": False,
         }
 
         self.playlist_entry3 = {
             "id": 44,
-            "song": {"title": "Song 3", "file_path": self.song3_path},
+            "song": {"title": "Song 3", "file_path": self.song3_path, "duration": 60},
             "owner": "me",
             "use_instrumental": False,
         }

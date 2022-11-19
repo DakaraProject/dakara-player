@@ -18,7 +18,7 @@ class CheckVersionTestCase(TestCase):
         # assert effect on logs
         self.assertListEqual(
             logger.output,
-            ["INFO:dakara_player.version:" "Dakara player 0.0.0 (1970-01-01)"],
+            ["INFO:dakara_player.version:Dakara player 0.0.0 (1970-01-01)"],
         )
 
     def test_check_version_non_release(self):
@@ -35,7 +35,7 @@ class CheckVersionTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "INFO:dakara_player.version:" "Dakara player 0.1.0-dev (1970-01-01)",
+                "INFO:dakara_player.version:Dakara player 0.1.0-dev (1970-01-01)",
                 "WARNING:dakara_player.version:"
                 "You are running a dev version, use it at your own risks!",
             ],

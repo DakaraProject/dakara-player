@@ -8,28 +8,31 @@ PlayResY: 1080
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: title,Roboto Thin,70,&H00191919,&H00191919,&H00A01286,&H00000000,0,0,0,0,100,100,0,0,3,20,0,1,70,70,585,1
-Style: song-detail-text,Roboto Light,50,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,140,70,540,1
-Style: song-detail-icon,Roboto Light,40,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,8,70,1780,540,1
-Style: playlist-entry-detail-text,Roboto Light,50,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,140,70,70,1
-Style: playlist-entry-detail-icon,Roboto Light,40,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,8,70,1780,70,1
+Style: title,Roboto Thin,70,&H00191919,&H00191919,&H00A01286,&H00000000,0,0,0,0,100,100,0,0,3,20,0,1,70,300,585,1
+Style: detail,Roboto Light,50,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,70,300,540,1
+Style: duration,Roboto Thin,100,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,3,1600,70,585,1
+Style: instrumental,Roboto Light,65,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,1,70,1780,585,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:00.00,0:00:05.00,title,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ playlist_entry.song.title }}
-{% for artist in playlist_entry.song.artists %}
-Dialogue: 0,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,song-detail-icon,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{\fnFontAwesome}{{ "music"|icon }}{\fs50}​
-Dialogue: 1,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,song-detail-text,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ artist.name }}
-{% endfor %}
-{% for work in playlist_entry.song.works %}
-Dialogue: 0,0:00:00.{% if fade_in %}20{% else %}00{% endif %},0:00:05.00,song-detail-icon,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{\fnFontAwesome}{{ work.work.work_type.icon_name|icon }}{\fs50}​
-Dialogue: 1,0:00:00.{% if fade_in %}20{% else %}00{% endif %},0:00:05.00,song-detail-text,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ work.work.title }}{% if work.work.subtitle %} {\alpha&H80&}{{ work.work.subtitle }}{\r}{% endif %} {{ work.link_type }}{{ work.link_type_number or '' }}
-{% endfor %}
-Dialogue: 0,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{\fnFontAwesome}{{ "user"|icon }}{\fs50}​
-Dialogue: 1,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,playlist-entry-detail-text,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ playlist_entry.owner.username }}
+; title
+Dialogue: 0,0:00:00.00,0:00:05.00,title,,{% if playlist_entry.use_instrumental %}190{% else %}0{% endif %},0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ playlist_entry.song.title }}
+; duration
+Dialogue: 0,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,duration,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ playlist_entry.song.duration|duration }}
+; use instrumental icon
 {% if playlist_entry.use_instrumental %}
-Dialogue: 0,0:00:00.{% if fade_in %}20{% else %}00{% endif %},0:00:05.00,playlist-entry-detail-icon,,0,0,0,,{\fad(500, 0)}{\fnFontAwesome}{{ "microphone-slash"|icon }}{\fs50}​
+Dialogue: 0,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,instrumental,,0,0,0,,{\fad(500, 0)}{\fnla-solid-900}{{ "microphone-slash"|icon }}
 {% endif %}
+; artists (on one line)
+{% if playlist_entry.song.artists %}
+Dialogue: 1,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,detail,,{% if playlist_entry.use_instrumental %}190{% else %}0{% endif %},0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{% for artist in playlist_entry.song.artists %}{\fnla-solid-900\fs40}{{ "microphone-alt"|icon }}{\r} {{ artist.name }} {% endfor %}
+{% endif %}
+; works (one line per work)
+{% for work in playlist_entry.song.works %}
+Dialogue: 1,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,detail,,{% if playlist_entry.use_instrumental %}190{% else %}0{% endif %},0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{\fnla-solid-900\fs40}{{ work.work.work_type.icon_name|icon }}{\r} {{ work.work.title }}{% if work.work.subtitle %} {\alpha&H80&}{{ work.work.subtitle }}{\r}{% endif %} {{ work.link_type }}{{ work.link_type_number or '' }}
+{% endfor %}
+; owner
+Dialogue: 1,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,detail,,{% if playlist_entry.use_instrumental %}190{% else %}0{% endif %},0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{\fnla-solid-900\fs40}{{ "user"|icon }}{\r} {{ playlist_entry.owner.username }}
 
 ; We have decided to use subtitle files for text display with media players
 ; because we can get a fancy output quite easily. Subtitles allow formatting and
@@ -46,6 +49,8 @@ Dialogue: 0,0:00:00.{% if fade_in %}20{% else %}00{% endif %},0:00:05.00,playlis
 ;     "playlist_entry": {
 ;         "song": {
 ;             "title": "song title",
+;             "duration": "song duration in seconds",
+;             "file_path": "path to the song file",
 ;             "artists": [
 ;                 {
 ;                     "id": "id of the artist",
@@ -54,6 +59,10 @@ Dialogue: 0,0:00:00.{% if fade_in %}20{% else %}00{% endif %},0:00:05.00,playlis
 ;             ],
 ;             "works": [
 ;                 {
+;                     "id": "id of the work link",
+;                     "link_type": "type of relation betwoon the song and the work",
+;                     "link_type_number": "number of the relation",
+;                     "episodes": "episodes where this song is used"
 ;                     "work": {
 ;                         "id": "id of the work",
 ;                         "title": "title of the work",
@@ -62,15 +71,11 @@ Dialogue: 0,0:00:00.{% if fade_in %}20{% else %}00{% endif %},0:00:05.00,playlis
 ;                             "name": "name of the type of work",
 ;                             "name_plural": "plural form of the name",
 ;                             "query_name": "query name form of the name",
-;                             "icon_name": "FontAwesome name of the icon",
+;                             "icon_name": "Line Awesome name of the icon",
 ;                         }
 ;                     },
-;                     "link_type": "type of relation betwoon the song and the work",
-;                     "link_type_number": "number of the relation",
-;                     "episodes": "episodes where this song is used"
 ;                 }
 ;             ],
-;             "file_path": "path to the song file",
 ;         },
 ;         "owner": {
 ;             "id": "id of the user who asked this song",
@@ -82,8 +87,9 @@ Dialogue: 0,0:00:00.{% if fade_in %}20{% else %}00{% endif %},0:00:05.00,playlis
 ; }
 
 ; Icon name can be used with the filter `icon` to get an actual icon (you have to
-; set the font as Fontawesome). Long name of the link type is obtained with the
-; `link_type_name` filter.
+; set the font as Line Awesome). Long name of the link type is obtained with the
+; `link_type_name` filter. Duration formatting is done with the `duration`
+; filter.
 
 ; You will notice the special character "​" (zero width space, U+200B, may
 ; not be displayed in all editors) at the end of some lines, after a font size
@@ -93,4 +99,3 @@ Dialogue: 0,0:00:00.{% if fade_in %}20{% else %}00{% endif %},0:00:05.00,playlis
 ; For further information about the Jinja2 template engine and its abilities,
 ; please consult the documentation:
 ; http://jinja.pocoo.org/docs/latest/
-
