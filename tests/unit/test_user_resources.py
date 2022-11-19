@@ -1,34 +1,10 @@
 from unittest import TestCase
-from unittest.mock import call, patch
+from unittest.mock import PropertyMock, call, patch
 
+from dakara_base.directory import AppDirsPath
 from path import Path
 
 from dakara_player import user_resources
-
-
-class GetUserDirectoryTestCase(TestCase):
-    """Test the get_user_directory function."""
-
-    @patch("dakara_player.user_resources.sys.platform", "linux")
-    def test_get_linux(self):
-        """Test get user directory on Linux."""
-        self.assertIn(
-            Path(".local") / "share" / "dakara" / "player",
-            user_resources.get_user_directory().expand(),
-        )
-
-    @patch("dakara_player.user_resources.sys.platform", "win32")
-    def test_get_windows(self):
-        """Test get user directory on Windows."""
-        self.assertIn(
-            Path("Dakara") / "player", user_resources.get_user_directory().expand()
-        )
-
-    @patch("dakara_player.user_resources.sys.platform", "unknown")
-    def test_get_unknown(self):
-        """Test get user directory on unknown OS."""
-        with self.assertRaises(NotImplementedError):
-            user_resources.get_user_directory().expand()
 
 
 class CopyResourceTestCase(TestCase):
@@ -202,17 +178,17 @@ class CopyResourceTestCase(TestCase):
         )
 
 
-@patch("dakara_player.user_resources.get_user_directory", autospec=True)
+@patch.object(AppDirsPath, "user_data_dir", new_callable=PropertyMock)
 @patch("dakara_player.user_resources.copy_resource", autospec=True)
 class CreateResourceFilesTestCase(TestCase):
     """Test the create_resource_files function."""
 
     @patch.object(Path, "makedirs_p", autospec=True)
     def test_create(
-        self, mocked_makedirs_p, mocked_copy_resource, mocked_get_user_directory
+        self, mocked_makedirs_p, mocked_copy_resource, mocked_user_data_dir
     ):
         """Test to create resource files."""
-        mocked_get_user_directory.return_value = Path("directory")
+        mocked_user_data_dir.return_value = Path("directory")
         with self.assertLogs("dakara_player.user_resources", "DEBUG") as logger:
             user_resources.create_resource_files()
 
