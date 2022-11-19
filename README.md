@@ -35,6 +35,12 @@ It is strongly recommended to use the Dakara player within a virtual environment
 
 ### Install
 
+Please ensure you have a recent enough version of `setuptools`:
+
+```sh
+pip install --upgrade "setuptools>=46.4.0"
+```
+
 Install the package with:
 
 ```sh
@@ -73,12 +79,12 @@ dakara-player create-config
 python -m dakara_player create-config
 ```
 
-and complete it with your values. The file is stored in your user space: `~/.config/dakara` on Linux or `$APPDATA\Dakara` on Windows.
+and complete it with your values. The file is stored in your user space: `~/.config/dakara` on Linux, or `$APPDATA\DakaraProject\dakara` on Windows.
 
 ## Customization
 
 The different text screens used when the player is idle, or before a song, can be customized, both for the background and the text template.
-The program looks for custom files at startup in the user directory: `~/.local/share/dakara/player` on Linux or `$APPDATA\Dakara\player` on Windows.
+The program looks for custom files at startup in the user directory: `~/.local/share/dakara/player` on Linux or `$APPDATA\DakaraProject\dakara\player` on Windows.
 Backgrounds are located in the `backgrounds` subfolder, and text templates in the `templates` subfolder.
 File names can be modified in the config file, see `player.templates` and `player.backgrounds`.
 
