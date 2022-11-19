@@ -31,6 +31,19 @@
 
 ## Unreleased
 
+### Update notes
+
+The project uses now a library to manage user directories on the different operating systems, the location was modified for Windows:
+
+```cmd
+# cmd
+mkdir %APPDATA%\DakaraProject
+move %APPDATA%\Dakara %APPDATA%\DakaraProject\dakara
+# powershell
+mkdir $env:APPDATA\DakaraProject
+mv $env:APPDATA\Dakara $env:APPDATA\DakaraProject\dakara
+```
+
 ### Added
 
 - Fonts are automatically installed on Windows.
@@ -38,6 +51,7 @@
   Duration of the rewind/fast forward jump is 10 seconds by default and can be customized in the config file using the `player.durations.rewind_fast_forward_duration` key.
 - Support of mpv 0.34.0 and above.
 - The user can force the version of mpv to use in config using the `player.mpv.force_version` key.
+- Support Python 3.10 and 3.11.
 
 ### Changed
 

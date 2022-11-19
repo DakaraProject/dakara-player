@@ -1,4 +1,4 @@
-import sys
+import platform
 from unittest import TestCase, skipUnless
 from unittest.mock import call, patch
 
@@ -18,17 +18,17 @@ class GetFontLoaderClassTestCase(TestCase):
     def test(self):
         """Test to get the correct font loader class for the platform."""
         # call for Linux
-        with patch("dakara_player.font.sys.platform", "linux"):
+        with patch("dakara_player.font.platform.system", return_value="Linux"):
             FontLoaderClass = get_font_loader_class()
             self.assertEqual(FontLoaderClass, FontLoaderLinux)
 
         # call for Windows
-        with patch("dakara_player.font.sys.platform", "win32"):
+        with patch("dakara_player.font.platform.system", return_value="Windows"):
             FontLoaderClass = get_font_loader_class()
             self.assertEqual(FontLoaderClass, FontLoaderWindows)
 
         # call for uniplemented OS
-        with patch("dakara_player.font.sys.platform", "other"):
+        with patch("dakara_player.font.platform.system", return_value="other"):
             with self.assertRaisesRegex(
                 NotImplementedError,
                 r"This operating system \(other\) is not currently supported",
@@ -110,7 +110,7 @@ class FontLoaderCommonTestCase(FontLoaderTestCase):
         self.assertListEqual(font_file_path_list, [self.font_path])
 
 
-@skipUnless(sys.platform.startswith("linux"), "Can be tested on Linux only")
+@skipUnless(platform.system() == "Linux", "Can be tested on Linux only")
 class FontLoaderLinuxTestCase(FontLoaderTestCase):
     """Test the Linux font loader."""
 

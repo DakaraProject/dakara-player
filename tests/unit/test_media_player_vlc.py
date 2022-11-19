@@ -5,7 +5,7 @@ from tempfile import gettempdir
 from threading import Event
 from time import sleep
 from unittest import TestCase, skipIf
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 try:
     import vlc
@@ -13,6 +13,7 @@ try:
 except (ImportError, OSError):
     vlc = None
 
+from dakara_base.directory import AppDirsPath
 from packaging.version import parse
 from path import Path
 
@@ -1069,10 +1070,10 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert the call
             vlc_player.callbacks["paused"].assert_called_with(42, 25)
 
-    @patch("dakara_player.media_player.base.get_user_directory")
-    def test_custom_backgrounds(self, mocked_get_user_directory):
+    @patch.object(AppDirsPath, "user_data_dir", new_callable=PropertyMock)
+    def test_custom_backgrounds(self, mocked_user_data_dir):
         """Test to instanciate with custom backgrounds."""
-        mocked_get_user_directory.return_value = Path("custom")
+        mocked_user_data_dir.return_value = Path("directory")
 
         # create object
         tempdir = Path("temp")
@@ -1090,7 +1091,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             mocked_background_loader_class.assert_called_with(
                 destination=tempdir,
                 package="dakara_player.resources.backgrounds",
-                directory=Path("custom") / "backgrounds",
+                directory=Path("directory") / "player" / "backgrounds",
                 filenames={
                     "transition": "custom_transition.png",
                     "idle": "custom_idle.png",
@@ -1169,8 +1170,8 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 ["DEBUG:dakara_player.media_player.vlc:Using VLC default window"],
             )
 
-    @patch("dakara_player.media_player.vlc.sys.platform", "linux")
-    def test_set_window_linux(self):
+    @patch("dakara_player.media_player.vlc.platform.system", return_value="Linux")
+    def test_set_window_linux(self, mocked_system):
         """Test to use X window."""
         with self.get_instance() as (vlc_player, _, _):
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
@@ -1181,8 +1182,8 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 ["DEBUG:dakara_player.media_player.vlc:Associating X window to VLC"],
             )
 
-    @patch("dakara_player.media_player.vlc.sys.platform", "win32")
-    def test_set_window_windows(self):
+    @patch("dakara_player.media_player.vlc.platform.system", return_value="Windows")
+    def test_set_window_windows(self, mocked_system):
         """Test to use Win API window."""
         with self.get_instance() as (vlc_player, _, _):
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
@@ -1196,9 +1197,8 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 ],
             )
 
-    @patch("dakara_player.media_player.base.get_user_directory", autospec=True)
-    @patch("dakara_player.media_player.vlc.sys.platform", "other")
-    def test_set_window_other(self, mocked_get_user_directory):
+    @patch("dakara_player.media_player.vlc.platform.system", return_value="other")
+    def test_set_window_other(self, mocked_system):
         """Test to set window on unknown platform."""
         with self.get_instance() as (vlc_player, _, _):
             with self.assertRaises(NotImplementedError):
