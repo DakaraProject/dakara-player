@@ -1,4 +1,4 @@
-import sys
+import platform
 from unittest import TestCase, skipUnless
 from unittest.mock import call, patch
 
@@ -110,7 +110,7 @@ class FontLoaderCommonTestCase(FontLoaderTestCase):
         self.assertListEqual(font_file_path_list, [self.font_path])
 
 
-@skipUnless(sys.platform.startswith("linux"), "Can be tested on Linux only")
+@skipUnless(platform.system() == "Linux", "Can be tested on Linux only")
 class FontLoaderLinuxTestCase(FontLoaderTestCase):
     """Test the Linux font loader."""
 

@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from functools import wraps
 from threading import Timer
 
+from dakara_base.directory import directories
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
 from path import Path
@@ -12,7 +13,6 @@ from path import Path
 from dakara_player.audio import get_audio_files
 from dakara_player.background import BackgroundLoader
 from dakara_player.text import TextGenerator
-from dakara_player.user_resources import get_user_directory
 from dakara_player.version import __version__
 
 TRANSITION_BG_NAME = "transition.png"
@@ -125,7 +125,7 @@ class MediaPlayer(Worker, ABC):
         config_texts = config.get("templates") or {}
         self.text_generator = TextGenerator(
             package="dakara_player.resources.templates",
-            directory=get_user_directory().expand() / "templates",
+            directory=directories.user_data_dir / "player" / "templates",
             filenames={
                 "transition": config_texts.get(
                     "transition_template_name", TRANSITION_TEXT_NAME
@@ -139,7 +139,7 @@ class MediaPlayer(Worker, ABC):
         self.background_loader = BackgroundLoader(
             destination=tempdir,
             package="dakara_player.resources.backgrounds",
-            directory=get_user_directory().expand() / "backgrounds",
+            directory=directories.user_data_dir / "player" / "backgrounds",
             filenames={
                 "transition": config_backgrounds.get(
                     "transition_background_name", TRANSITION_BG_NAME
