@@ -181,7 +181,8 @@ class MediaPlayer(Worker, ABC):
         self.load_player()
 
     def load_player(self):
-        """Perform actions with side effects for specialized media player initialization.
+        """Perform actions with side effects for specialized media player
+        initialization.
 
         Can be overriden.
         """
