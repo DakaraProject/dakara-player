@@ -31,6 +31,8 @@
 
 ## Unreleased
 
+## 1.8.0 - 2022-11-23
+
 ### Update notes
 
 The project uses now a library to manage user directories on the different operating systems, the location was modified for Windows:
