@@ -8,7 +8,7 @@ import logging
 
 from pkg_resources import parse_version
 
-__version__ = "1.8.1"
+__version__ = "1.9.0-dev"
 __date__ = "2022-12-18"
 
 logger = logging.getLogger(__name__)
