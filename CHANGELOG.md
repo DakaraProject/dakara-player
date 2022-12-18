@@ -31,6 +31,8 @@
 
 ## Unreleased
 
+## 1.8.1 - 2022-12-18
+
 ### Fixed
 
 - Fix missing reference to `line-awesome.json`.
