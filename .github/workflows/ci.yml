@@ -1,0 +1,56 @@
+name: Tests
+
+on: [push]
+
+jobs:
+  check:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["ubuntu-20.04", "windows-latest"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: install native dependencies (Ubuntu)
+        run: sudo apt-get install -y vlc mpv
+        if: matrix.os == 'ubuntu-20.04'
+
+      - name: install native dependencies (MacOS)
+        run: brew install vlc mpv
+        if: matrix.os == 'macos-latest'
+
+      - name: install native dependencies (Windows)
+        run: |
+          choco install vlc mpv
+          # update the PATH variable (because shims are not possible for vlc/mpv)
+          Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
+          refreshenv
+          $splitPath = $Env:PATH -split ";"
+          echo $splitPath
+          echo $splitPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        if: matrix.os == 'windows-latest'
+
+      - name: install python tests dependencies
+        run: pip install -e '.[tests]'
+
+      - name: run tests
+        run: python -m pytest -v --cov src
+
+      - name: run isort
+        run: python -m isort . --check
+
+      - name: run black
+        run: python -m black . --check
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
