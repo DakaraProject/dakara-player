@@ -19,7 +19,7 @@ jobs:
           cache: 'pip'
 
       - name: install native dependencies (Ubuntu)
-        run: sudo apt-get install -y vlc mpv
+        run: sudo apt-get update && sudo apt-get install -y vlc mpv
         if: matrix.os == 'ubuntu-20.04'
 
       - name: install native dependencies (MacOS)
