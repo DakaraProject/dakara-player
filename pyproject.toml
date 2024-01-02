@@ -50,7 +50,7 @@ version = {attr = "dakara_player.version.__version__" }
 where = ["src"]
 
 [project.optional-dependencies]
-tests = [
+dev = [
         "black>=22.10.0,<22.11.0",
         "codecov>=2.1.12,<2.2.0",
         "flake8>=5.0.4,<6.1.0",

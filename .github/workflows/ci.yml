@@ -1,11 +1,16 @@
 name: Tests
 
-on: [push]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - develop
 
 jobs:
-  check:
-
+  unit-tests:
     runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
         os: ["ubuntu-20.04", "windows-latest"]
@@ -13,32 +18,60 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+          cache: "pip"
 
-      - name: install native dependencies (Ubuntu)
+      - name: Install python tests dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run tests
+        run: python -m pytest -v --cov src tests/unit
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  integration-tests:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        # MacOS disabled for now
+        os: ["ubuntu-20.04", "windows-latest"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install native dependencies (Ubuntu)
         run: sudo apt-get update && sudo apt-get install -y vlc mpv
-        if: matrix.os == 'ubuntu-20.04'
+        if: matrix.os == "ubuntu-20.04"
 
-      - name: install native dependencies (MacOS)
+      - name: Install native dependencies (MacOS)
         run: brew install vlc mpv
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == "macos-latest"
 
-      - name: install native dependencies (Windows)
+      - name: Install native dependencies (Windows)
         run: |
-          choco install vlc mpv
+          choco install --no-progress vlc mpv
           # update the PATH variable (because shims are not possible for vlc/mpv)
           Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
           refreshenv
           $splitPath = $Env:PATH -split ";"
           echo $splitPath
           echo $splitPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == "windows-latest"
 
       - name: install python tests dependencies
-        run: pip install -e '.[tests]'
+        run: pip install -e ".[dev]"
 
       - name: run tests
         run: python -m pytest -v --cov src
@@ -54,3 +87,22 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  static-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run import order checks
+        run: python -m isort . --check
+
+      - name: Run style checks
+        run: python -m black . --check
