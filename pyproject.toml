@@ -34,21 +34,6 @@ dependencies = [
         "python-vlc>=3.0.18121,<3.1.0,!=3.0.12117",
 ]
 
-[project.urls]
-Homepage = "https://github.com/DakaraProject/dakara-player"
-Repository = "https://github.com/DakaraProject/dakara-player.git"
-Issues = "https://github.com/DakaraProject/dakara-player/issues"
-
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools.dynamic]
-version = {attr = "dakara_player.version.__version__" }
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
 [project.optional-dependencies]
 dev = [
         "black>=22.10.0,<22.11.0",
@@ -62,12 +47,27 @@ dev = [
         "pytest>=7.2.0,<7.3.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/DakaraProject/dakara-player"
+Repository = "https://github.com/DakaraProject/dakara-player.git"
+Issues = "https://github.com/DakaraProject/dakara-player/issues"
+Changelog = "https://github.com/DakaraProject/dakara-player/blob/master/CHANGELOG.md"
+
 [project.scripts]
 dakara-player = "dakara_player.__main__:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "dakara_player.version.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest]
 addopts = "--cov=dakara_player"
 
 [tool.isort]
 profile = "black"
-
