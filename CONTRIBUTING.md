@@ -13,7 +13,7 @@ pip install --upgrade "setuptools>=46.4.0"
 Install the dependencies with:
 
 ```sh
-pip install -e ".[tests]"
+pip install -e ".[dev]"
 ```
 
 This installs the normal dependencies of the package plus the dependencies for tests.
