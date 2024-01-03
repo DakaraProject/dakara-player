@@ -76,18 +76,35 @@ jobs:
           Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
           refreshenv
           $splitPath = $Env:PATH -split ";"
-          echo $splitPath
           echo $splitPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         if: matrix.os == 'windows-latest'
 
-      - name: Print VLC and Mpv versions
-        run: vlc --version && mpv --version
+      - name: Print VLC version (Ubuntu, MacOS)
+        run: vlc --version
+        if: matrix.os != 'windows-latest'
+
+      - name: Print VLC version (Windows)
+        # it seems impossible to obtain VLC version through the command line interface on Windows
+        run: echo "Please check Chocolatey logs"
+        if: matrix.os == 'windows-latest'
+
+      - name: Print Mpv version
+        run: mpv --version
 
       - name: Install python tests dependencies
         run: pip install -e ".[dev]"
 
-      - name: Run tests
+      - name: Run tests (Ubuntu, MacOS)
         run: python -m pytest -v --cov src tests/integration
+        if: matrix.os != 'windows-latest'
+
+      - name: Run tests (Windows)
+        run: python -m pytest -v --cov src tests/integration
+        if: matrix.os == 'windows-latest'
+        env:
+          # on 2024-01, the latest version of Mpv on Chocolatey did not have a readable version number, despite being 0.37.0 according to Chocolatey
+          # for now, and as long as the problem remains, the version is fixed
+          DAKARA_MPV_FORCE_VERSION: 0.37.0
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
