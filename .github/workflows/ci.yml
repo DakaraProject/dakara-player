@@ -71,7 +71,7 @@ jobs:
 
       - name: Install native dependencies (Windows)
         run: |
-          choco install --no-progress vlc mpv
+          choco install --no-progress vlc mpvio
           # update the PATH variable (because shims are not possible for vlc/mpv)
           Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
           refreshenv
@@ -96,15 +96,6 @@ jobs:
 
       - name: Run tests (Ubuntu, MacOS)
         run: python -m pytest -v --cov src tests/integration
-        if: matrix.os != 'windows-latest'
-
-      - name: Run tests (Windows)
-        run: python -m pytest -v --cov src tests/integration
-        if: matrix.os == 'windows-latest'
-        env:
-          # on 2024-01, the latest version of Mpv on Chocolatey did not have a readable version number, despite being 0.37.0 according to Chocolatey
-          # for now, and as long as the problem remains, the version is fixed
-          DAKARA_MPV_FORCE_VERSION: 0.37.0
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
