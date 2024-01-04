@@ -94,7 +94,7 @@ jobs:
       - name: Install python tests dependencies
         run: pip install -e ".[dev]"
 
-      - name: Run tests (Ubuntu, MacOS)
+      - name: Run tests
         run: python -m pytest -v --cov src tests/integration
 
       - name: Upload coverage reports to Codecov
