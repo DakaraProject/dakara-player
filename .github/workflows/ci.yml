@@ -71,7 +71,8 @@ jobs:
 
       - name: Install native dependencies (Windows)
         run: |
-          choco install --no-progress vlc mpvio
+          choco install --no-progress vlc
+          choco install mpvio.install --no-progress --version=0.36.0
           # update the PATH variable (because shims are not possible for vlc/mpv)
           Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
           refreshenv
