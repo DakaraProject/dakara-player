@@ -143,7 +143,7 @@ class MediaPlayerVlc(MediaPlayer):
         self.set_vlc_default_callbacks()
 
         # print VLC version
-        logger.info("VLC %s", self.get_version())
+        logger.info("VLC %s", self.get_version_str())
 
     @on_playing_this(["song"], default_return=0)
     def get_timing(self):

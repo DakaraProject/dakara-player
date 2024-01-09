@@ -10,6 +10,7 @@ try:
 except (ImportError, OSError):
     vlc = None
 
+from dakara_base.config import Config
 from func_timeout import func_set_timeout
 from path import TempDir
 
@@ -85,7 +86,11 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             temp = stack.enter_context(TempDir())
             vlc_player = stack.enter_context(
                 MediaPlayerVlc(
-                    Event(), Queue(), config_full, temp, warn_long_exit=False
+                    Event(),
+                    Queue(),
+                    Config("DAKARA_PLAYER", config_full),
+                    temp,
+                    warn_long_exit=False,
                 )
             )
             output = stack.enter_context(
