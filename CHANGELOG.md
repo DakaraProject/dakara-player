@@ -31,6 +31,18 @@
 
 ## Unreleased
 
+### Added
+
+- Mac support.
+
+## 1.8.1 - 2022-12-18
+
+### Fixed
+
+- Fix missing reference to `line-awesome.json`.
+
+## 1.8.0 - 2022-11-23
+
 ### Update notes
 
 The project uses now a library to manage user directories on the different operating systems, the location was modified for Windows:
@@ -51,14 +63,15 @@ mv $env:APPDATA\Dakara $env:APPDATA\DakaraProject\dakara
   Duration of the rewind/fast forward jump is 10 seconds by default and can be customized in the config file using the `player.durations.rewind_fast_forward_duration` key.
 - Support of mpv 0.34.0 and above.
 - The user can force the version of mpv to use in config using the `player.mpv.force_version` key.
-- Python 3.10 support.
-- Mac support.
+- Support Python 3.10 and 3.11.
 
 ### Changed
 
 - Fonts are searched in system and user directories recursively.
 - Name of the command changed from `dakara-play` to `dakara-player`.
 - Play command moved from `dakara-play` to `dakara-player play`.
+- A better font icon is used (especially with a singer-style microphone).
+- Elements displayed on the transition screen use now the same layout as on the web client.
 
 ### Fixed
 

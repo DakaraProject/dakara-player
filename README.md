@@ -1,11 +1,13 @@
 # Dakara player
 
 <!-- Badges are displayed for the develop branch -->
-[![Appveyor CI Build status](https://ci.appveyor.com/api/projects/status/seo2wb9u01ga9vpd/branch/develop?svg=true)](https://ci.appveyor.com/project/neraste/dakara-player/branch/develop)
-[![Codecov coverage analysis](https://codecov.io/gh/DakaraProject/dakara-player/branch/develop/graph/badge.svg)](https://codecov.io/gh/DakaraProject/dakara-player)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 [![PyPI version](https://badge.fury.io/py/dakaraplayer.svg)](https://pypi.python.org/pypi/dakaraplayer/)
 [![PyPI Python versions](https://img.shields.io/pypi/pyversions/dakaraplayer.svg)](https://pypi.python.org/pypi/dakaraplayer/)
+[![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://pypi.python.org/pypi/dakaraplayer/)
+[![Tests status](https://github.com/DakaraProject/dakara-player/actions/workflows/ci.yml/badge.svg)](https://github.com/DakaraProject/dakara-player/actions/workflows/ci.yml)
+[![Code coverage status](https://codecov.io/gh/DakaraProject/dakara-player/branch/develop/graph/badge.svg)](https://codecov.io/gh/DakaraProject/dakara-player)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
 
 Interface between the Dakara server and a media player, for the Dakara project.
 
@@ -19,7 +21,7 @@ Installation guidelines are provided over here:
 
 ### System requirements
 
-* Python3, for the magic to take place (supported versions: 3.7, 3.8, 3.9 and 3.10);
+* Python3, for the magic to take place (supported versions: 3.7, 3.8, 3.9, 3.10 and 3.11).
 * Tcl-Tk on Mac if you want to use VLC and if Python was installed with Brew (see note bellow).
 
 At least one of there players:
@@ -70,7 +72,9 @@ dakara-player play
 python -m dakara_player play
 ```
 
-One instance of the Dakara server should be running. For more help:
+One instance of the Dakara server should be running.
+
+For more help:
 
 ```sh
 dakara-player -h
@@ -88,10 +92,16 @@ python -m dakara_player create-config
 
 and complete it with your values. The file is stored in your user space: `~/.config/dakara` on Linux, `~/Library/Preferences/dakara` on Mac, or `$APPDATA\DakaraProject\dakara` on Windows.
 
-## Customization
+### Configuration
+
+The configuration is created with the previously cited command. Several aspect of the player can be configured with this file. Please check with the file documentation.
+
+Authentication to the server can only be done with a player token that can be generated and copied from the web client. Please note that only a playlist manager can generate such a player token.
+
+### Customization
 
 The different text screens used when the player is idle, or before a song, can be customized, both for the background and the text template.
-The program looks for custom files at startup in the user directory: `~/.local/share/dakara/player` on Linux or `$APPDATA\Dakara\player` on Windows.
+The program looks for custom files at startup in the user directory: `~/.local/share/dakara/player` on Linux or `$APPDATA\DakaraProject\dakara\player` on Windows.
 Backgrounds are located in the `backgrounds` subfolder, and text templates in the `templates` subfolder.
 File names can be modified in the config file, see `player.templates` and `player.backgrounds`.
 

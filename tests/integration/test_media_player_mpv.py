@@ -6,6 +6,7 @@ from time import sleep
 from unittest import skipUnless
 from unittest.mock import MagicMock
 
+from dakara_base.config import Config
 from func_timeout import func_set_timeout
 from path import TempDir
 
@@ -69,11 +70,10 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             try:
                 with ExitStack() as stack:
                     mpv_player = stack.enter_context(
-                        MediaPlayerMpv.get_class()(
+                        MediaPlayerMpv.from_version(
                             Event(),
                             Queue(),
-                            Queue(),
-                            config_full,
+                            Config("DAKARA_PLAYER", config_full),
                             temp,
                             warn_long_exit=False,
                         )

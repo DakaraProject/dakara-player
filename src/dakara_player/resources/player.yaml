@@ -148,12 +148,12 @@ server:
   # host: 127.0.0.1
   # port: 8000
 
+  # Token for server authentication
+  # You can find your token in "Settings > Token > Player token" on the dakara web client
+  token: tokenValue
+
   # Use a secured connection
   # ssl: false
-
-  # Credentials for server authentication
-  login: login
-  password: pass
 
   # Interval to reconnect to the server if connection lost (in seconds)
   # reconnect_interval: 5

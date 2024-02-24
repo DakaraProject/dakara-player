@@ -232,6 +232,30 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             MediaPlayerVlc.get_version()
 
     @patch.object(MediaPlayerVlc, "get_version")
+    def test_get_version_str(self, mocked_get_version):
+        """Test to get the VLC version as a string."""
+        # mock the version of VLC
+        mocked_get_version.return_value = parse("3.0.11")
+
+        # call the method
+        version_str = MediaPlayerVlc.get_version_str()
+
+        # assert the result
+        self.assertEqual(version_str, "3.0.11")
+
+    @patch.object(MediaPlayerVlc, "get_version")
+    def test_get_version_str_not_found(self, mocked_get_version):
+        """Test to get the VLC version as a string when it is not
+        available."""
+        # mock the version of VLC
+        mocked_get_version.side_effect = VersionNotFoundError(
+            "Unable to get VLC version"
+        )
+
+        # call the method
+        self.assertEqual(MediaPlayerVlc.get_version_str(), "unknown version")
+
+    @patch.object(MediaPlayerVlc, "get_version")
     def test_check_version(self, mocked_get_version):
         """Test to check recent enough version VLC."""
         with self.get_instance() as (vlc_player, _, _):

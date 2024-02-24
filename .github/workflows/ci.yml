@@ -1,0 +1,124 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - develop
+
+jobs:
+  unit-tests:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          # MacOS disabled for now
+          - windows-latest
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install python tests dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run tests
+        run: python -m pytest -v --cov src tests/unit
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  integration-tests:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04 # FIXME release this lock when possible
+          # MacOS disabled for now
+          - windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install native dependencies (Ubuntu)
+        run: sudo apt-get update && sudo apt-get install -y vlc mpv
+        if: matrix.os == 'ubuntu-20.04'
+
+      - name: Install native dependencies (MacOS)
+        run: brew install vlc mpv
+        if: matrix.os == 'macos-latest'
+
+      - name: Install native dependencies (Windows)
+        run: |
+          choco install --no-progress vlc
+          choco install mpvio.install --no-progress --version=0.36.0 # FIXME release this lock when possible
+          # update the PATH variable (because shims are not possible for vlc/mpv)
+          Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
+          refreshenv
+          $splitPath = $Env:PATH -split ";"
+          echo $splitPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        if: matrix.os == 'windows-latest'
+
+      - name: Print VLC version (Ubuntu, MacOS)
+        run: vlc --version
+        if: matrix.os != 'windows-latest'
+
+      - name: Print VLC version (Windows)
+        # it seems impossible to obtain VLC version through the command line interface on Windows
+        run: echo "Please check Chocolatey logs"
+        if: matrix.os == 'windows-latest'
+
+      - name: Print Mpv version
+        run: mpv --version
+
+      - name: Install python tests dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run tests
+        run: python -m pytest -v --cov src tests/integration
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  static-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run import order checks
+        run: python -m isort . --check
+
+      - name: Run style checks
+        run: python -m black . --check

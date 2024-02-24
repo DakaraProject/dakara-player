@@ -244,7 +244,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         self.player.fullscreen = self.fullscreen
 
         # log mpv version
-        logger.info("mpv %s", self.get_version())
+        logger.info("mpv %s", self.get_version_str())
 
         # set mpv as a single non-interactive window
         self.player.force_window = "immediate"

@@ -184,7 +184,8 @@ class MediaPlayer(Worker, ABC):
         self.load_player()
 
     def load_player(self):
-        """Perform actions with side effects for specialized media player initialization.
+        """Perform actions with side effects for specialized media player
+        initialization.
 
         Can be overriden.
         """
@@ -210,6 +211,20 @@ class MediaPlayer(Worker, ABC):
         Returns:
             packaging.version.Version: Parsed version of the media player.
         """
+
+    @classmethod
+    def get_version_str(cls):
+        """Get media player formatted version.
+
+        Returns:
+            str: Formatted version of the media player. If the version
+            cannot be obtained, display `unknown version`.
+        """
+        try:
+            return str(cls.get_version())
+
+        except VersionNotFoundError:
+            return "unknown version"
 
     @abstractmethod
     def is_playing(self):
@@ -485,7 +500,7 @@ class MediaPlayer(Worker, ABC):
                 "idle",
                 {
                     "notes": [
-                        "{} {}".format(self.player_name, self.get_version()),
+                        "{} {}".format(self.player_name, self.get_version_str()),
                         "Dakara player {}".format(__version__),
                     ]
                 },
