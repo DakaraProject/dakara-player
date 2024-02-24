@@ -6,6 +6,7 @@ from path import Path
 
 from dakara_player.font import (
     FontLoaderLinux,
+    FontLoaderMac,
     FontLoaderNotAvailableError,
     FontLoaderWindows,
     get_font_loader_class,
@@ -21,6 +22,11 @@ class GetFontLoaderClassTestCase(TestCase):
         with patch("dakara_player.font.platform.system", return_value="Linux"):
             FontLoaderClass = get_font_loader_class()
             self.assertEqual(FontLoaderClass, FontLoaderLinux)
+
+        # call for Mac
+        with patch("dakara_player.font.platform.system", return_value="Darwin"):
+            FontLoaderClass = get_font_loader_class()
+            self.assertEqual(FontLoaderClass, FontLoaderMac)
 
         # call for Windows
         with patch("dakara_player.font.platform.system", return_value="Windows"):
@@ -388,6 +394,67 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
                 "ERROR:dakara_player.font:Font 'font_file.ttf' in "
                 "'directory/font_file.ttf' cannot be unloaded: error message"
             ],
+        )
+
+
+@skipUnless(platform.system() == "Darwin", "Can be tested on Mac only")
+class FontLoaderMacTestCase(FontLoaderTestCase):
+    def setUp(self):
+        super().setUp()
+
+        # save user directory
+        self.user_directory = Path("~").expanduser()
+
+    def get_font_loader(self):
+        """Return an instance of the font loader."""
+        with self.assertLogs("dakara_player.font", "DEBUG"):
+            return FontLoaderMac("package")
+
+    @patch.object(FontLoaderLinux, "load_font", autospec=True)
+    @patch.object(FontLoaderLinux, "get_font_path_iterator", autospec=True)
+    @patch.object(Path, "walkfiles", autospec=True)
+    @patch.object(Path, "mkdir_p", autospec=True)
+    def test_load(
+        self,
+        mocked_mkdir_p,
+        mocked_walkfiles,
+        mocked_get_font_path_iterator,
+        mocked_load_font,
+    ):
+        """Test to load fonts."""
+        # prepare the mock
+        mocked_get_font_path_iterator.return_value = (p for p in [self.font_path])
+        mocked_walkfiles.side_effect = [
+            (p for p in [Path("/") / "Library" / "Fonts" / "font1"]),
+            (p for p in [Path("/") / "System" / "Library" / "Fonts" / "font2"]),
+            (p for p in [self.user_directory / "Library" / "Fonts" / "font3"]),
+        ]
+
+        font_loader = self.get_font_loader()
+
+        # call the method
+        font_loader.load()
+
+        # assert the call
+        mocked_mkdir_p.assert_called_once_with(
+            self.user_directory / "Library" / "Fonts"
+        )
+        mocked_walkfiles.assert_has_calls(
+            [
+                call(Path("/") / "Library" / "Fonts"),
+                call(Path("/") / "System" / "Library" / "Fonts"),
+                call(self.user_directory / "Library" / "Fonts"),
+            ]
+        )
+        mocked_get_font_path_iterator.assert_called_once_with(font_loader)
+        mocked_load_font.assert_called_once_with(
+            font_loader,
+            self.font_path,
+            [
+                Path("/") / "Library" / "Fonts" / "font1",
+                Path("/") / "System" / "Library" / "Fonts" / "font2",
+            ],
+            [self.user_directory / "Library" / "Fonts" / "font3"],
         )
 
 

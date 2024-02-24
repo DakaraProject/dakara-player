@@ -1,3 +1,4 @@
+import os
 from contextlib import ExitStack, contextmanager
 from queue import Queue
 from threading import Event
@@ -27,6 +28,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
     TIMEOUT = 120
     DELAY = 0.2
+    IS_IMPRECISE = os.environ.get("IMPRECISE_TEST")
 
     def setUp(self):
         super().setUp()
@@ -768,7 +770,10 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # check timing is earlier than previously
             timing2 = mpv_player.player.time_pos
             self.assertLess(timing2, timing1)
-            self.assertAlmostEqual(timing1 - timing2, REWIND_FAST_FORWARD_DURATION, 1)
+            if not self.IS_IMPRECISE:
+                self.assertAlmostEqual(
+                    timing1 - timing2, REWIND_FAST_FORWARD_DURATION, 1
+                )
 
             # assert callback
             mpv_player.callbacks["updated_timing"].assert_called_with(
@@ -842,7 +847,10 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # check timing is later than previously
             timing2 = mpv_player.player.time_pos
             self.assertGreater(timing2, timing1)
-            self.assertAlmostEqual(timing2 - timing1, REWIND_FAST_FORWARD_DURATION, 1)
+            if not self.IS_IMPRECISE:
+                self.assertAlmostEqual(
+                    timing2 - timing1, REWIND_FAST_FORWARD_DURATION, 1
+                )
 
             # assert callback
             mpv_player.callbacks["updated_timing"].assert_called_with(

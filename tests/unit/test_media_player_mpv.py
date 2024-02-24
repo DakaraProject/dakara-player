@@ -78,40 +78,23 @@ class MediaPlayerMpvTestCase(TestCase):
 
     @patch.object(MediaPlayerMpv, "get_version")
     @patch.object(MediaPlayerMpv, "get_class_from_version")
-    def test_from_version_config(
-        self, mocked_get_class_from_version, mocked_get_version
-    ):
-        """Test to get version from config."""
-        MediaPlayerMpv.from_version(
-            None, None, {"mpv": {"force_version": "0.27.0"}}, None
-        )
+    def test_get_class_config(self, mocked_get_class_from_version, mocked_get_version):
+        """Test to get class from config."""
+        MediaPlayerMpv.get_class({"mpv": {"force_version": "0.27.0"}})
 
         mocked_get_class_from_version.assert_called_with(Version("0.27.0"))
         mocked_get_version.assert_not_called()
 
     @patch.object(MediaPlayerMpv, "get_version")
     @patch.object(MediaPlayerMpv, "get_class_from_version")
-    def test_from_version_player(
-        self, mocked_get_class_from_version, mocked_get_version
-    ):
-        """Test to get version from player."""
+    def test_get_class_auto(self, mocked_get_class_from_version, mocked_get_version):
+        """Test to get class automatically."""
         mocked_get_version.return_value = Version("0.27.0")
 
-        MediaPlayerMpv.from_version(None, None, {"mpv": {}}, None)
+        MediaPlayerMpv.get_class({"mpv": {}})
 
         mocked_get_class_from_version.assert_called_with(Version("0.27.0"))
         mocked_get_version.assert_called_with()
-
-    @patch.object(MediaPlayerMpv, "get_version")
-    @patch.object(MediaPlayerMpv, "get_class_from_version")
-    def test_instanciate(self, mocked_get_class_from_version, mocked_get_version):
-        """Test to instanciate media player mpv class."""
-        mocked_get_class_from_version.return_value = MagicMock()
-
-        MediaPlayerMpv.from_version(None, None, {}, "tmp")
-        mocked_get_class_from_version.return_value.assert_called_with(
-            None, None, {}, "tmp"
-        )
 
     @patch("dakara_player.media_player.mpv.mpv.MPV")
     def test_is_available_ok_direct(self, mocked_mpv_class):
@@ -193,7 +176,7 @@ class MediaPlayerMpvModelTestCase(TestCase):
             )
 
             return (
-                self.mpv_player_class(Event(), Queue(), config, Path("temp")),
+                self.mpv_player_class(Event(), Queue(), Queue(), config, Path("temp")),
                 (
                     mocked_instance_class.return_value,
                     mocked_background_loader_class.return_value,
@@ -258,7 +241,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         with self.assertRaisesRegex(
             MediaPlayerNotAvailableError, "mpv is not available"
         ):
-            MediaPlayerMpvOld(Event(), Queue(), {}, Path("temp"))
+            MediaPlayerMpvOld(Event(), Queue(), Queue(), {}, Path("temp"))
 
     @patch.object(MediaPlayerMpvOld, "is_playing_this")
     def test_get_timing(self, mocked_is_playing_this):

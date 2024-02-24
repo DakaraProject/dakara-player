@@ -120,17 +120,17 @@ class MediaPlayerMpv(MediaPlayer, ABC):
 
     @staticmethod
     def get_class_from_version(version):
-        """Get the mpv media player class according to installed version.
+        """Get the mpv media player class according to provided version.
 
         Args:
             version (packaging.version.Version): Arbitrary mpv version to use.
 
         Returns:
-            MediaPlayerMpv: Will return the class adapted to the version of mpv:
+            type: Will return the class adapted to the version of mpv:
 
-                - `MediaPlayerMpvPost0340` if mpv newer than 0.34.0;
-                - `MediaPlayerMpvPost0330` if mpv newer than 0.33.0;
-                - `MediaPlayerMpvOld` as default.
+            - `MediaPlayerMpvPost0340` if mpv newer than 0.34.0;
+            - `MediaPlayerMpvPost0330` if mpv newer than 0.33.0;
+            - `MediaPlayerMpvOld` as default.
         """
         if version >= Version("0.34.0"):
             logger.debug("Using post 0.34.0 API of mpv")
@@ -144,21 +144,24 @@ class MediaPlayerMpv(MediaPlayer, ABC):
         return MediaPlayerMpvOld
 
     @staticmethod
-    def from_version(*args, **kwargs):
-        """Instanciate the right mpv media player class.
+    def get_class(config=None):
+        """Get the mpv media player class.
+
+        Args:
+            config (dakara_base.config.Config): Configuration. Used to
+                determine if mpv version should be automatically detected or
+                read from configuration.
 
         Returns:
-            MediaPlayer: Instance of the mpv media player for the correct
-            version of mpv.
+            type: Will return the class.
         """
-        try:
-            config = kwargs.get("config") or args[2]
+        if config is not None and "mpv" in config and "force_version" in config["mpv"]:
             version = Version(config["mpv"]["force_version"])
 
-        except (KeyError, IndexError):
+        else:
             version = MediaPlayerMpv.get_version()
 
-        return MediaPlayerMpv.get_class_from_version(version)(*args, **kwargs)
+        return MediaPlayerMpv.get_class_from_version(version)
 
 
 class MediaPlayerMpvOld(MediaPlayerMpv):

@@ -58,7 +58,8 @@ class DakaraWorkerTestCase(TestCase):
 
         self.assertIs(media_player_class, MediaPlayerVlc)
 
-    def test_get_media_player_class_mpv(self):
+    @patch.object(MediaPlayerMpv, "get_class")
+    def test_get_media_player_class_mpv(self, mocked_get_class):
         """Test to get MPV as media player."""
         stop = Event()
         errors = Queue()
@@ -68,7 +69,7 @@ class DakaraWorkerTestCase(TestCase):
         worker = DakaraWorker(stop, errors, config)
         media_player_class = worker.get_media_player_class()
 
-        self.assertIs(media_player_class, MediaPlayerMpv.from_version)
+        self.assertIs(media_player_class, mocked_get_class.return_value)
 
     def test_get_media_player_class_default(self):
         """Test to get the default media player."""
@@ -139,13 +140,15 @@ class DakaraWorkerTestCase(TestCase):
             "dakara_player.player.MEDIA_PLAYER_CLASSES",
             {"vlc": mocked_vlc_player_class},
         ):
-            dakara_worker.run()
+            dakara_worker.run_thread()
 
         # assert the call
         mocked_temporary_directory_class.assert_called_with(suffix=".dakara")
         mocked_font_loader_class.assert_called_with("dakara_player.resources.fonts")
         mocked_font_loader.load.assert_called_with()
-        mocked_vlc_player_class.assert_called_with(stop, errors, CONFIG["player"], ANY)
+        mocked_vlc_player_class.assert_called_with(
+            stop, errors, dakara_worker.window_comm, CONFIG["player"], ANY
+        )
         mocked_vlc_player.load.assert_called_with()
         mocked_dakara_http_client_class.assert_called_with(
             CONFIG["server"], endpoint_prefix="api/", mute_raise=True
@@ -195,4 +198,4 @@ class DakaraPlayerTestCase(TestCase):
         dakara_player.run()
 
         # assert the call
-        mocked_run_safe.assert_called_with(DakaraWorker, CONFIG)
+        mocked_run_safe.assert_called_with(DakaraWorker, args=(CONFIG,))

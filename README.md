@@ -22,6 +22,7 @@ Installation guidelines are provided over here:
 ### System requirements
 
 * Python3, for the magic to take place (supported versions: 3.7, 3.8, 3.9, 3.10 and 3.11).
+* Tcl-Tk on Mac if you want to use VLC and if Python was installed with Brew (see note bellow).
 
 At least one of there players:
 
@@ -29,7 +30,13 @@ At least one of there players:
 * [mpv](https://mpv.io/) (supported version: 0.27 and higher).
 
 For 64 bits operating systems, you must install the equivalent version of the requirements.
-Linux and Windows are supported.
+Linux, Mac and Windows are supported.
+
+### Note for Mac users
+
+Tk has to be used to create a window for VLC, as it cannot do it automatically, unlike on the other supported operating systems.
+If you have installed Python using Brew, the Tk library may not be installed, so you have to install it manually.
+The library should be located automatically, but you can indicate its location with the environment variable `TK_LIBRARY_PATH`.
 
 ### Virtual environment
 
@@ -83,7 +90,7 @@ dakara-player create-config
 python -m dakara_player create-config
 ```
 
-and complete it with your values. The file is stored in your user space: `~/.config/dakara` on Linux, or `$APPDATA\DakaraProject\dakara` on Windows.
+and complete it with your values. The file is stored in your user space: `~/.config/dakara` on Linux, `~/Library/Preferences/dakara` on Mac, or `$APPDATA\DakaraProject\dakara` on Windows.
 
 ### Configuration
 

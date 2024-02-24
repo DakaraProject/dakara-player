@@ -31,7 +31,6 @@ from dakara_player.media_player.vlc import (
 )
 from dakara_player.mrl import path_to_mrl
 from dakara_player.text import TextGenerator
-from dakara_player.window import DummyWindowManager, WindowManager
 
 
 class BaseTestCase(TestCase):
@@ -103,7 +102,7 @@ class BaseTestCase(TestCase):
                 tempdir = Path("temp")
 
             yield (
-                MediaPlayerVlc(Event(), Queue(), config, tempdir),
+                MediaPlayerVlc(Event(), Queue(), Queue(), config, tempdir),
                 (
                     mocked_instance_class.return_value,
                     mocked_background_loader_class.return_value,
@@ -147,18 +146,6 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             player.get_media.return_value = vlc_player.playlist_entry_data["song"].media
             vlc_player.playlist_entry_data["transition"].started = True
             vlc_player.playlist_entry_data["song"].started = True
-
-    def test_init_window(self):
-        """Test to use default or custom window."""
-        # default window
-        with self.get_instance(
-            {"kara_folder": gettempdir(), "vlc": {"use_default_window": True}}
-        ) as (vlc_player, _, _):
-            self.assertIsInstance(vlc_player.window, DummyWindowManager)
-
-        # custom window
-        with self.get_instance() as (vlc_player, _, _):
-            self.assertIsInstance(vlc_player.window, WindowManager)
 
     def test_set_callback(self):
         """Test the assignation of a callback."""
@@ -340,20 +327,18 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             ):
                 vlc_player.check_kara_folder_path()
 
-    @patch.object(WindowManager, "get_id")
-    @patch.object(WindowManager, "open")
     @patch.object(MediaPlayerVlc, "check_kara_folder_path")
     @patch.object(MediaPlayerVlc, "check_version")
     @patch.object(MediaPlayerVlc, "set_vlc_default_callbacks")
     @patch.object(MediaPlayerVlc, "get_version")
+    @patch.object(MediaPlayerVlc, "set_window")
     def test_load(
         self,
+        mocked_set_window,
         mocked_get_version,
         mocked_set_vlc_default_callback,
         mocked_check_version,
         mocked_check_kara_folder_path,
-        mocked_open,
-        mocked_get_id,
     ):
         """Test to load the instance."""
         with self.get_instance() as (
@@ -374,8 +359,6 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             mocked_background_loader.load.assert_called_with()
             mocked_check_version.assert_called_with()
             mocked_set_vlc_default_callback.assert_called_with()
-            mocked_open.assert_called_with()
-            mocked_get_id.assert_called_with()
 
             # assert logs
             self.assertListEqual(
@@ -1184,40 +1167,76 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             vlc_player.player.play.assert_not_called()
 
     def test_set_window_none(self):
-        """Test to use default window."""
+        """Test to use default window on any system but Mac."""
         with self.get_instance() as (vlc_player, _, _):
+            vlc_player.window_comm.put(None)
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
-                vlc_player.set_window(None)
+                vlc_player.set_window()
 
             self.assertListEqual(
                 logger.output,
                 ["DEBUG:dakara_player.media_player.vlc:Using VLC default window"],
             )
 
+    @patch("dakara_player.media_player.vlc.platform.system", return_value="Darwin")
+    def test_set_window_none_mac(self, mocked_system):
+        """Test to use default window on Mac."""
+        with self.get_instance() as (vlc_player, _, _):
+            vlc_player.window_comm.put(None)
+            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
+                vlc_player.set_window()
+
+            self.assertListEqual(
+                logger.output,
+                [
+                    "DEBUG:dakara_player.media_player.vlc:Using VLC default window",
+                    "ERROR:dakara_player.media_player.vlc:VLC cannot create a window "
+                    "by itself on Mac, the application may crash",
+                ],
+            )
+
     @patch("dakara_player.media_player.vlc.platform.system", return_value="Linux")
     def test_set_window_linux(self, mocked_system):
         """Test to use X window."""
         with self.get_instance() as (vlc_player, _, _):
+            vlc_player.window_comm.put(99)
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
-                vlc_player.set_window(99)
+                vlc_player.set_window()
 
             self.assertListEqual(
                 logger.output,
                 ["DEBUG:dakara_player.media_player.vlc:Associating X window to VLC"],
             )
 
-    @patch("dakara_player.media_player.vlc.platform.system", return_value="Windows")
-    def test_set_window_windows(self, mocked_system):
-        """Test to use Win API window."""
+    @patch("dakara_player.media_player.vlc.platform.system", return_value="Darwin")
+    def test_set_window_mac(self, mocked_system):
+        """Test to use AppKit window."""
         with self.get_instance() as (vlc_player, _, _):
+            vlc_player.window_comm.put(99)
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
-                vlc_player.set_window(99)
+                vlc_player.set_window()
 
             self.assertListEqual(
                 logger.output,
                 [
-                    "DEBUG:dakara_player.media_player.vlc:"
-                    "Associating Win API window to VLC"
+                    "DEBUG:dakara_player.media_player.vlc:Associating AppKit window "
+                    "to VLC"
+                ],
+            )
+
+    @patch("dakara_player.media_player.vlc.platform.system", return_value="Windows")
+    def test_set_window_windows(self, mocked_system):
+        """Test to use Win API window."""
+        with self.get_instance() as (vlc_player, _, _):
+            vlc_player.window_comm.put(99)
+            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
+                vlc_player.set_window()
+
+            self.assertListEqual(
+                logger.output,
+                [
+                    "DEBUG:dakara_player.media_player.vlc:Associating Win API window "
+                    "to VLC"
                 ],
             )
 
@@ -1225,8 +1244,9 @@ class MediaPlayerVlcTestCase(BaseTestCase):
     def test_set_window_other(self, mocked_system):
         """Test to set window on unknown platform."""
         with self.get_instance() as (vlc_player, _, _):
+            vlc_player.window_comm.put(99)
             with self.assertRaises(NotImplementedError):
-                vlc_player.set_window(99)
+                vlc_player.set_window()
 
 
 @patch("dakara_player.media_player.vlc.METADATA_KEYS_COUNT", 10)

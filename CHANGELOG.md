@@ -31,6 +31,10 @@
 
 ## Unreleased
 
+### Added
+
+- Mac support.
+
 ## 1.8.1 - 2022-12-18
 
 ### Fixed

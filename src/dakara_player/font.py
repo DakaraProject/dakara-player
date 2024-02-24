@@ -31,6 +31,9 @@ def get_font_loader_class():
     if system == "Linux":
         return FontLoaderLinux
 
+    if system == "Darwin":
+        return FontLoaderMac
+
     if system == "Windows":
         return FontLoaderWindows
 
@@ -236,6 +239,44 @@ class FontLoaderLinux(FontLoader):
                 font_file_path,
                 error,
             )
+
+
+class FontLoaderMac(FontLoaderLinux):
+    """Font loader for Mac.
+
+    It copies fonts to load in the user fonts directory and removes them on
+    exit. Using symbolic links is not safe as the location of the package fonts
+    may not be permanent (see `importlib.resources.path` for more info).
+
+    See:
+        https://docs.python.org/3/library/importlib.html#importlib.resources.path
+
+    Example of use:
+
+    >>> with FontLoaderMac() as loader:
+    ...     loader.load()
+    ...     # do stuff while fonts are loaded
+    >>> # now fonts are unloaded
+
+    Args:
+        package (str): Package checked for font files.
+
+    Attributes:
+        package (str): Package checked for font files.
+        font_loaded (dict of path.Path): List of loaded fonts. The key is the
+            font file name and the value is the path of the installed font in
+            user directory.
+    """
+
+    GREETINGS = "Font loader for Mac selected"
+    FONT_DIR_MACHINE = Path("/") / "Library" / "Fonts"
+    FONT_DIR_SYSTEM = Path("/") / "System" / "Library" / "Fonts"
+    FONT_DIR_USER = Path("~") / "Library" / "Fonts"
+
+    def get_system_font_path_list(self):
+        return list(self.FONT_DIR_MACHINE.walkfiles()) + list(
+            self.FONT_DIR_SYSTEM.walkfiles()
+        )
 
 
 class FontLoaderWindows(FontLoader):

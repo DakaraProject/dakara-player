@@ -61,7 +61,8 @@ player:
     # By default, a permanent Tkinter window is created and passed to VLC if
     # possible. In contrast, when VLC manages its window, it will create a new
     # one for each media, which may result in a blinking effect (especially
-    # visible on Windows).
+    # visible on Windows). You cannot set this option on Mac, as VLC cannot
+    # create its own window.
     # use_default_window = False
 
   # Parameters for mpv
