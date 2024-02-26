@@ -1,12 +1,7 @@
 """Manage background images for media players."""
 
 import logging
-
-try:
-    from importlib.resources import path
-
-except ImportError:
-    from importlib_resources import path
+from importlib.resources import path
 
 from dakara_base.exceptions import DakaraError
 from path import Path

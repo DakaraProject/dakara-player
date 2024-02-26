@@ -2,12 +2,7 @@
 
 import logging
 from distutils.util import strtobool
-
-try:
-    from importlib.resources import contents, path
-
-except ImportError:
-    from importlib_resources import path, contents
+from importlib.resources import contents, path
 
 from dakara_base.directory import directories
 from path import Path
