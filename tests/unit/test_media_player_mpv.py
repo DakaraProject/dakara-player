@@ -25,8 +25,8 @@ class MediaPlayerMpvTestCase(TestCase):
     """Test the static methods of the abstract MediaPlayerMpv class."""
 
     @patch("dakara_player.media_player.mpv.mpv.MPV")
-    def test_get_version_postrelease(self, mocked_mpv_class):
-        """Test to get the mpv post release version."""
+    def test_get_version_old_postrelease(self, mocked_mpv_class):
+        """Test to get the version version from a vcs build of mpv <0.37."""
         # mock the version of mpv
         mocked_mpv_class.return_value.mpv_version = (
             "mpv 0.32.0+git.20200402T120653.5824ac7d36"
@@ -40,8 +40,8 @@ class MediaPlayerMpvTestCase(TestCase):
         self.assertTrue(version.is_postrelease)
 
     @patch("dakara_player.media_player.mpv.mpv.MPV")
-    def test_get_version(self, mocked_mpv_class):
-        """Test to get the mpv stable version."""
+    def test_get_version_old(self, mocked_mpv_class):
+        """Test to get the version from a release build of mpv <0.37."""
         # mock the version of mpv
         mocked_mpv_class.return_value.mpv_version = "mpv 0.32.0"
 
@@ -50,6 +50,32 @@ class MediaPlayerMpvTestCase(TestCase):
 
         # assert the result
         self.assertEqual(version.base_version, "0.32.0")
+        self.assertFalse(version.is_postrelease)
+
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_get_version_meson(self, mocked_mpv_class):
+        """Test to get the version from a release build of mpv >=0.37."""
+        # mock the version of mpv
+        mocked_mpv_class.return_value.mpv_version = "mpv v0.37.0"
+
+        # call the method
+        version = MediaPlayerMpv.get_version()
+
+        # assert the result
+        self.assertEqual(version.base_version, "0.37.0")
+        self.assertFalse(version.is_postrelease)
+
+    @patch("dakara_player.media_player.mpv.mpv.MPV")
+    def test_get_version_meson_git(self, mocked_mpv_class):
+        """Test to get the version from a vcs build of mpv >=0.37."""
+        # mock the version of mpv
+        mocked_mpv_class.return_value.mpv_version = "mpv v0.37.0-364-g2cc3bc12db"
+
+        # call the method
+        version = MediaPlayerMpv.get_version()
+
+        # assert the result
+        self.assertEqual(version.base_version, "0.37.0")
         self.assertFalse(version.is_postrelease)
 
     @patch("dakara_player.media_player.mpv.mpv.MPV")
