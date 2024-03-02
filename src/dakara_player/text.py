@@ -2,17 +2,11 @@
 
 import json
 import logging
+from importlib.resources import path
 
 from dakara_base.exceptions import DakaraError
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PackageLoader
 from path import Path
-
-try:
-    from importlib.resources import path
-
-except ImportError:
-    from importlib_resources import path
-
 
 ICON_MAP_FILE = "line-awesome.json"
 

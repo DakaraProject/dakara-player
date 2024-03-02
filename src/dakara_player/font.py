@@ -4,16 +4,10 @@ import ctypes
 import logging
 import platform
 from abc import ABC, abstractmethod
-
-from path import Path
-
-try:
-    from importlib.resources import contents, path
-
-except ImportError:
-    from importlib_resources import contents, path
+from importlib.resources import contents, path
 
 from dakara_base.exceptions import DakaraError
+from path import Path
 
 logger = logging.getLogger(__name__)
 
