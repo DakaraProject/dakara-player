@@ -25,8 +25,8 @@ class MediaPlayerMpvTestCase(TestCase):
     """Test the static methods of the abstract MediaPlayerMpv class."""
 
     @patch("dakara_player.media_player.mpv.mpv.MPV")
-    def test_get_version_old_postrelease(self, mocked_mpv_class):
-        """Test to get the version version from a vcs build of mpv <0.37."""
+    def test_get_version_opensuse_postrelease(self, mocked_mpv_class):
+        """Test to get the version from an openSUSE mpv build."""
         # mock the version of mpv
         mocked_mpv_class.return_value.mpv_version = (
             "mpv 0.32.0+git.20200402T120653.5824ac7d36"
@@ -67,7 +67,7 @@ class MediaPlayerMpvTestCase(TestCase):
 
     @patch("dakara_player.media_player.mpv.mpv.MPV")
     def test_get_version_meson_git(self, mocked_mpv_class):
-        """Test to get the version from a vcs build of mpv >=0.37."""
+        """Test to get the version from a vcs build of mpv."""
         # mock the version of mpv
         mocked_mpv_class.return_value.mpv_version = "mpv v0.37.0-364-g2cc3bc12db"
 
@@ -76,7 +76,7 @@ class MediaPlayerMpvTestCase(TestCase):
 
         # assert the result
         self.assertEqual(version.base_version, "0.37.0")
-        self.assertFalse(version.is_postrelease)
+        self.assertTrue(version.is_postrelease)
 
     @patch("dakara_player.media_player.mpv.mpv.MPV")
     def test_get_version_not_found(self, mocked_mpv_class):

@@ -90,12 +90,10 @@ class MediaPlayerMpv(MediaPlayer, ABC):
     def get_version():
         """Get media player version.
 
-        mpv version is in the form "mpv x.y.z+git.v.w" where "v" is a timestamp
-        and "w" a commit hash for post releases, or "mpv x.y.z" for releases.
-
-        In case of post release, as the version given by mpv does not respect
-        semantic versionning, the sub-version is the concatenation of the day
-        part and the time part of "v".
+        mpv versions are in the form "vMAJOR.MINOR.PATCH" for releases, older
+        versions (<0.37) do not include a 'v' before the version, post releases
+        are detected as any valid base version followed by "+BUILD" or "-BUILD"
+        where BUILD is whatever build information was included in the string.
 
         Returns:
             packaging.version.Version: Parsed version of mpv.
@@ -105,14 +103,14 @@ class MediaPlayerMpv(MediaPlayer, ABC):
         """
         player = mpv.MPV()
         match = re.search(
-            r"mpv v?(\d+\.\d+\.\d+)(?:\+git\.(\d{8})T(\d{6})\..*)?",
+            r"mpv v?(\d+\.\d+\.\d+)([+-]\w+)?",
             player.mpv_version,
         )
         player.terminate()
 
         if match:
-            if match.group(2) and match.group(3):
-                return parse(match.group(1) + "-post" + match.group(2) + match.group(3))
+            if match.group(2):
+                return parse(match.group(1) + "-post")
 
             return parse(match.group(1))
 
