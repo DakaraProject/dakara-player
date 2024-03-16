@@ -74,6 +74,8 @@ addopts = "--cov=dakara_player"
 profile = "black"
 
 [tool.ruff]
-select = ["E", "F", "W", "B"]
 line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B"]
 ignore = []
