@@ -724,7 +724,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mpv_player, (mocked_player, _, _), _ = self.get_instance(
             {"mpv": {"key1": "value1"}}
         )
-        self.assertEqual(getattr(mocked_player, "key1"), "value1")
+        self.assertEqual(mocked_player.key1, "value1")
 
     def test_play_invalid(self):
         """Test to play invalid action."""

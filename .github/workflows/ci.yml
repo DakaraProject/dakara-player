@@ -122,3 +122,6 @@ jobs:
 
       - name: Run style checks
         run: python -m black . --check
+
+      - name: Run ruff linter
+        run: python -m ruff check .
