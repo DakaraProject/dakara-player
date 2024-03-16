@@ -3,9 +3,11 @@
 import logging
 import re
 from abc import ABC
+from typing import Optional
 
 from dakara_base.safe_workers import safe
 from packaging.version import Version, parse
+from python_mpv_jsonipc import MPVError
 
 try:
     import python_mpv_jsonipc as mpv
@@ -232,6 +234,10 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         self.player_data = {}
         self.player_data["skip"] = False
 
+        # detected loadfile command
+        self.loadfile_with_index = False
+        self.loadfile_without_index = False
+
     def load_player(self):
         """Perform actions with side effects for mpv initialization."""
         # set mpv callbacks
@@ -344,6 +350,56 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             media_path == self.playlist_entry_data[what].path and media_path is not None
         )
 
+    def loadfile_replace(self, file: str, subfile: str, end: Optional[float] = None):
+        """Low(er)-level method to request mpv to play a file.
+
+        Acts as a compatibility layer for mpv 0.38.0 and older versions.
+
+        Args:
+            file (str): File to play.
+            subfile (str): Subtitles to load with the file.
+            end (float): Optional timestamp at which the playback should end.
+
+        Raises:
+            RuntimeError: If none of the loadfile commands worked
+        """
+        options = {"sub-files": subfile}
+        if end is not None:
+            options["end"] = str(end)
+
+        e = None
+
+        if not self.loadfile_with_index:
+            try:
+                self.player.loadfile(
+                    file,
+                    "replace",
+                    options,
+                )
+                self.loadfile_without_index = True
+                return
+            except MPVError as e1:
+                e = e1
+                if self.loadfile_with_index:
+                    raise e1
+
+        if not self.loadfile_without_index:
+            try:
+                self.player.loadfile(
+                    file,
+                    "replace",
+                    -1,
+                    options,
+                )
+                self.loadfile_with_index = True
+                return
+            except MPVError as e2:
+                e = e2
+                if self.loadfile_with_index:
+                    raise e2
+
+        raise RuntimeError("failed to run loadfile command") from e
+
     def play(self, what):
         """Request mpv to play something.
 
@@ -368,22 +424,18 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
                 return
 
             self.generate_text("idle")
-            self.player.loadfile(
+            self.loadfile_replace(
                 self.background_loader.backgrounds["idle"],
-                "replace",
-                {"sub-files": self.text_paths["idle"]},
+                subfile=self.text_paths["idle"],
             )
 
             return
 
         if what == "transition":
-            self.player.loadfile(
+            self.loadfile_replace(
                 self.playlist_entry_data["transition"].path,
-                "replace",
-                {
-                    "sub-files": self.text_paths["transition"],
-                    "end": str(self.durations["transition"]),
-                },
+                subfile=self.text_paths["transition"],
+                end=self.durations["transition"],
             )
 
             return
