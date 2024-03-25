@@ -4,6 +4,7 @@ import logging
 import re
 from abc import ABC
 
+from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
 from packaging.version import Version, parse
 
@@ -129,6 +130,9 @@ class MediaPlayerMpv(MediaPlayer, ABC):
                 - `MediaPlayerMpvPost0340` if mpv newer than 0.34.0;
                 - `MediaPlayerMpvPost0330` if mpv newer than 0.33.0;
                 - `MediaPlayerMpvOld` as default.
+
+        Raises:
+            MpvTooOldError: if MPV version is lower than 0.28.0
         """
         if version >= Version("0.34.0"):
             logger.debug("Using post 0.34.0 API of mpv")
@@ -137,6 +141,11 @@ class MediaPlayerMpv(MediaPlayer, ABC):
         if version >= Version("0.33.0"):
             logger.debug("Using post 0.33.0 API of mpv")
             return MediaPlayerMpvPost0330
+
+        if version < Version("0.28.0"):
+            raise MpvTooOldError(
+                f"MPV is too old ({version=}, version 0.28.0 and higher supported)"
+            )
 
         logger.debug("Using old API of mpv")
         return MediaPlayerMpvOld
@@ -1021,3 +1030,7 @@ class MediaSong(Media):
         super().__init__(*args, **kwargs)
         self.path_subtitle = path_subtitle
         self.path_audio = path_audio
+
+
+class MpvTooOldError(DakaraError):
+    """Error raised if MPV is too old."""
