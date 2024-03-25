@@ -210,6 +210,12 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 vlc.EventType.MediaPlayerEndReached, callback
             )
 
+    @skipIf(vlc is None, "VLC not installed")
+    def test_vlc_unavailable(self):
+        """Test that is_available returns False when vlc.Instance raises a NameError."""
+        with patch.object(vlc, "Instance", side_effect=NameError()):
+            self.assertFalse(MediaPlayerVlc.is_available())
+
     @patch("dakara_player.media_player.vlc.libvlc_get_version")
     def test_get_version_long_4_digits(self, mocked_libvlc_get_version):
         """Test to get the VLC version when it is long and contains 4 digits."""
