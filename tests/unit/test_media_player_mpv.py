@@ -18,6 +18,7 @@ from dakara_player.media_player.mpv import (
     MediaPlayerMpvOld,
     MediaPlayerMpvPost0330,
     MediaPlayerMpvPost0340,
+    MpvTooOldError,
 )
 
 
@@ -91,7 +92,7 @@ class MediaPlayerMpvTestCase(TestCase):
     def test_get_class_from_version(self):
         """Test to get media player for various versions of mpv."""
         versions = [
-            ("0.27.0", MediaPlayerMpvOld),
+            ("0.28.0", MediaPlayerMpvOld),
             ("0.33.0", MediaPlayerMpvPost0330),
             ("0.34.0", MediaPlayerMpvPost0340),
         ]
@@ -102,6 +103,13 @@ class MediaPlayerMpvTestCase(TestCase):
                 media_player_class,
             )
 
+    def test_raise_old_version(self):
+        """Test to check that MpvTooOldError is raised on old versions of mpv."""
+        version = "0.27.0"
+
+        with self.assertRaises(MpvTooOldError):
+            MediaPlayerMpv.get_class_from_version(Version(version))
+
     @patch.object(MediaPlayerMpv, "get_version")
     @patch.object(MediaPlayerMpv, "get_class_from_version")
     def test_from_version_config(
@@ -109,10 +117,10 @@ class MediaPlayerMpvTestCase(TestCase):
     ):
         """Test to get version from config."""
         MediaPlayerMpv.from_version(
-            None, None, {"mpv": {"force_version": "0.27.0"}}, None
+            None, None, {"mpv": {"force_version": "0.28.0"}}, None
         )
 
-        mocked_get_class_from_version.assert_called_with(Version("0.27.0"))
+        mocked_get_class_from_version.assert_called_with(Version("0.28.0"))
         mocked_get_version.assert_not_called()
 
     @patch.object(MediaPlayerMpv, "get_version")
