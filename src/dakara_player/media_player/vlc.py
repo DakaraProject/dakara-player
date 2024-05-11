@@ -90,7 +90,11 @@ class MediaPlayerVlc(MediaPlayer):
         Returns:
             bool: `True` if VLC is useable.
         """
-        return vlc is not None and vlc.Instance() is not None
+        try:
+            return vlc is not None and vlc.Instance() is not None
+        except NameError:
+            logger.exception("Failed to start VLC.")
+            return False
 
     def init_player(self, config, tempdir):
         """Initialize the objects of VLC.
