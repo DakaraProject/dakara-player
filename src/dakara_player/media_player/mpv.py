@@ -4,6 +4,7 @@ import logging
 import re
 from abc import ABC
 
+from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
 from packaging.version import Version, parse
 
@@ -129,6 +130,9 @@ class MediaPlayerMpv(MediaPlayer, ABC):
                 - `MediaPlayerMpvPost0340` if mpv newer than 0.34.0;
                 - `MediaPlayerMpvPost0330` if mpv newer than 0.33.0;
                 - `MediaPlayerMpvOld` as default.
+
+        Raises:
+            MpvTooOldError: if MPV version is lower than 0.28.0
         """
         if version >= Version("0.34.0"):
             logger.debug("Using post 0.34.0 API of mpv")
@@ -137,6 +141,11 @@ class MediaPlayerMpv(MediaPlayer, ABC):
         if version >= Version("0.33.0"):
             logger.debug("Using post 0.33.0 API of mpv")
             return MediaPlayerMpvPost0330
+
+        if version < Version("0.28.0"):
+            raise MpvTooOldError(
+                f"MPV is too old ({version=}, version 0.28.0 and higher supported)"
+            )
 
         logger.debug("Using old API of mpv")
         return MediaPlayerMpvOld
@@ -252,6 +261,8 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         # handle image transitions as videos
         self.player.demuxer_lavf_o = "loop=1"
+        # used for idle/transitions screens
+        self.player.image_display_duration = "inf"
 
     @on_playing_this(["song"], default_return=0)
     def get_timing(self):
@@ -359,6 +370,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         self.player.audio_files = []
         self.player.audio = "auto"
         self.player.pause = False
+        self.player.end = "none"
 
         if what == "idle":
             # if already idle, do nothing
@@ -366,23 +378,15 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
                 return
 
             self.generate_text("idle")
-            self.player.loadfile(
-                self.background_loader.backgrounds["idle"],
-                "replace",
-                {"sub-files": self.text_paths["idle"]},
-            )
+            self.player.play(self.background_loader.backgrounds["idle"])
+            self.player.sub_files = self.text_paths["idle"]
 
             return
 
         if what == "transition":
-            self.player.loadfile(
-                self.playlist_entry_data["transition"].path,
-                "replace",
-                {
-                    "sub-files": self.text_paths["transition"],
-                    "end": str(self.durations["transition"]),
-                },
-            )
+            self.player.play(self.playlist_entry_data["transition"].path)
+            self.player.sub_files = self.text_paths["transition"]
+            self.player.end = str(self.durations["transition"])
 
             return
 
@@ -1026,3 +1030,7 @@ class MediaSong(Media):
         super().__init__(*args, **kwargs)
         self.path_subtitle = path_subtitle
         self.path_audio = path_audio
+
+
+class MpvTooOldError(DakaraError):
+    """Error raised if MPV is too old."""
