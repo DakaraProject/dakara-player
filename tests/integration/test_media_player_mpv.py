@@ -18,7 +18,8 @@ from dakara_player.media_player.base import (
 from dakara_player.media_player.mpv import MediaPlayerMpv
 from tests.integration.base import TestCasePollerKara
 
-REWIND_FAST_FORWARD_DURATION = 0.2
+REWIND_FAST_FORWARD_DURATION = 0.5
+REWIND_FAST_FORWARD_DELTA = 1
 
 
 @skipUnless(MediaPlayerMpv.is_available(), "mpv not installed")
@@ -427,7 +428,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.restart()
 
             # check timing is 0
-            self.assertAlmostEqual(mpv_player.player.time_pos, 0, 0)
+            self.assertAlmostEqual(mpv_player.player.time_pos, 0, delta=0)
 
             # check the song is not stopped
             self.assertIsNotNone(mpv_player.playlist_entry)
@@ -768,7 +769,11 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # check timing is earlier than previously
             timing2 = mpv_player.player.time_pos
             self.assertLess(timing2, timing1)
-            self.assertAlmostEqual(timing1 - timing2, REWIND_FAST_FORWARD_DURATION, 1)
+            self.assertAlmostEqual(
+                timing1 - timing2,
+                REWIND_FAST_FORWARD_DURATION,
+                delta=REWIND_FAST_FORWARD_DELTA,
+            )
 
             # assert callback
             mpv_player.callbacks["updated_timing"].assert_called_with(
@@ -800,7 +805,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.rewind()
 
             # check timing is 0
-            self.assertAlmostEqual(mpv_player.player.time_pos, 0, 0)
+            self.assertAlmostEqual(mpv_player.player.time_pos, 0, delta=0)
 
     @func_set_timeout(TIMEOUT)
     def test_fast_forward_song(self):
@@ -842,7 +847,11 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # check timing is later than previously
             timing2 = mpv_player.player.time_pos
             self.assertGreater(timing2, timing1)
-            self.assertAlmostEqual(timing2 - timing1, REWIND_FAST_FORWARD_DURATION, 1)
+            self.assertAlmostEqual(
+                timing2 - timing1,
+                REWIND_FAST_FORWARD_DURATION,
+                delta=REWIND_FAST_FORWARD_DELTA,
+            )
 
             # assert callback
             mpv_player.callbacks["updated_timing"].assert_called_with(

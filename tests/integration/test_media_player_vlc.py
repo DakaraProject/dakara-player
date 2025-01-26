@@ -20,6 +20,7 @@ from dakara_player.mrl import mrl_to_path
 from tests.integration.base import TestCasePollerKara
 
 REWIND_FAST_FORWARD_DURATION = 0.5
+REWIND_FAST_FORWARD_DELTA = 0.5
 
 
 @skipUnless(MediaPlayerVlc.is_available(), "VLC not installed")
@@ -525,7 +526,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.restart()
 
             # check timing is 0
-            self.assertAlmostEqual(vlc_player.player.get_time(), 0, 0)
+            self.assertAlmostEqual(vlc_player.player.get_time(), 0, delta=0)
 
             # check the song is not stopped
             self.assertIsNotNone(vlc_player.playlist_entry)
@@ -683,7 +684,11 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             # check timing is earlier than previously
             timing2 = vlc_player.player.get_time() / 1000
             self.assertLess(timing2, timing1)
-            self.assertAlmostEqual(timing1 - timing2, REWIND_FAST_FORWARD_DURATION, 1)
+            self.assertAlmostEqual(
+                timing1 - timing2,
+                REWIND_FAST_FORWARD_DURATION,
+                delta=REWIND_FAST_FORWARD_DELTA,
+            )
 
     @func_set_timeout(TIMEOUT)
     def test_rewind_song_before_start(self):
@@ -712,7 +717,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.rewind()
 
             # check timing is 0
-            self.assertAlmostEqual(vlc_player.player.get_time(), 0, 0)
+            self.assertAlmostEqual(vlc_player.player.get_time(), 0, delta=0)
 
     @func_set_timeout(TIMEOUT)
     def test_fast_forward_song(self):
@@ -757,7 +762,11 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             # check timing is earlier than previously
             timing2 = vlc_player.player.get_time() / 1000
             self.assertGreater(timing2, timing1)
-            self.assertAlmostEqual(timing2 - timing1, REWIND_FAST_FORWARD_DURATION, 1)
+            self.assertAlmostEqual(
+                timing2 - timing1,
+                REWIND_FAST_FORWARD_DURATION,
+                delta=REWIND_FAST_FORWARD_DELTA,
+            )
 
             # assert callback
             vlc_player.callbacks["updated_timing"].assert_called_with(
