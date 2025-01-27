@@ -59,7 +59,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
                 unittest.case._LoggingWatcher: Captured output.
         """
         config_full = {
-            "kara_folder": self.kara_folder,
+            "kara_folder": str(self.kara_folder_path),
             "fullscreen": self.fullscreen,
             "mpv": {"vo": "null", "ao": "null"},
         }

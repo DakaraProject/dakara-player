@@ -1,11 +1,10 @@
 from contextlib import ExitStack, contextmanager
+from pathlib import Path
 from queue import Queue
 from tempfile import TemporaryDirectory
 from threading import Event
 from unittest import skipIf, skipUnless
 from unittest.mock import MagicMock
-
-from path import Path
 
 try:
     import vlc
@@ -74,7 +73,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
         """
 
         config_full = {
-            "kara_folder": self.kara_folder,
+            "kara_folder": str(self.kara_folder_path),
             "fullscreen": self.fullscreen,
             "vlc": {
                 "instance_parameters": self.instance_parameters,
@@ -344,7 +343,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     def test_play_playlist_entry_instrumental_file(self):
         """Test to play a playlist entry using instrumental file."""
         # request to use instrumental file
-        self.playlist_entry1["song"]["file_path"] = self.song2_path
+        self.playlist_entry1["song"]["file_path"] = str(self.song2_path)
         self.playlist_entry1["use_instrumental"] = True
 
         with self.get_instance() as (vlc_player, _, _):

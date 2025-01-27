@@ -125,7 +125,7 @@ class MediaPlayer(Worker, ABC):
         config_texts = config.get("templates") or {}
         self.text_generator = TextGenerator(
             package="dakara_player.resources.templates",
-            directory=directories.user_data_dir / "player" / "templates",
+            directory=directories.user_data_path / "player" / "templates",
             filenames={
                 "transition": config_texts.get(
                     "transition_template_name", TRANSITION_TEXT_NAME
@@ -139,7 +139,7 @@ class MediaPlayer(Worker, ABC):
         self.background_loader = BackgroundLoader(
             destination=tempdir,
             package="dakara_player.resources.backgrounds",
-            directory=directories.user_data_dir / "player" / "backgrounds",
+            directory=directories.user_data_path / "player" / "backgrounds",
             filenames={
                 "transition": config_backgrounds.get(
                     "transition_background_name", TRANSITION_BG_NAME

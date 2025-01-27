@@ -413,7 +413,9 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mpv_player, (mocked_player, _, _), _ = self.get_instance()
         mpv_player.set_callback("finished", MagicMock())
         self.set_playlist_entry(mpv_player)
-        mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "transition.png"
+        mocked_player.playlist[0]["filename"] = str(
+            Path(gettempdir()) / "transition.png"
+        )
 
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
@@ -490,7 +492,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mpv_player, (mocked_player, _, _), _ = self.get_instance()
         mpv_player.set_callback("finished", MagicMock())
         self.set_playlist_entry(mpv_player)
-        mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "other"
+        mocked_player.playlist[0]["filename"] = str(Path(gettempdir()) / "other")
 
         self.assertFalse(mpv_player.stop.is_set())
 
@@ -768,7 +770,9 @@ class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
         mpv_player, (mocked_player, _, _), _ = self.get_instance()
         mpv_player.set_callback("finished", MagicMock())
         self.set_playlist_entry(mpv_player)
-        mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "transition.png"
+        mocked_player.playlist[0]["filename"] = str(
+            Path(gettempdir()) / "transition.png"
+        )
 
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
@@ -851,7 +855,7 @@ class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
         mpv_player, (mocked_player, _, _), _ = self.get_instance()
         mpv_player.set_callback("finished", MagicMock())
         self.set_playlist_entry(mpv_player)
-        mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "other"
+        mocked_player.playlist[0]["filename"] = str(Path(gettempdir()) / "other")
 
         self.assertFalse(mpv_player.stop.is_set())
 
