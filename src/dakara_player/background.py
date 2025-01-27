@@ -2,9 +2,10 @@
 
 import logging
 from importlib.resources import path
+from pathlib import Path
+from shutil import copy
 
 from dakara_base.exceptions import DakaraError
-from path import Path
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ class BackgroundLoader:
         - `something.png`
 
     and you use the following configuration:
+    >>> from pathlib import Path
     >>> loader = BackgroundLoader(
     ...        destination=Path("/destination"),
     ...        directory=Path("/directory/custom"),
@@ -48,18 +50,18 @@ class BackgroundLoader:
         }
 
     Args:
-        destination (path.Path): Where to copy found background files.
+        destination (pathlib.Path): Where to copy found background files.
         package (str): Package checked for backgrounds by default.
-        directory (path.Path): Custom directory checked for backgrounds.
+        directory (pathlib.Path): Custom directory checked for backgrounds.
         filenames (dict): Dictionary of background filenames. The key is the
             background name, the value the background file name.
 
     Attributes:
         backgrounds (dict): Dictionary of background file paths. The key is
             the background name, the value the background file path.
-        destination (path.Path): Where to copy found background files.
+        destination (pathlib.Path): Where to copy found background files.
         package (str): Package checked for backgrounds by default.
-        directory (path.Path): Custom directory checked for backgrounds.
+        directory (pathlib.Path): Custom directory checked for backgrounds.
         filenames (dict): Dictionary of background filenames. The key is the
             background name, the value the background file name.
     """
@@ -73,7 +75,7 @@ class BackgroundLoader:
     ):
         self.destination = destination
         self.package = package
-        self.directory = directory or Path()
+        self.directory = directory
         self.filenames = filenames or {}
         self.backgrounds = {}
 
@@ -91,16 +93,16 @@ class BackgroundLoader:
             file_name (str): Name of the background file.
 
         Returns:
-            path.Path: Absolute path to the background file.
+            pathlib.Path: Absolute path to the background file.
         """
         # trying to load from custom directory
-        if self.directory:
+        if self.directory is not None:
             file_path = self.directory / file_name
             if file_path.exists():
                 logger.debug(
                     "Loading custom %s background file '%s'", background_name, file_name
                 )
-                return file_path.copy(self.destination)
+                return copy(file_path, self.destination)
 
         # trying to load from package by default
         try:
@@ -111,7 +113,7 @@ class BackgroundLoader:
                     file_name,
                 )
                 file_path = Path(file)
-                return file_path.copy(self.destination)
+                return copy(file_path, self.destination)
 
         except FileNotFoundError as error:
             raise BackgroundNotFoundError(

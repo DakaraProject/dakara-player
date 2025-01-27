@@ -1,5 +1,6 @@
 import re
 from contextlib import ExitStack, contextmanager
+from pathlib import Path
 from queue import Queue
 from tempfile import gettempdir
 from threading import Event
@@ -15,7 +16,6 @@ except (ImportError, OSError):
 
 from dakara_base.directory import AppDirsPath
 from packaging.version import parse
-from path import Path
 
 from dakara_player.media_player.base import (
     InvalidStateError,
@@ -62,7 +62,7 @@ class BaseTestCase(TestCase):
 
         Args:
             config (dict): Configuration passed to the constructor.
-            tempdir (path.Path): Path to temporary directory.
+            tempdir (pathlib.Path): Path to temporary directory.
 
         Yields:
             tuple: Contains the following elements:
@@ -388,12 +388,12 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 logger.output, ["INFO:dakara_player.media_player.vlc:VLC 3.0.0 NoName"]
             )
 
-    @patch.object(Path, "isfile")
-    def test_set_playlist_entry_error_file(self, mocked_isfile):
+    @patch.object(Path, "is_file")
+    def test_set_playlist_entry_error_file(self, mocked_is_file):
         """Test to set a playlist entry that does not exist."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the system call
-            mocked_isfile.return_value = False
+            mocked_is_file.return_value = False
 
             # mock the callbacks
             vlc_player.set_callback("could_not_play", MagicMock())
@@ -407,7 +407,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 vlc_player.set_playlist_entry(self.playlist_entry)
 
             # call assertions
-            mocked_isfile.assert_called_once_with()
+            mocked_is_file.assert_called_once_with()
 
             # post assertions
             self.assertIsNone(vlc_player.playlist_entry)
@@ -431,10 +431,10 @@ class MediaPlayerVlcTestCase(BaseTestCase):
     @patch.object(MediaPlayerVlc, "manage_instrumental")
     @patch.object(MediaPlayerVlc, "play")
     @patch.object(MediaPlayerVlc, "generate_text")
-    @patch.object(Path, "isfile")
+    @patch.object(Path, "is_file")
     def test_set_playlist_entry(
         self,
-        mocked_isfile,
+        mocked_is_file,
         mocked_generate_text,
         mocked_play,
         mocked_manage_instrumental,
@@ -444,7 +444,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         """Test to set a playlist entry."""
         with self.get_instance() as (vlc_player, (_, mocked_background_loader, _), _):
             # setup mocks
-            mocked_isfile.return_value = True
+            mocked_is_file.return_value = True
             mocked_background_loader.backgrounds = {
                 "transition": Path(gettempdir()) / "transition.png"
             }
@@ -468,7 +468,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             vlc_player.callbacks["error"].assert_not_called()
 
             # assert mocks
-            mocked_isfile.assert_called_with()
+            mocked_is_file.assert_called_with()
             mocked_generate_text.assert_called_with("transition")
             mocked_play.assert_called_with("transition")
             mocked_manage_instrumental.assert_not_called()

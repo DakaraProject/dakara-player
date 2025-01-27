@@ -1,8 +1,11 @@
 from contextlib import ExitStack, contextmanager
 from queue import Queue
+from tempfile import TemporaryDirectory
 from threading import Event
 from unittest import skipIf, skipUnless
 from unittest.mock import MagicMock
+
+from path import Path
 
 try:
     import vlc
@@ -12,7 +15,6 @@ except (ImportError, OSError):
 
 from dakara_base.config import Config
 from func_timeout import func_set_timeout
-from path import TempDir
 
 from dakara_player.media_player.base import IDLE_BG_NAME, TRANSITION_BG_NAME
 from dakara_player.media_player.vlc import METADATA_KEYS_COUNT, MediaPlayerVlc
@@ -67,7 +69,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
         Yields:
             tuple: Containing the following elements:
                 MediaPlayerVlc: Instance;
-                path.Path: Path of the temporary directory;
+                pathlib.Path: Path of the temporary directory;
                 unittest.case._LoggingWatcher: Captured output.
         """
 
@@ -85,7 +87,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             config_full.update(config)
 
         with ExitStack() as stack:
-            temp = stack.enter_context(TempDir())
+            temp = Path(stack.enter_context(TemporaryDirectory()))
             vlc_player = stack.enter_context(
                 MediaPlayerVlc(
                     Event(),

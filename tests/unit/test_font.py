@@ -1,8 +1,7 @@
 import platform
+from pathlib import Path
 from unittest import TestCase, skipUnless
 from unittest.mock import call, patch
-
-from path import Path
 
 from dakara_player.font import (
     FontLoaderLinux,

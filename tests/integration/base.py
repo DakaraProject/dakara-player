@@ -1,3 +1,6 @@
+from pathlib import Path
+from shutil import copy, rmtree
+from tempfile import TemporaryDirectory
 from time import sleep
 from unittest import TestCase
 
@@ -6,8 +9,6 @@ try:
 
 except ImportError:
     from importlib_resources import path
-
-from path import Path, TempDir
 
 
 class TestCasePoller(TestCase):
@@ -75,53 +76,65 @@ class TestCaseKara(TestCase):
 
     def setUp(self):
         # create kara folder
-        self.kara_folder = TempDir()
+        self.kara_folder = Path(TemporaryDirectory().name)
 
         # create subtitle
         with path("tests.resources", "song1.ass") as file:
-            self.subtitle1_path = Path(file).copy(self.kara_folder)
+            self.subtitle1_path = copy(file, self.kara_folder)
 
         with path("tests.resources", "song2.ass") as file:
-            self.subtitle2_path = Path(file).copy(self.kara_folder)
+            self.subtitle2_path = copy(file, self.kara_folder)
 
         # create song
         with path("tests.resources", "song1.mkv") as file:
-            self.song1_path = Path(file).copy(self.kara_folder)
+            self.song1_path = copy(file, self.kara_folder)
 
         with path("tests.resources", "song2.mkv") as file:
-            self.song2_path = Path(file).copy(self.kara_folder)
+            self.song2_path = copy(file, self.kara_folder)
 
         with path("tests.resources", "song3.avi") as file:
-            self.song3_path = Path(file).copy(self.kara_folder)
+            self.song3_path = copy(file, self.kara_folder)
 
         # create audio
         with path("tests.resources", "song2.mp3") as file:
-            self.audio2_path = Path(file).copy(self.kara_folder)
+            self.audio2_path = copy(file, self.kara_folder)
 
         # create playlist entry
         self.playlist_entry1 = {
             "id": 42,
-            "song": {"title": "Song 1", "file_path": self.song1_path, "duration": 60},
+            "song": {
+                "title": "Song 1",
+                "file_path": str(self.song1_path),
+                "duration": 60,
+            },
             "owner": "me",
             "use_instrumental": False,
         }
 
         self.playlist_entry2 = {
             "id": 43,
-            "song": {"title": "Song 2", "file_path": self.song2_path, "duration": 60},
+            "song": {
+                "title": "Song 2",
+                "file_path": str(self.song2_path),
+                "duration": 60,
+            },
             "owner": "me",
             "use_instrumental": False,
         }
 
         self.playlist_entry3 = {
             "id": 44,
-            "song": {"title": "Song 3", "file_path": self.song3_path, "duration": 60},
+            "song": {
+                "title": "Song 3",
+                "file_path": str(self.song3_path),
+                "duration": 60,
+            },
             "owner": "me",
             "use_instrumental": False,
         }
 
     def tearDown(self):
-        self.kara_folder.rmtree(ignore_errors=True)
+        rmtree(self.kara_folder, ignore_errors=True)
 
 
 class TestCasePollerKara(TestCasePoller, TestCaseKara):

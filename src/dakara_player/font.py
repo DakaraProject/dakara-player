@@ -5,9 +5,9 @@ import logging
 import platform
 from abc import ABC, abstractmethod
 from importlib.resources import contents, path
+from pathlib import Path
 
 from dakara_base.exceptions import DakaraError
-from path import Path
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ class FontLoader(ABC):
         font_file_name_list = [
             file
             for file in contents(self.package)
-            if Path(file).ext.lower() in FONT_EXTENSIONS
+            if Path(file).suffix.lower() in FONT_EXTENSIONS
         ]
         logger.debug("Found %i font(s) to load", len(font_file_name_list))
 
@@ -87,7 +87,7 @@ class FontLoader(ABC):
         """Give font paths in font package.
 
         Yields:
-            path.Path: Absolute path to the font, from the package.
+            pathlib.Path: Absolute path to the font, from the package.
         """
         for font_file_name in self.get_font_name_list():
             with path(self.package, font_file_name) as font_file_path:
@@ -116,9 +116,9 @@ class FontLoaderLinux(FontLoader):
 
     Attributes:
         package (str): Package checked for font files.
-        font_loaded (dict of path.Path): List of loaded fonts. The key is the
-            font file name and the value is the path of the installed font in
-            user directory.
+        font_loaded (dict of pathlib.Path): List of loaded fonts. The key is
+            the font file name and the value is the path of the installed font
+            in user directory.
     """
 
     GREETINGS = "Font loader for Linux selected"
@@ -136,7 +136,7 @@ class FontLoaderLinux(FontLoader):
         """Retrieve the list of system fonts.
 
         Returns:
-            list of path.Path: List of font paths.
+            list of pathlib.Path: List of font paths.
         """
         return list(self.FONT_DIR_SYSTEM.walkfiles())
 
@@ -144,7 +144,7 @@ class FontLoaderLinux(FontLoader):
         """Retrieve the list of user fonts.
 
         Returns:
-            list of path.Path: List of font paths.
+            list of pathlib.Path: List of font paths.
         """
         return list(self.FONT_DIR_USER.expanduser().walkfiles())
 
@@ -165,11 +165,11 @@ class FontLoaderLinux(FontLoader):
         """Load the provided font.
 
         Args:
-            font_file_path (path.Path): Absolute path of the font to load.
-            system_font_path_list (list of path.Path): List of absolute paths
-                of system fonts.
-            user_font_path_list (list of path.Path): List of absolute paths of
-                user fonts.
+            font_file_path (pathlib.Path): Absolute path of the font to load.
+            system_font_path_list (list of pathlib.Path): List of absolute
+                paths of system fonts.
+            user_font_path_list (list of pathlib.Path): List of absolute paths
+                of user fonts.
         """
         # get font file name
         font_file_name = font_file_path.basename()
@@ -250,8 +250,8 @@ class FontLoaderWindows(FontLoader):
 
     Attributes:
         package (str): Package checked for font files.
-        font_loaded (dict of path.Path): List of loaded fonts. The key is the
-            font file name and the value is the path of font used at
+        font_loaded (dict of pathlib.Path): List of loaded fonts. The key is
+            the font file name and the value is the path of font used at
             installation.
     """
 
@@ -279,7 +279,7 @@ class FontLoaderWindows(FontLoader):
         """Load the provided font.
 
         Args:
-            font_file_path (path.Path): Absolute path of the font to load.
+            font_file_path (pathlib.Path): Absolute path of the font to load.
         """
         success = ctypes.windll.gdi32.AddFontResourceW(font_file_path)
         if success:

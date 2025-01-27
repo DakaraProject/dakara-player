@@ -1,5 +1,6 @@
 from contextlib import ExitStack, contextmanager
 from queue import Queue
+from tempfile import TemporaryDirectory
 from threading import Event
 from time import sleep
 from unittest import skipUnless
@@ -7,7 +8,7 @@ from unittest.mock import MagicMock
 
 from dakara_base.config import Config
 from func_timeout import func_set_timeout
-from path import TempDir
+from path import Path
 
 from dakara_player.media_player.base import (
     IDLE_BG_NAME,
@@ -54,7 +55,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
         Yields:
             tuple: Containing the following elements:
                 MediaPlayerMpv: Instance;
-                path.Path: Path of the temporary directory;
+                pathlib.Path: Path of the temporary directory;
                 unittest.case._LoggingWatcher: Captured output.
         """
         config_full = {
@@ -66,7 +67,8 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
         if config:
             config_full.update(config)
 
-        with TempDir() as temp:
+        with TemporaryDirectory() as temp_str:
+            temp = Path(temp_str)
             try:
                 with ExitStack() as stack:
                     mpv_player = stack.enter_context(

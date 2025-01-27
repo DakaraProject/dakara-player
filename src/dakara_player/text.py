@@ -3,10 +3,10 @@
 import json
 import logging
 from importlib.resources import path
+from pathlib import Path
 
 from dakara_base.exceptions import DakaraError
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PackageLoader
-from path import Path
 
 ICON_MAP_FILE = "line-awesome.json"
 
@@ -29,7 +29,7 @@ class TextGenerator:
 
     Example of use:
 
-    >>> from path import Path
+    >>> from pathlib import Path
     >>> generator = TextGenerator(
     ...     package="package",
     ...     directory=Path("directory"),
@@ -51,13 +51,13 @@ class TextGenerator:
 
     Args:
         package (str): Package checked for text templates by default.
-        directory (path.Path): Custom directory checked for text templates.
+        directory (pathlib.Path): Custom directory checked for text templates.
         filenames (dict): Dictionary of text templates filenames. The key is the
             template name, the value the template file name.
 
     Attributes:
         package (str): Package checked for text templates by default.
-        directory (path.Path): Custom directory checked for text templates.
+        directory (pathlib.Path): Custom directory checked for text templates.
         filenames (dict): Dictionary of text templates filenames. The key is the
             template name, the value the template file name.
         environment (jinja2.Environment): Environment for Jinja2.

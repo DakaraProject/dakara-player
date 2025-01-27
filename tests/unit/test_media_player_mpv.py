@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from pathlib import Path
 from queue import Queue
 from tempfile import gettempdir
 from threading import Event
@@ -6,7 +7,6 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 from packaging.version import Version
-from path import Path
 
 from dakara_player.media_player.base import (
     InvalidStateError,
