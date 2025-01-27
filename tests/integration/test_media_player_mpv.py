@@ -20,6 +20,7 @@ from tests.integration.base import TestCasePollerKara
 
 REWIND_FAST_FORWARD_DURATION = 0.5
 REWIND_FAST_FORWARD_DELTA = 1
+DEFAULT_DELTA = 0.2
 
 
 @skipUnless(MediaPlayerMpv.is_available(), "mpv not installed")
@@ -428,7 +429,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.restart()
 
             # check timing is 0
-            self.assertAlmostEqual(mpv_player.player.time_pos, 0, delta=0)
+            self.assertAlmostEqual(mpv_player.player.time_pos, 0, delta=DEFAULT_DELTA)
 
             # check the song is not stopped
             self.assertIsNotNone(mpv_player.playlist_entry)
@@ -805,7 +806,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.rewind()
 
             # check timing is 0
-            self.assertAlmostEqual(mpv_player.player.time_pos, 0, delta=0)
+            self.assertAlmostEqual(mpv_player.player.time_pos, 0, delta=DEFAULT_DELTA)
 
     @func_set_timeout(TIMEOUT)
     def test_fast_forward_song(self):

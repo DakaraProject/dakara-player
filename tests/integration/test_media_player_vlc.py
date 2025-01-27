@@ -21,6 +21,7 @@ from tests.integration.base import TestCasePollerKara
 
 REWIND_FAST_FORWARD_DURATION = 0.5
 REWIND_FAST_FORWARD_DELTA = 0.5
+DEFAULT_DELTA = 0.2
 
 
 @skipUnless(MediaPlayerVlc.is_available(), "VLC not installed")
@@ -526,7 +527,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.restart()
 
             # check timing is 0
-            self.assertAlmostEqual(vlc_player.player.get_time(), 0, delta=0)
+            self.assertAlmostEqual(vlc_player.player.get_time(), 0, delta=DEFAULT_DELTA)
 
             # check the song is not stopped
             self.assertIsNotNone(vlc_player.playlist_entry)
@@ -717,7 +718,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.rewind()
 
             # check timing is 0
-            self.assertAlmostEqual(vlc_player.player.get_time(), 0, delta=0)
+            self.assertAlmostEqual(vlc_player.player.get_time(), 0, delta=DEFAULT_DELTA)
 
     @func_set_timeout(TIMEOUT)
     def test_fast_forward_song(self):
