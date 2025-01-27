@@ -14,7 +14,7 @@ try:
 except (ImportError, OSError):
     vlc = None
 
-from dakara_base.directory import AppDirsPath
+from dakara_base.directory import PlatformDirs
 from packaging.version import parse
 
 from dakara_player.media_player.base import (
@@ -1100,10 +1100,10 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert the call
             vlc_player.callbacks["paused"].assert_called_with(42, 25)
 
-    @patch.object(AppDirsPath, "user_data_dir", new_callable=PropertyMock)
-    def test_custom_backgrounds(self, mocked_user_data_dir):
+    @patch.object(PlatformDirs, "user_data_path", new_callable=PropertyMock)
+    def test_custom_backgrounds(self, mocked_user_data_path):
         """Test to instanciate with custom backgrounds."""
-        mocked_user_data_dir.return_value = Path("directory")
+        mocked_user_data_path.return_value = Path("directory")
 
         # create object
         tempdir = Path("temp")

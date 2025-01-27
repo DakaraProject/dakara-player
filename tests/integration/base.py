@@ -1,5 +1,5 @@
 from pathlib import Path
-from shutil import copy, rmtree
+from shutil import copy
 from tempfile import TemporaryDirectory
 from time import sleep
 from unittest import TestCase
@@ -76,28 +76,29 @@ class TestCaseKara(TestCase):
 
     def setUp(self):
         # create kara folder
-        self.kara_folder = Path(TemporaryDirectory().name)
+        self.kara_folder = TemporaryDirectory()
+        self.kara_folder_path = Path(self.kara_folder.name)
 
         # create subtitle
         with path("tests.resources", "song1.ass") as file:
-            self.subtitle1_path = copy(file, self.kara_folder)
+            self.subtitle1_path = Path(copy(file, self.kara_folder_path))
 
         with path("tests.resources", "song2.ass") as file:
-            self.subtitle2_path = copy(file, self.kara_folder)
+            self.subtitle2_path = Path(copy(file, self.kara_folder_path))
 
         # create song
         with path("tests.resources", "song1.mkv") as file:
-            self.song1_path = copy(file, self.kara_folder)
+            self.song1_path = Path(copy(file, self.kara_folder_path))
 
         with path("tests.resources", "song2.mkv") as file:
-            self.song2_path = copy(file, self.kara_folder)
+            self.song2_path = Path(copy(file, self.kara_folder_path))
 
         with path("tests.resources", "song3.avi") as file:
-            self.song3_path = copy(file, self.kara_folder)
+            self.song3_path = Path(copy(file, self.kara_folder_path))
 
         # create audio
         with path("tests.resources", "song2.mp3") as file:
-            self.audio2_path = copy(file, self.kara_folder)
+            self.audio2_path = Path(copy(file, self.kara_folder_path))
 
         # create playlist entry
         self.playlist_entry1 = {
@@ -134,7 +135,7 @@ class TestCaseKara(TestCase):
         }
 
     def tearDown(self):
-        rmtree(self.kara_folder, ignore_errors=True)
+        self.kara_folder.cleanup()
 
 
 class TestCasePollerKara(TestCasePoller, TestCaseKara):

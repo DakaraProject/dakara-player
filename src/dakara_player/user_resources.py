@@ -52,7 +52,7 @@ def create_resource_files(force=False):
         force (bool): If the user directory already contains the resource
             directories and this flag is set, overwrite the directories.
     """
-    user_directory = directories.user_data_dir
+    user_directory = directories.user_data_path
     user_directory.mkdir(parents=True, exist_ok=True)
 
     for directory in ["backgrounds", "templates"]:

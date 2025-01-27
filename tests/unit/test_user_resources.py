@@ -2,7 +2,7 @@ from pathlib import Path
 from unittest import TestCase
 from unittest.mock import PropertyMock, call, patch
 
-from dakara_base.directory import AppDirsPath
+from dakara_base.directory import PlatformDirs
 
 from dakara_player import user_resources
 
@@ -184,15 +184,15 @@ class CopyResourceTestCase(TestCase):
         )
 
 
-@patch.object(AppDirsPath, "user_data_dir", new_callable=PropertyMock)
+@patch.object(PlatformDirs, "user_data_path", new_callable=PropertyMock)
 @patch("dakara_player.user_resources.copy_resource", autospec=True)
 class CreateResourceFilesTestCase(TestCase):
     """Test the create_resource_files function."""
 
     @patch.object(Path, "mkdir", autospec=True)
-    def test_create(self, mocked_mkdir, mocked_copy_resource, mocked_user_data_dir):
+    def test_create(self, mocked_mkdir, mocked_copy_resource, mocked_user_data_path):
         """Test to create resource files."""
-        mocked_user_data_dir.return_value = Path("directory")
+        mocked_user_data_path.return_value = Path("directory")
         with self.assertLogs("dakara_player.user_resources", "DEBUG") as logger:
             user_resources.create_resource_files()
 

@@ -34,13 +34,13 @@ handle_config_not_found = generate_exception_handler(
 handle_config_incomplete = generate_exception_handler(
     DakaraError,
     "Config may be incomplete, please check '{}'".format(
-        directories.user_config_dir / CONFIG_FILE
+        directories.user_config_path / CONFIG_FILE
     ),
 )
 handle_parameter_error = generate_exception_handler(
     ParameterError,
     "Config may be incomplete, please check '{}'".format(
-        directories.user_config_dir / CONFIG_FILE
+        directories.user_config_path / CONFIG_FILE
     ),
 )
 
@@ -123,7 +123,7 @@ def play(args):
     with handle_config_not_found():
         create_logger()
         config = Config(CONFIG_PREFIX)
-        config.load_file(directories.user_config_dir / CONFIG_FILE)
+        config.load_file(directories.user_config_path / CONFIG_FILE)
         config.check_mandatory_keys(["player", "server"])
         config.set_debug(args.debug)
         set_loglevel(config)
