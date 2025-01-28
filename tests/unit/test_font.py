@@ -166,8 +166,8 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
 
     @patch.object(Path, "unlink", autospec=True)
     @patch.object(Path, "copy", autospec=True)
-    @patch.object(Path, "islink", autospec=True)
-    def test_load_font_system(self, mocked_islink, mocked_copy, mocked_unlink):
+    @patch.object(Path, "is_link", autospec=True)
+    def test_load_font_system(self, mocked_is_link, mocked_copy, mocked_unlink):
         """Test to load one font which is in system directory."""
         font_loader = self.get_font_loader()
 
@@ -195,14 +195,14 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         )
 
         # assert the call
-        mocked_islink.assert_not_called()
+        mocked_is_link.assert_not_called()
         mocked_unlink.assert_not_called()
         mocked_copy.assert_not_called()
 
     @patch.object(Path, "unlink", autospec=True)
     @patch.object(Path, "copy", autospec=True)
-    @patch.object(Path, "islink", autospec=True)
-    def test_load_font_user(self, mocked_islink, mocked_copy, mocked_unlink):
+    @patch.object(Path, "is_link", autospec=True)
+    def test_load_font_user(self, mocked_is_link, mocked_copy, mocked_unlink):
         """Test to load one font which is in user directory."""
         font_loader = self.get_font_loader()
 
@@ -230,22 +230,22 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         )
 
         # assert the call
-        mocked_islink.assert_not_called()
+        mocked_is_link.assert_not_called()
         mocked_unlink.assert_not_called()
         mocked_copy.assert_not_called()
 
     @patch.object(Path, "unlink", autospec=True)
     @patch.object(Path, "copy", autospec=True)
-    @patch.object(Path, "islink", autospec=True)
+    @patch.object(Path, "is_link", autospec=True)
     def test_load_font_user_link_dead_install(
         self,
-        mocked_islink,
+        mocked_is_link,
         mocked_copy,
         mocked_unlink,
     ):
         """Test to load one font which is in user directory as dead link."""
         # prepare the mock
-        mocked_islink.return_value = True
+        mocked_is_link.return_value = True
 
         font_loader = self.get_font_loader()
 
@@ -272,17 +272,17 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         )
 
         # assert the call
-        mocked_islink.assert_called_with(font_path)
+        mocked_is_link.assert_called_with(font_path)
         mocked_unlink.assert_called_with(font_path)
         mocked_copy.assert_called_once_with("directory/font_file.ttf", font_path)
 
     @patch.object(Path, "unlink", autospec=True)
     @patch.object(Path, "copy", autospec=True)
-    @patch.object(Path, "islink", autospec=True)
-    def test_load_font_install(self, mocked_islink, mocked_copy, mocked_unlink):
+    @patch.object(Path, "is_link", autospec=True)
+    def test_load_font_install(self, mocked_is_link, mocked_copy, mocked_unlink):
         """Test to load one font which is not installed."""
         # prepare the mock
-        mocked_islink.return_value = False
+        mocked_is_link.return_value = False
 
         font_loader = self.get_font_loader()
 
@@ -311,7 +311,7 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         )
 
         # assert the call
-        mocked_islink.assert_called_with(font_path)
+        mocked_is_link.assert_called_with(font_path)
         mocked_unlink.assert_not_called()
         mocked_copy.assert_called_once_with(
             "directory/font_file.ttf", self.user_directory / ".fonts/font_file.ttf"
