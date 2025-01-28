@@ -187,7 +187,7 @@ class FontLoaderLinux(FontLoader):
         # check if the font exists as broken link at user level
         # in this case remove it and continue execution
         font_file_user_path = self.FONT_DIR_USER.expanduser() / font_file_name
-        if font_file_user_path.is_link():
+        if font_file_user_path.is_symlink():
             logger.debug(
                 "Dead symbolic link found for font '%s' in user directory, "
                 "removing it",
