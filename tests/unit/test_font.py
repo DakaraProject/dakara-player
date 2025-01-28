@@ -331,7 +331,7 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         # assert the call
         # especially check that the unload function does not alter the list of
         # elements we are iterating on
-        mocked_unlink.assert_has_calls([call("font1"), call("font2")])
+        mocked_unlink.assert_has_calls([call(Path("font1")), call(Path("font2"))])
 
     @patch.object(Path, "unlink", autospec=True)
     def test_unload_font(self, mocked_unlink):

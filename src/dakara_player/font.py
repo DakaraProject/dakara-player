@@ -193,7 +193,7 @@ class FontLoaderLinux(FontLoader):
                 "removing it",
                 font_file_name,
             )
-            font_file_user_path.unlink_p()
+            font_file_user_path.unlink(missing_ok=True)
 
         # then, if the font is not installed, load by copying it
         font_file_path.copy(font_file_user_path)
