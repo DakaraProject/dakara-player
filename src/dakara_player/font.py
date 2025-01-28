@@ -139,7 +139,7 @@ class FontLoaderLinux(FontLoader):
         Returns:
             list of pathlib.Path: List of font paths.
         """
-        return list(self.FONT_DIR_SYSTEM.walkfiles())
+        return list(self.FONT_DIR_SYSTEM.rglob("*"))
 
     def get_user_font_path_list(self):
         """Retrieve the list of user fonts.
@@ -147,7 +147,7 @@ class FontLoaderLinux(FontLoader):
         Returns:
             list of pathlib.Path: List of font paths.
         """
-        return list(self.FONT_DIR_USER.expanduser().walkfiles())
+        return list(self.FONT_DIR_USER.expanduser().rglob("*"))
 
     def load(self):
         """Load the fonts."""

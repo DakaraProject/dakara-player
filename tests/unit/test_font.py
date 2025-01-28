@@ -126,21 +126,21 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
 
     @patch.object(FontLoaderLinux, "load_font", autospec=True)
     @patch.object(FontLoaderLinux, "get_font_path_iterator", autospec=True)
-    @patch.object(Path, "walkfiles", autospec=True)
+    @patch.object(Path, "rglob", autospec=True)
     @patch.object(Path, "mkdir", autospec=True)
     def test_load(
         self,
         mocked_mkdir,
-        mocked_walkfiles,
+        mocked_rglob,
         mocked_get_font_path_iterator,
         mocked_load_font,
     ):
         """Test to load fonts."""
         # prepare the mock
         mocked_get_font_path_iterator.return_value = (p for p in [self.font_path])
-        mocked_walkfiles.side_effect = [
-            (p for p in [Path("/") / "usr" / "share" / "fonts" / "font1"]),
-            (p for p in [self.user_directory / ".fonts" / "font2"]),
+        mocked_rglob.side_effect = [
+            [Path("/") / "usr" / "share" / "fonts" / "font1"],
+            [self.user_directory / ".fonts" / "font2"],
         ]
 
         font_loader = self.get_font_loader()
@@ -152,7 +152,7 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         mocked_mkdir.assert_called_once_with(
             self.user_directory / ".fonts", parents=True, exists_ok=True
         )
-        mocked_walkfiles.assert_has_calls(
+        mocked_rglob.assert_has_calls(
             [
                 call(Path("/") / "usr" / "share" / "fonts"),
                 call(self.user_directory / ".fonts"),
@@ -275,7 +275,7 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
 
         # assert the call
         mocked_is_symlink.assert_called_with(font_path)
-        mocked_unlink.assert_called_with(font_path)
+        mocked_unlink.assert_called_with(font_path, missing_ok=True)
         mocked_copy.assert_called_once_with("directory/font_file.ttf", font_path)
 
     @patch.object(Path, "unlink", autospec=True)
