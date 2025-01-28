@@ -1,4 +1,5 @@
 from contextlib import ExitStack, contextmanager
+from pathlib import Path
 from queue import Queue
 from tempfile import TemporaryDirectory
 from threading import Event
@@ -8,7 +9,6 @@ from unittest.mock import MagicMock
 
 from dakara_base.config import Config
 from func_timeout import func_set_timeout
-from path import Path
 
 from dakara_player.media_player.base import (
     IDLE_BG_NAME,
