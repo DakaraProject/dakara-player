@@ -154,8 +154,8 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         )
         mocked_rglob.assert_has_calls(
             [
-                call(Path("/") / "usr" / "share" / "fonts"),
-                call(self.user_directory / ".fonts"),
+                call(Path("/") / "usr" / "share" / "fonts", "*"),
+                call(self.user_directory / ".fonts", "*"),
             ]
         )
         mocked_get_font_path_iterator.assert_called_once_with(font_loader)
@@ -318,7 +318,8 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         mocked_is_symlink.assert_called_with(font_path)
         mocked_unlink.assert_not_called()
         mocked_copy.assert_called_once_with(
-            "directory/font_file.ttf", self.user_directory / ".fonts/font_file.ttf"
+            Path("directory") / "font_file.ttf",
+            self.user_directory / ".fonts/font_file.ttf",
         )
 
     @patch.object(Path, "unlink", autospec=True)
