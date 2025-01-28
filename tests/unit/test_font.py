@@ -162,8 +162,8 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         mocked_load_font.assert_called_once_with(
             font_loader,
             self.font_path,
-            [Path("/") / "usr" / "share" / "fonts" / "font1"],
-            [self.user_directory / ".fonts" / "font2"],
+            ["font1"],
+            ["font2"],
         )
 
     @patch.object(Path, "unlink", autospec=True)
@@ -180,7 +180,7 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         with self.assertLogs("dakara_player.font", "DEBUG") as logger:
             font_loader.load_font(
                 self.font_path,
-                [Path("/") / "usr" / "share" / "fonts" / "truetype" / "font_file.ttf"],
+                ["font_file.ttf"],
                 [],
             )
 
@@ -216,7 +216,7 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
             font_loader.load_font(
                 self.font_path,
                 [],
-                [self.user_directory / "fonts" / "truetype" / "font_file.ttf"],
+                ["font_file.ttf"],
             )
 
         # post assertions
