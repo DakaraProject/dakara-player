@@ -127,10 +127,10 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
     @patch.object(FontLoaderLinux, "load_font", autospec=True)
     @patch.object(FontLoaderLinux, "get_font_path_iterator", autospec=True)
     @patch.object(Path, "walkfiles", autospec=True)
-    @patch.object(Path, "mkdir_p", autospec=True)
+    @patch.object(Path, "mkdir", autospec=True)
     def test_load(
         self,
-        mocked_mkdir_p,
+        mocked_mkdir,
         mocked_walkfiles,
         mocked_get_font_path_iterator,
         mocked_load_font,
@@ -149,7 +149,9 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         font_loader.load()
 
         # assert the call
-        mocked_mkdir_p.assert_called_once_with(self.user_directory / ".fonts")
+        mocked_mkdir.assert_called_once_with(
+            self.user_directory / ".fonts", parents=True, exists_ok=True
+        )
         mocked_walkfiles.assert_has_calls(
             [
                 call(Path("/") / "usr" / "share" / "fonts"),

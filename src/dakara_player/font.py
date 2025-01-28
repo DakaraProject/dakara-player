@@ -152,7 +152,7 @@ class FontLoaderLinux(FontLoader):
     def load(self):
         """Load the fonts."""
         # ensure that the user font directory exists
-        self.FONT_DIR_USER.expanduser().mkdir_p()
+        self.FONT_DIR_USER.expanduser().mkdir(parents=True, exists_ok=True)
 
         # get system and user font files
         system_font_path_list = self.get_system_font_path_list()
@@ -173,7 +173,7 @@ class FontLoaderLinux(FontLoader):
                 of user fonts.
         """
         # get font file name
-        font_file_name = font_file_path.basename()
+        font_file_name = font_file_path.name
 
         # check if the font is installed at system level
         if any(font_file_name in path for path in system_font_path_list):
