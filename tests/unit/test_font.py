@@ -150,7 +150,7 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
 
         # assert the call
         mocked_mkdir.assert_called_once_with(
-            self.user_directory / ".fonts", parents=True, exists_ok=True
+            self.user_directory / ".fonts", parents=True, exist_ok=True
         )
         mocked_rglob.assert_has_calls(
             [
@@ -276,7 +276,9 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         # assert the call
         mocked_is_symlink.assert_called_with(font_path)
         mocked_unlink.assert_called_with(font_path, missing_ok=True)
-        mocked_copy.assert_called_once_with("directory/font_file.ttf", font_path)
+        mocked_copy.assert_called_once_with(
+            Path("directory") / "font_file.ttf", font_path
+        )
 
     @patch.object(Path, "unlink", autospec=True)
     @patch("dakara_player.font.copy", autospec=True)

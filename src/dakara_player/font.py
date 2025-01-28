@@ -133,21 +133,21 @@ class FontLoaderLinux(FontLoader):
         # create list of fonts
         self.fonts_loaded = {}
 
-    def get_system_font_path_list(self):
+    def get_system_font_name_list(self):
         """Retrieve the list of system fonts.
 
         Returns:
             list of pathlib.Path: List of font paths.
         """
-        return list(self.FONT_DIR_SYSTEM.rglob("*"))
+        return [path.name for path in self.FONT_DIR_SYSTEM.rglob("*")]
 
-    def get_user_font_path_list(self):
+    def get_user_font_name_list(self):
         """Retrieve the list of user fonts.
 
         Returns:
             list of pathlib.Path: List of font paths.
         """
-        return list(self.FONT_DIR_USER.expanduser().rglob("*"))
+        return [path.name for path in self.FONT_DIR_USER.expanduser().rglob("*")]
 
     def load(self):
         """Load the fonts."""
@@ -155,33 +155,33 @@ class FontLoaderLinux(FontLoader):
         self.FONT_DIR_USER.expanduser().mkdir(parents=True, exists_ok=True)
 
         # get system and user font files
-        system_font_path_list = self.get_system_font_path_list()
-        user_font_path_list = self.get_user_font_path_list()
+        system_font_name_list = self.get_system_font_name_list()
+        user_font_name_list = self.get_user_font_name_list()
 
         # load fonts
         for font_file_path in self.get_font_path_iterator():
-            self.load_font(font_file_path, system_font_path_list, user_font_path_list)
+            self.load_font(font_file_path, system_font_name_list, user_font_name_list)
 
-    def load_font(self, font_file_path, system_font_path_list, user_font_path_list):
+    def load_font(self, font_file_path, system_font_name_list, user_font_name_list):
         """Load the provided font.
 
         Args:
             font_file_path (pathlib.Path): Absolute path of the font to load.
-            system_font_path_list (list of pathlib.Path): List of absolute
-                paths of system fonts.
-            user_font_path_list (list of pathlib.Path): List of absolute paths
-                of user fonts.
+            system_font_name_list (list of pathlib.Path): List of system fonts
+                name.
+            user_font_name_list (list of pathlib.Path): List of user fonts
+                name.
         """
         # get font file name
         font_file_name = font_file_path.name
 
         # check if the font is installed at system level
-        if any(font_file_name in path for path in system_font_path_list):
+        if any(font_file_name in system_font_name_list):
             logger.debug("Font '%s' found in system directory", font_file_name)
             return
 
         # check if the font is installed at user level
-        if any(font_file_name in path for path in user_font_path_list):
+        if any(font_file_name in user_font_name_list):
             logger.debug("Font '%s' found in user directory", font_file_name)
             return
 
