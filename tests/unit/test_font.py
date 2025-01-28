@@ -165,7 +165,7 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         )
 
     @patch.object(Path, "unlink", autospec=True)
-    @patch.object(Path, "copy", autospec=True)
+    @patch("dakara_player.font.copy", autospec=True)
     @patch.object(Path, "is_symlink", autospec=True)
     def test_load_font_system(self, mocked_is_symlink, mocked_copy, mocked_unlink):
         """Test to load one font which is in system directory."""
@@ -200,7 +200,7 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         mocked_copy.assert_not_called()
 
     @patch.object(Path, "unlink", autospec=True)
-    @patch.object(Path, "copy", autospec=True)
+    @patch("dakara_player.font.copy", autospec=True)
     @patch.object(Path, "is_symlink", autospec=True)
     def test_load_font_user(self, mocked_is_symlink, mocked_copy, mocked_unlink):
         """Test to load one font which is in user directory."""
@@ -235,7 +235,7 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         mocked_copy.assert_not_called()
 
     @patch.object(Path, "unlink", autospec=True)
-    @patch.object(Path, "copy", autospec=True)
+    @patch("dakara_player.font.copy", autospec=True)
     @patch.object(Path, "is_symlink", autospec=True)
     def test_load_font_user_link_dead_install(
         self,
@@ -277,7 +277,7 @@ class FontLoaderLinuxTestCase(FontLoaderTestCase):
         mocked_copy.assert_called_once_with("directory/font_file.ttf", font_path)
 
     @patch.object(Path, "unlink", autospec=True)
-    @patch.object(Path, "copy", autospec=True)
+    @patch("dakara_player.font.copy", autospec=True)
     @patch.object(Path, "is_symlink", autospec=True)
     def test_load_font_install(self, mocked_is_symlink, mocked_copy, mocked_unlink):
         """Test to load one font which is not installed."""

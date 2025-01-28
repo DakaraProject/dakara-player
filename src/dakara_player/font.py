@@ -6,6 +6,7 @@ import platform
 from abc import ABC, abstractmethod
 from importlib.resources import contents, path
 from pathlib import Path
+from shutil import copy
 
 from dakara_base.exceptions import DakaraError
 
@@ -196,7 +197,7 @@ class FontLoaderLinux(FontLoader):
             font_file_user_path.unlink(missing_ok=True)
 
         # then, if the font is not installed, load by copying it
-        font_file_path.copy(font_file_user_path)
+        copy(font_file_path, font_file_user_path)
 
         # register the font
         self.fonts_loaded[font_file_name] = font_file_user_path
