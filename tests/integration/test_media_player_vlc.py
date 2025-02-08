@@ -86,7 +86,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             config_full.update(config)
 
         with ExitStack() as stack:
-            temp = Path(stack.enter_context(TemporaryDirectory()))
+            temp = Path(stack.enter_context(TemporaryDirectory())).resolve()
             vlc_player = stack.enter_context(
                 MediaPlayerVlc(
                     Event(),

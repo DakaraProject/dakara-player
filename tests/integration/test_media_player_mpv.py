@@ -68,7 +68,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             config_full.update(config)
 
         with TemporaryDirectory() as temp_str:
-            temp = Path(temp_str)
+            temp = Path(temp_str).resolve()
             try:
                 with ExitStack() as stack:
                     mpv_player = stack.enter_context(
