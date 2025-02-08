@@ -991,7 +991,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 [
                     "DEBUG:dakara_player.media_player.vlc:Playing callback called",
                     "INFO:dakara_player.media_player.vlc:Now playing 'Song title' "
-                    "('{}')".format(Path(gettempdir()) / self.song_file_path),
+                    "('{}')".format(Path(gettempdir()).resolve() / self.song_file_path),
                 ],
             )
 
