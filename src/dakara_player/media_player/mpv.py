@@ -344,15 +344,17 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         assert len(playlist) == 1, "Too many entries in mpv internal playlist"
 
-        media = playlist[0]
-        media_path = Path(media.get("filename") or "")
+        media_raw = playlist[0].get("filename")
+
+        if media_raw is None:
+            return False
+
+        media_path = Path(media_raw)
 
         if what == "idle":
             return media_path == self.background_loader.backgrounds["idle"]
 
-        return (media_path == self.playlist_entry_data[what].path) and (
-            media_path != Path("")
-        )
+        return media_path == self.playlist_entry_data[what].path
 
     def play(self, what):
         """Request mpv to play something.
@@ -843,25 +845,28 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
 
         return self.is_playing_this(what, entries[0]["filename"])
 
-    def is_playing_this(self, what, media_path=None):
+    def is_playing_this(self, what, current_media_path=None):
         """Query if mpv is playing the requested media type.
 
         Args:
             what (str): Tell if mpv current track is of the requested type, but
                 not if it is actually playing it (it can be in pause).
-            media_path (pathlib.Path): Optional media path.
+            current_media_path (pathlib.Path): Optional current media path.
 
         Returns:
             bool: `True` if mpv is playing the requested type.
         """
-        media_path = Path(media_path or self.player.path or "")
+        media_raw = current_media_path or self.player.path
+
+        if media_raw is None:
+            return False
+
+        media_path = Path(media_raw)
 
         if what == "idle":
             return media_path == self.background_loader.backgrounds["idle"]
 
-        return (media_path == self.playlist_entry_data[what].path) and (
-            media_path != Path("")
-        )
+        return media_path == self.playlist_entry_data[what].path
 
     @safe
     def handle_end_file(self, event):
