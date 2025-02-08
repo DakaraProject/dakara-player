@@ -90,7 +90,8 @@ class TestCaseKara(TestCase):
     def setUp(self):
         # create kara folder
         self.kara_folder = TemporaryDirectory()
-        self.kara_folder_path = Path(self.kara_folder.name)
+        # resolve to prevent DOS short paths on Windows CI
+        self.kara_folder_path = Path(self.kara_folder.name).resolve()
 
         # create subtitle
         with path("tests.resources", "song1.ass") as file:
