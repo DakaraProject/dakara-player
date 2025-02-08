@@ -211,7 +211,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertFalse(mpv_player.is_playing_this("idle"))
 
             # wait for the media to end
-            self.wait(lambda: not mpv_player.is_playing())
+            self.wait(mpv_player, lambda: not mpv_player.is_playing())
 
             # assert the player is not playing anything
             self.assertFalse(mpv_player.is_playing_this("transition"))
@@ -424,7 +424,8 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # wait a bit for the player to play
             self.wait(
-                lambda: mpv_player.player.time_pos >= REWIND_FAST_FORWARD_DURATION
+                mpv_player,
+                lambda: mpv_player.player.time_pos >= REWIND_FAST_FORWARD_DURATION,
             )
 
             # request playlist entry to restart
@@ -762,7 +763,8 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # wait a bit for the player to play
             self.wait(
-                lambda: mpv_player.player.time_pos >= REWIND_FAST_FORWARD_DURATION * 2
+                mpv_player,
+                lambda: mpv_player.player.time_pos >= REWIND_FAST_FORWARD_DURATION * 2,
             )
             timing1 = mpv_player.player.time_pos
 
@@ -840,7 +842,8 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # wait a bit for the player to play
             self.wait(
-                lambda: mpv_player.player.time_pos >= REWIND_FAST_FORWARD_DURATION * 2
+                mpv_player,
+                lambda: mpv_player.player.time_pos >= REWIND_FAST_FORWARD_DURATION * 2,
             )
             timing1 = mpv_player.player.time_pos
 

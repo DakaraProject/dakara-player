@@ -241,7 +241,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertFalse(vlc_player.is_playing_this("idle"))
 
             # wait for the media to end
-            self.wait(lambda: not vlc_player.is_playing())
+            self.wait(vlc_player, lambda: not vlc_player.is_playing())
 
             # assert the player is not playing anything
             self.assertFalse(vlc_player.is_playing_this("transition"))
@@ -520,8 +520,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # wait a bit for the player to play
             self.wait(
+                vlc_player,
                 lambda: vlc_player.player.get_time()
-                >= REWIND_FAST_FORWARD_DURATION * 1000
+                >= REWIND_FAST_FORWARD_DURATION * 1000,
             )
 
             # request to restart media
@@ -675,8 +676,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # wait a bit for the player to play
             self.wait(
+                vlc_player,
                 lambda: vlc_player.player.get_time()
-                >= REWIND_FAST_FORWARD_DURATION * 2 * 1000
+                >= REWIND_FAST_FORWARD_DURATION * 2 * 1000,
             )
             timing1 = vlc_player.player.get_time() / 1000
 
@@ -753,8 +755,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # wait a bit for the player to play
             self.wait(
+                vlc_player,
                 lambda: vlc_player.player.get_time()
-                >= REWIND_FAST_FORWARD_DURATION * 2 * 1000
+                >= REWIND_FAST_FORWARD_DURATION * 2 * 1000,
             )
             timing1 = vlc_player.player.get_time() / 1000
 

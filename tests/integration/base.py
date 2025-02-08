@@ -1,4 +1,5 @@
 from pathlib import Path
+from queue import Empty
 from shutil import copy
 from tempfile import TemporaryDirectory
 from time import sleep
@@ -30,10 +31,12 @@ class TestCasePoller(TestCase):
             wait_extra (float): Time to wait at the end of the function.
         """
         if what:
-            cls.wait(lambda: player.is_playing() and player.is_playing_this(what))
+            cls.wait(
+                player, lambda: player.is_playing() and player.is_playing_this(what)
+            )
 
         else:
-            cls.wait(lambda: player.is_playing())
+            cls.wait(player, lambda: player.is_playing())
 
         sleep(wait_extra)
 
@@ -48,12 +51,12 @@ class TestCasePoller(TestCase):
             player (dakara_player.media_player.base.MediaPlayer): Player.
             wait_extra (float): Time to wait at the end of the function.
         """
-        cls.wait(lambda: player.is_paused())
+        cls.wait(player, lambda: player.is_paused())
 
         sleep(wait_extra)
 
     @classmethod
-    def wait(cls, condition_method):
+    def wait(cls, player, condition_method):
         """Wait for a condition to be true safely.
 
         Args:
@@ -61,6 +64,16 @@ class TestCasePoller(TestCase):
                 structure, so as to not break the loop in cause of error.
         """
         while True:
+            # handle any player error
+            if player.stop.is_set():
+                try:
+                    _, error, traceback = player.errors.get(5)
+                    error.with_traceback(traceback)
+                    raise error
+
+                except Empty as error_empty:
+                    raise RuntimeError("Unknown error happened") from error_empty
+
             try:
                 if condition_method():
                     return
