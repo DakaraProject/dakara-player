@@ -13,7 +13,7 @@ def get_audio_files(filepath):
         list of pathlib.Path: List of paths of audio files.
     """
     # list files with similar stem
-    items = filepath.parent.glob("{}.*".format(filepath.name))
+    items = filepath.parent.glob(f"{filepath.stem}.*")
     return [item for item in items if item != filepath and is_audio_file(item)]
 
 
