@@ -379,7 +379,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
                 return
 
             self.generate_text("idle")
-            self.player.play(self.background_loader.backgrounds["idle"])
+            self.player.play(str(self.background_loader.backgrounds["idle"]))
             self.player.sub_files = str(self.text_paths["idle"])
 
             return

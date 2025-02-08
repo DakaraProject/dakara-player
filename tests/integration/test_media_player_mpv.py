@@ -130,8 +130,10 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # post assertions
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, temp / IDLE_BG_NAME)
-            self.assertListEqual(mpv_player.player.sub_files, [temp / IDLE_TEXT_NAME])
+            self.assertEqual(mpv_player.player.path, str(temp / IDLE_BG_NAME))
+            self.assertListEqual(
+                mpv_player.player.sub_files, [str(temp / IDLE_TEXT_NAME)]
+            )
 
     @func_set_timeout(TIMEOUT)
     def test_play_playlist_entry(self):
@@ -175,14 +177,14 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, temp / TRANSITION_BG_NAME)
+            self.assertEqual(mpv_player.player.path, str(temp / TRANSITION_BG_NAME))
 
             # check there is no audio track
             self.assertFalse(mpv_player.player.audio)
 
             # check which subtitle file is read
             self.assertListEqual(
-                mpv_player.player.sub_files, [temp / TRANSITION_TEXT_NAME]
+                mpv_player.player.sub_files, [str(temp / TRANSITION_TEXT_NAME)]
             )
 
             # assert the started transition callback has been called
@@ -195,7 +197,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song1_path)
+            self.assertEqual(mpv_player.player.path, str(self.song1_path))
 
             # check audio track
             self.assertEqual(mpv_player.player.audio, 1)
@@ -244,7 +246,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media exists
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song1_path)
+            self.assertEqual(mpv_player.player.path, str(self.song1_path))
 
             # check audio track
             self.assertEqual(mpv_player.player.audio, 2)
@@ -278,7 +280,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media exists
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song2_path)
+            self.assertEqual(mpv_player.player.path, str(self.song2_path))
 
             # check audio track
             self.assertEqual(mpv_player.player.audio, 3)
@@ -467,7 +469,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song1_path)
+            self.assertEqual(mpv_player.player.path, str(self.song1_path))
 
             # request first playlist entry to stop
             mpv_player.skip()
@@ -492,7 +494,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song2_path)
+            self.assertEqual(mpv_player.player.path, str(self.song2_path))
 
             # check skip flag
             self.assertFalse(mpv_player.player_data["skip"])
@@ -521,7 +523,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song1_path)
+            self.assertEqual(mpv_player.player.path, str(self.song1_path))
 
             # request first playlist entry to stop
             mpv_player.skip()
@@ -570,7 +572,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song1_path)
+            self.assertEqual(mpv_player.player.path, str(self.song1_path))
 
             # pause song
             mpv_player.pause()
@@ -601,7 +603,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song2_path)
+            self.assertEqual(mpv_player.player.path, str(self.song2_path))
 
             # check skip flag
             self.assertFalse(mpv_player.player_data["skip"])
@@ -635,7 +637,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song1_path)
+            self.assertEqual(mpv_player.player.path, str(self.song1_path))
 
             # pause song
             mpv_player.pause()
@@ -696,7 +698,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song2_path)
+            self.assertEqual(mpv_player.player.path, str(self.song2_path))
 
     @func_set_timeout(TIMEOUT)
     def test_skip_idle(self):
@@ -731,7 +733,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song1_path)
+            self.assertEqual(mpv_player.player.path, str(self.song1_path))
 
     @func_set_timeout(TIMEOUT)
     def test_rewind_song(self):
@@ -920,7 +922,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
-            self.assertEqual(mpv_player.player.path, self.song1_path)
+            self.assertEqual(mpv_player.player.path, str(self.song1_path))
 
             # pause song
             mpv_player.pause()

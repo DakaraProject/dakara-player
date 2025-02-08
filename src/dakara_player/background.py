@@ -44,9 +44,9 @@ class BackgroundLoader:
     >>> loader.load()
     >>> loader.backgrounds
         {
-            "idle": "/destination/idle.png",
-            "transition": "/destination/transition.png",
-            "other": "/destination/something.png"
+            "idle": Path("/destination/idle.png"),
+            "transition": Path("/destination/transition.png"),
+            "other": Path("/destination/something.png")
         }
 
     Args:
@@ -102,7 +102,7 @@ class BackgroundLoader:
                 logger.debug(
                     "Loading custom %s background file '%s'", background_name, file_name
                 )
-                return copy(file_path, self.destination)
+                return Path(copy(file_path, self.destination))
 
         # trying to load from package by default
         try:
@@ -113,7 +113,7 @@ class BackgroundLoader:
                     file_name,
                 )
                 file_path = Path(file)
-                return copy(file_path, self.destination)
+                return Path(copy(file_path, self.destination))
 
         except FileNotFoundError as error:
             raise BackgroundNotFoundError(
