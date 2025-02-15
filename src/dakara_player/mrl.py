@@ -16,6 +16,7 @@ def mrl_to_path(file_mrl):
     Returns:
         pathlib.Path: Path to the resource.
     """
+    # TODO Replace by pathlib.Path.from_uri() available in Python 3.13
     path_string = unquote(urlparse(file_mrl).path)
 
     # remove first '/' if a colon character is found like in '/C:/a/b'
