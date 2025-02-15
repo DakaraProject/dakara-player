@@ -72,7 +72,7 @@ class TestCasePoller(TestCase):
                     raise error
 
                 except Empty as error_empty:
-                    raise RuntimeError("Unknown error happened") from error_empty
+                    raise RuntimeError("Unexpected error happened") from error_empty
 
             try:
                 if condition_method():
