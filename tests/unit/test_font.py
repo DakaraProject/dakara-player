@@ -65,11 +65,16 @@ class FontLoaderCommonTestCase(FontLoaderTestCase):
 
         mocked_unload.assert_called_with()
 
-    @patch("dakara_player.font.contents", autospec=True)
-    def test_get_font_name_list(self, mocked_contents):
+    @patch.object(Path, "is_file", autospec=True)
+    @patch("dakara_player.font.files", autospec=True)
+    def test_get_font_name_list(self, mocked_files, mocked_is_file):
         """Test to get list of font names."""
         # mock system calls
-        mocked_contents.return_value = [self.font_name, "__init__.py"]
+        mocked_files.return_value.iterdir.return_value = [
+            Path("dir") / self.font_name,
+            Path("dir") / "__init__.py",
+        ]
+        mocked_is_file.return_value = True
 
         font_loader = self.get_font_loader()
 
@@ -89,15 +94,18 @@ class FontLoaderCommonTestCase(FontLoaderTestCase):
             ],
         )
 
-        # call assertions
-        mocked_contents.assert_called_once_with("package")
+        # assert mock
+        mocked_files.assert_called_once_with("package")
 
-    @patch("dakara_player.font.path")
+    @patch("dakara_player.font.as_file")
+    @patch("dakara_player.font.files")
     @patch.object(FontLoaderLinux, "get_font_name_list", autospec=True)
-    def test_get_font_path_iterator(self, mocked_get_font_name_list, mocked_path):
+    def test_get_font_path_iterator(
+        self, mocked_get_font_name_list, mocked_files, mocked_as_file
+    ):
         """Test to get iterator of font paths."""
         mocked_get_font_name_list.return_value = self.font_name_list
-        mocked_path.return_value.__enter__.return_value = (
+        mocked_as_file.return_value.__enter__.return_value = (
             self.directory / self.font_name
         )
 
@@ -106,7 +114,12 @@ class FontLoaderCommonTestCase(FontLoaderTestCase):
         # call the method
         font_file_path_list = list(font_loader.get_font_path_iterator())
 
+        # assert the result
         self.assertListEqual(font_file_path_list, [self.font_path])
+
+        # assert mock
+        mocked_files.assert_called_once_with("package")
+        mocked_files.return_value.joinpath.assert_called_once_with(self.font_name)
 
 
 @skipUnless(platform.system() == "Linux", "Can be tested on Linux only")

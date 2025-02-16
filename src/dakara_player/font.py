@@ -4,7 +4,7 @@ import ctypes
 import logging
 import platform
 from abc import ABC, abstractmethod
-from importlib.resources import contents, path
+from importlib.resources import as_file, files
 from pathlib import Path
 from shutil import copy
 
@@ -76,9 +76,9 @@ class FontLoader(ABC):
         """
         logger.debug("Scanning fonts directory")
         font_file_name_list = [
-            file
-            for file in contents(self.package)
-            if Path(file).suffix.lower() in FONT_EXTENSIONS
+            file.name
+            for file in files(self.package).iterdir()
+            if file.is_file() and file.suffix.lower() in FONT_EXTENSIONS
         ]
         logger.debug("Found %i font(s) to load", len(font_file_name_list))
 
@@ -91,8 +91,10 @@ class FontLoader(ABC):
             pathlib.Path: Absolute path to the font, from the package.
         """
         for font_file_name in self.get_font_name_list():
-            with path(self.package, font_file_name) as font_file_path:
-                yield Path(font_file_path)
+            with as_file(
+                files(self.package).joinpath(font_file_name)
+            ) as font_file_path:
+                yield font_file_path
 
 
 class FontLoaderLinux(FontLoader):
