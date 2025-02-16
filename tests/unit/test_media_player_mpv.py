@@ -519,9 +519,10 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mpv_player.set_callback("error", MagicMock())
 
         # call the method
-        with self.assertLogs(
-            "dakara_player.media_player.mpv", "DEBUG"
-        ) as logger, self.assertLogs("mpv", "DEBUG") as logger_mpv:
+        with (
+            self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger,
+            self.assertLogs("mpv", "DEBUG") as logger_mpv,
+        ):
             mpv_player.handle_log_messages("fatal", "mpv.component", "error message")
 
         # assert effect on logs
