@@ -37,6 +37,7 @@
 
 ### Removed
 
+- Dropped Python 3.8 support.
 - Dropped Python 3.7 support.
 
 ## 1.8.1 - 2022-12-18
