@@ -57,13 +57,13 @@ class FontLoaderCommonTestCase(FontLoaderTestCase):
         with self.assertLogs("dakara_player.font", "DEBUG"):
             return FontLoaderLinux("package")
 
-    @patch.object(FontLoaderLinux, "unload")
+    @patch.object(FontLoaderLinux, "unload", autospec=True)
     def test_context_manager(self, mocked_unload):
         """Test the font loader context manager."""
-        with FontLoaderLinux("package"):
+        with FontLoaderLinux("package") as loader:
             pass
 
-        mocked_unload.assert_called_with()
+        mocked_unload.assert_called_with(loader)
 
     @patch.object(Path, "is_file", autospec=True)
     @patch("dakara_player.font.files", autospec=True)
@@ -97,8 +97,8 @@ class FontLoaderCommonTestCase(FontLoaderTestCase):
         # assert mock
         mocked_files.assert_called_once_with("package")
 
-    @patch("dakara_player.font.as_file")
-    @patch("dakara_player.font.files")
+    @patch("dakara_player.font.as_file", autospec=True)
+    @patch("dakara_player.font.files", autospec=True)
     @patch.object(FontLoaderLinux, "get_font_name_list", autospec=True)
     def test_get_font_path_iterator(
         self, mocked_get_font_name_list, mocked_files, mocked_as_file
@@ -505,7 +505,7 @@ class FontLoaderWindowsTestCase(TestCase):
         )
 
     @patch("dakara_player.font.ctypes")
-    @patch.object(FontLoaderWindows, "unload_font")
+    @patch.object(FontLoaderWindows, "unload_font", autospec=True)
     def test_unload(self, mocked_unload_font, mocked_ctypes):
         """Test to unload fonts."""
         font_loader = self.get_font_loader()
@@ -517,7 +517,9 @@ class FontLoaderWindowsTestCase(TestCase):
         font_loader.unload()
 
         # assert the call
-        mocked_unload_font.assert_has_calls([call("font1"), call("font2")])
+        mocked_unload_font.assert_has_calls(
+            [call(font_loader, "font1"), call(font_loader, "font2")]
+        )
 
     @patch("dakara_player.font.ctypes")
     def test_unload_font(self, mocked_ctypes):
