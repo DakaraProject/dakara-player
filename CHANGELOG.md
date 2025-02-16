@@ -33,6 +33,7 @@
 
 ### Added
 
+- Added Python 3.13 support.
 - Added Python 3.12 support.
 
 ### Removed
