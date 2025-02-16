@@ -1,15 +1,10 @@
+from importlib.resources import as_file, files
 from pathlib import Path
 from queue import Empty
 from shutil import copy
 from tempfile import TemporaryDirectory
 from time import sleep
 from unittest import TestCase
-
-try:
-    from importlib.resources import path
-
-except ImportError:
-    from importlib_resources import path
 
 
 class TestCasePoller(TestCase):
@@ -94,24 +89,24 @@ class TestCaseKara(TestCase):
         self.kara_folder_path = Path(self.kara_folder.name).resolve()
 
         # create subtitle
-        with path("tests.resources", "song1.ass") as file:
+        with as_file(files("tests.resources").joinpath("song1.ass")) as file:
             self.subtitle1_path = Path(copy(file, self.kara_folder_path))
 
-        with path("tests.resources", "song2.ass") as file:
+        with as_file(files("tests.resources").joinpath("song2.ass")) as file:
             self.subtitle2_path = Path(copy(file, self.kara_folder_path))
 
         # create song
-        with path("tests.resources", "song1.mkv") as file:
+        with as_file(files("tests.resources").joinpath("song1.mkv")) as file:
             self.song1_path = Path(copy(file, self.kara_folder_path))
 
-        with path("tests.resources", "song2.mkv") as file:
+        with as_file(files("tests.resources").joinpath("song2.mkv")) as file:
             self.song2_path = Path(copy(file, self.kara_folder_path))
 
-        with path("tests.resources", "song3.avi") as file:
+        with as_file(files("tests.resources").joinpath("song3.avi")) as file:
             self.song3_path = Path(copy(file, self.kara_folder_path))
 
         # create audio
-        with path("tests.resources", "song2.mp3") as file:
+        with as_file(files("tests.resources").joinpath("song2.mp3")) as file:
             self.audio2_path = Path(copy(file, self.kara_folder_path))
 
         # create playlist entry

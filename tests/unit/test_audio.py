@@ -1,4 +1,4 @@
-from importlib.resources import path
+from importlib.resources import as_file, files
 from pathlib import Path
 from unittest import TestCase
 from unittest.mock import patch
@@ -9,17 +9,17 @@ from dakara_player.audio import get_audio_files, is_audio_file
 class IsAudioFileTestCase(TestCase):
     def test_mp3(self):
         """Test to detect a MP3 file."""
-        with path("tests.resources", "song2.mp3") as file:
+        with as_file(files("tests.resources").joinpath("song2.mp3")) as file:
             self.assertTrue(is_audio_file(file))
 
     def test_ass(self):
         """Test to not detect an ASS file."""
-        with path("tests.resources", "song2.ass") as file:
+        with as_file(files("tests.resources").joinpath("song2.ass")) as file:
             self.assertFalse(is_audio_file(file))
 
     def test_mkv(self):
         """Test to not detect a MKV file."""
-        with path("tests.resources", "song2.mkv") as file:
+        with as_file(files("tests.resources").joinpath("song2.mkv")) as file:
             self.assertFalse(is_audio_file(file))
 
 
