@@ -51,7 +51,7 @@ class MediaPlayerVlc(MediaPlayer):
         errors (queue.Queue): Error queue to communicate the exception to the
             main thread.
         config (dict): Dictionary of configuration.
-        tempdir (path.Path): Path of the temporary directory.
+        tempdir (pathlib.Path): Path of the temporary directory.
 
     Attributes:
         stop (threading.Event): Stop event that notify to stop the entire
@@ -60,14 +60,14 @@ class MediaPlayerVlc(MediaPlayer):
             main thread.
         player_name (str): Name of VLC.
         fullscreen (bool): If `True`, VLC will be fullscreen.
-        kara_folder_path (path.Path): Path to the karaoke folder.
+        kara_folder_path (pathlib.Path): Path to the karaoke folder.
         playlist_entry (dict): Playlist entyr object.
         callbacks (dict): High level callbacks associated with the media
             player.
         warn_long_exit (bool): If `True`, display a warning message if the media
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
-        text_paths (dict of path.Path): Path of the different text screens.
+        text_paths (dict of pathlib.Path): Path of the different text screens.
         text_generator (dakara_player.text_generator.TextGenerator): Text
             generator instance.
         background_loader
@@ -104,7 +104,7 @@ class MediaPlayerVlc(MediaPlayer):
 
         Args:
             config (dict): Dictionary of configuration.
-            tempdir (path.Path): Path of the temporary directory.
+            tempdir (pathlib.Path): Path of the temporary directory.
         """
         # parameters
         config_vlc = config.get("vlc") or {}
@@ -277,7 +277,7 @@ class MediaPlayerVlc(MediaPlayer):
         if what == "idle":
             # create idle screen media
             media = self.instance.media_new_path(
-                self.background_loader.backgrounds["idle"]
+                str(self.background_loader.backgrounds["idle"])
             )
 
             media.add_options(
@@ -415,7 +415,7 @@ class MediaPlayerVlc(MediaPlayer):
 
         Args:
             playlist_entry (dict): Playlist entry object.
-            file_path (path.Path): Absolute path to the song file.
+            file_path (pathlib.Path): Absolute path to the song file.
             autoplay (bool): If `True`, start to play transition screen as soon
                 as possible (i.e. as soon as the transition screen media is
                 ready). The song media is prepared when the transition screen
@@ -423,7 +423,7 @@ class MediaPlayerVlc(MediaPlayer):
         """
         # create transition screen media
         media_transition = self.instance.media_new_path(
-            self.background_loader.backgrounds["transition"]
+            str(self.background_loader.backgrounds["transition"])
         )
 
         media_transition.add_options(
@@ -447,7 +447,7 @@ class MediaPlayerVlc(MediaPlayer):
             self.play("transition")
 
         # create song media
-        media_song = self.instance.media_new_path(file_path)
+        media_song = self.instance.media_new_path(str(file_path))
         media_song.add_options(*self.media_parameters)
         media_song.parse()
         set_metadata(
@@ -469,7 +469,7 @@ class MediaPlayerVlc(MediaPlayer):
         Args:
             playlist_entry (dict): Playlist entry data. Must contain the key
                 `use_instrumental`.
-            file_path (path.Path): Path of the song file.
+            file_path (pathlib.Path): Path of the song file.
         """
         # get instrumental file if possible
         audio_path = self.get_instrumental_file(file_path)

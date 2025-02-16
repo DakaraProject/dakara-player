@@ -1,5 +1,7 @@
 from contextlib import ExitStack, contextmanager
+from pathlib import Path
 from queue import Queue
+from tempfile import TemporaryDirectory
 from threading import Event
 from unittest import skipIf, skipUnless
 from unittest.mock import MagicMock
@@ -12,7 +14,6 @@ except (ImportError, OSError):
 
 from dakara_base.config import Config
 from func_timeout import func_set_timeout
-from path import TempDir
 
 from dakara_player.media_player.base import IDLE_BG_NAME, TRANSITION_BG_NAME
 from dakara_player.media_player.vlc import METADATA_KEYS_COUNT, MediaPlayerVlc
@@ -67,12 +68,12 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
         Yields:
             tuple: Containing the following elements:
                 MediaPlayerVlc: Instance;
-                path.Path: Path of the temporary directory;
+                pathlib.Path: Path of the temporary directory;
                 unittest.case._LoggingWatcher: Captured output.
         """
 
         config_full = {
-            "kara_folder": self.kara_folder,
+            "kara_folder": str(self.kara_folder_path),
             "fullscreen": self.fullscreen,
             "vlc": {
                 "instance_parameters": self.instance_parameters,
@@ -85,7 +86,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             config_full.update(config)
 
         with ExitStack() as stack:
-            temp = stack.enter_context(TempDir())
+            temp = Path(stack.enter_context(TemporaryDirectory())).resolve()
             vlc_player = stack.enter_context(
                 MediaPlayerVlc(
                     Event(),
@@ -240,7 +241,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertFalse(vlc_player.is_playing_this("idle"))
 
             # wait for the media to end
-            self.wait(lambda: not vlc_player.is_playing())
+            self.wait(vlc_player, lambda: not vlc_player.is_playing())
 
             # assert the player is not playing anything
             self.assertFalse(vlc_player.is_playing_this("transition"))
@@ -342,7 +343,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     def test_play_playlist_entry_instrumental_file(self):
         """Test to play a playlist entry using instrumental file."""
         # request to use instrumental file
-        self.playlist_entry1["song"]["file_path"] = self.song2_path
+        self.playlist_entry1["song"]["file_path"] = str(self.song2_path)
         self.playlist_entry1["use_instrumental"] = True
 
         with self.get_instance() as (vlc_player, _, _):
@@ -519,8 +520,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # wait a bit for the player to play
             self.wait(
+                vlc_player,
                 lambda: vlc_player.player.get_time()
-                >= REWIND_FAST_FORWARD_DURATION * 1000
+                >= REWIND_FAST_FORWARD_DURATION * 1000,
             )
 
             # request to restart media
@@ -674,8 +676,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # wait a bit for the player to play
             self.wait(
+                vlc_player,
                 lambda: vlc_player.player.get_time()
-                >= REWIND_FAST_FORWARD_DURATION * 2 * 1000
+                >= REWIND_FAST_FORWARD_DURATION * 2 * 1000,
             )
             timing1 = vlc_player.player.get_time() / 1000
 
@@ -752,8 +755,9 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # wait a bit for the player to play
             self.wait(
+                vlc_player,
                 lambda: vlc_player.player.get_time()
-                >= REWIND_FAST_FORWARD_DURATION * 2 * 1000
+                >= REWIND_FAST_FORWARD_DURATION * 2 * 1000,
             )
             timing1 = vlc_player.player.get_time() / 1000
 

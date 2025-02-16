@@ -1,7 +1,7 @@
 import re
 from contextlib import ExitStack, contextmanager
+from pathlib import Path
 from queue import Queue
-from tempfile import gettempdir
 from threading import Event
 from time import sleep
 from unittest import TestCase, skipIf
@@ -13,9 +13,8 @@ try:
 except (ImportError, OSError):
     vlc = None
 
-from dakara_base.directory import AppDirsPath
+from dakara_base.directory import PlatformDirs
 from packaging.version import parse
-from path import Path
 
 from dakara_player.media_player.base import (
     InvalidStateError,
@@ -32,6 +31,7 @@ from dakara_player.media_player.vlc import (
 from dakara_player.mrl import path_to_mrl
 from dakara_player.text import TextGenerator
 from dakara_player.window import DummyWindowManager, WindowManager
+from tests.utils import get_temp_dir
 
 
 class BaseTestCase(TestCase):
@@ -62,7 +62,7 @@ class BaseTestCase(TestCase):
 
         Args:
             config (dict): Configuration passed to the constructor.
-            tempdir (path.Path): Path to temporary directory.
+            tempdir (pathlib.Path): Path to temporary directory.
 
         Yields:
             tuple: Contains the following elements:
@@ -76,7 +76,7 @@ class BaseTestCase(TestCase):
                     unittest.mock.MagicMock: BackgroundLoader class.
                     unittest.mock.MagicMock: TextGenerator class.
         """
-        config = config or {"kara_folder": gettempdir()}
+        config = config or {"kara_folder": str(get_temp_dir())}
 
         with ExitStack() as stack:
             if vlc is None:
@@ -152,7 +152,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         """Test to use default or custom window."""
         # default window
         with self.get_instance(
-            {"kara_folder": gettempdir(), "vlc": {"use_default_window": True}}
+            {"kara_folder": str(get_temp_dir()), "vlc": {"use_default_window": True}}
         ) as (vlc_player, _, _):
             self.assertIsInstance(vlc_player.window, DummyWindowManager)
 
@@ -342,7 +342,9 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # call the method
             with self.assertRaisesRegex(
                 KaraFolderNotFound,
-                'Karaoke folder "{}" does not exist'.format(re.escape(gettempdir())),
+                'Karaoke folder "{}" does not exist'.format(
+                    re.escape(str(get_temp_dir()))
+                ),
             ):
                 vlc_player.check_kara_folder_path()
 
@@ -388,12 +390,12 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 logger.output, ["INFO:dakara_player.media_player.vlc:VLC 3.0.0 NoName"]
             )
 
-    @patch.object(Path, "isfile")
-    def test_set_playlist_entry_error_file(self, mocked_isfile):
+    @patch.object(Path, "is_file")
+    def test_set_playlist_entry_error_file(self, mocked_is_file):
         """Test to set a playlist entry that does not exist."""
         with self.get_instance() as (vlc_player, _, _):
             # mock the system call
-            mocked_isfile.return_value = False
+            mocked_is_file.return_value = False
 
             # mock the callbacks
             vlc_player.set_callback("could_not_play", MagicMock())
@@ -407,7 +409,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 vlc_player.set_playlist_entry(self.playlist_entry)
 
             # call assertions
-            mocked_isfile.assert_called_once_with()
+            mocked_is_file.assert_called_once_with()
 
             # post assertions
             self.assertIsNone(vlc_player.playlist_entry)
@@ -421,7 +423,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 logger.output,
                 [
                     "ERROR:dakara_player.media_player.base:File not found '{}'".format(
-                        Path(gettempdir()) / self.song_file_path
+                        get_temp_dir() / self.song_file_path
                     )
                 ],
             )
@@ -431,10 +433,10 @@ class MediaPlayerVlcTestCase(BaseTestCase):
     @patch.object(MediaPlayerVlc, "manage_instrumental")
     @patch.object(MediaPlayerVlc, "play")
     @patch.object(MediaPlayerVlc, "generate_text")
-    @patch.object(Path, "isfile")
+    @patch.object(Path, "is_file")
     def test_set_playlist_entry(
         self,
-        mocked_isfile,
+        mocked_is_file,
         mocked_generate_text,
         mocked_play,
         mocked_manage_instrumental,
@@ -444,9 +446,9 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         """Test to set a playlist entry."""
         with self.get_instance() as (vlc_player, (_, mocked_background_loader, _), _):
             # setup mocks
-            mocked_isfile.return_value = True
+            mocked_is_file.return_value = True
             mocked_background_loader.backgrounds = {
-                "transition": Path(gettempdir()) / "transition.png"
+                "transition": get_temp_dir() / "transition.png"
             }
 
             # mock the callbacks
@@ -468,7 +470,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             vlc_player.callbacks["error"].assert_not_called()
 
             # assert mocks
-            mocked_isfile.assert_called_with()
+            mocked_is_file.assert_called_with()
             mocked_generate_text.assert_called_with("transition")
             mocked_play.assert_called_with("transition")
             mocked_manage_instrumental.assert_not_called()
@@ -484,8 +486,8 @@ class MediaPlayerVlcTestCase(BaseTestCase):
     ):
         """Test to add instrumental file."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
-            video_path = Path(gettempdir()) / "video"
-            audio_path = Path(gettempdir()) / "audio"
+            video_path = get_temp_dir() / "video"
+            audio_path = get_temp_dir() / "audio"
 
             # pre assertions
             self.assertIsNone(vlc_player.playlist_entry_data["song"].audio_track_id)
@@ -528,8 +530,8 @@ class MediaPlayerVlcTestCase(BaseTestCase):
     ):
         """Test to be unable to add instrumental file."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
-            video_path = Path(gettempdir()) / "video"
-            audio_path = Path(gettempdir()) / "audio"
+            video_path = get_temp_dir() / "video"
+            audio_path = get_temp_dir() / "audio"
 
             # pre assertions
             self.assertIsNone(vlc_player.playlist_entry_data["song"].audio_track_id)
@@ -584,7 +586,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             ),
             _,
         ):
-            video_path = Path(gettempdir()) / "video"
+            video_path = get_temp_dir() / "video"
 
             # pre assertions
             self.assertIsNone(vlc_player.playlist_entry_data["song"].audio_track_id)
@@ -625,7 +627,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
     ):
         """Test to cannot find instrumental."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
-            video_path = Path(gettempdir()) / "video"
+            video_path = get_temp_dir() / "video"
 
             # pre assertions
             self.assertIsNone(vlc_player.playlist_entry_data["song"].audio_track_id)
@@ -755,7 +757,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 [
                     "DEBUG:dakara_player.media_player.vlc:End reached callback called",
                     "DEBUG:dakara_player.media_player.vlc:Will play '{}'".format(
-                        Path(gettempdir()) / self.song_file_path
+                        get_temp_dir() / self.song_file_path
                     ),
                 ],
             )
@@ -889,7 +891,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 [
                     "DEBUG:dakara_player.media_player.vlc:Error callback called",
                     "ERROR:dakara_player.media_player.vlc:Unable to play '{}'".format(
-                        Path(gettempdir()) / self.song_file_path
+                        get_temp_dir() / self.song_file_path
                     ),
                 ],
             )
@@ -991,7 +993,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 [
                     "DEBUG:dakara_player.media_player.vlc:Playing callback called",
                     "INFO:dakara_player.media_player.vlc:Now playing 'Song title' "
-                    "('{}')".format(Path(gettempdir()) / self.song_file_path),
+                    "('{}')".format(get_temp_dir() / self.song_file_path),
                 ],
             )
 
@@ -1027,7 +1029,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                     "DEBUG:dakara_player.media_player.vlc:Requesting to play audio "
                     "track 99",
                     "INFO:dakara_player.media_player.vlc:Now playing 'Song title' "
-                    "('{}')".format(Path(gettempdir()) / self.song_file_path),
+                    "('{}')".format(get_temp_dir() / self.song_file_path),
                 ],
             )
 
@@ -1100,10 +1102,10 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert the call
             vlc_player.callbacks["paused"].assert_called_with(42, 25)
 
-    @patch.object(AppDirsPath, "user_data_dir", new_callable=PropertyMock)
-    def test_custom_backgrounds(self, mocked_user_data_dir):
+    @patch.object(PlatformDirs, "user_data_path", new_callable=PropertyMock)
+    def test_custom_backgrounds(self, mocked_user_data_path):
         """Test to instanciate with custom backgrounds."""
-        mocked_user_data_dir.return_value = Path("directory")
+        mocked_user_data_path.return_value = Path("directory")
 
         # create object
         tempdir = Path("temp")

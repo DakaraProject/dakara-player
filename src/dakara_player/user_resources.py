@@ -3,9 +3,9 @@
 import logging
 from distutils.util import strtobool
 from importlib.resources import contents, path
+from shutil import copy
 
 from dakara_base.directory import directories
-from path import Path
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ def copy_resource(resource, destination, force):
 
     Args:
         resource (str): Resource to copy.
-        destination (path.Path): Directory where to copy the resource.
+        destination (pathlib.Path): Directory where to copy the resource.
         force (bool): If the destination exists and this flag is set to `True`,
             overwrite the destination.
     """
@@ -34,7 +34,7 @@ def copy_resource(resource, destination, force):
         if not result:
             return
 
-    destination.makedirs_p()
+    destination.mkdir(parents=True, exist_ok=True)
 
     for file_name in contents(resource):
         # ignore Python files
@@ -42,7 +42,7 @@ def copy_resource(resource, destination, force):
             continue
 
         with path(resource, file_name) as file:
-            Path(file).copy(destination)
+            copy(file, destination)
 
 
 def create_resource_files(force=False):
@@ -52,8 +52,8 @@ def create_resource_files(force=False):
         force (bool): If the user directory already contains the resource
             directories and this flag is set, overwrite the directories.
     """
-    user_directory = directories.user_data_dir
-    user_directory.makedirs_p()
+    user_directory = directories.user_data_path
+    user_directory.mkdir(parents=True, exist_ok=True)
 
     for directory in ["backgrounds", "templates"]:
         copy_resource(

@@ -1,3 +1,7 @@
+from pathlib import Path
+from queue import Empty
+from shutil import copy
+from tempfile import TemporaryDirectory
 from time import sleep
 from unittest import TestCase
 
@@ -6,8 +10,6 @@ try:
 
 except ImportError:
     from importlib_resources import path
-
-from path import Path, TempDir
 
 
 class TestCasePoller(TestCase):
@@ -29,10 +31,12 @@ class TestCasePoller(TestCase):
             wait_extra (float): Time to wait at the end of the function.
         """
         if what:
-            cls.wait(lambda: player.is_playing() and player.is_playing_this(what))
+            cls.wait(
+                player, lambda: player.is_playing() and player.is_playing_this(what)
+            )
 
         else:
-            cls.wait(lambda: player.is_playing())
+            cls.wait(player, lambda: player.is_playing())
 
         sleep(wait_extra)
 
@@ -47,12 +51,12 @@ class TestCasePoller(TestCase):
             player (dakara_player.media_player.base.MediaPlayer): Player.
             wait_extra (float): Time to wait at the end of the function.
         """
-        cls.wait(lambda: player.is_paused())
+        cls.wait(player, lambda: player.is_paused())
 
         sleep(wait_extra)
 
     @classmethod
-    def wait(cls, condition_method):
+    def wait(cls, player, condition_method):
         """Wait for a condition to be true safely.
 
         Args:
@@ -60,6 +64,16 @@ class TestCasePoller(TestCase):
                 structure, so as to not break the loop in cause of error.
         """
         while True:
+            # handle any player error
+            if player.stop.is_set():
+                try:
+                    _, error, traceback = player.errors.get(5)
+                    error.with_traceback(traceback)
+                    raise error
+
+                except Empty as error_empty:
+                    raise RuntimeError("Unexpected error happened") from error_empty
+
             try:
                 if condition_method():
                     return
@@ -75,53 +89,67 @@ class TestCaseKara(TestCase):
 
     def setUp(self):
         # create kara folder
-        self.kara_folder = TempDir()
+        self.kara_folder = TemporaryDirectory()
+        # resolve to prevent DOS short paths on Windows CI
+        self.kara_folder_path = Path(self.kara_folder.name).resolve()
 
         # create subtitle
         with path("tests.resources", "song1.ass") as file:
-            self.subtitle1_path = Path(file).copy(self.kara_folder)
+            self.subtitle1_path = Path(copy(file, self.kara_folder_path))
 
         with path("tests.resources", "song2.ass") as file:
-            self.subtitle2_path = Path(file).copy(self.kara_folder)
+            self.subtitle2_path = Path(copy(file, self.kara_folder_path))
 
         # create song
         with path("tests.resources", "song1.mkv") as file:
-            self.song1_path = Path(file).copy(self.kara_folder)
+            self.song1_path = Path(copy(file, self.kara_folder_path))
 
         with path("tests.resources", "song2.mkv") as file:
-            self.song2_path = Path(file).copy(self.kara_folder)
+            self.song2_path = Path(copy(file, self.kara_folder_path))
 
         with path("tests.resources", "song3.avi") as file:
-            self.song3_path = Path(file).copy(self.kara_folder)
+            self.song3_path = Path(copy(file, self.kara_folder_path))
 
         # create audio
         with path("tests.resources", "song2.mp3") as file:
-            self.audio2_path = Path(file).copy(self.kara_folder)
+            self.audio2_path = Path(copy(file, self.kara_folder_path))
 
         # create playlist entry
         self.playlist_entry1 = {
             "id": 42,
-            "song": {"title": "Song 1", "file_path": self.song1_path, "duration": 60},
+            "song": {
+                "title": "Song 1",
+                "file_path": str(self.song1_path),
+                "duration": 60,
+            },
             "owner": "me",
             "use_instrumental": False,
         }
 
         self.playlist_entry2 = {
             "id": 43,
-            "song": {"title": "Song 2", "file_path": self.song2_path, "duration": 60},
+            "song": {
+                "title": "Song 2",
+                "file_path": str(self.song2_path),
+                "duration": 60,
+            },
             "owner": "me",
             "use_instrumental": False,
         }
 
         self.playlist_entry3 = {
             "id": 44,
-            "song": {"title": "Song 3", "file_path": self.song3_path, "duration": 60},
+            "song": {
+                "title": "Song 3",
+                "file_path": str(self.song3_path),
+                "duration": 60,
+            },
             "owner": "me",
             "use_instrumental": False,
         }
 
     def tearDown(self):
-        self.kara_folder.rmtree(ignore_errors=True)
+        self.kara_folder.cleanup()
 
 
 class TestCasePollerKara(TestCasePoller, TestCaseKara):

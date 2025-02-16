@@ -1,13 +1,12 @@
+from pathlib import Path
 from unittest import TestCase
 from unittest.mock import patch
-
-from path import Path
 
 from dakara_player.background import BackgroundLoader, BackgroundNotFoundError
 
 
 @patch("dakara_player.background.path", autospec=True)
-@patch.object(Path, "copy", autospec=True)
+@patch("dakara_player.background.copy", autospec=True)
 @patch.object(Path, "exists", autospec=True)
 class BackgroundLoaderTestCase(TestCase):
     """Test the loader for backgrounds."""

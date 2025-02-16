@@ -2,10 +2,11 @@
 
 import logging
 from contextlib import ExitStack
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Runner, WorkerSafeThread
-from path import TempDir
 
 from dakara_player.font import get_font_loader_class
 from dakara_player.manager import DakaraManager
@@ -123,7 +124,7 @@ class DakaraWorker(WorkerSafeThread):
         # be executed.
         with ExitStack() as stack:
             # temporary directory
-            tempdir = stack.enter_context(TempDir(suffix=".dakara"))
+            tempdir = Path(stack.enter_context(TemporaryDirectory(suffix=".dakara")))
 
             # font loader
             font_loader = stack.enter_context(

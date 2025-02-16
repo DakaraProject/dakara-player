@@ -1,12 +1,11 @@
 from contextlib import ExitStack
+from pathlib import Path
 from queue import Queue
-from tempfile import gettempdir
 from threading import Event
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 from packaging.version import Version
-from path import Path
 
 from dakara_player.media_player.base import (
     InvalidStateError,
@@ -20,6 +19,7 @@ from dakara_player.media_player.mpv import (
     MediaPlayerMpvPost0340,
     MpvTooOldError,
 )
+from tests.utils import get_temp_dir
 
 
 class MediaPlayerMpvTestCase(TestCase):
@@ -211,7 +211,7 @@ class MediaPlayerMpvModelTestCase(TestCase):
                     unittest.mock.MagicMock: BackgroundLoader class.
                     unittest.mock.MagicMock: TextGenerator class.
         """
-        config = config or {"kara_folder": gettempdir()}
+        config = config or {"kara_folder": get_temp_dir()}
 
         with ExitStack() as stack:
             mocked_instance_class = stack.enter_context(
@@ -251,7 +251,7 @@ class MediaPlayerMpvModelTestCase(TestCase):
 
         # create mocked transition
         mpv_player.playlist_entry_data["transition"].path = (
-            Path(gettempdir()) / "transition.png"
+            get_temp_dir() / "transition.png"
         )
 
         # create mocked song
@@ -413,7 +413,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mpv_player, (mocked_player, _, _), _ = self.get_instance()
         mpv_player.set_callback("finished", MagicMock())
         self.set_playlist_entry(mpv_player)
-        mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "transition.png"
+        mocked_player.playlist[0]["filename"] = str(get_temp_dir() / "transition.png")
 
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
@@ -425,7 +425,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
             [
                 "DEBUG:dakara_player.media_player.mpv:File end callback called",
                 "DEBUG:dakara_player.media_player.mpv:Will play '{}'".format(
-                    Path(gettempdir()) / self.song_file_path
+                    get_temp_dir() / self.song_file_path
                 ),
             ],
         )
@@ -490,7 +490,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mpv_player, (mocked_player, _, _), _ = self.get_instance()
         mpv_player.set_callback("finished", MagicMock())
         self.set_playlist_entry(mpv_player)
-        mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "other"
+        mocked_player.playlist[0]["filename"] = str(get_temp_dir() / "other")
 
         self.assertFalse(mpv_player.stop.is_set())
 
@@ -530,7 +530,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
             [
                 "DEBUG:dakara_player.media_player.mpv:Log message callback called",
                 "ERROR:dakara_player.media_player.mpv:Unable to play '{}'".format(
-                    Path(gettempdir()) / self.song_file_path
+                    get_temp_dir() / self.song_file_path
                 ),
             ],
         )
@@ -598,7 +598,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
             [
                 "DEBUG:dakara_player.media_player.mpv:Start file callback called",
                 "INFO:dakara_player.media_player.mpv:Now playing 'Song title' "
-                "('{}')".format(Path(gettempdir()) / self.song_file_path),
+                "('{}')".format(get_temp_dir() / self.song_file_path),
             ],
         )
 
@@ -768,7 +768,7 @@ class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
         mpv_player, (mocked_player, _, _), _ = self.get_instance()
         mpv_player.set_callback("finished", MagicMock())
         self.set_playlist_entry(mpv_player)
-        mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "transition.png"
+        mocked_player.playlist[0]["filename"] = str(get_temp_dir() / "transition.png")
 
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
@@ -782,7 +782,7 @@ class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
             [
                 "DEBUG:dakara_player.media_player.mpv:File end callback called",
                 "DEBUG:dakara_player.media_player.mpv:Will play '{}'".format(
-                    Path(gettempdir()) / self.song_file_path
+                    get_temp_dir() / self.song_file_path
                 ),
             ],
         )
@@ -851,7 +851,7 @@ class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
         mpv_player, (mocked_player, _, _), _ = self.get_instance()
         mpv_player.set_callback("finished", MagicMock())
         self.set_playlist_entry(mpv_player)
-        mocked_player.playlist[0]["filename"] = Path(gettempdir()) / "other"
+        mocked_player.playlist[0]["filename"] = str(get_temp_dir() / "other")
 
         self.assertFalse(mpv_player.stop.is_set())
 

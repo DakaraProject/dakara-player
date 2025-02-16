@@ -3,6 +3,7 @@
 import logging
 import re
 from abc import ABC
+from pathlib import Path
 
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
@@ -182,7 +183,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         errors (queue.Queue): Error queue to communicate the exception to the
             main thread.
         config (dict): Dictionary of configuration.
-        tempdir (path.Path): Path of the temporary directory.
+        tempdir (pathlib.Path): Path of the temporary directory.
 
     Attributes:
         stop (threading.Event): Stop event that notify to stop the entire
@@ -191,14 +192,14 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             main thread.
         player_name (str): Name of mpv.
         fullscreen (bool): If `True`, mpv will be fullscreen.
-        kara_folder_path (path.Path): Path to the karaoke folder.
+        kara_folder_path (pathlib.Path): Path to the karaoke folder.
         playlist_entry (dict): Playlist entyr object.
         callbacks (dict): High level callbacks associated with the media
             player.
         warn_long_exit (bool): If `True`, display a warning message if the media
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
-        text_paths (dict of path.Path): Path of the different text screens.
+        text_paths (dict of pathlib.Path): Path of the different text screens.
         text_generator (dakara_player.text_generator.TextGenerator): Text
             generator instance.
         background_loader
@@ -217,7 +218,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         Args:
             config (dict): Dictionary of configuration.
-            tempdir (path.Path): Path of the temporary directory.
+            tempdir (pathlib.Path): Path of the temporary directory.
         """
         # set mpv player options and logging
         loglevel = config.get("loglevel", "info")
@@ -343,15 +344,17 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         assert len(playlist) == 1, "Too many entries in mpv internal playlist"
 
-        media = playlist[0]
-        media_path = media.get("filename")
+        media_raw = playlist[0].get("filename")
+
+        if media_raw is None:
+            return False
+
+        media_path = Path(media_raw)
 
         if what == "idle":
             return media_path == self.background_loader.backgrounds["idle"]
 
-        return (
-            media_path == self.playlist_entry_data[what].path and media_path is not None
-        )
+        return media_path == self.playlist_entry_data[what].path
 
     def play(self, what):
         """Request mpv to play something.
@@ -378,21 +381,21 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
                 return
 
             self.generate_text("idle")
-            self.player.play(self.background_loader.backgrounds["idle"])
-            self.player.sub_files = self.text_paths["idle"]
+            self.player.play(str(self.background_loader.backgrounds["idle"]))
+            self.player.sub_files = str(self.text_paths["idle"])
 
             return
 
         if what == "transition":
-            self.player.play(self.playlist_entry_data["transition"].path)
-            self.player.sub_files = self.text_paths["transition"]
+            self.player.play(str(self.playlist_entry_data["transition"].path))
+            self.player.sub_files = str(self.text_paths["transition"])
             self.player.end = str(self.durations["transition"])
 
             return
 
         if what == "song":
             # manage instrumental track/file
-            path_audio = self.playlist_entry_data["song"].path_audio
+            path_audio = str(self.playlist_entry_data["song"].path_audio)
             if path_audio:
                 if path_audio == "self":
                     # mpv use different index for each track, so we can safely request
@@ -406,9 +409,11 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
             # if the subtitle file cannot be discovered, do not request it
             if self.playlist_entry_data["song"].path_subtitle:
-                self.player.sub_files = [self.playlist_entry_data["song"].path_subtitle]
+                self.player.sub_files = [
+                    str(self.playlist_entry_data["song"].path_subtitle)
+                ]
 
-            self.player.play(self.playlist_entry_data["song"].path)
+            self.player.play(str(self.playlist_entry_data["song"].path))
 
             return
 
@@ -519,7 +524,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         Args:
             playlist_entry (dict): Playlist entry object.
-            file_path (path.Path): Absolute path to the song file.
+            file_path (pathlib.Path): Absolute path to the song file.
             autoplay (bool): If `True`, start to play transition screen as soon
                 as possible (i.e. as soon as the transition screen media is
                 ready). The song media is prepared when the transition screen
@@ -543,9 +548,9 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         # manually set the subtitles as a workaround for the matching of
         # mpv being too permissive
-        path_without_ext = file_path.dirname() / file_path.stem
+        path_without_ext = file_path.parent / file_path.stem
         for subtitle_extension in SUBTITLE_EXTENSIONS:
-            path_subtitle = path_without_ext + subtitle_extension
+            path_subtitle = path_without_ext.with_suffix(subtitle_extension)
             if path_subtitle.exists():
                 break
 
@@ -570,7 +575,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         Args:
             playlist_entry (dict): Playlist entry data. Must contain the key
                 `use_instrumental`.
-            file_path (path.Path): Path of the song file.
+            file_path (pathlib.Path): Path of the song file.
         """
         # get instrumental file if possible
         audio_path = self.get_instrumental_file(file_path)
@@ -777,7 +782,7 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
         errors (queue.Queue): Error queue to communicate the exception to the
             main thread.
         config (dict): Dictionary of configuration.
-        tempdir (path.Path): Path of the temporary directory.
+        tempdir (pathlib.Path): Path of the temporary directory.
 
     Attributes:
         stop (threading.Event): Stop event that notify to stop the entire
@@ -786,14 +791,14 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
             main thread.
         player_name (str): Name of mpv.
         fullscreen (bool): If `True`, mpv will be fullscreen.
-        kara_folder_path (path.Path): Path to the karaoke folder.
+        kara_folder_path (pathlib.Path): Path to the karaoke folder.
         playlist_entry (dict): Playlist entyr object.
         callbacks (dict): High level callbacks associated with the media
             player.
         warn_long_exit (bool): If `True`, display a warning message if the media
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
-        text_paths (dict of path.Path): Path of the different text screens.
+        text_paths (dict of pathlib.Path): Path of the different text screens.
         text_generator (dakara_player.text_generator.TextGenerator): Text
             generator instance.
         background_loader
@@ -840,25 +845,28 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
 
         return self.is_playing_this(what, entries[0]["filename"])
 
-    def is_playing_this(self, what, media_path=None):
+    def is_playing_this(self, what, current_media_path=None):
         """Query if mpv is playing the requested media type.
 
         Args:
             what (str): Tell if mpv current track is of the requested type, but
                 not if it is actually playing it (it can be in pause).
-            media_path (path.Path): Optional media path.
+            current_media_path (pathlib.Path): Optional current media path.
 
         Returns:
             bool: `True` if mpv is playing the requested type.
         """
-        media_path = media_path or self.player.path
+        media_raw = current_media_path or self.player.path
+
+        if media_raw is None:
+            return False
+
+        media_path = Path(media_raw)
 
         if what == "idle":
             return media_path == self.background_loader.backgrounds["idle"]
 
-        return (
-            media_path == self.playlist_entry_data[what].path and media_path is not None
-        )
+        return media_path == self.playlist_entry_data[what].path
 
     @safe
     def handle_end_file(self, event):
@@ -921,7 +929,7 @@ class MediaPlayerMpvPost0340(MediaPlayerMpvPost0330):
         errors (queue.Queue): Error queue to communicate the exception to the
             main thread.
         config (dict): Dictionary of configuration.
-        tempdir (path.Path): Path of the temporary directory.
+        tempdir (pathlib.Path): Path of the temporary directory.
 
     Attributes:
         stop (threading.Event): Stop event that notify to stop the entire
@@ -930,14 +938,14 @@ class MediaPlayerMpvPost0340(MediaPlayerMpvPost0330):
             main thread.
         player_name (str): Name of mpv.
         fullscreen (bool): If `True`, mpv will be fullscreen.
-        kara_folder_path (path.Path): Path to the karaoke folder.
+        kara_folder_path (pathlib.Path): Path to the karaoke folder.
         playlist_entry (dict): Playlist entyr object.
         callbacks (dict): High level callbacks associated with the media
             player.
         warn_long_exit (bool): If `True`, display a warning message if the media
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
-        text_paths (dict of path.Path): Path of the different text screens.
+        text_paths (dict of pathlib.Path): Path of the different text screens.
         text_generator (dakara_player.text_generator.TextGenerator): Text
             generator instance.
         background_loader

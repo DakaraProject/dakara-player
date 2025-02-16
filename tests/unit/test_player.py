@@ -94,7 +94,7 @@ class DakaraWorkerTestCase(TestCase):
         ):
             worker.get_media_player_class()
 
-    @patch("dakara_player.player.TempDir", autospec=True)
+    @patch("dakara_player.player.TemporaryDirectory", autospec=True)
     @patch("dakara_player.player.FontLoader", autospec=True)
     @patch("dakara_player.player.MediaPlayerVlc", autospec=True)
     @patch("dakara_player.player.HTTPClientDakara", autospec=True)

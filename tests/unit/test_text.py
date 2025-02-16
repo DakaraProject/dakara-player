@@ -1,8 +1,9 @@
+from pathlib import Path
 from pathlib import Path as Path_pathlib
+from shutil import copy
+from tempfile import TemporaryDirectory
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
-
-from path import Path, TempDir
 
 try:
     from importlib.resources import path
@@ -260,7 +261,9 @@ class TextGeneratorIntegrationTestCase(TestCase):
 
         Integration test.
         """
-        with TempDir() as temp:
+        with TemporaryDirectory() as temp_str:
+            temp = Path(temp_str)
+
             # create object
             text_generator = TextGenerator(
                 package="dakara_player.resources.templates",
@@ -280,13 +283,15 @@ class TextGeneratorIntegrationTestCase(TestCase):
 
     def test_load_templates_custom(self):
         """Test to load custom templates using an existing directory."""
-        with TempDir() as temp:
+        with TemporaryDirectory() as temp_str:
+            temp = Path(temp_str)
+
             # prepare directory
             with path("dakara_player.resources.templates", "idle.ass") as file:
-                Path(file).copy(temp)
+                copy(file, temp)
 
             with path("dakara_player.resources.templates", "transition.ass") as file:
-                Path(file).copy(temp)
+                copy(file, temp)
 
             # create object
             text_generator = TextGenerator(

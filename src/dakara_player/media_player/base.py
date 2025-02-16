@@ -3,12 +3,12 @@
 import logging
 from abc import ABC, abstractmethod
 from functools import wraps
+from pathlib import Path
 from threading import Timer
 
 from dakara_base.directory import directories
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
-from path import Path
 
 from dakara_player.audio import get_audio_files
 from dakara_player.background import BackgroundLoader
@@ -43,7 +43,7 @@ class MediaPlayer(Worker, ABC):
         errors (queue.Queue): Error queue to communicate the exception to the
             main thread.
         config (dict): Dictionary of configuration.
-        tempdir (path.Path): Path of the temporary directory.
+        tempdir (pathlib.Path): Path of the temporary directory.
 
     Attributes:
         stop (threading.Event): Stop event that notify to stop the entire
@@ -52,14 +52,14 @@ class MediaPlayer(Worker, ABC):
             main thread.
         player_name (str): Name of the media player.
         fullscreen (bool): If `True`, the media player will be fullscreen.
-        kara_folder_path (path.Path): Path to the karaoke folder.
+        kara_folder_path (pathlib.Path): Path to the karaoke folder.
         playlist_entry (dict): Playlist entyr object.
         callbacks (dict): High level callbacks associated with the media
             player.
         warn_long_exit (bool): If `True`, display a warning message if the media
             player takes too long to stop.
         durations (dict of int): Duration of the different screens in seconds.
-        text_paths (dict of path.Path): Path of the different text screens.
+        text_paths (dict of pathlib.Path): Path of the different text screens.
         text_generator (dakara_player.text.TextGenerator): Text
             generator instance.
         background_loader
@@ -88,7 +88,7 @@ class MediaPlayer(Worker, ABC):
 
         Args:
             config (dict): Dictionary of configuration.
-            tempdir (path.Path): Path of the temporary directory.
+            tempdir (pathlib.Path): Path of the temporary directory.
             warn_long_exit (bool): If `True`, the class will display a warning
                 message if the media player takes too long to stop.
         """
@@ -125,7 +125,7 @@ class MediaPlayer(Worker, ABC):
         config_texts = config.get("templates") or {}
         self.text_generator = TextGenerator(
             package="dakara_player.resources.templates",
-            directory=directories.user_data_dir / "player" / "templates",
+            directory=directories.user_data_path / "player" / "templates",
             filenames={
                 "transition": config_texts.get(
                     "transition_template_name", TRANSITION_TEXT_NAME
@@ -139,7 +139,7 @@ class MediaPlayer(Worker, ABC):
         self.background_loader = BackgroundLoader(
             destination=tempdir,
             package="dakara_player.resources.backgrounds",
-            directory=directories.user_data_dir / "player" / "backgrounds",
+            directory=directories.user_data_path / "player" / "backgrounds",
             filenames={
                 "transition": config_backgrounds.get(
                     "transition_background_name", TRANSITION_BG_NAME
@@ -164,7 +164,7 @@ class MediaPlayer(Worker, ABC):
 
         Args:
             config (dict): Dictionary of configuration.
-            tempdir (path.Path): Path of the temporary directory.
+            tempdir (pathlib.Path): Path of the temporary directory.
         """
 
     def load(self):
@@ -351,7 +351,7 @@ class MediaPlayer(Worker, ABC):
         """
         file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
 
-        if not file_path.isfile():
+        if not file_path.is_file():
             logger.error("File not found '%s'", file_path)
             self.callbacks["error"](playlist_entry["id"], "File not found")
             self.callbacks["could_not_play"](playlist_entry["id"])
@@ -373,7 +373,7 @@ class MediaPlayer(Worker, ABC):
 
         Args:
             playlist_entry (dict): Playlist entry object.
-            file_path (path.Path): Absolute path to the song file.
+            file_path (pathlib.Path): Absolute path to the song file.
             autoplay (bool): If `True`, start to play transition screen as soon
                 as possible (i.e. as soon as the transition screen media is
                 ready). The song media is prepared when the transition screen
@@ -410,10 +410,10 @@ class MediaPlayer(Worker, ABC):
         Consider that this instrumental file should be the only one audio file found.
 
         Args:
-            filepath (path.Path): Path to the media file.
+            filepath (pathlib.Path): Path to the media file.
 
         Returns:
-            path.Path: Path to the instrumental file. None if not found.
+            pathlib.Path: Path to the instrumental file. None if not found.
         """
         audio_files = get_audio_files(filepath)
 
@@ -487,7 +487,7 @@ class MediaPlayer(Worker, ABC):
                 have no fade in effect.
 
         Returns:
-            path.Path: Path of the text screen.
+            pathlib.Path: Path of the text screen.
 
         Raises:
             ValueError: If the type of screen to generate is unknown.
