@@ -1,11 +1,11 @@
 """Manage the user resource directory and files."""
 
 import logging
-from distutils.util import strtobool
 from importlib.resources import files
 from shutil import copy
 
 from dakara_base.directory import directories
+from dakara_base.utils import strtobool
 
 logger = logging.getLogger(__name__)
 
@@ -20,16 +20,12 @@ def copy_resource(package, destination, force):
             overwrite the destination.
     """
     if not force and destination.exists():
-        try:
-            result = strtobool(
-                input(
-                    f"Directory {destination} already exists, "
-                    "overwrite it with its content? [y/N] "
-                )
+        result = strtobool(
+            input(
+                f"Directory {destination} already exists, "
+                "overwrite it with its content? [y/N] "
             )
-
-        except ValueError:
-            result = False
+        )
 
         if not result:
             return
