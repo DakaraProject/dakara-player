@@ -2,7 +2,7 @@
 
 import logging
 from distutils.util import strtobool
-from importlib.resources import contents, path
+from importlib.resources import files
 from shutil import copy
 
 from dakara_base.directory import directories
@@ -10,11 +10,11 @@ from dakara_base.directory import directories
 logger = logging.getLogger(__name__)
 
 
-def copy_resource(resource, destination, force):
+def copy_resource(package, destination, force):
     """Copy the content of one resource directory.
 
     Args:
-        resource (str): Resource to copy.
+        package (str): Package of resources to copy.
         destination (pathlib.Path): Directory where to copy the resource.
         force (bool): If the destination exists and this flag is set to `True`,
             overwrite the destination.
@@ -36,13 +36,12 @@ def copy_resource(resource, destination, force):
 
     destination.mkdir(parents=True, exist_ok=True)
 
-    for file_name in contents(resource):
+    for resource in files(package).iterdir():
         # ignore Python files
-        if file_name.startswith("__"):
+        if resource.name.startswith("__"):
             continue
 
-        with path(resource, file_name) as file:
-            copy(file, destination)
+        copy(resource, destination)
 
 
 def create_resource_files(force=False):
