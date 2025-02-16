@@ -1,15 +1,10 @@
+from importlib.resources import as_file, files
 from pathlib import Path
 from pathlib import Path as Path_pathlib
 from shutil import copy
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
-
-try:
-    from importlib.resources import path
-
-except ImportError:
-    from importlib_resources import path
 
 from dakara_player.text import (
     TemplateNotFoundError,
@@ -287,10 +282,14 @@ class TextGeneratorIntegrationTestCase(TestCase):
             temp = Path(temp_str)
 
             # prepare directory
-            with path("dakara_player.resources.templates", "idle.ass") as file:
+            with as_file(
+                files("dakara_player.resources.templates").joinpath("idle.ass")
+            ) as file:
                 copy(file, temp)
 
-            with path("dakara_player.resources.templates", "transition.ass") as file:
+            with as_file(
+                files("dakara_player.resources.templates").joinpath("transition.ass")
+            ) as file:
                 copy(file, temp)
 
             # create object
@@ -314,7 +313,7 @@ class TextGeneratorIntegrationTestCase(TestCase):
         result = self.text_generator.get_text("idle", self.idle_info)
 
         # check file content
-        with path("tests.resources", "idle.ass") as file:
+        with as_file(files("tests.resources").joinpath("idle.ass")) as file:
             idle_text_content = file.read_text(encoding="utf8")
             self.assertEqual(idle_text_content.rstrip(), result.rstrip())
 
@@ -326,7 +325,7 @@ class TextGeneratorIntegrationTestCase(TestCase):
         )
 
         # check file content
-        with path("tests.resources", "transition.ass") as file:
+        with as_file(files("tests.resources").joinpath("transition.ass")) as file:
             transition_text_content = file.read_text(encoding="utf8")
             self.assertEqual(transition_text_content.rstrip(), result.rstrip())
 

@@ -2,7 +2,7 @@
 
 import json
 import logging
-from importlib.resources import path
+from importlib.resources import as_file, files
 from pathlib import Path
 
 from dakara_base.exceptions import DakaraError
@@ -88,7 +88,7 @@ class TextGenerator:
 
     def load_icon_map(self):
         """Load the icon map."""
-        with path("dakara_player.resources", ICON_MAP_FILE) as file:
+        with as_file(files("dakara_player.resources").joinpath(ICON_MAP_FILE)) as file:
             self.icon_map = json.loads(file.read_text())
 
     def load_templates(self):

@@ -1,7 +1,7 @@
 """Manage background images for media players."""
 
 import logging
-from importlib.resources import path
+from importlib.resources import as_file, files
 from pathlib import Path
 from shutil import copy
 
@@ -97,28 +97,64 @@ class BackgroundLoader:
         """
         # trying to load from custom directory
         if self.directory is not None:
-            file_path = self.directory / file_name
-            if file_path.exists():
-                logger.debug(
-                    "Loading custom %s background file '%s'", background_name, file_name
-                )
-                return Path(copy(file_path, self.destination))
+            try:
+                return self.copy_custom_background(background_name, file_name)
+
+            except FileNotFoundError:
+                pass
 
         # trying to load from package by default
         try:
-            with path(self.package, file_name) as file:
-                logger.debug(
-                    "Loading default %s background file '%s'",
-                    background_name,
-                    file_name,
-                )
-                file_path = Path(file)
-                return Path(copy(file_path, self.destination))
+            return self.copy_default_background(background_name, file_name)
 
         except FileNotFoundError as error:
             raise BackgroundNotFoundError(
                 f"No {background_name} background file found for '{file_name}'"
             ) from error
+
+    def copy_custom_background(self, background_name, file_name):
+        """Copy a custom background.
+
+        Args:
+            background_name (str): Name of the background.
+            file_name (str): Name of the background file.
+
+        Returns:
+            pathlib.Path: Absolute path to the background file.
+
+        Raises:
+            FileNotFoundError: If the custom file does not exist (by
+                `shuti.copy`).
+        """
+        file_path = self.directory / file_name
+        output_path = Path(copy(file_path, self.destination))
+        logger.debug(
+            "Loading custom %s background file '%s'", background_name, file_name
+        )
+        return output_path
+
+    def copy_default_background(self, background_name, file_name):
+        """Copy a default background.
+
+        Args:
+            background_name (str): Name of the background.
+            file_name (str): Name of the background file.
+
+        Returns:
+            pathlib.Path: Absolute path to the background file.
+
+        Raises:
+            FileNotFoundError: If the custom file does not exist (by
+                `shuti.copy`).
+        """
+        with as_file(files(self.package).joinpath(file_name)) as file_path:
+            output_path = Path(copy(file_path, self.destination))
+            logger.debug(
+                "Loading default %s background file '%s'",
+                background_name,
+                file_name,
+            )
+            return output_path
 
 
 class BackgroundNotFoundError(DakaraError, FileNotFoundError):
