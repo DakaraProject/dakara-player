@@ -500,18 +500,18 @@ class MediaPlayerVlc(MediaPlayer):
                 )
                 return
 
-            self.playlist_entry_data["song"].audio_track_id = number_tracks
+            self.playlist_entry_data["song"].track_id_audio = number_tracks
             return
 
-        # get audio tracks
-        audio_tracks_id = self.get_audio_tracks_id(
+        # get audio track ids
+        track_id_audio_list = self.get_track_id_audio_list(
             self.playlist_entry_data["song"].media
         )
 
         # if more than 1 audio track is present, register to play the 2nd one
-        if len(audio_tracks_id) > 1:
+        if len(track_id_audio_list) > 1:
             logger.info("Requesting to play instrumental track of '%s'", file_path)
-            self.playlist_entry_data["song"].audio_track_id = audio_tracks_id[1]
+            self.playlist_entry_data["song"].track_id_audio = track_id_audio_list[1]
             return
 
         # otherwise, fallback to register to play the first track and log it
@@ -539,7 +539,7 @@ class MediaPlayerVlc(MediaPlayer):
         return len(list(media.tracks_get()))
 
     @staticmethod
-    def get_audio_tracks_id(media):
+    def get_track_id_audio_list(media):
         """Get ID of audio tracks of the media.
 
         Args:
@@ -681,10 +681,10 @@ class MediaPlayerVlc(MediaPlayer):
             self.callbacks["started_song"](self.playlist_entry["id"])
 
             # set instrumental track if necessary
-            audio_track_id = self.playlist_entry_data["song"].audio_track_id
-            if audio_track_id is not None:
-                logger.debug("Requesting to play audio track %i", audio_track_id)
-                self.player.audio_set_track(audio_track_id)
+            track_id_audio = self.playlist_entry_data["song"].track_id_audio
+            if track_id_audio is not None:
+                logger.debug("Requesting to play audio track %i", track_id_audio)
+                self.player.audio_set_track(track_id_audio)
 
             self.playlist_entry_data["song"].started = True
             logger.info(
@@ -803,9 +803,9 @@ class Media:
 class MediaSong(Media):
     """Song object."""
 
-    def __init__(self, *args, audio_track_id=None, **kwargs):
+    def __init__(self, *args, track_id_audio=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.audio_track_id = audio_track_id
+        self.track_id_audio = track_id_audio
 
 
 class VlcTooOldError(DakaraError):
