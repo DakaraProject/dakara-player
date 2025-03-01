@@ -202,6 +202,9 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # check audio track
             self.assertEqual(mpv_player.player.audio, 1)
 
+            # check there is no audio file
+            self.assertEqual(len(mpv_player.player.audio_files), 0)
+
             # assert the started song callback has been called
             mpv_player.callbacks["started_song"].assert_called_with(
                 self.playlist_entry1["id"]
@@ -251,6 +254,9 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             # check audio track
             self.assertEqual(mpv_player.player.audio, 2)
 
+            # check there is no audio file
+            self.assertEqual(len(mpv_player.player.audio_files), 0)
+
             # assert the started song callback has been called
             mpv_player.callbacks["started_song"].assert_called_with(
                 self.playlist_entry1["id"]
@@ -284,6 +290,10 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check audio track
             self.assertEqual(mpv_player.player.audio, 3)
+
+            # check audio file
+            self.assertEqual(len(mpv_player.player.audio_files), 1)
+            self.assertEqual(mpv_player.player.audio_files[0], str(self.audio2_path))
 
             # assert the started song callback has been called
             mpv_player.callbacks["started_song"].assert_called_with(
