@@ -404,7 +404,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
                     logger.debug("Requesting to play audio track 2")
 
                 else:
-                    self.player.audio_files = [self(path_audio)]
+                    self.player.audio_files = [str(path_audio)]
                     logger.debug("Requesting to play audio file %s", path_audio)
 
             # if the subtitle file cannot be discovered, do not request it
