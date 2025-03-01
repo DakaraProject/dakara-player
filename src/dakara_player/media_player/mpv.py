@@ -395,7 +395,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         if what == "song":
             # manage instrumental track/file
-            path_audio = str(self.playlist_entry_data["song"].path_audio)
+            path_audio = self.playlist_entry_data["song"].path_audio
             if path_audio:
                 if path_audio == "self":
                     # mpv use different index for each track, so we can safely request
@@ -404,7 +404,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
                     logger.debug("Requesting to play audio track 2")
 
                 else:
-                    self.player.audio_files = [path_audio]
+                    self.player.audio_files = [str(path_audio)]
                     logger.debug("Requesting to play audio file %s", path_audio)
 
             # if the subtitle file cannot be discovered, do not request it
