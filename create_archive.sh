@@ -18,4 +18,4 @@ python -m build
 
 # upload to PyPI
 echo "Package will be uploaded tp Pypi"
-python -m twine upload dist/*
+python -m twine upload --repository dakaraplayer dist/*
