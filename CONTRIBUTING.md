@@ -102,9 +102,8 @@ This process describes how to release a new version:
 3. Push the version commit and its tag:
    ```sh
    git push
-   git push origin 0.0.0
+   git push --tags
    ```
-   with the according version number.
 4. Move to the `master` branch and merge the created tag into it.
    Then push:
    ```sh
