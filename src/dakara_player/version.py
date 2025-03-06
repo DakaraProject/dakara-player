@@ -8,8 +8,8 @@ import logging
 
 from packaging.version import parse
 
-__version__ = "1.9.0-dev"
-__date__ = "2022-12-18"
+__version__ = "1.9.0"
+__date__ = "2025-03-06"
 
 logger = logging.getLogger(__name__)
 
