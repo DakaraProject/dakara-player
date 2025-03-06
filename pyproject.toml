@@ -1,7 +1,6 @@
 [project]
 name = "dakaraplayer"
 authors = [
-        {name = "Flore", email = "flore.love@gmail.com"},
         {name = "Neraste", email = "neraste.herr10@gmail.com"},
 ]
 description = "Media player for the Dakara Project"
