@@ -40,6 +40,8 @@ MPV_ERROR_LEVELS = {
 
 PLAYER_IS_AVAILABLE_ATTEMPTS = 5
 
+USE_PATH_AUDIO = -1
+
 
 # monkey patch mpv to silent socket close failures on windows
 if mpv is not None:
@@ -395,17 +397,16 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         if what == "song":
             # manage instrumental track/file
-            path_audio = str(self.playlist_entry_data["song"].path_audio)
-            if path_audio:
-                if path_audio == "self":
-                    # mpv use different index for each track, so we can safely request
-                    # the second audio track
-                    self.player.audio = 2
-                    logger.debug("Requesting to play audio track 2")
+            track_id_audio = self.playlist_entry_data["song"].track_id_audio
+            if track_id_audio is not None:
+                if track_id_audio == USE_PATH_AUDIO:
+                    path_audio = self.playlist_entry_data["song"].path_audio
+                    self.player.audio_files = [str(path_audio)]
+                    logger.debug("Requesting to play audio file %s", path_audio)
 
                 else:
-                    self.player.audio_files = [path_audio]
-                    logger.debug("Requesting to play audio file %s", path_audio)
+                    self.player.audio = track_id_audio
+                    logger.debug("Requesting to play audio track %i", track_id_audio)
 
             # if the subtitle file cannot be discovered, do not request it
             if self.playlist_entry_data["song"].path_subtitle:
@@ -581,6 +582,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         audio_path = self.get_instrumental_file(file_path)
 
         if audio_path:
+            self.playlist_entry_data["song"].track_id_audio = USE_PATH_AUDIO
             self.playlist_entry_data["song"].path_audio = audio_path
             logger.info(
                 "Requesting to play instrumental file '%s' for '%s'",
@@ -590,9 +592,10 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
             return
 
-        # otherwise mark to look for instrumental track in internal tracks when
-        # starting to read the media
-        self.playlist_entry_data["song"].path_audio = "self"
+        # otherwise mark to use the 2nd track when starting to read the media
+        # mpv use different index for each track, so we can safely request the
+        # second audio track
+        self.playlist_entry_data["song"].track_id_audio = 2
         logger.info("Requesting to play instrumental track of '%s'", file_path)
 
     def clear_playlist_entry_player(self):
@@ -723,7 +726,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
         raise InvalidStateError("Start file on an undeterminated state")
 
-    def get_audio_tracks_id(self):
+    def get_track_id_audio_list(self):
         """Get ID of audio tracks for the current media.
 
         Returns:
@@ -1034,10 +1037,13 @@ class Media:
 class MediaSong(Media):
     """Song class."""
 
-    def __init__(self, *args, path_subtitle=None, path_audio=None, **kwargs):
+    def __init__(
+        self, *args, path_subtitle=None, path_audio=None, track_id_audio=None, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.path_subtitle = path_subtitle
         self.path_audio = path_audio
+        self.track_id_audio = track_id_audio
 
 
 class MpvTooOldError(DakaraError):

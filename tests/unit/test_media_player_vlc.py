@@ -475,14 +475,14 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             mocked_play.assert_called_with("transition")
             mocked_manage_instrumental.assert_not_called()
 
-    @patch.object(MediaPlayerVlc, "get_audio_tracks_id")
+    @patch.object(MediaPlayerVlc, "get_track_id_audio_list")
     @patch.object(MediaPlayerVlc, "get_number_tracks")
     @patch.object(MediaPlayerVlc, "get_instrumental_file")
     def test_manage_instrumental_file(
         self,
         mocked_get_instrumental_file,
         mocked_get_number_tracks,
-        mocked_get_audio_tracks_id,
+        mocked_get_track_id_audio_list,
     ):
         """Test to add instrumental file."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
@@ -490,7 +490,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             audio_path = get_temp_dir() / "audio"
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].audio_track_id)
+            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
             self.assertIsNotNone(vlc_player.kara_folder_path)
 
             # set playlist entry to request instrumental
@@ -507,7 +507,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 vlc_player.manage_instrumental(self.playlist_entry, video_path)
 
             # post assertions
-            self.assertEqual(vlc_player.playlist_entry_data["song"].audio_track_id, 2)
+            self.assertEqual(vlc_player.playlist_entry_data["song"].track_id_audio, 2)
 
             # assert the effects on logs
             self.assertListEqual(
@@ -519,7 +519,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             )
 
             # assert the call
-            mocked_get_audio_tracks_id.assert_not_called()
+            mocked_get_track_id_audio_list.assert_not_called()
 
     @patch.object(MediaPlayerVlc, "get_number_tracks")
     @patch.object(MediaPlayerVlc, "get_instrumental_file")
@@ -534,7 +534,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             audio_path = get_temp_dir() / "audio"
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].audio_track_id)
+            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
             self.assertIsNotNone(vlc_player.kara_folder_path)
 
             # set playlist entry to request instrumental
@@ -554,7 +554,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 vlc_player.manage_instrumental(self.playlist_entry, video_path)
 
             # post assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].audio_track_id)
+            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
 
             # assert the effects on logs
             self.assertListEqual(
@@ -567,14 +567,14 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 ],
             )
 
-    @patch.object(MediaPlayerVlc, "get_audio_tracks_id")
+    @patch.object(MediaPlayerVlc, "get_track_id_audio_list")
     @patch.object(MediaPlayerVlc, "get_number_tracks")
     @patch.object(MediaPlayerVlc, "get_instrumental_file")
     def test_manage_instrumental_track(
         self,
         mocked_get_instrumental_file,
         mocked_get_number_tracks,
-        mocked_get_audio_tracks_id,
+        mocked_get_track_id_audio_list,
     ):
         """Test add instrumental track."""
         with self.get_instance() as (
@@ -589,7 +589,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             video_path = get_temp_dir() / "video"
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].audio_track_id)
+            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
             self.assertIsNotNone(vlc_player.kara_folder_path)
 
             # set playlist entry to request instrumental
@@ -597,7 +597,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
 
             # mocks
             mocked_get_instrumental_file.return_value = None
-            mocked_get_audio_tracks_id.return_value = [0, 99, 42]
+            mocked_get_track_id_audio_list.return_value = [0, 99, 42]
             mocked_media_song = mocked_instance.media_new_path.return_value
             vlc_player.playlist_entry_data["song"].media = mocked_media_song
 
@@ -606,7 +606,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 vlc_player.manage_instrumental(self.playlist_entry, video_path)
 
             # post assertions
-            self.assertEqual(vlc_player.playlist_entry_data["song"].audio_track_id, 99)
+            self.assertEqual(vlc_player.playlist_entry_data["song"].track_id_audio, 99)
 
             # assert the effects on logs
             self.assertListEqual(
@@ -620,24 +620,24 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert the call
             mocked_get_number_tracks.assert_not_called()
 
-    @patch.object(MediaPlayerVlc, "get_audio_tracks_id")
+    @patch.object(MediaPlayerVlc, "get_track_id_audio_list")
     @patch.object(MediaPlayerVlc, "get_instrumental_file")
     def test_manage_instrumental_no_instrumental_found(
-        self, mocked_get_instrumental_file, mocked_get_audio_tracks_id
+        self, mocked_get_instrumental_file, mocked_get_track_id_audio_list
     ):
         """Test to cannot find instrumental."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             video_path = get_temp_dir() / "video"
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].audio_track_id)
+            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
 
             # set playlist entry to request instrumental
             self.playlist_entry["use_instrumental"] = True
 
             # mocks
             mocked_get_instrumental_file.return_value = None
-            mocked_get_audio_tracks_id.return_value = [99]
+            mocked_get_track_id_audio_list.return_value = [99]
 
             # make slaves_add method unavailable
             mocked_media_song = mocked_instance.return_value.media_new_path.return_value
@@ -648,7 +648,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 vlc_player.manage_instrumental(self.playlist_entry, video_path)
 
             # post assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].audio_track_id)
+            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
 
             # assert the effects on logs
             self.assertListEqual(
@@ -1009,7 +1009,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             mocked_player = mocked_instance.media_player_new.return_value
             self.set_playlist_entry(vlc_player)
-            vlc_player.playlist_entry_data["song"].audio_track_id = 99
+            vlc_player.playlist_entry_data["song"].track_id_audio = 99
 
             # mock the call
             vlc_player.set_callback("started_song", MagicMock())
