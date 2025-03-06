@@ -536,9 +536,9 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             self.player_data["skip"] = True
 
         # set transition
-        self.playlist_entry_data[
-            "transition"
-        ].path = self.background_loader.backgrounds["transition"]
+        self.playlist_entry_data["transition"].path = (
+            self.background_loader.backgrounds["transition"]
+        )
         self.generate_text("transition")
 
         if autoplay:

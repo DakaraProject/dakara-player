@@ -4,17 +4,17 @@
 set -eu
 
 # getting version of the package
-version=$(python setup.py --version)
+version=$(python -c "from setuptools import setup; setup()" --version)
 echo "Creating archive for dakara_player v$version"
 
 # install twine
-pip install --upgrade twine
+pip install --upgrade build twine
 
 # clean the dist directory
 rm -rf dist/*
 
 # create the distribution packages
-python setup.py sdist bdist_wheel
+python -m build
 
 # upload to PyPI
 echo "Package will be uploaded tp Pypi"

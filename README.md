@@ -21,15 +21,14 @@ Installation guidelines are provided over here:
 
 ### System requirements
 
-* Python3, for the magic to take place (supported versions: 3.7, 3.8, 3.9, 3.10 and 3.11).
+* Python3, for the magic to take place (supported versions: see above).
 
-At least one of there players:
+At least one of the following players:
 
 * [VLC](https://www.videolan.org/vlc/) (supported version: 3.0.0 and higher, note that versions 3.0.13 to 3.0.16 cannot be used);
 * [mpv](https://mpv.io/) (supported version: 0.27 and higher).
 
-For 64 bits operating systems, you must install the equivalent version of the requirements.
-Linux and Windows are supported.
+For 64 bits operating systems, you must install the equivalent version of the requirements. Linux and Windows are supported.
 
 ### Virtual environment
 
