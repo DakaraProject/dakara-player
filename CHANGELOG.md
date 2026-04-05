@@ -31,6 +31,10 @@
 
 ## Unreleased
 
+### Removed
+
+- Dropped Python 3.9.
+
 ## 1.9.0 - 2025-03-06
 
 ### Added
