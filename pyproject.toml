@@ -22,7 +22,7 @@ classifiers = [
         "Intended Audience :: End Users/Desktop",
 ]
 dependencies = [
-        "dakarabase>=2.1.0,<2.2.0",
+        "dakarabase>=2.2.0,<2.3.0",
         "filetype>=1.2.0,<1.3.0",
         "Jinja2>=3.1.6,<3.2.0",
         "packaging>=26.0,<27.0",
@@ -42,6 +42,7 @@ dev = [
         "pytest>=9.0.2,<9.1.0",
         "ruff>=0.15.9,<0.16.0",
 ]
+# note: update the build-system section below
 # note: update .pre-commit-config.yaml as well
 
 [project.urls]
@@ -54,7 +55,7 @@ Changelog = "https://github.com/DakaraProject/dakara-player/blob/master/CHANGELO
 dakara-player = "dakara_player.__main__:main"
 
 [build-system]
-requires = ["setuptools>=75.8.0"]
+requires = ["setuptools>=82.0.1"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
