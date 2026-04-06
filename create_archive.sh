@@ -3,12 +3,14 @@
 # strict mode
 set -eu
 
+PACKAGE_NAME="dakara_player"
+
 # getting version of the package
-version=$(python -c "from setuptools import setup; setup()" --version)
-echo "Creating archive for dakara_player v$version"
+version=$(python -c "from $PACKAGE_NAME import __version__; print(__version__)")
+echo "Creating archive for $PACKAGE_NAME v$version"
 
 # install twine
-pip install --upgrade build twine
+pip install --upgrade twine build
 
 # clean the dist directory
 rm -rf dist/*
@@ -17,5 +19,5 @@ rm -rf dist/*
 python -m build
 
 # upload to PyPI
-echo "Package will be uploaded tp Pypi"
-python -m twine upload --repository dakaraplayer dist/*
+echo "Copy pase the following command (with correct repository) to upload $PACKAGE_NAME v$version to Pypi:"
+echo "  python -m twine upload --repository *** dist/*"
