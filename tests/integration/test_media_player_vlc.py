@@ -253,6 +253,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
         """Test to play a playlist entry using instrumental track."""
         # request to use instrumental track
         self.playlist_entry1["use_instrumental"] = True
+        self.playlist_entry1["song"]["instrumental_track"] = 1
 
         with self.get_instance() as (vlc_player, _, _):
             # mock the callbacks
@@ -299,6 +300,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
         """
         # request to use instrumental track
         self.playlist_entry3["use_instrumental"] = True
+        self.playlist_entry3["song"]["instrumental_track"] = 1
 
         with self.get_instance() as (vlc_player, _, _):
             # mock the callbacks
@@ -345,6 +347,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
         # request to use instrumental file
         self.playlist_entry1["song"]["file_path"] = str(self.song2_path)
         self.playlist_entry1["use_instrumental"] = True
+        self.playlist_entry1["song"]["instrumental_file"] = self.audio2_path.name
 
         with self.get_instance() as (vlc_player, _, _):
             # mock the callbacks

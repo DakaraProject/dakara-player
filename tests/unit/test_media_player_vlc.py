@@ -47,7 +47,13 @@ class BaseTestCase(TestCase):
         # create playlist entry
         self.playlist_entry = {
             "id": self.id,
-            "song": {"title": "Song title", "file_path": self.song_file_path},
+            "song": {
+                "title": "Song title",
+                "file_path": self.song_file_path,
+                "directory": str(get_temp_dir()),
+                "instrumental_file": None,
+                "instrumental_track": None,
+            },
             "owner": "me",
             "use_instrumental": False,
         }
@@ -475,14 +481,14 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             mocked_play.assert_called_with("transition")
             mocked_manage_instrumental.assert_not_called()
 
-    @patch.object(MediaPlayerVlc, "get_track_id_audio_list")
+    @patch.object(MediaPlayerVlc, "manage_instrumental_track")
     @patch.object(MediaPlayerVlc, "get_number_tracks")
-    @patch.object(MediaPlayerVlc, "get_instrumental_file")
+    @patch.object(Path, "exists", return_value=True, autospec=True)
     def test_manage_instrumental_file(
         self,
-        mocked_get_instrumental_file,
+        mocked_exists,
         mocked_get_number_tracks,
-        mocked_get_track_id_audio_list,
+        mocked_manage_instrumental_track,
     ):
         """Test to add instrumental file."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
@@ -495,15 +501,15 @@ class MediaPlayerVlcTestCase(BaseTestCase):
 
             # set playlist entry to request instrumental
             self.playlist_entry["use_instrumental"] = True
+            self.playlist_entry["song"]["instrumental_file"] = "audio"
 
             # mocks
-            mocked_get_instrumental_file.return_value = audio_path
             mocked_get_number_tracks.return_value = 2
             mocked_media_song = mocked_instance.media_new_path.return_value
             vlc_player.playlist_entry_data["song"].media = mocked_media_song
 
             # call the method
-            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
+            with self.assertLogs("dakara_player.media_player", "DEBUG") as logger:
                 vlc_player.manage_instrumental(self.playlist_entry, video_path)
 
             # post assertions
@@ -513,22 +519,22 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             self.assertListEqual(
                 logger.output,
                 [
+                    "INFO:dakara_player.media_player.base:Requesting "
+                    f"instrumental file or track for file '{video_path}'",
                     "INFO:dakara_player.media_player.vlc:Requesting to play "
-                    "instrumental file '{}' for '{}'".format(audio_path, video_path),
+                    f"instrumental file '{audio_path}'",
                 ],
             )
 
             # assert the call
-            mocked_get_track_id_audio_list.assert_not_called()
+            mocked_manage_instrumental_track.assert_not_called()
 
-    @patch.object(MediaPlayerVlc, "get_number_tracks")
-    @patch.object(MediaPlayerVlc, "get_instrumental_file")
-    def test_manage_instrumental_file_error_slaves_add(
-        self,
-        mocked_get_instrumental_file,
-        mocked_get_number_tracks,
+    @patch.object(MediaPlayerVlc, "manage_instrumental_file")
+    @patch.object(Path, "exists", return_value=False, autospec=True)
+    def test_manage_instrumental_file_error_not_found(
+        self, mocked_exists, mocked_manage_instrumental_file
     ):
-        """Test to be unable to add instrumental file."""
+        """Test to add instrumental file that does not exist."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             video_path = get_temp_dir() / "video"
             audio_path = get_temp_dir() / "audio"
@@ -539,18 +545,14 @@ class MediaPlayerVlcTestCase(BaseTestCase):
 
             # set playlist entry to request instrumental
             self.playlist_entry["use_instrumental"] = True
+            self.playlist_entry["song"]["instrumental_file"] = "audio"
 
             # mocks
-            mocked_get_instrumental_file.return_value = audio_path
-            mocked_get_number_tracks.return_value = 2
-
-            # make slaves_add method unavailable
-            mocked_media_song = mocked_instance.return_value.media_new_path.return_value
-            mocked_media_song.slaves_add.side_effect = NameError("no slaves_add")
+            mocked_media_song = mocked_instance.media_new_path.return_value
             vlc_player.playlist_entry_data["song"].media = mocked_media_song
 
             # call the method
-            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
+            with self.assertLogs("dakara_player.media_player.base", "DEBUG") as logger:
                 vlc_player.manage_instrumental(self.playlist_entry, video_path)
 
             # post assertions
@@ -560,32 +562,151 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             self.assertListEqual(
                 logger.output,
                 [
+                    "INFO:dakara_player.media_player.base:Requesting "
+                    f"instrumental file or track for file '{video_path}'",
+                    "ERROR:dakara_player.media_player.base:Unable to find requested "
+                    f"instrumental file '{audio_path}'",
+                ],
+            )
+
+            mocked_manage_instrumental_file.assert_not_called()
+
+    @patch.object(MediaPlayerVlc, "get_number_tracks")
+    @patch.object(Path, "exists", return_value=True, autospec=True)
+    def test_manage_instrumental_file_error_slaves_add(
+        self,
+        mocked_exists,
+        mocked_get_number_tracks,
+    ):
+        """Test to be unable to add instrumental file."""
+        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
+            audio_path = get_temp_dir() / "audio"
+
+            # pre assertions
+            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
+            self.assertIsNotNone(vlc_player.kara_folder_path)
+
+            # set playlist entry to request instrumental
+            self.playlist_entry["use_instrumental"] = True
+
+            # mocks
+            mocked_get_number_tracks.return_value = 2
+            mocked_media_song = mocked_instance.media_new_path.return_value
+            vlc_player.playlist_entry_data["song"].media = mocked_media_song
+
+            # make slaves_add method unavailable
+            mocked_media_song = mocked_instance.return_value.media_new_path.return_value
+            mocked_media_song.slaves_add.side_effect = NameError("no slaves_add")
+            vlc_player.playlist_entry_data["song"].media = mocked_media_song
+
+            # call the method
+            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
+                vlc_player.manage_instrumental_file(audio_path)
+
+            # post assertions
+            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
+
+            # assert the effects on logs
+            self.assertListEqual(
+                logger.output,
+                [
                     "INFO:dakara_player.media_player.vlc:Requesting to play "
-                    "instrumental file '{}' for '{}'".format(audio_path, video_path),
+                    f"instrumental file '{audio_path}'",
                     "ERROR:dakara_player.media_player.vlc:This version of VLC does "
                     "not support slaves, cannot add instrumental file",
                 ],
             )
 
+    @patch.object(MediaPlayerVlc, "manage_instrumental_file")
     @patch.object(MediaPlayerVlc, "get_track_id_audio_list")
     @patch.object(MediaPlayerVlc, "get_number_tracks")
-    @patch.object(MediaPlayerVlc, "get_instrumental_file")
     def test_manage_instrumental_track(
         self,
-        mocked_get_instrumental_file,
         mocked_get_number_tracks,
         mocked_get_track_id_audio_list,
+        mocked_manage_instrumental_file,
     ):
         """Test add instrumental track."""
-        with self.get_instance() as (
-            vlc_player,
-            (
-                mocked_instance,
-                _,
-                _,
-            ),
-            _,
-        ):
+        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
+            video_path = get_temp_dir() / "video"
+
+            # pre assertions
+            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
+            self.assertIsNotNone(vlc_player.kara_folder_path)
+
+            # set playlist entry to request instrumental
+            self.playlist_entry["use_instrumental"] = True
+            self.playlist_entry["song"]["instrumental_track"] = 1
+
+            # mocks
+            mocked_get_track_id_audio_list.return_value = [0, 99, 42]
+            mocked_media_song = mocked_instance.media_new_path.return_value
+            vlc_player.playlist_entry_data["song"].media = mocked_media_song
+
+            # call the method
+            with self.assertLogs("dakara_player.media_player", "DEBUG") as logger:
+                vlc_player.manage_instrumental(self.playlist_entry, video_path)
+
+            # post assertions
+            self.assertEqual(vlc_player.playlist_entry_data["song"].track_id_audio, 99)
+
+            # assert the effects on logs
+            self.assertListEqual(
+                logger.output,
+                [
+                    "INFO:dakara_player.media_player.base:Requesting "
+                    f"instrumental file or track for file '{video_path}'",
+                    "INFO:dakara_player.media_player.vlc:Requesting to play "
+                    "instrumental track 1 (#99)",
+                ],
+            )
+
+            # assert the call
+            mocked_get_number_tracks.assert_not_called()
+            mocked_manage_instrumental_file.assert_not_called()
+
+    @patch.object(MediaPlayerVlc, "get_track_id_audio_list")
+    def test_manage_instrumental_no_instrumental_found(
+        self, mocked_get_track_id_audio_list
+    ):
+        """Test to cannot find instrumental."""
+        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
+            # pre assertions
+            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
+
+            # set playlist entry to request instrumental
+            self.playlist_entry["use_instrumental"] = True
+
+            # mocks
+            mocked_get_track_id_audio_list.return_value = [99]
+            mocked_media_song = mocked_instance.return_value.media_new_path.return_value
+            vlc_player.playlist_entry_data["song"].media = mocked_media_song
+
+            # call the method
+            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
+                vlc_player.manage_instrumental_track(1)
+
+            # post assertions
+            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
+
+            # assert the effects on logs
+            self.assertListEqual(
+                logger.output,
+                [
+                    "ERROR:dakara_player.media_player.vlc:Unable to find requested "
+                    "instrumental track 1"
+                ],
+            )
+
+    @patch.object(MediaPlayerVlc, "manage_instrumental_file")
+    @patch.object(MediaPlayerVlc, "manage_instrumental_track")
+    def test_manage_instrumental_no_fields(
+        self,
+        mocked_manage_instrumental_track,
+        mocked_manage_instrumental_file,
+    ):
+        """Test add instrumental track."""
+        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             video_path = get_temp_dir() / "video"
 
             # pre assertions
@@ -596,68 +717,30 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             self.playlist_entry["use_instrumental"] = True
 
             # mocks
-            mocked_get_instrumental_file.return_value = None
-            mocked_get_track_id_audio_list.return_value = [0, 99, 42]
             mocked_media_song = mocked_instance.media_new_path.return_value
             vlc_player.playlist_entry_data["song"].media = mocked_media_song
 
             # call the method
-            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
+            with self.assertLogs("dakara_player.media_player", "DEBUG") as logger:
                 vlc_player.manage_instrumental(self.playlist_entry, video_path)
 
             # post assertions
-            self.assertEqual(vlc_player.playlist_entry_data["song"].track_id_audio, 99)
+            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
 
             # assert the effects on logs
             self.assertListEqual(
                 logger.output,
                 [
-                    "INFO:dakara_player.media_player.vlc:Requesting to play "
-                    "instrumental track of '{}'".format(video_path),
+                    "INFO:dakara_player.media_player.base:Requesting "
+                    "instrumental file or track for file '{}'".format(video_path),
+                    "WARNING:dakara_player.media_player.base:No instrumental "
+                    "file or track specified for file '{}'".format(video_path),
                 ],
             )
 
             # assert the call
-            mocked_get_number_tracks.assert_not_called()
-
-    @patch.object(MediaPlayerVlc, "get_track_id_audio_list")
-    @patch.object(MediaPlayerVlc, "get_instrumental_file")
-    def test_manage_instrumental_no_instrumental_found(
-        self, mocked_get_instrumental_file, mocked_get_track_id_audio_list
-    ):
-        """Test to cannot find instrumental."""
-        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
-            video_path = get_temp_dir() / "video"
-
-            # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
-
-            # set playlist entry to request instrumental
-            self.playlist_entry["use_instrumental"] = True
-
-            # mocks
-            mocked_get_instrumental_file.return_value = None
-            mocked_get_track_id_audio_list.return_value = [99]
-
-            # make slaves_add method unavailable
-            mocked_media_song = mocked_instance.return_value.media_new_path.return_value
-            vlc_player.playlist_entry_data["song"].media = mocked_media_song
-
-            # call the method
-            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
-                vlc_player.manage_instrumental(self.playlist_entry, video_path)
-
-            # post assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
-
-            # assert the effects on logs
-            self.assertListEqual(
-                logger.output,
-                [
-                    "WARNING:dakara_player.media_player.vlc:Cannot find instrumental "
-                    "file or track for file '{}'".format(video_path)
-                ],
-            )
+            mocked_manage_instrumental_file.assert_not_called()
+            mocked_manage_instrumental_track.assert_not_called()
 
     @patch.object(MediaPlayerVlc, "is_playing_this")
     def test_set_pause_idle(self, mocked_is_playing_this):

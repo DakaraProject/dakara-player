@@ -10,7 +10,6 @@ from dakara_base.directory import directories
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import Worker
 
-from dakara_player.audio import get_audio_files
 from dakara_player.background import BackgroundLoader
 from dakara_player.text import TextGenerator
 from dakara_player.version import __version__
@@ -387,6 +386,63 @@ class MediaPlayer(Worker, ABC):
 
         self.clear_playlist_entry_player()
 
+    def manage_instrumental(self, playlist_entry, file_path):
+        """Manage the requested instrumental version of the song.
+
+        Instrumental audio is searched first in the instrumental file, then in
+        instrumental track of the video file. This data was extracted by the
+        feeder and is considered to be exact.
+
+        Args:
+            playlist_entry (dict): Playlist entry data. Must contain the key
+                `use_instrumental`.
+            file_path (pathlib.Path): Path of the song file.
+        """
+        logger.info("Requesting instrumental file or track for file '%s'", file_path)
+
+        # attempt to add instrumental file
+        if audio_file := playlist_entry["song"]["instrumental_file"]:
+            audio_path = Path(playlist_entry["song"]["directory"]) / audio_file
+
+            if not audio_path.exists():
+                logger.error(
+                    "Unable to find requested instrumental file '%s'", audio_path
+                )
+                return
+
+            self.manage_instrumental_file(audio_path)
+            return
+
+        # attempt to add instrumental track
+        if audio_id := playlist_entry["song"]["instrumental_track"]:
+            self.manage_instrumental_track(audio_id)
+            return
+
+        # display a warning if nothing worked out
+        logger.warning(
+            "No instrumental file or track specified for file '%s'", file_path
+        )
+
+    @abstractmethod
+    def manage_instrumental_file(self, audio_path):
+        """Manage instrumental file.
+
+        Args:
+            audio_path (pathilb.Path): Path of the instrumental file.
+
+        Must be overriden.
+        """
+
+    @abstractmethod
+    def manage_instrumental_track(self, audio_id):
+        """Manage instrumental file.
+
+        Args:
+            audio_id (int): ID of the instrumental track.
+
+        Must be overriden.
+        """
+
     @abstractmethod
     def clear_playlist_entry_player(self):
         """Clean playlist entry data after being played.
@@ -402,27 +458,6 @@ class MediaPlayer(Worker, ABC):
             callback (function): Callback.
         """
         self.callbacks[name] = callback
-
-    @staticmethod
-    def get_instrumental_file(filepath):
-        """Get the instrumental audio file associated to a given song file.
-
-        Consider that this instrumental file should be the only one audio file found.
-
-        Args:
-            filepath (pathlib.Path): Path to the media file.
-
-        Returns:
-            pathlib.Path: Path to the instrumental file. None if not found.
-        """
-        audio_files = get_audio_files(filepath)
-
-        # accept only one audio file
-        if len(audio_files) == 1:
-            return audio_files[0]
-
-        # otherwise return None
-        return None
 
     def check_kara_folder_path(self):
         """Check if the karaoke folder exists."""
