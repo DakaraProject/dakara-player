@@ -31,6 +31,10 @@
 
 ## Unreleased
 
+### Changed
+
+- The discovery of instrumental file or track is now delegated to the feeder, which means that this data is given by the server. There are no re-discovering processes, but some checks are performed (depending on the media player).
+
 ### Removed
 
 - Dropped Python 3.9.
