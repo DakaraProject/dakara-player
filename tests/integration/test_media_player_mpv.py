@@ -228,6 +228,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
         """Test to play a playlist entry using instrumental track."""
         # request to use instrumental track
         self.playlist_entry1["use_instrumental"] = True
+        self.playlist_entry1["song"]["instrumental_track"] = 1
 
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks
@@ -268,6 +269,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
         # request to use instrumental file
         self.playlist_entry1["song"]["file_path"] = self.song2_path
         self.playlist_entry1["use_instrumental"] = True
+        self.playlist_entry1["song"]["instrumental_file"] = self.audio2_path.name
 
         with self.get_instance() as (mpv_player, _, _):
             # mock the callbacks

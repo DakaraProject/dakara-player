@@ -13,6 +13,7 @@ from dakara_player.media_player.base import (
     VersionNotFoundError,
 )
 from dakara_player.media_player.mpv import (
+    USE_PATH_AUDIO,
     MediaPlayerMpv,
     MediaPlayerMpvOld,
     MediaPlayerMpvPost0330,
@@ -186,8 +187,15 @@ class MediaPlayerMpvModelTestCase(TestCase):
         # create plàylist entry
         self.playlist_entry = {
             "id": self.id,
-            "song": {"title": "Song title", "file_path": self.song_file_path},
+            "song": {
+                "title": "Song title",
+                "file_path": self.song_file_path,
+                "directory": str(get_temp_dir()),
+                "instrumental_file": None,
+                "instrumental_track": None,
+            },
             "owner": "me",
+            "use_instrumental": False,
         }
 
     def get_instance(
@@ -754,6 +762,72 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
 
         mpv_player.player.play.assert_called_with("test_file")
         self.assertNotEqual(mpv_player.player.sub_files, [None])
+
+    @patch.object(MediaPlayerMpv, "manage_instrumental_track")
+    @patch.object(Path, "exists", return_value=True, autospec=True)
+    def test_manage_instrumental_file(
+        self, mocked_exists, mocked_manage_instrumental_track
+    ):
+        """Test to add instrumental file."""
+        audio_path = get_temp_dir() / "audio"
+
+        mpv_player, _, _ = self.get_instance()
+
+        self.playlist_entry["use_instrumental"] = True
+        self.playlist_entry["song"]["instrumental_file"] = "audio"
+
+        # pre asserts
+        self.assertIsNone(mpv_player.playlist_entry_data["song"].track_id_audio)
+        self.assertIsNone(mpv_player.playlist_entry_data["song"].path_audio)
+
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
+            mpv_player.manage_instrumental(self.playlist_entry, self.song_file_path)
+
+        self.assertEqual(
+            mpv_player.playlist_entry_data["song"].track_id_audio, USE_PATH_AUDIO
+        )
+        self.assertEqual(mpv_player.playlist_entry_data["song"].path_audio, audio_path)
+
+        self.assertListEqual(
+            logger.output,
+            [
+                "INFO:dakara_player.media_player.mpv:Requesting to play "
+                f"instrumental file '{audio_path}'",
+            ],
+        )
+
+        mocked_manage_instrumental_track.assert_not_called()
+
+    @patch.object(MediaPlayerMpv, "manage_instrumental_file")
+    @patch.object(Path, "exists", return_value=True, autospec=True)
+    def test_manage_instrumental_track(
+        self, mocked_exists, mocked_manage_instrumental_file
+    ):
+        """Test to add instrumental track."""
+        mpv_player, _, _ = self.get_instance()
+
+        self.playlist_entry["use_instrumental"] = True
+        self.playlist_entry["song"]["instrumental_track"] = 1
+
+        # pre asserts
+        self.assertIsNone(mpv_player.playlist_entry_data["song"].track_id_audio)
+        self.assertIsNone(mpv_player.playlist_entry_data["song"].path_audio)
+
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
+            mpv_player.manage_instrumental(self.playlist_entry, self.song_file_path)
+
+        self.assertEqual(mpv_player.playlist_entry_data["song"].track_id_audio, 2)
+        self.assertIsNone(mpv_player.playlist_entry_data["song"].path_audio)
+
+        self.assertListEqual(
+            logger.output,
+            [
+                "INFO:dakara_player.media_player.mpv:Requesting to play "
+                "instrumental track 2",
+            ],
+        )
+
+        mocked_manage_instrumental_file.assert_not_called()
 
 
 class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
