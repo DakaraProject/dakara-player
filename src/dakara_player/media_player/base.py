@@ -396,13 +396,14 @@ class MediaPlayer(Worker, ABC):
         Args:
             playlist_entry (dict): Playlist entry data. Must contain the key
                 `use_instrumental`.
-            file_path (pathlib.Path): Path of the song file.
+            file_path (pathlib.Path): Absolute path of the song file.
         """
         logger.info("Requesting instrumental file or track for file '%s'", file_path)
 
         # attempt to add instrumental file
         if audio_file := playlist_entry["song"]["instrumental_file"]:
-            audio_path = Path(playlist_entry["song"]["directory"]) / audio_file
+            # get absolute path from song file path
+            audio_path = file_path.parent / audio_file
 
             if not audio_path.exists():
                 logger.error(
@@ -428,7 +429,7 @@ class MediaPlayer(Worker, ABC):
         """Manage instrumental file.
 
         Args:
-            audio_path (pathilb.Path): Path of the instrumental file.
+            audio_path (pathilb.Path): Absolute path of the instrumental file.
 
         Must be overriden.
         """

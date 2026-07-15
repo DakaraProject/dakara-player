@@ -468,7 +468,7 @@ class MediaPlayerVlc(MediaPlayer):
         audio track of the media).
 
         Args:
-            audio_path (pathilb.Path): Path of the instrumental file.
+            audio_path (pathilb.Path): Absolute path of the instrumental file.
         """
         number_tracks = self.get_number_tracks(self.playlist_entry_data["song"].media)
 

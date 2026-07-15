@@ -571,7 +571,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         discover and set the instrumental track when the media starts.
 
         Args:
-            audio_path (pathilb.Path): Path of the instrumental file.
+            audio_path (pathilb.Path): Absolute path of the instrumental file.
         """
         logger.info(
             "Requesting to play instrumental file '%s'",
