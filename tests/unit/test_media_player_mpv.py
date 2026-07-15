@@ -181,16 +181,15 @@ class MediaPlayerMpvModelTestCase(TestCase):
         self.id = 42
 
         # create playlist entry file path
-        self.song_file_path = Path("file")
-        self.subtitle_file_path = Path("file_sub")
+        self.song_file_path = get_temp_dir() / "file"
+        self.subtitle_file_path = get_temp_dir() / "file_sub"
 
         # create plàylist entry
         self.playlist_entry = {
             "id": self.id,
             "song": {
                 "title": "Song title",
-                "file_path": self.song_file_path,
-                "directory": str(get_temp_dir()),
+                "file_path": "file",
                 "instrumental_file": None,
                 "instrumental_track": None,
             },

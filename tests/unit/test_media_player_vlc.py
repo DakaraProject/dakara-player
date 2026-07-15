@@ -50,7 +50,6 @@ class BaseTestCase(TestCase):
             "song": {
                 "title": "Song title",
                 "file_path": self.song_file_path,
-                "directory": str(get_temp_dir()),
                 "instrumental_file": None,
                 "instrumental_track": None,
             },
