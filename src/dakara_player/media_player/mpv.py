@@ -564,39 +564,35 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         if playlist_entry["use_instrumental"]:
             self.manage_instrumental(playlist_entry, file_path)
 
-    def manage_instrumental(self, playlist_entry, file_path):
-        """Manage the requested instrumental track.
-
-        Instrumental track is searched first in audio files having the same
-        name as the video file, then in extra audio tracks of the video file.
+    def manage_instrumental_file(self, audio_path):
+        """Manage instrumental file.
 
         As mpv cannot fetch information of a media in advance, we have to
         discover and set the instrumental track when the media starts.
 
         Args:
-            playlist_entry (dict): Playlist entry data. Must contain the key
-                `use_instrumental`.
-            file_path (pathlib.Path): Path of the song file.
+            audio_path (pathilb.Path): Absolute path of the instrumental file.
         """
-        # get instrumental file if possible
-        audio_path = self.get_instrumental_file(file_path)
+        logger.info(
+            "Requesting to play instrumental file '%s'",
+            audio_path,
+        )
+        self.playlist_entry_data["song"].track_id_audio = USE_PATH_AUDIO
+        self.playlist_entry_data["song"].path_audio = audio_path
 
-        if audio_path:
-            self.playlist_entry_data["song"].track_id_audio = USE_PATH_AUDIO
-            self.playlist_entry_data["song"].path_audio = audio_path
-            logger.info(
-                "Requesting to play instrumental file '%s' for '%s'",
-                audio_path,
-                file_path,
-            )
+    def manage_instrumental_track(self, audio_id):
+        """Manage instrumental track.
 
-            return
+        Mark to use the `audio_id` track when starting to read the media. Mpv
+        uses different index for each track, so we can safely request the
+        second audio track.
 
-        # otherwise mark to use the 2nd track when starting to read the media
-        # mpv use different index for each track, so we can safely request the
-        # second audio track
-        self.playlist_entry_data["song"].track_id_audio = 2
-        logger.info("Requesting to play instrumental track of '%s'", file_path)
+        Args:
+            audio_id (int): ID of the instrumental track.
+        """
+        track_id = audio_id + 1
+        logger.info("Requesting to play instrumental track %i", track_id)
+        self.playlist_entry_data["song"].track_id_audio = track_id
 
     def clear_playlist_entry_player(self):
         """Clean playlist entry data after being played."""

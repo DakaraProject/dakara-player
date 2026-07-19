@@ -460,64 +460,58 @@ class MediaPlayerVlc(MediaPlayer):
         if playlist_entry["use_instrumental"]:
             self.manage_instrumental(playlist_entry, file_path)
 
-    def manage_instrumental(self, playlist_entry, file_path):
-        """Manage the requested instrumental track.
+    def manage_instrumental_file(self, audio_path):
+        """Manage instrumental file.
 
-        Instrumental track is searched first in audio files having the same
-        name as the video file, then in extra audio tracks of the video file.
+        If audio file is present, request to add the file to the media as a
+        slave and register to play this extra track (which will be the last
+        audio track of the media).
 
         Args:
-            playlist_entry (dict): Playlist entry data. Must contain the key
-                `use_instrumental`.
-            file_path (pathlib.Path): Path of the song file.
+            audio_path (pathilb.Path): Absolute path of the instrumental file.
         """
-        # get instrumental file if possible
-        audio_path = self.get_instrumental_file(file_path)
+        number_tracks = self.get_number_tracks(self.playlist_entry_data["song"].media)
 
-        # if audio file is present, request to add the file to the media
-        # as a slave and register to play this extra track (which will be
-        # the last audio track of the media)
-        if audio_path:
-            number_tracks = self.get_number_tracks(
-                self.playlist_entry_data["song"].media
+        logger.info(
+            "Requesting to play instrumental file '%s'",
+            audio_path,
+        )
+        try:
+            # try to add the instrumental file
+            self.playlist_entry_data["song"].media.slaves_add(
+                vlc.MediaSlaveType.audio, 4, path_to_mrl(audio_path).encode()
             )
-            logger.info(
-                "Requesting to play instrumental file '%s' for '%s'",
-                audio_path,
-                file_path,
+
+        except NameError:
+            # otherwise fallback to default
+            logger.error(
+                "This version of VLC does not support slaves, cannot add "
+                "instrumental file"
             )
-            try:
-                # try to add the instrumental file
-                self.playlist_entry_data["song"].media.slaves_add(
-                    vlc.MediaSlaveType.audio, 4, path_to_mrl(audio_path).encode()
-                )
-
-            except NameError:
-                # otherwise fallback to default
-                logger.error(
-                    "This version of VLC does not support slaves, cannot add "
-                    "instrumental file"
-                )
-                return
-
-            self.playlist_entry_data["song"].track_id_audio = number_tracks
             return
 
+        self.playlist_entry_data["song"].track_id_audio = number_tracks
+
+    def manage_instrumental_track(self, audio_id):
+        """Manage instrumental track.
+
+        Args:
+            audio_id (int): ID of the instrumental track.
+        """
         # get audio track ids
         track_id_audio_list = self.get_track_id_audio_list(
             self.playlist_entry_data["song"].media
         )
 
-        # if more than 1 audio track is present, register to play the 2nd one
-        if len(track_id_audio_list) > 1:
-            logger.info("Requesting to play instrumental track of '%s'", file_path)
-            self.playlist_entry_data["song"].track_id_audio = track_id_audio_list[1]
+        if len(track_id_audio_list) <= audio_id:
+            logger.error("Unable to find requested instrumental track %i", audio_id)
             return
 
-        # otherwise, fallback to register to play the first track and log it
-        logger.warning(
-            "Cannot find instrumental file or track for file '%s'", file_path
+        track_id = track_id_audio_list[audio_id]
+        logger.info(
+            "Requesting to play instrumental track %i (#%i)", audio_id, track_id
         )
+        self.playlist_entry_data["song"].track_id_audio = track_id
 
     def clear_playlist_entry_player(self):
         """Clean playlist entry data after being played."""

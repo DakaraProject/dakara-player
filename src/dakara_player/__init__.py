@@ -5,7 +5,6 @@ Interface between the Dakara server and a media player, for the Dakara project.
 """
 
 from dakara_player import (
-    audio,
     background,
     font,
     manager,
@@ -21,7 +20,6 @@ from dakara_player import (
 from dakara_player.version import __date__, __version__
 
 __all__ = [
-    "audio",
     "manager",
     "mrl",
     "text",
