@@ -123,8 +123,14 @@ class MediaPlayerVlc(MediaPlayer):
         )
 
         # VLC objects
-        self.instance = vlc.Instance(config_vlc.get("instance_parameters") or [])
-        self.player = self.instance.media_player_new()
+        instance = vlc.Instance(config_vlc.get("instance_parameters") or [])
+        if instance is None:
+            raise UnexpectedInstanceParameterError("Unexpected instance parameter")
+
+        self.instance = instance
+
+        player = self.instance.media_player_new()
+        self.player = player
         self.event_manager = self.player.event_manager()
 
         # vlc callbacks
@@ -804,3 +810,7 @@ class MediaSong(Media):
 
 class VlcTooOldError(DakaraError):
     """Error raised if VLC is too old."""
+
+
+class UnexpectedInstanceParameterError(DakaraError):
+    """Error raised when passing incorrect parameters to  the VLC instance."""
