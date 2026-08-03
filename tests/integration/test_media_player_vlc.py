@@ -4,7 +4,7 @@ from queue import Queue
 from tempfile import TemporaryDirectory
 from threading import Event
 from unittest import skipIf, skipUnless
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 try:
     import vlc
@@ -19,7 +19,6 @@ from dakara_player.media_player.base import IDLE_BG_NAME, TRANSITION_BG_NAME
 from dakara_player.media_player.vlc import (
     METADATA_KEYS_COUNT,
     MediaPlayerVlc,
-    UnexpectedInstanceParameterError,
 )
 from dakara_player.mrl import mrl_to_path
 from tests.integration.base import TestCasePollerKara
@@ -116,18 +115,6 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
                 # assert no errors to fail test if any
                 self.assertFalse(vlc_player.stop.is_set())
-
-    @patch(
-        "dakara_player.media_player.vlc.vlc.Instance", return_value=None, autospec=True
-    )
-    @patch.object(MediaPlayerVlc, "is_available", return_value=True, autospec=True)
-    def test_init_invalid_instance_parameters(
-        self, mocked_is_available, mocked_instance
-    ):
-        """Test to pass invalid instance parameters."""
-        with self.assertRaises(UnexpectedInstanceParameterError):
-            with self.get_instance():
-                pass
 
     def test_metadata_keys_count(self):
         """Test the number of metadata keys."""

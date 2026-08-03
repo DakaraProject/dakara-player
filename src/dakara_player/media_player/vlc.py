@@ -123,11 +123,7 @@ class MediaPlayerVlc(MediaPlayer):
         )
 
         # VLC objects
-        instance = vlc.Instance(config_vlc.get("instance_parameters") or [])
-        if instance is None:
-            raise UnexpectedInstanceParameterError("Unexpected instance parameter")
-
-        self.instance = instance
+        self.instance = get_instance(config_vlc.get("instance_parameters"))
 
         player = self.instance.media_player_new()
         self.player = player
@@ -790,6 +786,27 @@ def get_metadata(media):
             continue
 
     raise ValueError("This media has no set metadata")
+
+
+def get_instance(instance_parameters=None):
+    """Get a VLC instance with parameters.
+
+    Args:
+        instance_parameters (list of str): List of parameters. Must be in the
+            form "--option=value".
+
+    Returns:
+        vlc.Instance: New instance.
+
+    Raises:
+        UnexpectedInstanceParameterError: If unexpected parameters are
+            passed.
+    """
+    instance = vlc.Instance(instance_parameters or [])
+    if instance is None:
+        raise UnexpectedInstanceParameterError("Unexpected instance parameter")
+
+    return instance
 
 
 class Media:

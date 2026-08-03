@@ -24,7 +24,9 @@ from dakara_player.media_player.base import (
 )
 from dakara_player.media_player.vlc import (
     MediaPlayerVlc,
+    UnexpectedInstanceParameterError,
     VlcTooOldError,
+    get_instance,
     get_metadata,
     set_metadata,
 )
@@ -1422,3 +1424,14 @@ class OnPlayingThisTestCase(BaseTestCase):
 
         with self.get_instance() as (player, _, _):
             self.assertEqual(function_decorated(player), 42)
+
+
+class GetInstanceTestCase(TestCase):
+
+    @patch(
+        "dakara_player.media_player.vlc.vlc.Instance", return_value=None, autospec=True
+    )
+    def test_unexpected_instance_parameters(self, mocked_instance):
+        """Test to pass unexpected instance parameters."""
+        with self.assertRaises(UnexpectedInstanceParameterError):
+            get_instance()
