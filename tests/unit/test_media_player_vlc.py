@@ -1428,10 +1428,9 @@ class OnPlayingThisTestCase(BaseTestCase):
 
 class GetInstanceTestCase(TestCase):
 
-    @patch(
-        "dakara_player.media_player.vlc.vlc.Instance", return_value=None, autospec=True
-    )
-    def test_unexpected_instance_parameters(self, mocked_instance):
+    @patch("dakara_player.media_player.vlc.vlc", autospec=True)
+    def test_unexpected_instance_parameters(self, mocked_vlc):
         """Test to pass unexpected instance parameters."""
+        mocked_vlc.Instance.return_value = None
         with self.assertRaises(UnexpectedInstanceParameterError):
             get_instance()
