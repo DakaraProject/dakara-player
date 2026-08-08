@@ -31,6 +31,10 @@
 
 ## Unreleased
 
+### Added
+
+- When using VLC, the player will properly crash if unexpected instance parameters are given.
+
 ### Changed
 
 - The discovery of instrumental file or track is now delegated to the feeder, which means that this data is given by the server. There are no re-discovering processes, but some checks are performed (whether the instrumental file exists, and if the instrumental track exists).

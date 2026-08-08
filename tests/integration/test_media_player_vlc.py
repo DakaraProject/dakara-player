@@ -16,7 +16,10 @@ from dakara_base.config import Config
 from func_timeout import func_set_timeout
 
 from dakara_player.media_player.base import IDLE_BG_NAME, TRANSITION_BG_NAME
-from dakara_player.media_player.vlc import METADATA_KEYS_COUNT, MediaPlayerVlc
+from dakara_player.media_player.vlc import (
+    METADATA_KEYS_COUNT,
+    MediaPlayerVlc,
+)
 from dakara_player.mrl import mrl_to_path
 from tests.integration.base import TestCasePollerKara
 

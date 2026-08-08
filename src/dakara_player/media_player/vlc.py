@@ -123,8 +123,10 @@ class MediaPlayerVlc(MediaPlayer):
         )
 
         # VLC objects
-        self.instance = vlc.Instance(config_vlc.get("instance_parameters") or [])
-        self.player = self.instance.media_player_new()
+        self.instance = get_instance(config_vlc.get("instance_parameters"))
+
+        player = self.instance.media_player_new()
+        self.player = player
         self.event_manager = self.player.event_manager()
 
         # vlc callbacks
@@ -786,6 +788,38 @@ def get_metadata(media):
     raise ValueError("This media has no set metadata")
 
 
+def get_instance(instance_parameters=None):
+    """Get a VLC instance with parameters.
+
+    Args:
+        instance_parameters (list of str): List of parameters. Must be in the
+            form "--option=value".
+
+    Returns:
+        vlc.Instance: New instance.
+
+    Raises:
+        UnavailableInstanceError: If an instance cannot be obtained without
+            parameters.
+        UnexpectedInstanceParameterError: If unexpected parameters are
+            passed.
+    """
+    # if no parameters are passed, the instance should never be None
+    if not instance_parameters:
+        instance = vlc.Instance()
+        if instance is None:
+            raise UnavailableInstanceError("Unable to get a VLC instance")
+
+        return instance
+
+    # if parameters are passed, an unexpected parameter makes the instance None
+    instance = vlc.Instance(instance_parameters)
+    if instance is None:
+        raise UnexpectedInstanceParameterError("Unexpected VLC instance parameter")
+
+    return instance
+
+
 class Media:
     """Media object."""
 
@@ -804,3 +838,11 @@ class MediaSong(Media):
 
 class VlcTooOldError(DakaraError):
     """Error raised if VLC is too old."""
+
+
+class UnexpectedInstanceParameterError(DakaraError):
+    """Error raised when passing incorrect parameters to  the VLC instance."""
+
+
+class UnavailableInstanceError(DakaraError):
+    """Error raised when a VLC instance cannot be obtained."""
