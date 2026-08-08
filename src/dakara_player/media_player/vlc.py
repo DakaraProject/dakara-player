@@ -799,12 +799,23 @@ def get_instance(instance_parameters=None):
         vlc.Instance: New instance.
 
     Raises:
+        UnavailableInstanceError: If an instance cannot be obtained without
+            parameters.
         UnexpectedInstanceParameterError: If unexpected parameters are
             passed.
     """
-    instance = vlc.Instance(instance_parameters or [])
+    # if no parameters are passed, the instance should never be None
+    if not instance_parameters:
+        instance = vlc.Instance()
+        if instance is None:
+            raise UnavailableInstanceError("Unable to get a VLC instance")
+
+        return instance
+
+    # if parameters are passed, an unexpected parameter makes the instance None
+    instance = vlc.Instance(instance_parameters)
     if instance is None:
-        raise UnexpectedInstanceParameterError("Unexpected instance parameter")
+        raise UnexpectedInstanceParameterError("Unexpected VLC instance parameter")
 
     return instance
 
@@ -831,3 +842,7 @@ class VlcTooOldError(DakaraError):
 
 class UnexpectedInstanceParameterError(DakaraError):
     """Error raised when passing incorrect parameters to  the VLC instance."""
+
+
+class UnavailableInstanceError(DakaraError):
+    """Error raised when a VLC instance cannot be obtained."""

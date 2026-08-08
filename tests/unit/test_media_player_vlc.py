@@ -24,6 +24,7 @@ from dakara_player.media_player.base import (
 )
 from dakara_player.media_player.vlc import (
     MediaPlayerVlc,
+    UnavailableInstanceError,
     UnexpectedInstanceParameterError,
     VlcTooOldError,
     get_instance,
@@ -1426,11 +1427,27 @@ class OnPlayingThisTestCase(BaseTestCase):
             self.assertEqual(function_decorated(player), 42)
 
 
+@patch("dakara_player.media_player.vlc.vlc", autospec=True)
 class GetInstanceTestCase(TestCase):
 
-    @patch("dakara_player.media_player.vlc.vlc", autospec=True)
-    def test_unexpected_instance_parameters(self, mocked_vlc):
-        """Test to pass unexpected instance parameters."""
+    def test_parameters_unexpected(self, mocked_vlc):
+        """Test to pass unexpected parameters."""
         mocked_vlc.Instance.return_value = None
         with self.assertRaises(UnexpectedInstanceParameterError):
+            get_instance(["parameter"])
+
+    def test_parameters(self, mocked_vlc):
+        """Test to pass parameters."""
+        self.assertIs(mocked_vlc.Instance.return_value, get_instance(["parameter"]))
+        mocked_vlc.Instance.assert_called_with(["parameter"])
+
+    def test_no_parameters_unavailable(self, mocked_vlc):
+        """Test unavailable instance."""
+        mocked_vlc.Instance.return_value = None
+        with self.assertRaises(UnavailableInstanceError):
             get_instance()
+
+    def test_no_parameters(self, mocked_vlc):
+        """Test instance."""
+        self.assertIs(mocked_vlc.Instance.return_value, get_instance())
+        mocked_vlc.Instance.assert_called_with()
