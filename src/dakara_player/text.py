@@ -8,7 +8,7 @@ from pathlib import Path
 from dakara_base.exceptions import DakaraError
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PackageLoader
 
-from dakara_player.filters import filter_duration
+from dakara_player.filters import filter_duration_hhmm, filter_duration_ss
 
 ICON_MAP_FILE = "line-awesome.json"
 
@@ -113,7 +113,8 @@ class TextGenerator:
         self.environment.filters["link_type_name"] = self.convert_link_type_name
 
         # add filter for duration
-        self.environment.filters["duration"] = filter_duration
+        self.environment.filters["duration_hhmm"] = filter_duration_hhmm
+        self.environment.filters["duration_ss"] = filter_duration_ss
 
         # check loaded templates
         for name, file_name in self.filenames.items():

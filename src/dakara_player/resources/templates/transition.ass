@@ -18,7 +18,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 ; title
 Dialogue: 0,0:00:00.00,0:00:05.00,title,,{% if playlist_entry.use_instrumental %}190{% else %}0{% endif %},0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ playlist_entry.song.title }}
 ; duration
-Dialogue: 0,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,duration,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ playlist_entry.song.duration|duration }}
+Dialogue: 0,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,duration,,0,0,0,,{% if fade_in %}{\fad(500, 0)}{% endif %}{{ playlist_entry.song.duration|duration_hhmm }}{{ playlist_entry.song.duration|duration_ss }}
 ; use instrumental icon
 {% if playlist_entry.use_instrumental %}
 Dialogue: 0,0:00:00.{% if fade_in %}10{% else %}00{% endif %},0:00:05.00,instrumental,,0,0,0,,{\fad(500, 0)}{\fnla-solid-900}{{ "microphone-slash"|icon }}
