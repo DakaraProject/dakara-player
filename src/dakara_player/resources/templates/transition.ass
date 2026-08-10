@@ -8,10 +8,10 @@ PlayResY: 1080
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: title,Roboto Thin,70,&H00191919,&H00191919,&H00A01286,&H00000000,0,0,0,0,100,100,0,0,3,20,0,1,70,300,585,1
-Style: detail,Roboto Light,50,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,70,300,540,1
-Style: duration,Roboto Thin,100,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,3,1600,70,585,1
-Style: instrumental,Roboto Light,65,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,1,70,1780,585,1
+Style: title,Roboto ExtraLight,70,&H00191919,&H00191919,&H00A01286,&H00000000,0,0,0,0,100,100,0,0,3,20,0,1,70,300,585,1
+Style: detail,Roboto Regular,50,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,70,300,540,1
+Style: duration,Roboto ExtraLight,100,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,3,1600,70,585,1
+Style: instrumental,Roboto Regular,65,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,1,70,1780,585,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
