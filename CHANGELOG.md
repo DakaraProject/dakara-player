@@ -34,6 +34,7 @@
 ### Added
 
 - When using VLC, the player will properly crash if unexpected instance parameters are given.
+- More Roboto font files are included, allowing to display characters other than latin.
 
 ### Changed
 
