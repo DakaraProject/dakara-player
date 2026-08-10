@@ -8,6 +8,8 @@ from pathlib import Path
 from dakara_base.exceptions import DakaraError
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PackageLoader
 
+from dakara_player.filters import filter_duration_hhmm, filter_duration_ss
+
 ICON_MAP_FILE = "line-awesome.json"
 
 LINK_TYPE_NAMES = {
@@ -111,7 +113,8 @@ class TextGenerator:
         self.environment.filters["link_type_name"] = self.convert_link_type_name
 
         # add filter for duration
-        self.environment.filters["duration"] = self.convert_duration
+        self.environment.filters["duration_hhmm"] = filter_duration_hhmm
+        self.environment.filters["duration_ss"] = filter_duration_ss
 
         # check loaded templates
         for name, file_name in self.filenames.items():
@@ -179,34 +182,6 @@ class TextGenerator:
             str: Long name of the link type.
         """
         return LINK_TYPE_NAMES[link_type]
-
-    @staticmethod
-    def convert_duration(duration):
-        """Format a duration in seconds.
-
-        Args:
-            duration (int): Duration in seconds.
-
-        Returns:
-            str: Formatted duration, either:
-
-            - `H:MM:SS` if the duration exceeds one hour;
-            - `M:SS` otherwise.
-        """
-        if duration is None:
-            return ""
-
-        try:
-            hours, seconds = divmod(duration, 3600)
-            minutes, seconds = divmod(seconds, 60)
-
-        except TypeError:
-            return str(duration)
-
-        if hours > 0:
-            return "{:d}:{:02d}:{:02d}".format(hours, minutes, seconds)
-
-        return "{:d}:{:02d}".format(minutes, seconds)
 
     def get_text(self, template_name, data):
         """Generate the text for the desired template.

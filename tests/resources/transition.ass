@@ -18,7 +18,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 ; title
 Dialogue: 0,0:00:00.00,0:00:05.00,title,,190,0,0,,{\fad(500, 0)}Song title
 ; duration
-Dialogue: 0,0:00:00.10,0:00:05.00,duration,,0,0,0,,{\fad(500, 0)}4:23
+Dialogue: 0,0:00:00.10,0:00:05.00,duration,,0,0,0,,{\fad(500, 0)}4{\fs80}:23
 ; use instrumental icon
 
 Dialogue: 0,0:00:00.10,0:00:05.00,instrumental,,0,0,0,,{\fad(500, 0)}{\fnla-solid-900}
