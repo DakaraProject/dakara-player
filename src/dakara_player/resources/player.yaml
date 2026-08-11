@@ -1,3 +1,4 @@
+---
 # Parameters for the player
 player:
   # Name of the media player to use ('vlc' or 'mpv')
@@ -83,7 +84,7 @@ player:
     # quantization artifacts, at the expense of very slightly blurring some of the
     # finest details. In practice, it's virtually always an improvement - the only
     # reason to disable it would be for performance.
-    deband: yes
+    deband: true
 
   # Parameters for templates
   # Templates are used to display some information on the idle or the
