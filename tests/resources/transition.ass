@@ -8,15 +8,15 @@ PlayResY: 1080
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: title,Roboto ExtraLight,70,&H00191919,&H00191919,&H00A01286,&H00000000,0,0,0,0,100,100,0,0,3,20,0,1,70,300,585,1
-Style: detail,Roboto Regular,50,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,70,300,540,1
-Style: duration,Roboto ExtraLight,100,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,3,1600,70,585,1
-Style: instrumental,Roboto Regular,65,&H00A01286,&H00191919,&H00333333,&H00000000,0,0,0,0,100,100,0,0,1,0,0,1,70,1780,585,1
+Style: title,Roboto ExtraLight,90,&H00E067C6,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,1,70,300,580,1
+Style: detail,Roboto Regular,42,&H00E067C6,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,70,300,520,1
+Style: duration,Roboto ExtraLight,100,&H00E067C6,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,3,1600,70,578,1
+Style: instrumental,Roboto Regular,60,&H00E067C6,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,1,70,1780,591,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 ; title
-Dialogue: 0,0:00:00.00,0:00:05.00,title,,190,0,0,,{\fad(500, 0)}Song title
+Dialogue: 0,0:00:00.00,0:00:05.00,title,,180,0,0,,{\fad(500, 0)}Song title
 ; duration
 Dialogue: 0,0:00:00.10,0:00:05.00,duration,,0,0,0,,{\fad(500, 0)}4{\fs80}:23
 ; use instrumental icon
@@ -25,14 +25,14 @@ Dialogue: 0,0:00:00.10,0:00:05.00,instrumental,,0,0,0,,{\fad(500, 0)}{\fnla-soli
 
 ; artists (on one line)
 
-Dialogue: 1,0:00:00.10,0:00:05.00,detail,,190,0,0,,{\fad(500, 0)}{\fnla-solid-900\fs40}{\r} Artist name {\fnla-solid-900\fs40}{\r} Other artist 
+Dialogue: 1,0:00:00.10,0:00:05.00,detail,,180,0,0,,{\fad(500, 0)}{\fnla-solid-900\fs40}{\r} Artist name {\fnla-solid-900\fs40}{\r} Other artist 
 
 ; works (one line per work)
 
-Dialogue: 1,0:00:00.10,0:00:05.00,detail,,190,0,0,,{\fad(500, 0)}{\fnla-solid-900\fs40}{\r} Work title {\alpha&H80&}Subtitle of the work{\r} OP1
+Dialogue: 1,0:00:00.10,0:00:05.00,detail,,180,0,0,,{\fad(500, 0)}{\fnla-solid-900\fs40}{\r} Work title (Subtitle of the work) OP1
 
 ; owner
-Dialogue: 1,0:00:00.10,0:00:05.00,detail,,190,0,0,,{\fad(500, 0)}{\fnla-solid-900\fs40}{\r} User
+Dialogue: 1,0:00:00.10,0:00:05.00,detail,,180,0,0,,{\fad(500, 0)}{\fnla-solid-900\fs40}{\r} User
 
 ; We have decided to use subtitle files for text display with media players
 ; because we can get a fancy output quite easily. Subtitles allow formatting and
