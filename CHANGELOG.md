@@ -31,6 +31,8 @@
 
 ## Unreleased
 
+## 1.10.0 - 2026-08-13
+
 ### Added
 
 - When using VLC, the player will properly crash if unexpected instance parameters are given.
