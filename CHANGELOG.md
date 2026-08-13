@@ -39,7 +39,8 @@
 ### Changed
 
 - The visual style of the screen texts of the player were updated to reflect the new design of the web client.
-- The discovery of instrumental file or track is now delegated to the feeder, which means that this data is given by the server. There are no re-discovering processes, but some checks are performed (whether the instrumental file exists, and if the instrumental track exists).
+- The discovery of instrumental file or track is now delegated to the feeder, which means that this data is given by the server.
+  There are no re-discovering processes, but some checks are performed (whether the instrumental file exists, and if the instrumental track exists).
 
 ### Removed
 
