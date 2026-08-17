@@ -22,6 +22,8 @@ except (ImportError, OSError):
 from dakara_player.media_player.base import (
     InvalidStateError,
     MediaPlayer,
+    MediaPlayerItemSong,
+    MediaPlayerItemTransition,
     VersionNotFoundError,
     on_playing_this,
 )
@@ -834,6 +836,95 @@ class MediaSong(Media):
     def __init__(self, *args, track_id_audio=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.track_id_audio = track_id_audio
+
+
+def get_transition_media(transition: MediaPlayerItemTransition) -> vlc.Media:
+    media = vlc.Media(
+        transition.path.as_uri(),
+        f"image-duration={transition.duration}",
+        f"sub-file={transition.subtitle_path}",
+        "no-sub-autodetect-file",
+    )
+    set_metadata(media, {"type": "transition", "started": False})
+
+    return media
+
+
+def get_song_media(song: MediaPlayerItemSong, media_parameters: list[str]) -> vlc.Media:
+    media = vlc.Media(
+        song.path.as_uri(),
+        *media_parameters,
+    )
+    metadata = {"type": "song", "started": False, "track_id_audio": None}
+
+    # manage instrumental
+    if song.instrumental_path is not None:
+        metadata["track_id_audio"] = set_instrumental_file(song, media)
+
+    elif song.instrumental_track is not None:
+        metadata["track_id_audio"] = set_instrumental_track(song, media)
+
+    set_metadata(media, metadata)
+    return media
+
+
+def set_instrumental_file(song: MediaPlayerItemSong, media: vlc.Media) -> int | None:
+    """Manage instrumental file.
+
+    If audio file is present, request to add the file to the media as a
+    slave and register to play this extra track (which will be the last
+    audio track of the media).
+
+    Args:
+        audio_path (pathilb.Path): Absolute path of the instrumental file.
+    """
+    assert song.instrumental_path is not None
+
+    # get number of tracks of the media
+    number_tracks = len(list(media.tracks_get()))
+
+    try:
+        # try to add the instrumental file
+        media.slaves_add(
+            vlc.MediaSlaveType.audio,
+            4,  # highest priority
+            song.instrumental_path.as_uri(),
+        )
+
+    except NameError:
+        # otherwise fallback to default
+        logger.error(
+            "This version of VLC does not support slaves, cannot add "
+            "instrumental file"
+        )
+        return None
+
+    return number_tracks
+
+
+def set_instrumental_track(song: MediaPlayerItemSong, media: vlc.Media) -> int | None:
+    """Manage instrumental track.
+
+    Args:
+        audio_id (int): ID of the instrumental track.
+    """
+    assert song.instrumental_track is not None
+
+    # get audio track IDs
+    track_id_audio_list = [
+        item.id for item in media.tracks_get() if item.type == vlc.TrackType.audio
+    ]
+
+    audio_id = song.instrumental_track
+
+    if len(track_id_audio_list) <= audio_id:
+        logger.error("Unable to find requested instrumental track %i", audio_id)
+        return None
+
+    track_id = track_id_audio_list[audio_id]
+    logger.debug("Instrumental track is #%i for VLC", track_id)
+
+    return track_id
 
 
 class VlcTooOldError(DakaraError):

@@ -18,6 +18,8 @@ except ImportError:
 from dakara_player.media_player.base import (
     InvalidStateError,
     MediaPlayer,
+    MediaPlayerItemSong,
+    MediaPlayerItemTransition,
     VersionNotFoundError,
     on_playing_this,
 )
@@ -1040,6 +1042,41 @@ class MediaSong(Media):
         self.path_subtitle = path_subtitle
         self.path_audio = path_audio
         self.track_id_audio = track_id_audio
+
+
+def get_transition_data(
+    transition: MediaPlayerItemTransition,
+) -> dict[str, str | list[str]]:
+    return {
+        "play": str(transition.path),
+        "sub_files": [str(transition.subtitle_path)],
+        "end": str(transition.duration),
+    }
+
+
+def get_song_data(
+    song: MediaPlayerItemSong,
+) -> dict[str, str | list[str] | int]:
+    data: dict[str, str | list[str] | int] = {
+        "play": str(song.path),
+    }
+
+    # manually set the subtitles as a workaround for the matching of
+    # mpv being too permissive
+    for subtitle_extension in SUBTITLE_EXTENSIONS:
+        path_subtitle = song.path.with_suffix(subtitle_extension)
+        if path_subtitle.exists():
+            data["sub_files"] = [str(path_subtitle)]
+            break
+
+    # manage instrumental
+    if song.instrumental_path is not None:
+        data["audio_files"] = [str(song.instrumental_path)]
+
+    elif song.instrumental_track is not None:
+        data["audio"] = song.instrumental_track + 1
+
+    return data
 
 
 class MpvTooOldError(DakaraError):

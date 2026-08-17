@@ -19,6 +19,8 @@ from dakara_player.media_player.mpv import (
     MediaPlayerMpvPost0330,
     MediaPlayerMpvPost0340,
     MpvTooOldError,
+    get_song_data,
+    get_transition_data,
 )
 from tests.utils import get_temp_dir
 
@@ -1035,3 +1037,66 @@ class MediaPlayerMpvPost0340TestCase(MediaPlayerMpvModelTestCase):
             self.playlist_entry["id"], 42
         )
         mocked_get_timing.assert_called_with()
+
+
+class TestMediaPlayerEntryMpv:
+    def test_get_transition_data(self, media_player_entry):
+        """Test to get a transition."""
+        transition = get_transition_data(media_player_entry.items["transition"])
+
+        assert transition == {
+            "play": "/transition.png",
+            "sub_files": ["/transition.ass"],
+            "end": "10",
+        }
+
+    def test_get_song_data(self, media_player_entry, mocker):
+        """Test to get a song."""
+        # mock to find a subtitle under the same stem
+        mocker.patch.object(Path, "exists", return_value=True, autospec=True)
+
+        song = get_song_data(media_player_entry.items["song"])
+
+        assert song == {
+            "play": "/kara/folder/file.mkv",
+            "sub_files": ["/kara/folder/file.ass"],
+        }
+
+    def test_get_song_data_no_subtitle(self, media_player_entry, mocker):
+        """Test to get a song."""
+        # mock to find no subtitles under the same stem
+        mocker.patch.object(Path, "exists", return_value=False, autospec=True)
+
+        song = get_song_data(media_player_entry.items["song"])
+
+        assert song == {
+            "play": "/kara/folder/file.mkv",
+        }
+
+    def test_get_song_data_instrumental_file(
+        self, media_player_entry_instrumental_file, mocker
+    ):
+        """Test to get a song with instrumental file."""
+        mocker.patch.object(Path, "exists", return_value=True, autospec=True)
+
+        song = get_song_data(media_player_entry_instrumental_file.items["song"])
+
+        assert song == {
+            "play": "/kara/folder/file.mkv",
+            "sub_files": ["/kara/folder/file.ass"],
+            "audio_files": ["/kara/folder/file.mka"],
+        }
+
+    def test_get_song_data_instrumental_track(
+        self, media_player_entry_instrumental_track, mocker
+    ):
+        """Test to get a song with instrumental track."""
+        mocker.patch.object(Path, "exists", return_value=True, autospec=True)
+
+        song = get_song_data(media_player_entry_instrumental_track.items["song"])
+
+        assert song == {
+            "play": "/kara/folder/file.mkv",
+            "sub_files": ["/kara/folder/file.ass"],
+            "audio": 2,
+        }

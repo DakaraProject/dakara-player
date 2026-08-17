@@ -1,5 +1,7 @@
+import logging
 import re
 from contextlib import ExitStack, contextmanager
+from dataclasses import dataclass
 from pathlib import Path
 from queue import Queue
 from threading import Event
@@ -29,6 +31,8 @@ from dakara_player.media_player.vlc import (
     VlcTooOldError,
     get_instance,
     get_metadata,
+    get_song_media,
+    get_transition_media,
     set_metadata,
 )
 from dakara_player.mrl import path_to_mrl
@@ -1451,3 +1455,117 @@ class GetInstanceTestCase(TestCase):
         """Test instance."""
         self.assertIs(mocked_vlc.Instance.return_value, get_instance())
         mocked_vlc.Instance.assert_called_with()
+
+
+@dataclass
+class DummyTrack:
+    id: int
+    type: vlc.TrackType
+
+
+class TestMediaPlayerEntryVlc:
+    def test_get_transition_media(self, media_player_entry):
+        """Test to get a transition."""
+        transition = get_transition_media(media_player_entry.items["transition"])
+
+        assert transition is not None
+        assert transition.get_mrl() == Path("/transition.png").as_uri()
+        assert get_metadata(transition) == {"type": "transition", "started": False}
+
+    def test_get_song_media(self, media_player_entry):
+        """Test to get a song."""
+        song = get_song_media(media_player_entry.items["song"], [])
+
+        assert song is not None
+        assert song.get_mrl() == Path("/kara/folder/file.mkv").as_uri()
+        assert get_metadata(song) == {
+            "type": "song",
+            "started": False,
+            "track_id_audio": None,
+        }
+
+    def test_get_song_media_instrumental_file(
+        self, media_player_entry_instrumental_file, mocker
+    ):
+        """Test to get a song with instrumental file."""
+        mocker.patch.object(
+            vlc.Media,
+            "tracks_get",
+            return_value=[
+                DummyTrack(0, vlc.TrackType.video),
+                DummyTrack(1, vlc.TrackType.audio),
+            ],
+            autospec=True,
+        )
+
+        song = get_song_media(media_player_entry_instrumental_file.items["song"], [])
+
+        assert get_metadata(song) == {
+            "type": "song",
+            "started": False,
+            "track_id_audio": 2,
+        }
+
+    def test_get_song_media_instrumental_track(
+        self, media_player_entry_instrumental_track, mocker, caplog
+    ):
+        """Test to get a song with instrumental track."""
+        mocker.patch.object(
+            vlc.Media,
+            "tracks_get",
+            return_value=[
+                DummyTrack(0, vlc.TrackType.video),
+                DummyTrack(1, vlc.TrackType.audio),
+                DummyTrack(2, vlc.TrackType.audio),
+            ],
+            autospec=True,
+        )
+
+        caplog.set_level(logging.DEBUG)
+
+        song = get_song_media(media_player_entry_instrumental_track.items["song"], [])
+
+        assert get_metadata(song) == {
+            "type": "song",
+            "started": False,
+            "track_id_audio": 2,
+        }
+        assert caplog.record_tuples == [
+            (
+                "dakara_player.media_player.vlc",
+                logging.DEBUG,
+                "Instrumental track is #2 for VLC",
+            ),
+        ]
+
+    def test_get_song_media_instrumental_track_no_track(
+        self, media_player_entry_instrumental_track, mocker, caplog
+    ):
+        """Test to get a song with instrumental track when this track is
+        missing."""
+        mocker.patch.object(
+            vlc.Media,
+            "tracks_get",
+            return_value=[
+                DummyTrack(0, vlc.TrackType.video),
+                DummyTrack(1, vlc.TrackType.audio),
+            ],
+            autospec=True,
+        )
+
+        caplog.set_level(logging.INFO)
+
+        song = get_song_media(media_player_entry_instrumental_track.items["song"], [])
+
+        assert get_metadata(song) == {
+            "type": "song",
+            "started": False,
+            "track_id_audio": None,
+        }
+        assert caplog.record_tuples == [
+            (
+                "dakara_player.media_player.vlc",
+                logging.ERROR,
+                "Unable to find requested instrumental track 1",
+            ),
+        ]

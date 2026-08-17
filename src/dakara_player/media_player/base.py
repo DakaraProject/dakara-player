@@ -2,6 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from functools import wraps
 from pathlib import Path
 from threading import Timer
@@ -331,7 +332,7 @@ class MediaPlayer(Worker, ABC):
         """
 
     @abstractmethod
-    def stop_player():
+    def stop_player(self):
         """Request to stop the media player.
 
         Must be overriden.
@@ -581,6 +582,108 @@ def on_playing_this(what_list, default_return=None):
         return wrap
 
     return decorator
+
+
+@dataclass
+class MediaPlayerItem:
+    path: Path
+
+
+@dataclass
+class MediaPlayerItemTransition(MediaPlayerItem):
+    subtitle_path: Path
+    duration: int
+
+
+@dataclass
+class MediaPlayerItemSong(MediaPlayerItem):
+    instrumental_track: int | None = None
+    instrumental_path: Path | None = None
+
+
+@dataclass
+class MediaPlayerEntry:
+    kara_folder_path: Path
+    playlist_entry: dict
+    items: dict[str, MediaPlayerItem] = field(init=False, default_factory=dict)
+
+    def load(
+        self,
+        backgrounds: dict[str, Path],
+        durations: dict[str, int],
+        text_paths: dict[str, Path],
+    ) -> None:
+        self.items = {
+            "transition": self.get_transition(backgrounds, durations, text_paths),
+            "song": self.get_song(),
+        }
+
+    def get_transition(
+        self,
+        backgrounds: dict[str, Path],
+        durations: dict[str, int],
+        text_paths: dict[str, Path],
+    ) -> MediaPlayerItemTransition:
+        return MediaPlayerItemTransition(
+            path=backgrounds["transition"],
+            subtitle_path=text_paths["transition"],
+            duration=durations["transition"],
+        )
+
+    def get_song(self) -> MediaPlayerItemSong:
+        media = MediaPlayerItemSong(
+            path=self.kara_folder_path / self.playlist_entry["song"]["file_path"]
+        )
+        self.set_instrumental(media)
+
+        return media
+
+    def set_instrumental(self, media: MediaPlayerItemSong) -> None:
+        if self.playlist_entry["use_instrumental"]:
+            logger.info("Requesting instrumental version of file '%s'", media.path)
+
+            # use instrumental file
+            if instrumental_file_path := self.get_instrumental_file_path(media):
+                media.instrumental_path = instrumental_file_path
+                return
+
+            # use instrumental track
+            if instrumental_track_id := self.get_instrumental_track_id():
+                media.instrumental_track = instrumental_track_id
+                return
+
+            # display a warning if nothing worked out
+            logger.warning("No instrumental version available of file '%s'", media.path)
+
+    def get_instrumental_file_path(self, media: MediaPlayerItemSong) -> Path | None:
+        # attempt to add instrumental file
+        if audio_file := self.playlist_entry["song"]["instrumental_file"]:
+            # get absolute path from song file path
+            audio_path = media.path.parent / audio_file
+
+            logger.info(
+                "Requesting to play instrumental file '%s'",
+                audio_path,
+            )
+
+            if not audio_path.exists():
+                logger.error(
+                    "Unable to find requested instrumental file '%s'", audio_path
+                )
+                return None
+
+            return audio_path
+
+        return None
+
+    def get_instrumental_track_id(self) -> int | None:
+        # attempt to add instrumental track
+        if audio_id := self.playlist_entry["song"]["instrumental_track"]:
+            logger.info("Requesting to play instrumental track %i", audio_id)
+
+            return audio_id
+
+        return None
 
 
 class KaraFolderNotFound(DakaraError):
