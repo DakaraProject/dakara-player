@@ -12,9 +12,9 @@ VLC_DUMMY_INTERFACE = True
 
 def display_module_warning() -> None:
     warn(
-        "Using the dummy interface of VLC, as VLC seems to not be installed on "
-        "your system. This is fine for unit testing but will crash for any "
-        "other use.",
+        "You are using the dummy interface of VLC, because VLC seems to not be "
+        "installed on your system. The dummy intervace is fine for unit testing "
+        "but cannot be used for anything else.",
         stacklevel=2,
     )
 

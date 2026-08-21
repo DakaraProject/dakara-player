@@ -3,9 +3,15 @@ from pathlib import Path
 from shutil import copy
 
 import pytest
-import vlc
 
 from dakara_player.media_player import vlc_dummy
+from dakara_player.media_player.vlc_check import is_vlc_available
+
+if is_vlc_available():
+    import vlc
+
+else:
+    pytest.skip("VLC not installed", allow_module_level=True)
 
 
 @pytest.fixture

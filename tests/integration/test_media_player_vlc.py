@@ -6,12 +6,7 @@ from threading import Event
 from unittest import skipIf, skipUnless
 from unittest.mock import MagicMock
 
-try:
-    import vlc
-
-except (ImportError, OSError):
-    from dakara_player.media_player import vlc_dummy as vlc
-
+import pytest
 from dakara_base.config import Config
 from func_timeout import func_set_timeout
 
@@ -20,6 +15,14 @@ from dakara_player.media_player.vlc import (
     METADATA_KEYS_COUNT,
     MediaPlayerVlc,
 )
+from dakara_player.media_player.vlc_check import is_vlc_available
+
+if is_vlc_available():
+    import vlc
+
+else:
+    pytest.skip("VLC not installed", allow_module_level=True)
+
 from tests.integration.base import TestCasePollerKara
 from tests.utils import assert_no_errors
 

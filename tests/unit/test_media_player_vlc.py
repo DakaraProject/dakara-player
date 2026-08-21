@@ -33,13 +33,14 @@ from dakara_player.media_player.vlc import (
     set_metadata,
     update_metadata,
 )
+from dakara_player.media_player.vlc_check import is_vlc_available
 from dakara_player.text import TextGenerator
 from dakara_player.window import DummyWindowManager, WindowManager
 
-try:
+if is_vlc_available():
     import vlc
 
-except (ImportError, OSError):
+else:
     from dakara_player.media_player import vlc_dummy as vlc
 
 from tests.utils import assert_no_errors, get_temp_dir

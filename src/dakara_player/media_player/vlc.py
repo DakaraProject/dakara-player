@@ -18,12 +18,13 @@ from dakara_player.media_player.base import (
     VersionNotFoundError,
     on_playing_this,
 )
+from dakara_player.media_player.vlc_check import is_vlc_available
 from dakara_player.window import DummyWindowManager, WindowManager
 
-try:
+if is_vlc_available():
     import vlc
 
-except (ImportError, OSError):
+else:
     from dakara_player.media_player import vlc_dummy as vlc
 
     vlc.display_module_warning()
@@ -88,15 +89,7 @@ class MediaPlayerVlc(MediaPlayer):
         Returns:
             bool: `True` if VLC is useable.
         """
-        if hasattr(vlc, "VLC_DUMMY_INTERFACE"):
-            return False
-
-        try:
-            return vlc.Instance() is not None
-
-        except NameError:
-            logger.exception("Failed to start VLC.")
-            return False
+        return is_vlc_available()
 
     def init_player(self, config, tempdir):
         """Initialize the objects of VLC.
