@@ -4,7 +4,6 @@ import json
 import logging
 import platform
 import re
-from pathlib import Path
 
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
