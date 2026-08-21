@@ -9,7 +9,6 @@ from dakara_player import (
     font,
     manager,
     media_player,
-    mrl,
     player,
     text,
     user_resources,
@@ -21,7 +20,6 @@ from dakara_player.version import __date__, __version__
 
 __all__ = [
     "manager",
-    "mrl",
     "text",
     "version",
     "window",
