@@ -53,7 +53,7 @@ class MediaPlayer(Worker, ABC):
         player_name (str): Name of the media player.
         fullscreen (bool): If `True`, the media player will be fullscreen.
         kara_folder_path (pathlib.Path): Path to the karaoke folder.
-        playlist_entry (dict): Playlist entyr object.
+        entry (MediaPlayerEntry): Entry object.
         callbacks (dict): High level callbacks associated with the media
             player.
         warn_long_exit (bool): If `True`, display a warning message if the media
@@ -99,7 +99,7 @@ class MediaPlayer(Worker, ABC):
         self.kara_folder_path = Path(config.get("kara_folder", ""))
 
         # inner objects
-        self.playlist_entry = None
+        self.entry = None
         self.callbacks = {}
         self.warn_long_exit = warn_long_exit
 
@@ -349,20 +349,22 @@ class MediaPlayer(Worker, ABC):
             autoplay (bool): If `True`, start to play transition screen as soon
                 as possible.
         """
-        file_path = self.kara_folder_path / playlist_entry["song"]["file_path"]
+        entry = MediaPlayerEntry(self.kara_folder_path, playlist_entry)
+        entry.load(self.background_loader.backgrounds, self.durations, self.text_paths)
 
-        if not file_path.is_file():
-            logger.error("File not found '%s'", file_path)
-            self.callbacks["error"](playlist_entry["id"], "File not found")
-            self.callbacks["could_not_play"](playlist_entry["id"])
+        # XXX should be done later
+        if not entry.items["song"].path.is_file():
+            logger.error("File not found '%s'", entry.items["song"].path)
+            self.callbacks["error"](entry.id, "File not found")
+            self.callbacks["could_not_play"](entry.id)
             return
 
-        self.playlist_entry = playlist_entry
+        self.entry = entry
 
-        self.set_playlist_entry_player(playlist_entry, file_path, autoplay)
+        self.set_playlist_entry_player(autoplay)
 
     @abstractmethod
-    def set_playlist_entry_player(self, playlist_entry, file_path, autoplay):
+    def set_playlist_entry_player(self, autoplay):
         """Prepare playlist entry data to be played.
 
         Prepare all media objects, subtitles, etc. for being played, for the
@@ -372,8 +374,6 @@ class MediaPlayer(Worker, ABC):
         Must be overriden.
 
         Args:
-            playlist_entry (dict): Playlist entry object.
-            file_path (pathlib.Path): Absolute path to the song file.
             autoplay (bool): If `True`, start to play transition screen as soon
                 as possible (i.e. as soon as the transition screen media is
                 ready). The song media is prepared when the transition screen
@@ -383,74 +383,7 @@ class MediaPlayer(Worker, ABC):
     def clear_playlist_entry(self):
         """Clean playlist entry base data."""
         logger.debug("Clearing internal memory")
-        self.playlist_entry = None
-
-        self.clear_playlist_entry_player()
-
-    def manage_instrumental(self, playlist_entry, file_path):
-        """Manage the requested instrumental version of the song.
-
-        Instrumental audio is searched first in the instrumental file, then in
-        instrumental track of the video file. This data was extracted by the
-        feeder and is considered to be exact.
-
-        Args:
-            playlist_entry (dict): Playlist entry data. Must contain the key
-                `use_instrumental`.
-            file_path (pathlib.Path): Absolute path of the song file.
-        """
-        logger.info("Requesting instrumental file or track for file '%s'", file_path)
-
-        # attempt to add instrumental file
-        if audio_file := playlist_entry["song"]["instrumental_file"]:
-            # get absolute path from song file path
-            audio_path = file_path.parent / audio_file
-
-            if not audio_path.exists():
-                logger.error(
-                    "Unable to find requested instrumental file '%s'", audio_path
-                )
-                return
-
-            self.manage_instrumental_file(audio_path)
-            return
-
-        # attempt to add instrumental track
-        if audio_id := playlist_entry["song"]["instrumental_track"]:
-            self.manage_instrumental_track(audio_id)
-            return
-
-        # display a warning if nothing worked out
-        logger.warning(
-            "No instrumental file or track specified for file '%s'", file_path
-        )
-
-    @abstractmethod
-    def manage_instrumental_file(self, audio_path):
-        """Manage instrumental file.
-
-        Args:
-            audio_path (pathilb.Path): Absolute path of the instrumental file.
-
-        Must be overriden.
-        """
-
-    @abstractmethod
-    def manage_instrumental_track(self, audio_id):
-        """Manage instrumental file.
-
-        Args:
-            audio_id (int): ID of the instrumental track.
-
-        Must be overriden.
-        """
-
-    @abstractmethod
-    def clear_playlist_entry_player(self):
-        """Clean playlist entry data after being played.
-
-        Must be overriden.
-        """
+        self.entry = None
 
     def set_callback(self, name, callback):
         """Set callback to the media player.
@@ -544,7 +477,7 @@ class MediaPlayer(Worker, ABC):
             text = self.text_generator.get_text(
                 "transition",
                 {
-                    "playlist_entry": self.playlist_entry,
+                    "playlist_entry": self.entry.playlist_entry,
                     "fade_in": kwargs.get("fade_in", True),
                 },
             )
@@ -617,6 +550,17 @@ class MediaPlayerEntry:
             "transition": self.get_transition(backgrounds, durations, text_paths),
             "song": self.get_song(),
         }
+
+    @property
+    def id(self) -> int:
+        return self.playlist_entry["id"]
+
+    @property
+    def title(self) -> str:
+        return self.playlist_entry["song"]["title"]
+
+    def is_loaded(self) -> bool:
+        return len(self.items.keys()) != 0
 
     def get_transition(
         self,

@@ -10,17 +10,20 @@ class TestMediaPlayerEntry:
         entry = MediaPlayerEntry(Path("/kara/folder"), playlist_entry)
 
         assert entry is not None
-        assert len(entry.items.keys()) == 0
+        assert not entry.is_loaded()
+        assert entry.id == playlist_entry["id"]
+        assert entry.title == playlist_entry["song"]["title"]
 
     def test_load(self, playlist_entry, backgrounds, durations, text_screens):
         """Test to load a created instance."""
         entry = MediaPlayerEntry(Path("/kara/folder"), playlist_entry)
 
-        assert len(entry.items.keys()) == 0
+        assert not entry.is_loaded()
 
         entry.load(backgrounds, durations, text_screens)
 
         assert entry is not None
+        assert entry.is_loaded()
         assert len(entry.items.keys()) == 2
         assert "transition" in entry.items
         assert "song" in entry.items

@@ -18,6 +18,7 @@ from dakara_player.media_player.base import (
 )
 from dakara_player.media_player.mpv import MediaPlayerMpv
 from tests.integration.base import TestCasePollerKara
+from tests.utils import assert_no_errors
 
 REWIND_FAST_FORWARD_DURATION = 0.5
 REWIND_FAST_FORWARD_DELTA = 1
@@ -88,14 +89,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
                     yield mpv_player, temp, output
 
                     if check_error:
-                        # display errors in queue if any
-                        if not mpv_player.errors.empty():
-                            _, error, traceback = mpv_player.errors.get(5)
-                            error.with_traceback(traceback)
-                            raise error
-
-                        # assert no errors to fail test if any
-                        self.assertFalse(mpv_player.stop.is_set())
+                        assert_no_errors(mpv_player)
 
             except OSError:
                 # silence closing errors of mpv
@@ -108,9 +102,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
     def test_start(self):
         """Test the initial state of the player without instructions."""
         with self.get_instance() as (mpv_player, _, _):
-            self.assertIsNone(mpv_player.playlist_entry)
-            self.assertIsNone(mpv_player.playlist_entry_data["transition"].path)
-            self.assertIsNone(mpv_player.playlist_entry_data["song"].path)
+            self.assertIsNone(mpv_player.entry)
             self.assertFalse(mpv_player.is_playing_this("idle"))
             self.assertFalse(mpv_player.is_playing_this("transition"))
             self.assertFalse(mpv_player.is_playing_this("song"))
@@ -147,7 +139,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("started_song", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # set playlist entry
@@ -155,16 +147,10 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
 
             # check memory
             self.assertEqual(
-                mpv_player.playlist_entry_data["transition"].path,
+                mpv_player.entry.items["transition"].path,
                 temp / TRANSITION_BG_NAME,
             )
-            self.assertEqual(
-                mpv_player.playlist_entry_data["song"].path, self.song1_path
-            )
-            self.assertEqual(
-                mpv_player.playlist_entry_data["song"].path_subtitle,
-                self.subtitle1_path,
-            )
+            self.assertEqual(mpv_player.entry.items["song"].path, self.song1_path)
 
             # start playing
             mpv_player.play("transition")
@@ -173,7 +159,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "transition")
 
             # post assertions for transition screen
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
@@ -236,7 +222,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("started_song", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # call the method
@@ -277,7 +263,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("started_song", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # call the method
@@ -424,7 +410,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("updated_timing", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # request playlist entry to play
@@ -434,7 +420,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # wait a bit for the player to play
             self.wait(
@@ -449,7 +435,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertAlmostEqual(mpv_player.player.time_pos, 0, delta=DEFAULT_DELTA)
 
             # check the song is not stopped
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
             mpv_player.callbacks["finished"].assert_not_called()
 
             # assert callback
@@ -467,7 +453,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("finished", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # request initial playlist entry to play
@@ -477,7 +463,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
@@ -490,7 +476,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertTrue(mpv_player.player_data["skip"])
 
             # check the song is stopped accordingly
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             mpv_player.callbacks["finished"].assert_called_with(
                 self.playlist_entry1["id"]
             )
@@ -502,7 +488,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
@@ -521,7 +507,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("finished", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # request initial playlist entry to play
@@ -531,7 +517,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
@@ -544,7 +530,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertTrue(mpv_player.player_data["skip"])
 
             # check the song is stopped accordingly
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             mpv_player.callbacks["finished"].assert_called_with(
                 self.playlist_entry1["id"]
             )
@@ -570,7 +556,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("resumed", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # request initial playlist entry to play
@@ -580,7 +566,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
@@ -599,7 +585,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.assertTrue(mpv_player.player_data["skip"])
 
             # check the song is stopped accordingly
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             mpv_player.callbacks["finished"].assert_called_with(
                 self.playlist_entry1["id"]
             )
@@ -611,7 +597,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
@@ -635,7 +621,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("resumed", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # request initial playlist entry to play
@@ -645,7 +631,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
@@ -661,7 +647,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.skip()
 
             # check the song is stopped accordingly
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             mpv_player.callbacks["finished"].assert_called_with(
                 self.playlist_entry1["id"]
             )
@@ -685,7 +671,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("finished", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # request initial playlist entry to play
@@ -722,7 +708,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("finished", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # request idle screen
@@ -732,7 +718,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "idle")
 
             # post assertions for song
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
 
             # request playlist entry to play
             mpv_player.set_playlist_entry(self.playlist_entry1)
@@ -741,7 +727,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)
@@ -763,7 +749,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("updated_timing", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # request playlist entry to play
@@ -773,7 +759,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # wait a bit for the player to play
             self.wait(
@@ -808,7 +794,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("started_song", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # request playlist entry to play
@@ -818,7 +804,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # request playlist entry to rewind
             mpv_player.rewind()
@@ -842,7 +828,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("updated_timing", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # request playlist entry to play
@@ -852,7 +838,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # wait a bit for the player to play
             self.wait(
@@ -888,7 +874,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("finished", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # request playlist entry to play
@@ -898,7 +884,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # request playlist entry to advance
             mpv_player.fast_forward()
@@ -920,7 +906,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             mpv_player.set_callback("resumed", MagicMock())
 
             # pre assertions
-            self.assertIsNone(mpv_player.playlist_entry)
+            self.assertIsNone(mpv_player.entry)
             self.assertIsNone(mpv_player.player.path)
 
             # request initial playlist entry to play
@@ -930,7 +916,7 @@ class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
             self.wait_is_playing(mpv_player, "song")
 
             # post assertions for song
-            self.assertIsNotNone(mpv_player.playlist_entry)
+            self.assertIsNotNone(mpv_player.entry)
 
             # check media
             self.assertIsNotNone(mpv_player.player.path)

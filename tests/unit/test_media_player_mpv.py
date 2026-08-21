@@ -9,11 +9,11 @@ from packaging.version import Version
 
 from dakara_player.media_player.base import (
     InvalidStateError,
+    MediaPlayerEntry,
     MediaPlayerNotAvailableError,
     VersionNotFoundError,
 )
 from dakara_player.media_player.mpv import (
-    USE_PATH_AUDIO,
     MediaPlayerMpv,
     MediaPlayerMpvOld,
     MediaPlayerMpvPost0330,
@@ -22,7 +22,7 @@ from dakara_player.media_player.mpv import (
     get_song_data,
     get_transition_data,
 )
-from tests.utils import get_temp_dir
+from tests.utils import assert_no_errors, get_temp_dir
 
 
 class MediaPlayerMpvTestCase(TestCase):
@@ -199,6 +199,8 @@ class MediaPlayerMpvModelTestCase(TestCase):
             "use_instrumental": False,
         }
 
+        self.entry = MediaPlayerEntry(get_temp_dir(), self.playlist_entry)
+
     def get_instance(
         self,
         config=None,
@@ -256,31 +258,20 @@ class MediaPlayerMpvModelTestCase(TestCase):
             mpv_player (MediaPlayerMpv): Instance of the mpv player.
             started (bool): If True, make the player play the song.
         """
-        mpv_player.playlist_entry = self.playlist_entry
-
-        # create mocked transition
-        mpv_player.playlist_entry_data["transition"].path = (
-            get_temp_dir() / "transition.png"
-        )
-
-        # create mocked song
-        mpv_player.playlist_entry_data["song"].path = (
-            mpv_player.kara_folder_path / self.song_file_path
-        )
-        mpv_player.playlist_entry_data["song"].path_subtitle = (
-            mpv_player.kara_folder_path / self.subtitle_file_path
+        mpv_player.entry = self.entry
+        mpv_player.entry.load(
+            {"transition": get_temp_dir() / "transition.png"},
+            {"transition": 2},
+            {"transition": get_temp_dir() / "transition.ass"},
         )
 
         # set media has started
         if started:
-            mpv_player.player.path = mpv_player.playlist_entry_data["song"].path
-            mpv_player.player.sub_files = [
-                mpv_player.playlist_entry_data["song"].path_subtitle
-            ]
+            mpv_player.player.path = str(self.song_file_path)
             mpv_player.player.playlist = [
                 {
                     "id": 1,
-                    "filename": mpv_player.player.path,
+                    "filename": str(self.song_file_path),
                     "current": True,
                     "playing": True,
                 }
@@ -428,14 +419,15 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_end_file({"event": "end-file"})
 
+        assert_no_errors(mpv_player)
+
         # assert effect on logs
         self.assertListEqual(
             logger.output,
             [
                 "DEBUG:dakara_player.media_player.mpv:File end callback called",
-                "DEBUG:dakara_player.media_player.mpv:Will play '{}'".format(
-                    get_temp_dir() / self.song_file_path
-                ),
+                "DEBUG:dakara_player.media_player.mpv:Finished playing transition for "
+                "'Song title'",
             ],
         )
 
@@ -449,13 +441,15 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
     def test_handle_end_file_song(self, mocked_play, mocked_clear_playlist_entry):
         """Test end file callback for after a song."""
         # create instance
-        mpv_player, (mocked_player, _, _), _ = self.get_instance()
+        mpv_player, _, _ = self.get_instance()
         mpv_player.set_callback("finished", MagicMock())
         self.set_playlist_entry(mpv_player)
 
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_end_file({"event": "end-file"})
+
+        assert_no_errors(mpv_player)
 
         # assert effect on logs
         self.assertListEqual(
@@ -467,29 +461,6 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         mocked_play.assert_not_called()
         mocked_clear_playlist_entry.assert_called_with()
         mpv_player.callbacks["finished"].assert_called_with(self.playlist_entry["id"])
-
-    @patch.object(MediaPlayerMpvOld, "play")
-    def test_handle_end_file_song_too_fast(self, mocked_play):
-        """Test song end callback after a song with instantaneous response
-        from server.
-        """
-        # create instance
-        mpv_player, (mocked_player, _, _), _ = self.get_instance()
-        mpv_player.set_callback(
-            "finished", lambda _: self.set_playlist_entry(mpv_player, started=False)
-        )
-        self.set_playlist_entry(mpv_player)
-
-        # call the method
-        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG"):
-            mpv_player.handle_end_file({"event": "end-file"})
-
-        # post asserts
-        self.assertTrue(mpv_player.errors.empty())
-        self.assertIsNotNone(mpv_player.playlist_entry_data["song"].path)
-
-        # assert the call
-        mocked_play.assert_not_called()
 
     @patch.object(MediaPlayerMpvOld, "clear_playlist_entry")
     @patch.object(MediaPlayerMpvOld, "play")
@@ -534,6 +505,8 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         ):
             mpv_player.handle_log_messages("fatal", "mpv.component", "error message")
 
+        assert_no_errors(mpv_player)
+
         # assert effect on logs
         self.assertListEqual(
             logger.output,
@@ -570,6 +543,8 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_start_file({})
 
+        assert_no_errors(mpv_player)
+
         # assert effect on logs
         self.assertListEqual(
             logger.output,
@@ -601,6 +576,8 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_start_file({})
+
+        assert_no_errors(mpv_player)
 
         # assert effect on logs
         self.assertListEqual(
@@ -639,6 +616,8 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_start_file({})
+
+        assert_no_errors(mpv_player)
 
         # assert effect on logs
         self.assertListEqual(
@@ -694,6 +673,8 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_pause({})
 
+        assert_no_errors(mpv_player)
+
         # assert effect on logs
         self.assertListEqual(
             logger.output,
@@ -721,6 +702,8 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_unpause({})
+
+        assert_no_errors(mpv_player)
 
         # assert effect on logs
         self.assertListEqual(
@@ -753,83 +736,6 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
 
         mpv_player.player.play.assert_not_called()
 
-    def test_play_no_song_path_subtitle(self):
-        """Test to play a file no detected subtitle."""
-        mpv_player, _, _ = self.get_instance()
-        mpv_player.playlist_entry_data["song"].path = "test_file"
-        mpv_player.playlist_entry_data["song"].path_subtitle = None
-
-        mpv_player.play("song")
-
-        mpv_player.player.play.assert_called_with("test_file")
-        self.assertNotEqual(mpv_player.player.sub_files, [None])
-
-    @patch.object(MediaPlayerMpv, "manage_instrumental_track")
-    @patch.object(Path, "exists", return_value=True, autospec=True)
-    def test_manage_instrumental_file(
-        self, mocked_exists, mocked_manage_instrumental_track
-    ):
-        """Test to add instrumental file."""
-        audio_path = get_temp_dir() / "audio"
-
-        mpv_player, _, _ = self.get_instance()
-
-        self.playlist_entry["use_instrumental"] = True
-        self.playlist_entry["song"]["instrumental_file"] = "audio"
-
-        # pre asserts
-        self.assertIsNone(mpv_player.playlist_entry_data["song"].track_id_audio)
-        self.assertIsNone(mpv_player.playlist_entry_data["song"].path_audio)
-
-        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
-            mpv_player.manage_instrumental(self.playlist_entry, self.song_file_path)
-
-        self.assertEqual(
-            mpv_player.playlist_entry_data["song"].track_id_audio, USE_PATH_AUDIO
-        )
-        self.assertEqual(mpv_player.playlist_entry_data["song"].path_audio, audio_path)
-
-        self.assertListEqual(
-            logger.output,
-            [
-                "INFO:dakara_player.media_player.mpv:Requesting to play "
-                f"instrumental file '{audio_path}'",
-            ],
-        )
-
-        mocked_manage_instrumental_track.assert_not_called()
-
-    @patch.object(MediaPlayerMpv, "manage_instrumental_file")
-    @patch.object(Path, "exists", return_value=True, autospec=True)
-    def test_manage_instrumental_track(
-        self, mocked_exists, mocked_manage_instrumental_file
-    ):
-        """Test to add instrumental track."""
-        mpv_player, _, _ = self.get_instance()
-
-        self.playlist_entry["use_instrumental"] = True
-        self.playlist_entry["song"]["instrumental_track"] = 1
-
-        # pre asserts
-        self.assertIsNone(mpv_player.playlist_entry_data["song"].track_id_audio)
-        self.assertIsNone(mpv_player.playlist_entry_data["song"].path_audio)
-
-        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
-            mpv_player.manage_instrumental(self.playlist_entry, self.song_file_path)
-
-        self.assertEqual(mpv_player.playlist_entry_data["song"].track_id_audio, 2)
-        self.assertIsNone(mpv_player.playlist_entry_data["song"].path_audio)
-
-        self.assertListEqual(
-            logger.output,
-            [
-                "INFO:dakara_player.media_player.mpv:Requesting to play "
-                "instrumental track 2",
-            ],
-        )
-
-        mocked_manage_instrumental_file.assert_not_called()
-
 
 class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
     """Test the post 0.33.0 mpv player class unitary."""
@@ -852,14 +758,15 @@ class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
                 {"event": "end-file", "reason": "eof", "playlist_entry_id": 1}
             )
 
+        assert_no_errors(mpv_player)
+
         # assert effect on logs
         self.assertListEqual(
             logger.output,
             [
                 "DEBUG:dakara_player.media_player.mpv:File end callback called",
-                "DEBUG:dakara_player.media_player.mpv:Will play '{}'".format(
-                    get_temp_dir() / self.song_file_path
-                ),
+                "DEBUG:dakara_player.media_player.mpv:Finished playing transition "
+                "for 'Song title'",
             ],
         )
 
@@ -883,6 +790,8 @@ class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
                 {"event": "end-file", "reason": "eof", "playlist_entry_id": 1}
             )
 
+        assert_no_errors(mpv_player)
+
         # assert effect on logs
         self.assertListEqual(
             logger.output,
@@ -893,31 +802,6 @@ class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):
         mocked_play.assert_not_called()
         mocked_clear_playlist_entry.assert_called_with()
         mpv_player.callbacks["finished"].assert_called_with(self.playlist_entry["id"])
-
-    @patch.object(MediaPlayerMpvPost0330, "play")
-    def test_handle_end_file_song_too_fast(self, mocked_play):
-        """Test song end callback after a song with instantaneous response
-        from server.
-        """
-        # create instance
-        mpv_player, (mocked_player, _, _), _ = self.get_instance()
-        mpv_player.set_callback(
-            "finished", lambda _: self.set_playlist_entry(mpv_player, started=False)
-        )
-        self.set_playlist_entry(mpv_player)
-
-        # call the method
-        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG"):
-            mpv_player.handle_end_file(
-                {"event": "end-file", "reason": "eof", "playlist_entry_id": 1}
-            )
-
-        # post asserts
-        self.assertTrue(mpv_player.errors.empty())
-        self.assertIsNotNone(mpv_player.playlist_entry_data["song"].path)
-
-        # assert the call
-        mocked_play.assert_not_called()
 
     @patch.object(MediaPlayerMpvPost0330, "clear_playlist_entry")
     @patch.object(MediaPlayerMpvPost0330, "play")
@@ -995,6 +879,8 @@ class MediaPlayerMpvPost0340TestCase(MediaPlayerMpvModelTestCase):
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_pause("pause", True)
 
+        assert_no_errors(mpv_player)
+
         # assert effect on logs
         self.assertListEqual(
             logger.output,
@@ -1022,6 +908,8 @@ class MediaPlayerMpvPost0340TestCase(MediaPlayerMpvModelTestCase):
         # call the method
         with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
             mpv_player.handle_pause("pause", False)
+
+        assert_no_errors(mpv_player)
 
         # assert effect on logs
         self.assertListEqual(
