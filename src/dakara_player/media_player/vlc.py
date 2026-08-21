@@ -10,16 +10,6 @@ from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
 from packaging.version import parse
 
-from dakara_player.window import DummyWindowManager, WindowManager
-
-try:
-    import vlc
-    from vlc import libvlc_get_version
-
-except (ImportError, OSError):
-    vlc = None
-    libvlc_get_version = None
-
 from dakara_player.media_player.base import (
     InvalidStateError,
     MediaPlayer,
@@ -28,13 +18,18 @@ from dakara_player.media_player.base import (
     VersionNotFoundError,
     on_playing_this,
 )
+from dakara_player.window import DummyWindowManager, WindowManager
 
 try:
-    METADATA_KEYS_COUNT = len(vlc.Meta.__dict__["_enum_names_"])
+    import vlc
 
-except AttributeError:
-    METADATA_KEYS_COUNT = 0
+except (ImportError, OSError):
+    from dakara_player.media_player import vlc_dummy as vlc
 
+    vlc.display_module_warning()
+
+
+METADATA_KEYS_COUNT = len(vlc.Meta.__dict__["_enum_names_"])
 METADATA_MARKER_KEY = "set_by"
 METADATA_MARKER_VALUE = "dakara"
 
@@ -93,8 +88,12 @@ class MediaPlayerVlc(MediaPlayer):
         Returns:
             bool: `True` if VLC is useable.
         """
+        if hasattr(vlc, "VLC_DUMMY_INTERFACE"):
+            return False
+
         try:
-            return vlc is not None and vlc.Instance() is not None
+            return vlc.Instance() is not None
+
         except NameError:
             logger.exception("Failed to start VLC.")
             return False
@@ -176,7 +175,9 @@ class MediaPlayerVlc(MediaPlayer):
         Raises:
             VersionNotFoundError: If the version cannot be parsed.
         """
-        match = re.search(r"(\d+\.\d+\.\d+(?:\.\d+)*)", libvlc_get_version().decode())
+        match = re.search(
+            r"(\d+\.\d+\.\d+(?:\.\d+)*)", vlc.libvlc_get_version().decode()
+        )
         if match:
             return parse(match.group(1))
 

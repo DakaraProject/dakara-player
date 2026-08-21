@@ -10,7 +10,7 @@ try:
     import vlc
 
 except (ImportError, OSError):
-    vlc = None
+    from dakara_player.media_player import vlc_dummy as vlc
 
 from dakara_base.config import Config
 from func_timeout import func_set_timeout

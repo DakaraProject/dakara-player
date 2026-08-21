@@ -11,13 +11,6 @@ from unittest import TestCase, skipIf
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
-
-try:
-    import vlc
-
-except (ImportError, OSError):
-    vlc = None
-
 from dakara_base.directory import PlatformDirs
 from packaging.version import parse
 
@@ -42,6 +35,13 @@ from dakara_player.media_player.vlc import (
 )
 from dakara_player.text import TextGenerator
 from dakara_player.window import DummyWindowManager, WindowManager
+
+try:
+    import vlc
+
+except (ImportError, OSError):
+    from dakara_player.media_player import vlc_dummy as vlc
+
 from tests.utils import assert_no_errors, get_temp_dir
 
 
@@ -248,7 +248,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         with patch.object(vlc, "Instance", side_effect=NameError()):
             self.assertFalse(MediaPlayerVlc.is_available())
 
-    @patch("dakara_player.media_player.vlc.libvlc_get_version")
+    @patch("dakara_player.media_player.vlc.vlc.libvlc_get_version")
     def test_get_version_long_4_digits(self, mocked_libvlc_get_version):
         """Test to get the VLC version when it is long and contains 4 digits."""
         # mock the version of VLC
@@ -260,7 +260,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         # assert the result
         self.assertEqual(version, parse("3.0.11.1"))
 
-    @patch("dakara_player.media_player.vlc.libvlc_get_version")
+    @patch("dakara_player.media_player.vlc.vlc.libvlc_get_version")
     def test_get_version_long(self, mocked_libvlc_get_version):
         """Test to get the VLC version when it is long."""
         # mock the version of VLC
@@ -272,7 +272,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         # assert the result
         self.assertEqual(version, parse("3.0.11"))
 
-    @patch("dakara_player.media_player.vlc.libvlc_get_version")
+    @patch("dakara_player.media_player.vlc.vlc.libvlc_get_version")
     def test_get_version_not_found(self, mocked_libvlc_get_version):
         """Test to get the VLC version when it is not available."""
         # mock the version of VLC
