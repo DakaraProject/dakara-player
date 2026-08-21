@@ -2,12 +2,13 @@ import logging
 from pathlib import Path
 
 from dakara_player.media_player.base import MediaPlayerEntry
+from tests.utils import get_temp_dir
 
 
 class TestMediaPlayerEntry:
     def test_create(self, playlist_entry):
         """Test to create an instance."""
-        entry = MediaPlayerEntry(Path("/kara/folder"), playlist_entry)
+        entry = MediaPlayerEntry(get_temp_dir(), playlist_entry)
 
         assert entry is not None
         assert not entry.is_loaded()
@@ -16,7 +17,7 @@ class TestMediaPlayerEntry:
 
     def test_load(self, playlist_entry, backgrounds, durations, text_screens):
         """Test to load a created instance."""
-        entry = MediaPlayerEntry(Path("/kara/folder"), playlist_entry)
+        entry = MediaPlayerEntry(get_temp_dir(), playlist_entry)
 
         assert not entry.is_loaded()
 
@@ -31,7 +32,7 @@ class TestMediaPlayerEntry:
     def test_get_transition(self, playlist_entry, backgrounds, durations, text_screens):
         """Test to get a transition."""
 
-        entry = MediaPlayerEntry(Path("/kara/folder"), playlist_entry)
+        entry = MediaPlayerEntry(get_temp_dir(), playlist_entry)
         transition = entry.get_transition(backgrounds, durations, text_screens)
 
         assert transition is not None
@@ -41,11 +42,11 @@ class TestMediaPlayerEntry:
 
     def test_get_song(self, playlist_entry):
         """Test to get a song."""
-        entry = MediaPlayerEntry(Path("/kara/folder"), playlist_entry)
+        entry = MediaPlayerEntry(get_temp_dir(), playlist_entry)
         song = entry.get_song()
 
         assert song is not None
-        assert song.path == Path("/kara/folder/file.mkv")
+        assert song.path == get_temp_dir() / "file.mkv"
         assert song.instrumental_track is None
         assert song.instrumental_path is None
 
@@ -58,20 +59,22 @@ class TestMediaPlayerEntry:
 
         caplog.set_level(logging.INFO)
 
-        entry = MediaPlayerEntry(Path("/kara/folder"), playlist_entry)
+        entry = MediaPlayerEntry(get_temp_dir(), playlist_entry)
         song = entry.get_song()
 
-        assert song.instrumental_path == Path("/kara/folder/file.mka")
+        assert song.instrumental_path == get_temp_dir() / "file.mka"
         assert caplog.record_tuples == [
             (
                 "dakara_player.media_player.base",
                 logging.INFO,
-                "Requesting instrumental version of file '/kara/folder/file.mkv'",
+                "Requesting instrumental version of file "
+                f"'{get_temp_dir() / 'file.mkv'}'",
             ),
             (
                 "dakara_player.media_player.base",
                 logging.INFO,
-                "Requesting to play instrumental file '/kara/folder/file.mka'",
+                "Requesting to play instrumental file "
+                f"'{get_temp_dir() / 'file.mka'}'",
             ),
         ]
 
@@ -85,7 +88,7 @@ class TestMediaPlayerEntry:
 
         mocker.patch.object(Path, "exists", return_value=False, autospec=True)
 
-        entry = MediaPlayerEntry(Path("/kara/folder"), playlist_entry)
+        entry = MediaPlayerEntry(get_temp_dir(), playlist_entry)
         song = entry.get_song()
 
         assert song.instrumental_path is None
@@ -93,22 +96,26 @@ class TestMediaPlayerEntry:
             (
                 "dakara_player.media_player.base",
                 logging.INFO,
-                "Requesting instrumental version of file '/kara/folder/file.mkv'",
+                "Requesting instrumental version of file "
+                f"'{get_temp_dir() / 'file.mkv'}'",
             ),
             (
                 "dakara_player.media_player.base",
                 logging.INFO,
-                "Requesting to play instrumental file '/kara/folder/file.mka'",
+                "Requesting to play instrumental file "
+                f"'{get_temp_dir() / 'file.mka'}'",
             ),
             (
                 "dakara_player.media_player.base",
                 logging.ERROR,
-                "Unable to find requested instrumental file '/kara/folder/file.mka'",
+                "Unable to find requested instrumental file "
+                f"'{get_temp_dir() / 'file.mka'}'",
             ),
             (
                 "dakara_player.media_player.base",
                 logging.WARNING,
-                "No instrumental version available of file '/kara/folder/file.mkv'",
+                "No instrumental version available of file "
+                f"'{get_temp_dir() / 'file.mkv'}'",
             ),
         ]
 
@@ -119,7 +126,7 @@ class TestMediaPlayerEntry:
 
         caplog.set_level(logging.DEBUG)
 
-        entry = MediaPlayerEntry(Path("/kara/folder"), playlist_entry)
+        entry = MediaPlayerEntry(get_temp_dir(), playlist_entry)
         song = entry.get_song()
 
         assert song.instrumental_track == 1
@@ -127,7 +134,8 @@ class TestMediaPlayerEntry:
             (
                 "dakara_player.media_player.base",
                 logging.INFO,
-                "Requesting instrumental version of file '/kara/folder/file.mkv'",
+                "Requesting instrumental version of file "
+                f"'{get_temp_dir() / 'file.mkv'}'",
             ),
             (
                 "dakara_player.media_player.base",
@@ -143,7 +151,7 @@ class TestMediaPlayerEntry:
 
         caplog.set_level(logging.INFO)
 
-        entry = MediaPlayerEntry(Path("/kara/folder"), playlist_entry)
+        entry = MediaPlayerEntry(get_temp_dir(), playlist_entry)
         song = entry.get_song()
 
         assert song.instrumental_path is None
@@ -152,11 +160,13 @@ class TestMediaPlayerEntry:
             (
                 "dakara_player.media_player.base",
                 logging.INFO,
-                "Requesting instrumental version of file '/kara/folder/file.mkv'",
+                "Requesting instrumental version of file "
+                f"'{get_temp_dir() / 'file.mkv'}'",
             ),
             (
                 "dakara_player.media_player.base",
                 logging.WARNING,
-                "No instrumental version available of file '/kara/folder/file.mkv'",
+                "No instrumental version available of file "
+                f"'{get_temp_dir() / 'file.mkv'}'",
             ),
         ]
