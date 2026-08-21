@@ -1119,7 +1119,7 @@ class TestMediaPlayerEntryVlc:
         song = get_song_media(media_player_entry.items["song"], [])
 
         assert song is not None
-        assert song.get_mrl() == Path("/kara/folder/file.mkv").as_uri()
+        assert song.get_mrl() == (get_temp_dir() / "file.mkv").as_uri()
         assert get_metadata(song) == {
             "type": "song",
             "started": False,

@@ -946,8 +946,8 @@ class TestMediaPlayerEntryMpv:
         song = get_song_data(media_player_entry.items["song"])
 
         assert song == {
-            "play": "/kara/folder/file.mkv",
-            "sub_files": ["/kara/folder/file.ass"],
+            "play": str(get_temp_dir() / "file.mkv"),
+            "sub_files": [str(get_temp_dir() / "file.ass")],
         }
 
     def test_get_song_data_no_subtitle(self, media_player_entry, mocker):
@@ -958,7 +958,7 @@ class TestMediaPlayerEntryMpv:
         song = get_song_data(media_player_entry.items["song"])
 
         assert song == {
-            "play": "/kara/folder/file.mkv",
+            "play": str(get_temp_dir() / "file.mkv"),
         }
 
     def test_get_song_data_instrumental_file(
@@ -970,9 +970,9 @@ class TestMediaPlayerEntryMpv:
         song = get_song_data(media_player_entry_instrumental_file.items["song"])
 
         assert song == {
-            "play": "/kara/folder/file.mkv",
-            "sub_files": ["/kara/folder/file.ass"],
-            "audio_files": ["/kara/folder/file.mka"],
+            "play": str(get_temp_dir() / "file.mkv"),
+            "sub_files": [str(get_temp_dir() / "file.ass")],
+            "audio_files": [str(get_temp_dir() / "file.mka")],
         }
 
     def test_get_song_data_instrumental_track(
@@ -984,7 +984,7 @@ class TestMediaPlayerEntryMpv:
         song = get_song_data(media_player_entry_instrumental_track.items["song"])
 
         assert song == {
-            "play": "/kara/folder/file.mkv",
-            "sub_files": ["/kara/folder/file.ass"],
+            "play": str(get_temp_dir() / "file.mkv"),
+            "sub_files": [str(get_temp_dir() / "file.ass")],
             "audio": 2,
         }
