@@ -24,7 +24,7 @@ def playlist_entry():
 
 @pytest.fixture
 def backgrounds():
-    return {"transition": Path("/transition.png")}
+    return {"transition": get_temp_dir() / "transition.png"}
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def durations():
 
 @pytest.fixture
 def text_screens():
-    return {"transition": Path("/transition.ass")}
+    return {"transition": get_temp_dir() / "transition.ass"}
 
 
 @pytest.fixture

@@ -1111,7 +1111,7 @@ class TestMediaPlayerEntryVlc:
         transition = get_transition_media(media_player_entry.items["transition"], [])
 
         assert transition is not None
-        assert transition.get_mrl() == Path("/transition.png").as_uri()
+        assert transition.get_mrl() == (get_temp_dir() / "transition.png").as_uri()
         assert get_metadata(transition) == {"type": "transition", "started": False}
 
     def test_get_song_media(self, media_player_entry):

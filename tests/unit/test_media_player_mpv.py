@@ -933,8 +933,8 @@ class TestMediaPlayerEntryMpv:
         transition = get_transition_data(media_player_entry.items["transition"])
 
         assert transition == {
-            "play": "/transition.png",
-            "sub_files": ["/transition.ass"],
+            "play": str(get_temp_dir() / "transition.png"),
+            "sub_files": [str(get_temp_dir() / "transition.ass")],
             "end": "10",
         }
 

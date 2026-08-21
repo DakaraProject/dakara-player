@@ -36,8 +36,8 @@ class TestMediaPlayerEntry:
         transition = entry.get_transition(backgrounds, durations, text_screens)
 
         assert transition is not None
-        assert transition.path == Path("/transition.png")
-        assert transition.subtitle_path == Path("/transition.ass")
+        assert transition.path == get_temp_dir() / "transition.png"
+        assert transition.subtitle_path == get_temp_dir() / "transition.ass"
         assert transition.duration == 10
 
     def test_get_song(self, playlist_entry):
