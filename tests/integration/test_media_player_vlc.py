@@ -16,6 +16,7 @@ from dakara_player.media_player.vlc import (
     MediaPlayerVlc,
 )
 from dakara_player.media_player.vlc_check import is_vlc_available
+from dakara_player.mrl import mrl_to_path
 
 if is_vlc_available():
     import vlc
@@ -144,7 +145,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             self.assertIsNotNone(vlc_player.player.get_media())
             media = vlc_player.player.get_media()
-            file_path = Path.from_uri(media.get_mrl())
+            file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, temp / IDLE_BG_NAME)
 
             # TODO check which subtitle file is read
@@ -184,7 +185,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(media)
 
             # check media path
-            file_path = Path.from_uri(media.get_mrl())
+            file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, temp / TRANSITION_BG_NAME)
 
             # check there is no audio track
@@ -210,7 +211,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(media)
 
             # check media path
-            file_path = Path.from_uri(media.get_mrl())
+            file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song1_path)
 
             # check audio track
@@ -266,7 +267,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(media)
 
             # check media path
-            file_path = Path.from_uri(media.get_mrl())
+            file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song1_path)
 
             # check audio track
@@ -313,7 +314,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(media)
 
             # check media path
-            file_path = Path.from_uri(media.get_mrl())
+            file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song3_path)
 
             # check audio track
@@ -360,7 +361,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(media)
 
             # check media path
-            file_path = Path.from_uri(media.get_mrl())
+            file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song2_path)
 
             # check audio track
@@ -559,7 +560,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(media)
 
             # check media path
-            file_path = Path.from_uri(media.get_mrl())
+            file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song1_path)
 
             # request first playlist entry to stop
@@ -586,7 +587,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(media)
 
             # check media path
-            file_path = Path.from_uri(media.get_mrl())
+            file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song2_path)
 
     @func_set_timeout(TIMEOUT)
@@ -631,7 +632,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertIsNotNone(media)
 
             # check media path
-            file_path = Path.from_uri(media.get_mrl())
+            file_path = mrl_to_path(media.get_mrl())
             self.assertEqual(file_path, self.song2_path)
 
     @func_set_timeout(TIMEOUT)

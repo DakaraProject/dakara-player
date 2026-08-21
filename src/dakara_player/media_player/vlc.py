@@ -19,6 +19,7 @@ from dakara_player.media_player.base import (
     on_playing_this,
 )
 from dakara_player.media_player.vlc_check import is_vlc_available
+from dakara_player.mrl import mrl_to_path
 from dakara_player.window import DummyWindowManager, WindowManager
 
 if is_vlc_available():
@@ -480,7 +481,7 @@ class MediaPlayerVlc(MediaPlayer):
         # call error callback
         if self.is_playing_this("song"):
             logger.error(
-                "Unable to play '%s'", Path.from_uri(self.player.get_media().get_mrl())
+                "Unable to play '%s'", mrl_to_path(self.player.get_media().get_mrl())
             )
             self.callbacks["error"](self.entry.id, "Unable to play current song")
             self.skip()
@@ -543,7 +544,7 @@ class MediaPlayerVlc(MediaPlayer):
             logger.info(
                 "Now playing '%s' ('%s')",
                 self.entry.title,
-                Path.from_uri(self.player.get_media().get_mrl()),
+                mrl_to_path(self.player.get_media().get_mrl()),
             )
 
             return

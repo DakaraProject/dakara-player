@@ -11,7 +11,13 @@ CSS_ICON_NAME_PARSER = Template(
 
 
 def generate(css_file, json_file, prefix):
-    """Generate a file that contains code for character names"""
+    """Generate a file that contains code for character names.
+
+    Args:
+        css_file (str): Path to the CSS file.
+        json_file (str): Path to the JSON file.
+        prefix (str): Prefix for each symbol.
+    """
     # check css_file exists
     if not os.path.isfile(css_file):
         raise FileNotFoundError("File '{}' not found".format(css_file))
