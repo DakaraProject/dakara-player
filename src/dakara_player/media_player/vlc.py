@@ -722,21 +722,23 @@ def get_song_media(song: MediaPlayerItemSong, media_parameters: list[str]) -> vl
         song.path.as_uri(),
         *media_parameters,
     )
-    metadata = {"type": "song", "started": False, "track_id_audio": None}
+    set_metadata(media, {"type": "song", "started": False, "track_id_audio": None})
 
     # manage instrumental
     if song.instrumental_path is not None:
-        metadata["track_id_audio"] = set_instrumental_file(song, media)
+        set_instrumental_file(song, media)
 
     elif song.instrumental_track is not None:
-        metadata["track_id_audio"] = set_instrumental_track(song, media)
+        set_instrumental_track(song, media)
 
-    set_metadata(media, metadata)
     return media
 
 
-def set_instrumental_file(song: MediaPlayerItemSong, media: vlc.Media) -> int | None:
-    """Add the instrumental file as a slave to the media.
+def set_instrumental_file(song: MediaPlayerItemSong, media: vlc.Media) -> None:
+    """Add the instrumental file as a slave to the media and set the number of
+    the instrumental track in the song.
+
+    Note that for VLC the track number is not limited to audio tracks.
 
     Note some older versions of VLC (cannot find the version, the documentation
     states it has been valid since VLC 3.0.0) do not support to add slaves.
@@ -744,10 +746,6 @@ def set_instrumental_file(song: MediaPlayerItemSong, media: vlc.Media) -> int | 
     Args:
         song (MediaPlayerItemSong): Song item that contains all data.
         vlc.Media: VLC media for the song.
-
-    Returns:
-        int: Number of the instrumental track (note that the track number is
-        not limited to audio tracks).
     """
     assert song.instrumental_path is not None
 
@@ -769,23 +767,20 @@ def set_instrumental_file(song: MediaPlayerItemSong, media: vlc.Media) -> int | 
             "This version of VLC does not support slaves, cannot add "
             "instrumental file"
         )
-        return None
+        return
 
-    return number_tracks
+    update_metadata(media, {"track_id_audio": number_tracks})
 
 
-def set_instrumental_track(song: MediaPlayerItemSong, media: vlc.Media) -> int | None:
-    """Get the insrumental track number.
+def set_instrumental_track(song: MediaPlayerItemSong, media: vlc.Media) -> None:
+    """Get the insrumental track number and set the number of the instrumental
+    track in the song.
 
-    Note that despite the name of the function, nothing is actually set.
+    Note that for VLC the track number is not limited to audio tracks.
 
     Args:
         song (MediaPlayerItemSong): Song item that contains all data.
         vlc.Media: VLC media for the song.
-
-    Returns:
-        int: Number of the instrumental track (note that the track number is
-        not limited to audio tracks).
     """
     assert song.instrumental_track is not None
 
@@ -799,12 +794,12 @@ def set_instrumental_track(song: MediaPlayerItemSong, media: vlc.Media) -> int |
 
     if len(track_id_audio_list) <= audio_id:
         logger.error("Unable to find requested instrumental track %i", audio_id)
-        return None
+        return
 
     track_id = track_id_audio_list[audio_id]
     logger.debug("Instrumental track is #%i for VLC", track_id)
 
-    return track_id
+    update_metadata(media, {"track_id_audio": track_id})
 
 
 def get_idle_media(idle: MediaPlayerItemIdle, media_parameters: list[str]) -> vlc.Media:
