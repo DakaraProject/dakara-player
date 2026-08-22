@@ -7,6 +7,12 @@ from unittest.mock import MagicMock, patch
 
 from packaging.version import Version
 
+try:
+    import python_mpv_jsonipc as mpv
+
+except ImportError:
+    mpv = None
+
 from dakara_player.media_player.base import (
     InvalidStateError,
     MediaPlayerEntry,
@@ -735,6 +741,43 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
             mpv_player.play("none")
 
         mpv_player.player.play.assert_not_called()
+
+    @patch("dakara_player.media_player.mpv.setattr")
+    def test_set_player_from_dict(self, mocked_setattr):
+        """Test to set properties"""
+        mpv_player, (mocked_player, _, _), _ = self.get_instance()
+
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
+            mpv_player.set_player_from_dict({"play": "foo", "bar": "baz"})
+
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player.media_player.mpv:Setting player "
+                "with\n{'bar': 'baz',\n 'play': 'foo'}",
+            ],
+        )
+
+        mocked_player.play.assert_called_with("foo")
+        mocked_setattr.assert_called_with(mocked_player, "bar", "baz")
+
+    @patch("dakara_player.media_player.mpv.setattr", side_effect=mpv.MPVError("error"))
+    def test_set_player_from_dict_error(self, mocked_setattr):
+        """Test to set properties"""
+        mpv_player, (mocked_player, _, _), _ = self.get_instance()
+
+        with self.assertLogs("dakara_player.media_player.mpv", "DEBUG") as logger:
+            mpv_player.set_player_from_dict({"bar": "baz"})
+
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_player.media_player.mpv:Setting player "
+                "with\n{'bar': 'baz'}",
+                "ERROR:dakara_player.media_player.mpv:Unable to set mpv player "
+                "key 'bar' to value 'baz': error",
+            ],
+        )
 
 
 class MediaPlayerMpvPost0330TestCase(MediaPlayerMpvModelTestCase):

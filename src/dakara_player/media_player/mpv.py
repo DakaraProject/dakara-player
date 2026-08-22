@@ -366,9 +366,12 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             try:
                 setattr(self.player, key, value)
 
-            except mpv.MPVError:
+            except mpv.MPVError as error:
                 logger.error(
-                    "Unable to set mpv player key '%s' to value '%s'", key, value
+                    "Unable to set mpv player key '%s' to value '%s': %s",
+                    key,
+                    value,
+                    error,
                 )
                 continue
 
