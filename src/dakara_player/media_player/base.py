@@ -519,23 +519,56 @@ def on_playing_this(what_list, default_return=None):
 
 @dataclass
 class MediaPlayerItem:
+    """Media item. Anything the player is supposed to play.
+
+    Attributes:
+        path (pathlib.Path): Absolute path of the file to play.
+    """
+
     path: Path
 
 
 @dataclass
 class MediaPlayerItemTransition(MediaPlayerItem):
+    """Media item for transitions.
+
+    Attributes:
+        subtitle_path (pathlib.Path): Absolute path of the screen text file.
+        duration (int): Duration of the transition.
+    """
+
     subtitle_path: Path
     duration: int
 
 
 @dataclass
 class MediaPlayerItemSong(MediaPlayerItem):
+    """Media item for songs.
+
+    Attributes:
+        instrumental_track (int): If provided, number of the audio track to use
+            for instrumental version.
+        instrumental_path (pathlib.Path): If provided, absolute path to the
+            audio file to use for instrumental version.
+    """
+
     instrumental_track: int | None = None
     instrumental_path: Path | None = None
 
 
 @dataclass
 class MediaPlayerEntry:
+    """Player-agnostic representation of items to play associated with a playlist entry.
+
+    This class leverages all the logic of manipulating media files, so as to
+    let media player implementations only focus on their own logic.
+
+    Attributes:
+        kara_folder_path (pathlib.Path): Absolute path to the karaoke directory.
+        playlist_entry (dict): Playlist entry as received from the server.
+        items (dict): Items associated with the playlist entry.
+    """
+
     kara_folder_path: Path
     playlist_entry: dict
     items: dict[str, MediaPlayerItem] = field(init=False, default_factory=dict)
@@ -546,6 +579,13 @@ class MediaPlayerEntry:
         durations: dict[str, int],
         text_paths: dict[str, Path],
     ) -> None:
+        """Populate items, which may cause side-effects.
+
+        Args:
+            backgrounds (dict): Background file absolute paths.
+            durations (dict): Durations.
+            text_paths (dict): Text screen file absolute paths.
+        """
         self.items = {
             "transition": self.get_transition(backgrounds, durations, text_paths),
             "song": self.get_song(),
@@ -553,13 +593,16 @@ class MediaPlayerEntry:
 
     @property
     def id(self) -> int:
+        """int: Shorthand to playlist entry ID."""
         return self.playlist_entry["id"]
 
     @property
     def title(self) -> str:
+        """str: Shorthand to playlist entry song title."""
         return self.playlist_entry["song"]["title"]
 
     def is_loaded(self) -> bool:
+        """Indicate if the `load` method was called."""
         return len(self.items.keys()) != 0
 
     def get_transition(
@@ -568,6 +611,16 @@ class MediaPlayerEntry:
         durations: dict[str, int],
         text_paths: dict[str, Path],
     ) -> MediaPlayerItemTransition:
+        """Create a transition item.
+
+        Args:
+            backgrounds (dict): Background file absolute paths.
+            durations (dict): Durations.
+            text_paths (dict): Text screen file absolute paths.
+
+        Returns:
+            MediaPlayerItemTransition: Transition item.
+        """
         return MediaPlayerItemTransition(
             path=backgrounds["transition"],
             subtitle_path=text_paths["transition"],
@@ -575,35 +628,59 @@ class MediaPlayerEntry:
         )
 
     def get_song(self) -> MediaPlayerItemSong:
-        media = MediaPlayerItemSong(
+        """Create a song item.
+
+        Take care of instrumental version.
+
+        Returns:
+            MediaPlayerItemSong: Song item.
+        """
+        song = MediaPlayerItemSong(
             path=self.kara_folder_path / self.playlist_entry["song"]["file_path"]
         )
-        self.set_instrumental(media)
+        self.set_instrumental(song)
 
-        return media
+        return song
 
-    def set_instrumental(self, media: MediaPlayerItemSong) -> None:
+    def set_instrumental(self, song: MediaPlayerItemSong) -> None:
+        """Set instrumental track or file in media.
+
+        If the playlist entry requires the instrumental version, first look for
+        the instrumental file, then for the instrumental track.
+
+        Args:
+            song (MediaPlayerItemSong): Song tiem to modify.
+        """
         if self.playlist_entry["use_instrumental"]:
-            logger.info("Requesting instrumental version of file '%s'", media.path)
+            logger.info("Requesting instrumental version of file '%s'", song.path)
 
             # use instrumental file
-            if instrumental_file_path := self.get_instrumental_file_path(media):
-                media.instrumental_path = instrumental_file_path
+            if instrumental_file_path := self.get_instrumental_file_path(song):
+                song.instrumental_path = instrumental_file_path
                 return
 
             # use instrumental track
             if instrumental_track_id := self.get_instrumental_track_id():
-                media.instrumental_track = instrumental_track_id
+                song.instrumental_track = instrumental_track_id
                 return
 
             # display a warning if nothing worked out
-            logger.warning("No instrumental version available of file '%s'", media.path)
+            logger.warning("No instrumental version available of file '%s'", song.path)
 
-    def get_instrumental_file_path(self, media: MediaPlayerItemSong) -> Path | None:
+    def get_instrumental_file_path(self, song: MediaPlayerItemSong) -> Path | None:
+        """Retreive the instrumental file of a song.
+
+        Args:
+            song (MediaPlayerItemSong): Song item.
+
+        Returs:
+            pathlib.Path: Absolute path to the audio file, provided that the
+            song has an insrumental file and that this file exists.
+        """
         # attempt to add instrumental file
         if audio_file := self.playlist_entry["song"]["instrumental_file"]:
             # get absolute path from song file path
-            audio_path = media.path.parent / audio_file
+            audio_path = song.path.parent / audio_file
 
             logger.info(
                 "Requesting to play instrumental file '%s'",
@@ -621,6 +698,12 @@ class MediaPlayerEntry:
         return None
 
     def get_instrumental_track_id(self) -> int | None:
+        """Retreive the instrumental track of a song.
+
+        Returs:
+            int: Audio track number of the instrumental track, provided that
+            the song has one.
+        """
         # attempt to add instrumental track
         if audio_id := self.playlist_entry["song"]["instrumental_track"]:
             logger.info("Requesting to play instrumental track %i", audio_id)

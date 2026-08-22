@@ -956,6 +956,15 @@ class MediaPlayerMpvPost0340(MediaPlayerMpvPost0330):
 def get_transition_data(
     transition: MediaPlayerItemTransition,
 ) -> dict[str, str | list[str]]:
+    """Create transition data for Mpv.
+
+    Args:
+        transition (MediaPlayerItemTransition): Transition item that contains
+            all data.
+
+    Returns:
+        dict: Mpv data for the transition.
+    """
     return {
         "play": str(transition.path),
         "sub_files": [str(transition.subtitle_path)],
@@ -966,6 +975,14 @@ def get_transition_data(
 def get_song_data(
     song: MediaPlayerItemSong,
 ) -> dict[str, str | list[str] | int]:
+    """Create song data for Mpv.
+
+    Args:
+        song (MediaPlayerItemSong): Song item that contains all data.
+
+    Returns:
+        dict: Mpv data for the song.
+    """
     data: dict[str, str | list[str] | int] = {
         "play": str(song.path),
     }

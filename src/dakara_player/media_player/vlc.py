@@ -711,6 +711,17 @@ def get_instance(instance_parameters=None):
 def get_transition_media(
     transition: MediaPlayerItemTransition, media_parameters: list[str]
 ) -> vlc.Media:
+    """Create a transition media for VLC.
+
+    Args:
+        transition (MediaPlayerItemTransition): Transition item that contains
+            all data.
+        media_parameters (list of str): Media parameters to pass to VLC. Must
+            be in the form `option=value` (without the leading `--`).
+
+    Returns:
+        vlc.Media: VLC media for the transition.
+    """
     media = vlc.Media(
         transition.path.as_uri(),
         *media_parameters,
@@ -724,6 +735,16 @@ def get_transition_media(
 
 
 def get_song_media(song: MediaPlayerItemSong, media_parameters: list[str]) -> vlc.Media:
+    """Create a song media for VLC.
+
+    Args:
+        song (MediaPlayerItemSong): Song item that contains all data.
+        media_parameters (list of str): Media parameters to pass to VLC. Must
+            be in the form `option=value` (without the leading `--`).
+
+    Returns:
+        vlc.Media: VLC media for the song.
+    """
     media = vlc.Media(
         song.path.as_uri(),
         *media_parameters,
@@ -742,14 +763,18 @@ def get_song_media(song: MediaPlayerItemSong, media_parameters: list[str]) -> vl
 
 
 def set_instrumental_file(song: MediaPlayerItemSong, media: vlc.Media) -> int | None:
-    """Manage instrumental file.
+    """Add the instrumental file as a slave to the media.
 
-    If audio file is present, request to add the file to the media as a
-    slave and register to play this extra track (which will be the last
-    audio track of the media).
+    Note some older versions of VLC (cannot find the version, the documentation
+    states it has been valid since VLC 3.0.0) do not support to add slaves.
 
     Args:
-        audio_path (pathilb.Path): Absolute path of the instrumental file.
+        song (MediaPlayerItemSong): Song item that contains all data.
+        vlc.Media: VLC media for the song.
+
+    Returns:
+        int: Number of the instrumental track (note that the track number is
+        not limited to audio tracks).
     """
     assert song.instrumental_path is not None
 
@@ -777,10 +802,17 @@ def set_instrumental_file(song: MediaPlayerItemSong, media: vlc.Media) -> int | 
 
 
 def set_instrumental_track(song: MediaPlayerItemSong, media: vlc.Media) -> int | None:
-    """Manage instrumental track.
+    """Get the insrumental track number.
+
+    Note that despite the name of the function, nothing is actually set.
 
     Args:
-        audio_id (int): ID of the instrumental track.
+        song (MediaPlayerItemSong): Song item that contains all data.
+        vlc.Media: VLC media for the song.
+
+    Returns:
+        int: Number of the instrumental track (note that the track number is
+        not limited to audio tracks).
     """
     assert song.instrumental_track is not None
 
