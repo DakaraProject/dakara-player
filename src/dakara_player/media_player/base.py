@@ -54,6 +54,7 @@ class MediaPlayer(Worker, ABC):
         fullscreen (bool): If `True`, the media player will be fullscreen.
         kara_folder_path (pathlib.Path): Path to the karaoke folder.
         entry (MediaPlayerEntry): Entry object.
+        idle_item (MediaPlayerItemIdle): Idle item object.
         callbacks (dict): High level callbacks associated with the media
             player.
         warn_long_exit (bool): If `True`, display a warning message if the media
@@ -177,6 +178,8 @@ class MediaPlayer(Worker, ABC):
 
         # load backgrounds
         self.background_loader.load()
+
+        self.idle_item = get_idle(self.background_loader.backgrounds, self.text_paths)
 
         self.load_player()
 
@@ -732,7 +735,6 @@ def get_idle(
 
     Args:
         backgrounds (dict): Background file absolute paths.
-        durations (dict): Durations.
         text_paths (dict): Text screen file absolute paths.
 
     Returns:

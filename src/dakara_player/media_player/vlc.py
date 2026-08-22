@@ -270,20 +270,9 @@ class MediaPlayerVlc(MediaPlayer):
             ValueError: If the action to play is unknown.
         """
         if what == "idle":
-            # create idle screen media
-            media = self.instance.media_new_path(
-                str(self.background_loader.backgrounds["idle"])
-            )
+            media = get_idle_media(self.idle_item, self.media_parameters)
 
-            media.add_options(
-                *self.media_parameters,
-                "image-duration={}".format(self.durations["idle"]),
-                "sub-file={}".format(self.text_paths["idle"]),
-                "no-sub-autodetect-file",
-            )
-
-            set_metadata(media, {"type": "idle"})
-
+            # XXX do this before
             self.generate_text("idle")
 
         elif what == "transition":
