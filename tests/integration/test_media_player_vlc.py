@@ -15,8 +15,8 @@ from dakara_player.media_player.vlc import (
     METADATA_KEYS_COUNT,
     MediaPlayerVlc,
 )
-from dakara_player.media_player.vlc_check import is_vlc_available
 from dakara_player.mrl import mrl_to_path
+from dakara_player.vlc.check import is_vlc_available
 
 if is_vlc_available():
     import vlc

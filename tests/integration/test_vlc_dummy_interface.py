@@ -4,8 +4,8 @@ from shutil import copy
 
 import pytest
 
-from dakara_player.media_player import vlc_dummy
-from dakara_player.media_player.vlc_check import is_vlc_available
+from dakara_player.vlc import dummy_interface as vlc_dummy
+from dakara_player.vlc.check import is_vlc_available
 
 if is_vlc_available():
     import vlc

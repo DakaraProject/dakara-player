@@ -17,15 +17,15 @@ from dakara_player.media_player.base import (
     VersionNotFoundError,
     on_playing_this,
 )
-from dakara_player.media_player.vlc_check import is_vlc_available
 from dakara_player.mrl import mrl_to_path
+from dakara_player.vlc.check import is_vlc_available
 from dakara_player.window import DummyWindowManager, WindowManager
 
 if is_vlc_available():
     import vlc
 
 else:
-    from dakara_player.media_player import vlc_dummy as vlc
+    from dakara_player.vlc import dummy_interface as vlc
 
     vlc.display_module_warning()
 
