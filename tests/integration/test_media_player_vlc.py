@@ -3,7 +3,7 @@ from pathlib import Path
 from queue import Queue
 from tempfile import TemporaryDirectory
 from threading import Event
-from unittest import skipIf, skipUnless
+from unittest import skipIf
 from unittest.mock import MagicMock
 
 import pytest
@@ -32,7 +32,6 @@ REWIND_FAST_FORWARD_DELTA = 0.5
 DEFAULT_DELTA = 0.2
 
 
-@skipUnless(MediaPlayerVlc.is_available(), "VLC not installed")
 class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     """Test the VLC player class in real conditions."""
 

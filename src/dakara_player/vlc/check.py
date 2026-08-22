@@ -14,10 +14,16 @@ def is_vlc_available() -> bool:
     Returns:
         bool: True if VLC can be imported and used.
     """
+    # try to import
     try:
         import vlc
 
+    except (ImportError, FileNotFoundError):
+        return False
+
+    # try to use
+    try:
         return vlc.Instance() is not None
 
-    except (ImportError, FileNotFoundError, OSError, NameError):
+    except (OSError, NameError):
         return False
