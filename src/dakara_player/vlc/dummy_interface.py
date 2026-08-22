@@ -1,4 +1,5 @@
-"""Dummy module that replaces VLC for unit tests when VLC is not installed."""
+"""Module that provides a dummy VLC interface for unit tests when VLC is not
+installed."""
 
 from dataclasses import InitVar, dataclass, field
 from enum import IntEnum
@@ -11,6 +12,7 @@ VLC_DUMMY_INTERFACE = True
 
 
 def display_module_warning() -> None:
+    """Display a warning message thet the dummy VLC interface is being used."""
     warn(
         "You are using the dummy interface of VLC, because VLC seems to not be "
         "installed on your system. The dummy intervace is fine for unit testing "
@@ -20,7 +22,7 @@ def display_module_warning() -> None:
 
 
 def libvlc_get_version() -> ByteString:
-    return "0.0.0 Mocked".encode("utf-8")
+    return "0.0.0 Dummy".encode("utf-8")
 
 
 class EventType(IntEnum):
@@ -135,22 +137,22 @@ class MediaPlayer:
         self.media = media
 
     def play(self) -> None:
-        raise DummyVlcUsedError("The dummy VLC interface cannot be used!")
+        raise DummyVlcInterfaceUseError("The dummy VLC interface cannot be used!")
 
     def pause(self) -> None:
-        raise DummyVlcUsedError("The dummy VLC interface cannot be used!")
+        raise DummyVlcInterfaceUseError("The dummy VLC interface cannot be used!")
 
     def stop(self) -> None:
-        raise DummyVlcUsedError("The dummy VLC interface cannot be used!")
+        raise DummyVlcInterfaceUseError("The dummy VLC interface cannot be used!")
 
     def audio_set_track(self, track: int) -> None:
         pass
 
     def set_xwindow(self, id: int) -> None:
-        raise DummyVlcUsedError("The dummy VLC interface cannot be used!")
+        raise DummyVlcInterfaceUseError("The dummy VLC interface cannot be used!")
 
     def set_hwnd(self, id: int) -> None:
-        raise DummyVlcUsedError("The dummy VLC interface cannot be used!")
+        raise DummyVlcInterfaceUseError("The dummy VLC interface cannot be used!")
 
 
 @dataclass
@@ -161,5 +163,5 @@ class EventManager:
         self.events[event] = callback
 
 
-class DummyVlcUsedError(DakaraError):
+class DummyVlcInterfaceUseError(DakaraError):
     """Error raised when trying to use the dummy VLC interface."""

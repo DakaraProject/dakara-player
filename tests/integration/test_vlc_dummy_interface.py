@@ -214,22 +214,22 @@ class TestMediaPlayer:
     def test_play(self, media_player_dummy):
         """Test that playback functions cannot be used, for the dummy interface
         only"""
-        with pytest.raises(vlc_dummy.DummyVlcUsedError):
+        with pytest.raises(vlc_dummy.DummyVlcInterfaceUseError):
             media_player_dummy.play()
 
-        with pytest.raises(vlc_dummy.DummyVlcUsedError):
+        with pytest.raises(vlc_dummy.DummyVlcInterfaceUseError):
             media_player_dummy.pause()
 
-        with pytest.raises(vlc_dummy.DummyVlcUsedError):
+        with pytest.raises(vlc_dummy.DummyVlcInterfaceUseError):
             media_player_dummy.stop()
 
     def test_window(self, media_player_dummy):
         """Test that window functions cannot be used, for the dummy interface
         only"""
-        with pytest.raises(vlc_dummy.DummyVlcUsedError):
+        with pytest.raises(vlc_dummy.DummyVlcInterfaceUseError):
             media_player_dummy.set_xwindow(0)
 
-        with pytest.raises(vlc_dummy.DummyVlcUsedError):
+        with pytest.raises(vlc_dummy.DummyVlcInterfaceUseError):
             media_player_dummy.set_hwnd(0)
 
     def test_audio_track(self, media_player, media_player_dummy):
