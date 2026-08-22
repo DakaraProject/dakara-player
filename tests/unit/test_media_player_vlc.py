@@ -441,9 +441,12 @@ class MediaPlayerVlcTestCase(BaseTestCase):
     @patch.object(Path, "is_file")
     def test_set_playlist_entry_error_file(self, mocked_is_file):
         """Test to set a playlist entry that does not exist."""
-        with self.get_instance() as (vlc_player, _, _):
+        with self.get_instance() as (vlc_player, (_, mocked_background_loader, _), _):
             # mock the system call
             mocked_is_file.return_value = False
+            mocked_background_loader.backgrounds = {
+                "transition": get_temp_dir() / "transition.png"
+            }
 
             # mock the callbacks
             vlc_player.set_callback("could_not_play", MagicMock())
@@ -470,9 +473,12 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             self.assertListEqual(
                 logger.output,
                 [
-                    "ERROR:dakara_player.media_player.base:File not found '{}'".format(
-                        get_temp_dir() / self.song_file_path
-                    )
+                    "DEBUG:dakara_player.media_player.base:Setting up transition "
+                    f"screen for 'Song title' ({get_temp_dir() / 'transition.png'})",
+                    "INFO:dakara_player.media_player.base:Setting up "
+                    f"'Song title' ({get_temp_dir() / self.song_file_path})",
+                    "ERROR:dakara_player.media_player.base:File not found "
+                    f"'{get_temp_dir() / self.song_file_path}'",
                 ],
             )
 
@@ -772,7 +778,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 logger.output,
                 [
                     "DEBUG:dakara_player.media_player.vlc:Playing callback called",
-                    "INFO:dakara_player.media_player.vlc:Playing transition for "
+                    "INFO:dakara_player.media_player.vlc:Playing transition screen for "
                     "'Song title'",
                 ],
             )
@@ -807,7 +813,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 [
                     "DEBUG:dakara_player.media_player.vlc:Playing callback called",
                     "INFO:dakara_player.media_player.vlc:Now playing 'Song title' "
-                    "('{}')".format(get_temp_dir() / self.song_file_path),
+                    "({})".format(get_temp_dir() / self.song_file_path),
                 ],
             )
 
@@ -842,7 +848,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                     "DEBUG:dakara_player.media_player.vlc:Requesting to play audio "
                     "track #99",
                     "INFO:dakara_player.media_player.vlc:Now playing 'Song title' "
-                    "('{}')".format(get_temp_dir() / self.song_file_path),
+                    "({})".format(get_temp_dir() / self.song_file_path),
                 ],
             )
 

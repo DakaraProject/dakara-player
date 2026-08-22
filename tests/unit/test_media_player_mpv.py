@@ -533,7 +533,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
             logger.output,
             [
                 "DEBUG:dakara_player.media_player.mpv:Start file callback called",
-                "INFO:dakara_player.media_player.mpv:Playing transition for "
+                "INFO:dakara_player.media_player.mpv:Playing transition screen for "
                 "'Song title'",
             ],
         )
@@ -568,7 +568,7 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
             [
                 "DEBUG:dakara_player.media_player.mpv:Start file callback called",
                 "INFO:dakara_player.media_player.mpv:Now playing 'Song title' "
-                "('{}')".format(get_temp_dir() / self.song_file_path),
+                "({})".format(get_temp_dir() / self.song_file_path),
             ],
         )
 

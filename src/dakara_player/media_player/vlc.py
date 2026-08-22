@@ -499,7 +499,7 @@ class MediaPlayerVlc(MediaPlayer):
         if self.is_playing_this("transition"):
             self.callbacks["started_transition"](self.entry.id)
             update_metadata(media, {"started": True})
-            logger.info("Playing transition for '%s'", self.entry.title)
+            logger.info("Playing transition screen for '%s'", self.entry.title)
 
             return
 
@@ -514,7 +514,7 @@ class MediaPlayerVlc(MediaPlayer):
 
             update_metadata(media, {"started": True})
             logger.info(
-                "Now playing '%s' ('%s')",
+                "Now playing '%s' (%s)",
                 self.entry.title,
                 mrl_to_path(self.player.get_media().get_mrl()),
             )

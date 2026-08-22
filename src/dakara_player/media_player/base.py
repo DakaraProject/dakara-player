@@ -622,11 +622,17 @@ class MediaPlayerEntry:
         Returns:
             MediaPlayerItemTransition: Transition item.
         """
-        return MediaPlayerItemTransition(
+        transition = MediaPlayerItemTransition(
             path=backgrounds["transition"],
             subtitle_path=text_paths["transition"],
             duration=durations["transition"],
         )
+
+        logger.debug(
+            "Setting up transition screen for '%s' (%s)", self.title, transition.path
+        )
+
+        return transition
 
     def get_song(self) -> MediaPlayerItemSong:
         """Create a song item.
@@ -639,6 +645,8 @@ class MediaPlayerEntry:
         song = MediaPlayerItemSong(
             path=self.kara_folder_path / self.playlist_entry["song"]["file_path"]
         )
+        logger.info("Setting up '%s' (%s)", self.title, song.path)
+
         self.set_instrumental(song)
 
         return song
@@ -653,7 +661,7 @@ class MediaPlayerEntry:
             song (MediaPlayerItemSong): Song tiem to modify.
         """
         if self.playlist_entry["use_instrumental"]:
-            logger.info("Requesting instrumental version of file '%s'", song.path)
+            logger.info("Requesting instrumental version for '%s'", self.title)
 
             # use instrumental file
             if instrumental_file_path := self.get_instrumental_file_path(song):
@@ -666,7 +674,7 @@ class MediaPlayerEntry:
                 return
 
             # display a warning if nothing worked out
-            logger.warning("No instrumental version available of file '%s'", song.path)
+            logger.warning("No instrumental version available for '%s'", self.title)
 
     def get_instrumental_file_path(self, song: MediaPlayerItemSong) -> Path | None:
         """Retreive the instrumental file of a song.

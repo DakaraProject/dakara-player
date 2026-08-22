@@ -584,7 +584,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         # the transition screen starts to play
         if self.is_playing_this("transition"):
             self.callbacks["started_transition"](self.entry.id)
-            logger.info("Playing transition for '%s'", self.entry.title)
+            logger.info("Playing transition screen for '%s'", self.entry.title)
 
             return
 
@@ -592,7 +592,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         if self.is_playing_this("song"):
             self.callbacks["started_song"](self.entry.id)
             logger.info(
-                "Now playing '%s' ('%s')",
+                "Now playing '%s' (%s)",
                 self.entry.title,
                 self.player.path,
             )

@@ -29,8 +29,11 @@ class TestMediaPlayerEntry:
         assert "transition" in entry.items
         assert "song" in entry.items
 
-    def test_get_transition(self, playlist_entry, backgrounds, durations, text_screens):
+    def test_get_transition(
+        self, playlist_entry, backgrounds, durations, text_screens, caplog
+    ):
         """Test to get a transition."""
+        caplog.set_level(logging.DEBUG)
 
         entry = MediaPlayerEntry(get_temp_dir(), playlist_entry)
         transition = entry.get_transition(backgrounds, durations, text_screens)
@@ -39,9 +42,19 @@ class TestMediaPlayerEntry:
         assert transition.path == get_temp_dir() / "transition.png"
         assert transition.subtitle_path == get_temp_dir() / "transition.ass"
         assert transition.duration == 10
+        assert caplog.record_tuples == [
+            (
+                "dakara_player.media_player.base",
+                logging.DEBUG,
+                "Setting up transition screen for 'Song title' "
+                f"({get_temp_dir() / 'transition.png'})",
+            ),
+        ]
 
-    def test_get_song(self, playlist_entry):
+    def test_get_song(self, playlist_entry, caplog):
         """Test to get a song."""
+        caplog.set_level(logging.INFO)
+
         entry = MediaPlayerEntry(get_temp_dir(), playlist_entry)
         song = entry.get_song()
 
@@ -49,6 +62,13 @@ class TestMediaPlayerEntry:
         assert song.path == get_temp_dir() / "file.mkv"
         assert song.instrumental_track is None
         assert song.instrumental_path is None
+        assert caplog.record_tuples == [
+            (
+                "dakara_player.media_player.base",
+                logging.INFO,
+                f"Setting up 'Song title' ({get_temp_dir() / 'file.mkv'})",
+            ),
+        ]
 
     def test_get_song_instrumental_file(self, playlist_entry, mocker, caplog):
         """Test to get a song with instrumental file."""
@@ -67,8 +87,12 @@ class TestMediaPlayerEntry:
             (
                 "dakara_player.media_player.base",
                 logging.INFO,
-                "Requesting instrumental version of file "
-                f"'{get_temp_dir() / 'file.mkv'}'",
+                f"Setting up 'Song title' ({get_temp_dir() / 'file.mkv'})",
+            ),
+            (
+                "dakara_player.media_player.base",
+                logging.INFO,
+                "Requesting instrumental version for 'Song title'",
             ),
             (
                 "dakara_player.media_player.base",
@@ -96,8 +120,12 @@ class TestMediaPlayerEntry:
             (
                 "dakara_player.media_player.base",
                 logging.INFO,
-                "Requesting instrumental version of file "
-                f"'{get_temp_dir() / 'file.mkv'}'",
+                f"Setting up 'Song title' ({get_temp_dir() / 'file.mkv'})",
+            ),
+            (
+                "dakara_player.media_player.base",
+                logging.INFO,
+                "Requesting instrumental version for 'Song title'",
             ),
             (
                 "dakara_player.media_player.base",
@@ -114,8 +142,7 @@ class TestMediaPlayerEntry:
             (
                 "dakara_player.media_player.base",
                 logging.WARNING,
-                "No instrumental version available of file "
-                f"'{get_temp_dir() / 'file.mkv'}'",
+                "No instrumental version available for 'Song title'",
             ),
         ]
 
@@ -134,8 +161,12 @@ class TestMediaPlayerEntry:
             (
                 "dakara_player.media_player.base",
                 logging.INFO,
-                "Requesting instrumental version of file "
-                f"'{get_temp_dir() / 'file.mkv'}'",
+                f"Setting up 'Song title' ({get_temp_dir() / 'file.mkv'})",
+            ),
+            (
+                "dakara_player.media_player.base",
+                logging.INFO,
+                "Requesting instrumental version for 'Song title'",
             ),
             (
                 "dakara_player.media_player.base",
@@ -160,14 +191,17 @@ class TestMediaPlayerEntry:
             (
                 "dakara_player.media_player.base",
                 logging.INFO,
-                "Requesting instrumental version of file "
-                f"'{get_temp_dir() / 'file.mkv'}'",
+                f"Setting up 'Song title' ({get_temp_dir() / 'file.mkv'})",
+            ),
+            (
+                "dakara_player.media_player.base",
+                logging.INFO,
+                "Requesting instrumental version for 'Song title'",
             ),
             (
                 "dakara_player.media_player.base",
                 logging.WARNING,
-                "No instrumental version available of file "
-                f"'{get_temp_dir() / 'file.mkv'}'",
+                "No instrumental version available for 'Song title'",
             ),
         ]
 
