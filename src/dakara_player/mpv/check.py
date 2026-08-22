@@ -1,8 +1,11 @@
 """Module to check the availability of Mpv."""
 
+from functools import cache
+
 ATTEMPTS = 10
 
 
+@cache
 def is_mpv_available() -> bool:
     """Check if Mpv can be imported and used.
 
