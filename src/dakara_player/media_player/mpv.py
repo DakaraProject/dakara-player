@@ -38,22 +38,6 @@ MPV_ERROR_LEVELS = {
     "debug": logging.DEBUG,
 }
 
-PLAYER_IS_AVAILABLE_ATTEMPTS = 5
-
-
-# monkey patch mpv to silent socket close failures on windows
-if mpv is not None:
-
-    class WindowsSocketSilenced(mpv.WindowsSocket):
-        def stop(self, *args, **kwargs):
-            try:
-                super().stop(*args, **kwargs)
-
-            except OSError:
-                pass
-
-    mpv.WindowsSocket = WindowsSocketSilenced
-
 
 class MediaPlayerMpv(MediaPlayer, ABC):
     """Abstract class to manipulate mpv.
