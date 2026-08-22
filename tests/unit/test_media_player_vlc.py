@@ -143,7 +143,7 @@ class BaseTestCase(TestCase):
 
 
 @patch("dakara_player.media_player.base.TRANSITION_DURATION", 10)
-@patch("dakara_player.media_player.base.IDLE_DURATION", 20)
+@patch("dakara_player.media_player.vlc.IDLE_DURATION", 20)
 class MediaPlayerVlcTestCase(BaseTestCase):
     """Test the VLC player class unitary."""
 
@@ -948,7 +948,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert the instance
             self.assertDictEqual(
                 vlc_player.durations,
-                {"transition": 10, "idle": 20, "rewind_fast_forward": 10},
+                {"transition": 10, "rewind_fast_forward": 10},
             )
 
     def test_custom_durations(self):
@@ -961,7 +961,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert the instance
             self.assertDictEqual(
                 vlc_player.durations,
-                {"transition": 5, "idle": 20, "rewind_fast_forward": 10},
+                {"transition": 5, "rewind_fast_forward": 10},
             )
 
     @patch("dakara_player.media_player.base.PLAYER_CLOSING_DURATION", 0)

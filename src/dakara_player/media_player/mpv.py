@@ -310,7 +310,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         media_path = Path(media_raw)
 
         if what == "idle":
-            return media_path == self.background_loader.backgrounds["idle"]
+            return media_path == self.idle_item.path
 
         # if no playlist entry is set
         if self.entry is None or not self.entry.is_loaded():
@@ -319,6 +319,12 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         return media_path == self.entry.items[what].path
 
     def set_player_from_dict(self, data: dict | None) -> None:
+        """Set player attributes from a dictionary.
+
+        Args:
+            data (dict): Attributes to pass. If `play` is among them, then it
+                is passed as an argument to the `play` method instead.
+        """
         logger.debug("Setting player with\n%s", pformat(data, width=1, indent=1))
 
         if not data:
@@ -364,23 +370,17 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
                 return
 
             data = get_idle_data(self.idle_item)
-            self.set_player_from_dict(data)
 
-            return
-
-        if what == "transition":
+        elif what == "transition":
             data = get_transition_data(self.entry.items["transition"])
-            self.set_player_from_dict(data)
 
-            return
-
-        if what == "song":
+        elif what == "song":
             data = get_song_data(self.entry.items["song"])
-            self.set_player_from_dict(data)
 
-            return
+        else:
+            raise ValueError("Unexpected action to play: {}".format(what))
 
-        raise ValueError("Unexpected action to play: {}".format(what))
+        self.set_player_from_dict(data)
 
     @on_playing_this(["transition", "song"])
     def pause(self):
@@ -519,7 +519,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
 
             return
 
-        # the media has finished, so clean memory and call the according callback
+        # the song has finished, so clean memory and call the according callback
         if self.is_playing_this("song"):
             playlist_entry_id = self.entry.id
             self.clear_playlist_entry()
@@ -743,7 +743,7 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
         media_path = Path(media_raw)
 
         if what == "idle":
-            return media_path == self.background_loader.backgrounds["idle"]
+            return media_path == self.idle_item.path
 
         # if no playlist entry is set
         if self.entry is None or not self.entry.is_loaded():
@@ -786,7 +786,7 @@ class MediaPlayerMpvPost0330(MediaPlayerMpvOld):
 
             return
 
-        # the media has finished, so clean memory and call the according callback
+        # the song has finished, so clean memory and call the according callback
         if self.was_playing_this("song", id):
             playlist_entry_id = self.entry.id
             self.clear_playlist_entry()
@@ -886,7 +886,7 @@ class MediaPlayerMpvPost0340(MediaPlayerMpvPost0330):
 
         # invalidate call if initializing
         if self.is_initializing():
-            logger.debug("Pause callback aborted")
+            logger.debug("Pause callback ignored at initialization")
 
             return
 

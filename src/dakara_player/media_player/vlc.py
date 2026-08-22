@@ -418,7 +418,7 @@ class MediaPlayerVlc(MediaPlayer):
 
             return
 
-        # the media has finished, so clean memory and call the according callback
+        # the song has finished, so clean memory and call the according callback
         if self.is_playing_this("song"):
             playlist_entry_id = self.entry.id
             self.clear_playlist_entry()

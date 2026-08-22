@@ -21,7 +21,6 @@ TRANSITION_DURATION = 2
 
 IDLE_BG_NAME = "idle.png"
 IDLE_TEXT_NAME = "idle.ass"
-IDLE_DURATION = 300
 
 PLAYER_CLOSING_DURATION = 3
 
@@ -101,13 +100,13 @@ class MediaPlayer(Worker, ABC):
 
         # inner objects
         self.entry = None
+        self.idle_item = None
         self.callbacks = {}
         self.warn_long_exit = warn_long_exit
 
         # set durations
         config_durations = config.get("durations") or {}
         self.durations = {
-            "idle": IDLE_DURATION,
             "transition": config_durations.get(
                 "transition_duration", TRANSITION_DURATION
             ),
@@ -151,9 +150,6 @@ class MediaPlayer(Worker, ABC):
 
         # set default callbacks
         self.set_default_callbacks()
-
-        self.idle_item = None
-        self.entry = None
 
         # call specialized constructor
         self.init_player(config, tempdir)
@@ -332,6 +328,7 @@ class MediaPlayer(Worker, ABC):
         Must be overriden.
         """
 
+    @abstractmethod
     def fast_forward(self):
         """Request to fast forward a few seconds the media.
 
