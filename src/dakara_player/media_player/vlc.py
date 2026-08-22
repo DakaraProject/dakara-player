@@ -392,22 +392,6 @@ class MediaPlayerVlc(MediaPlayer):
         # closing window
         self.window.close()
 
-    def set_playlist_entry_player(self, autoplay):
-        """Prepare playlist entry data to be played.
-
-        Args:
-            autoplay (bool): If `True`, start to play transition screen as soon
-                as possible (i.e. as soon as the transition screen media is
-                ready). The song media is prepared when the transition screen
-                is playing.
-        """
-        # create transition screen
-        self.generate_text("transition")
-
-        # start playing transition right away if requested
-        if autoplay:
-            self.play("transition")
-
     @safe
     def handle_end_reached(self, event):
         """Callback called when a media ends.

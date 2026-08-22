@@ -344,6 +344,9 @@ class MediaPlayer(Worker, ABC):
     def set_playlist_entry(self, playlist_entry, autoplay=True):
         """Prepare playlist entry base data to be played.
 
+        Prepare all media objects, subtitles, etc. for being played, for the
+        transition screen and the song.
+
         Check if the song file exists, otherwise consider the song cannot be
         played.
 
@@ -363,25 +366,16 @@ class MediaPlayer(Worker, ABC):
             return
 
         self.entry = entry
+        self.generate_text("transition")
 
-        self.set_playlist_entry_player(autoplay)
+        self.set_playlist_entry_player()
 
-    @abstractmethod
-    def set_playlist_entry_player(self, autoplay):
-        """Prepare playlist entry data to be played.
+        # start playing transition right away if requested
+        if autoplay:
+            self.play("transition")
 
-        Prepare all media objects, subtitles, etc. for being played, for the
-        transition screen and the song. Such data should be stored on a
-        dedicated object, like `playlist_entry_data`.
-
-        Must be overriden.
-
-        Args:
-            autoplay (bool): If `True`, start to play transition screen as soon
-                as possible (i.e. as soon as the transition screen media is
-                ready). The song media is prepared when the transition screen
-                is playing.
-        """
+    def set_playlist_entry_player(self):
+        """Prepare player for new playlist entry."""
 
     def clear_playlist_entry(self):
         """Clean playlist entry base data."""

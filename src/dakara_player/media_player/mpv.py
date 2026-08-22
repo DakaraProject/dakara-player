@@ -513,24 +513,11 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         self.player.terminate()
         logger.debug("Stopped player")
 
-    def set_playlist_entry_player(self, autoplay):
-        """Prepare playlist entry data to be played.
-
-        Args:
-            autoplay (bool): If `True`, start to play transition screen as soon
-                as possible (i.e. as soon as the transition screen media is
-                ready). The song media is prepared when the transition screen
-                is playing.
-        """
+    def set_playlist_entry_player(self):
+        """Prepare player for new playlist entry."""
         # if the player is playing the idle screen, mark to skip it
         if self.is_playing_this("idle"):
             self.player_data["skip"] = True
-
-        # set transition
-        self.generate_text("transition")
-
-        if autoplay:
-            self.play("transition")
 
     @safe
     def handle_end_file(self, event):
