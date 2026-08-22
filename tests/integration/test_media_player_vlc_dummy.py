@@ -14,6 +14,11 @@ else:
     pytest.skip("VLC not installed", allow_module_level=True)
 
 
+def test_version():
+    assert vlc.libvlc_get_version() is not None
+    assert vlc_dummy.libvlc_get_version() is not None
+
+
 @pytest.fixture
 def file(tmpdir) -> str:
     with as_file(files("tests.resources").joinpath("song1.mkv")) as res:
@@ -207,7 +212,8 @@ class TestMediaPlayer:
         assert media_player_dummy.get_media().get_mrl() == media_dummy.get_mrl()
 
     def test_play(self, media_player_dummy):
-        """Test to play, pause, and stop, for the dummy interface only"""
+        """Test that playback functions cannot be used, for the dummy interface
+        only"""
         with pytest.raises(vlc_dummy.DummyVlcUsedError):
             media_player_dummy.play()
 
@@ -216,6 +222,15 @@ class TestMediaPlayer:
 
         with pytest.raises(vlc_dummy.DummyVlcUsedError):
             media_player_dummy.stop()
+
+    def test_window(self, media_player_dummy):
+        """Test that window functions cannot be used, for the dummy interface
+        only"""
+        with pytest.raises(vlc_dummy.DummyVlcUsedError):
+            media_player_dummy.set_xwindow(0)
+
+        with pytest.raises(vlc_dummy.DummyVlcUsedError):
+            media_player_dummy.set_hwnd(0)
 
     def test_audio_track(self, media_player, media_player_dummy):
         """Test to set the audio track."""

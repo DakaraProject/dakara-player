@@ -147,10 +147,10 @@ class MediaPlayer:
         pass
 
     def set_xwindow(self, id: int) -> None:
-        pass
+        raise DummyVlcUsedError("The dummy VLC interface cannot be used!")
 
     def set_hwnd(self, id: int) -> None:
-        pass
+        raise DummyVlcUsedError("The dummy VLC interface cannot be used!")
 
 
 @dataclass
