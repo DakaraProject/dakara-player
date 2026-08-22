@@ -384,6 +384,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
 
     @patch.object(WindowManager, "get_id")
     @patch.object(WindowManager, "open")
+    @patch.object(MediaPlayerVlc, "generate_text", autospec=True)
     @patch.object(MediaPlayerVlc, "check_kara_folder_path")
     @patch.object(MediaPlayerVlc, "check_version")
     @patch.object(MediaPlayerVlc, "set_vlc_default_callbacks")
@@ -394,6 +395,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         mocked_set_vlc_default_callback,
         mocked_check_version,
         mocked_check_kara_folder_path,
+        mocked_generate_text,
         mocked_open,
         mocked_get_id,
     ):
@@ -406,9 +408,17 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # setup mocks
             mocked_get_version.return_value = "3.0.0 NoName"
 
+            # pre-asserts
+            self.assertIsNone(vlc_player.idle_item)
+            self.assertIsNone(vlc_player.entry)
+
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "INFO") as logger:
                 vlc_player.load()
+
+            # post asserts
+            self.assertIsNotNone(vlc_player.idle_item)
+            self.assertIsNone(vlc_player.entry)
 
             # assert the calls
             mocked_check_kara_folder_path.assert_called_with()
@@ -416,6 +426,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             mocked_background_loader.load.assert_called_with()
             mocked_check_version.assert_called_with()
             mocked_set_vlc_default_callback.assert_called_with()
+            mocked_generate_text.assert_called_with(vlc_player, "idle")
             mocked_open.assert_called_with()
             mocked_get_id.assert_called_with()
 

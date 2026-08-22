@@ -397,7 +397,6 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             if self.is_playing_this("idle"):
                 return
 
-            self.generate_text("idle")
             data = get_idle_data(self.idle_item)
             self.set_player_from_dict(data)
 

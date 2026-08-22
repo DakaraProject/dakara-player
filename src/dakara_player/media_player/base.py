@@ -152,6 +152,9 @@ class MediaPlayer(Worker, ABC):
         # set default callbacks
         self.set_default_callbacks()
 
+        self.idle_item = None
+        self.entry = None
+
         # call specialized constructor
         self.init_player(config, tempdir)
 
@@ -179,8 +182,11 @@ class MediaPlayer(Worker, ABC):
         # load backgrounds
         self.background_loader.load()
 
+        # generate idle item
+        self.generate_text("idle")
         self.idle_item = get_idle(self.background_loader.backgrounds, self.text_paths)
 
+        # load player-specific elements
         self.load_player()
 
     def load_player(self):

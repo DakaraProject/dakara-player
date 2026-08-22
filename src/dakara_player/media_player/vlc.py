@@ -272,9 +272,6 @@ class MediaPlayerVlc(MediaPlayer):
         if what == "idle":
             media = get_idle_media(self.idle_item, self.media_parameters)
 
-            # XXX do this before
-            self.generate_text("idle")
-
         elif what == "transition":
             media = get_transition_media(
                 self.entry.items["transition"], self.media_parameters
