@@ -17,7 +17,7 @@ from dakara_player.version import __version__
 
 TRANSITION_BG_NAME = "transition.png"
 TRANSITION_TEXT_NAME = "transition.ass"
-TRANSITION_DURATION = 2
+TRANSITION_DURATION = 5
 
 IDLE_BG_NAME = "idle.png"
 IDLE_TEXT_NAME = "idle.ass"
@@ -267,9 +267,6 @@ class MediaPlayer(Worker, ABC):
     def play(self, what):
         """Request the media player to play something.
 
-        No preparation should be done by this function, i.e. the media track
-        should have been prepared already by `set_playlist_entry`.
-
         Must be overriden.
 
         Args:
@@ -371,14 +368,18 @@ class MediaPlayer(Worker, ABC):
         self.entry = entry
         self.generate_text("transition")
 
-        self.set_playlist_entry_player()
+        self.set_playlist_entry_player(playlist_entry)
 
         # start playing transition right away if requested
         if autoplay:
             self.play("transition")
 
-    def set_playlist_entry_player(self):
-        """Prepare player for new playlist entry."""
+    def set_playlist_entry_player(self, playlist_entry):
+        """Prepare player for new playlist entry.
+
+        Args:
+            playlist_entry (dict): Playlist entry object.
+        """
 
     def clear_playlist_entry(self):
         """Clean playlist entry base data."""

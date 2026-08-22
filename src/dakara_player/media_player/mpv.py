@@ -478,8 +478,12 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         self.player.terminate()
         logger.debug("Stopped player")
 
-    def set_playlist_entry_player(self):
-        """Prepare player for new playlist entry."""
+    def set_playlist_entry_player(self, playlist_entry):
+        """Prepare player for new playlist entry.
+
+        Args:
+            playlist_entry (dict): Playlist entry object.
+        """
         # if the player is playing the idle screen, mark to skip it
         if self.is_playing_this("idle"):
             self.player_data["skip"] = True
