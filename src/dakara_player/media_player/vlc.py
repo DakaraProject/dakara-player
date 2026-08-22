@@ -12,6 +12,7 @@ from packaging.version import parse
 from dakara_player.media_player.base import (
     InvalidStateError,
     MediaPlayer,
+    MediaPlayerItemIdle,
     MediaPlayerItemSong,
     MediaPlayerItemTransition,
     VersionNotFoundError,
@@ -33,6 +34,8 @@ else:
 METADATA_KEYS_COUNT = len(vlc.Meta.__dict__["_enum_names_"])
 METADATA_MARKER_KEY = "set_by"
 METADATA_MARKER_VALUE = "dakara"
+
+IDLE_DURATION = 3600
 
 
 logger = logging.getLogger(__name__)
@@ -832,6 +835,29 @@ def set_instrumental_track(song: MediaPlayerItemSong, media: vlc.Media) -> int |
     logger.debug("Instrumental track is #%i for VLC", track_id)
 
     return track_id
+
+
+def get_idle_media(idle: MediaPlayerItemIdle, media_parameters: list[str]) -> vlc.Media:
+    """Create an idle screen media for VLC.
+
+    Args:
+        idle (MediaPlayerItemIdle): Idle item that contains all data.
+        media_parameters (list of str): Media parameters to pass to VLC. Must
+            be in the form `option=value` (without the leading `--`).
+
+    Returns:
+        vlc.Media: VLC media for the idle screen.
+    """
+    media = vlc.Media(
+        idle.path.as_uri(),
+        *media_parameters,
+        f"image-duration={IDLE_DURATION}",
+        f"sub-file={idle.subtitle_path}",
+        "no-sub-autodetect-file",
+    )
+    set_metadata(media, {"type": "idle"})
+
+    return media
 
 
 class VlcTooOldError(DakaraError):

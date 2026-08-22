@@ -25,6 +25,7 @@ from dakara_player.media_player.mpv import (
     MediaPlayerMpvPost0330,
     MediaPlayerMpvPost0340,
     MpvTooOldError,
+    get_idle_data,
     get_song_data,
     get_transition_data,
 )
@@ -1031,3 +1032,13 @@ class TestMediaPlayerEntryMpv:
             "sub_files": [str(get_temp_dir() / "file.ass")],
             "audio": 2,
         }
+
+
+def test_get_idle_data(idle):
+    """Test to get idle screen data."""
+    data = get_idle_data(idle)
+
+    assert data == {
+        "play": str(get_temp_dir() / "idle.png"),
+        "sub_files": [str(get_temp_dir() / "idle.ass")],
+    }

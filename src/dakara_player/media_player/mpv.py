@@ -19,6 +19,7 @@ except ImportError:
 from dakara_player.media_player.base import (
     InvalidStateError,
     MediaPlayer,
+    MediaPlayerItemIdle,
     MediaPlayerItemSong,
     MediaPlayerItemTransition,
     VersionNotFoundError,
@@ -1003,6 +1004,23 @@ def get_song_data(
         data["audio"] = song.instrumental_track + 1
 
     return data
+
+
+def get_idle_data(
+    idle: MediaPlayerItemIdle,
+) -> dict[str, str | list[str]]:
+    """Create idle data for Mpv.
+
+    Args:
+        idle (MediaPlayerItemIdle): Idle item that contains all data.
+
+    Returns:
+        dict: Mpv data for idle screen.
+    """
+    return {
+        "play": str(idle.path),
+        "sub_files": [str(idle.subtitle_path)],
+    }
 
 
 class MpvTooOldError(DakaraError):

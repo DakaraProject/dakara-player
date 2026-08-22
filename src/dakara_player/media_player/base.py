@@ -713,6 +713,37 @@ class MediaPlayerEntry:
         return None
 
 
+@dataclass
+class MediaPlayerItemIdle(MediaPlayerItem):
+    """Media item for idle screen.
+
+    Attributes:
+        subtitle_path (pathlib.Path): Absolute path of the screen text file.
+    """
+
+    subtitle_path: Path
+
+
+def get_idle(
+    backgrounds: dict[str, Path],
+    text_paths: dict[str, Path],
+) -> MediaPlayerItemIdle:
+    """Create an idle item.
+
+    Args:
+        backgrounds (dict): Background file absolute paths.
+        durations (dict): Durations.
+        text_paths (dict): Text screen file absolute paths.
+
+    Returns:
+        MediaPlayerItemIdle: Idle item.
+    """
+    return MediaPlayerItemIdle(
+        path=backgrounds["idle"],
+        subtitle_path=text_paths["idle"],
+    )
+
+
 class KaraFolderNotFound(DakaraError):
     """Error raised when the kara folder cannot be found."""
 

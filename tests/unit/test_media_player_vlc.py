@@ -26,6 +26,7 @@ from dakara_player.media_player.vlc import (
     UnavailableInstanceError,
     UnexpectedInstanceParameterError,
     VlcTooOldError,
+    get_idle_media,
     get_instance,
     get_metadata,
     get_song_media,
@@ -1252,6 +1253,12 @@ class TestMediaPlayerEntryVlc:
                 "Unable to find requested instrumental track 1",
             ),
         ]
+
+
+def test_get_idle_media(idle):
+    media = get_idle_media(idle, [])
+
+    assert media.get_mrl() == (get_temp_dir() / "idle.png").as_uri()
 
 
 @pytest.fixture

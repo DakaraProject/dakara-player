@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from dakara_player.media_player.base import MediaPlayerEntry
+from dakara_player.media_player.base import MediaPlayerEntry, get_idle
 from tests.utils import get_temp_dir
 
 
@@ -170,3 +170,12 @@ class TestMediaPlayerEntry:
                 f"'{get_temp_dir() / 'file.mkv'}'",
             ),
         ]
+
+
+class TestGetIdle:
+    def test_get(self, backgrounds, text_screens):
+        """Test to get idle item."""
+        idle = get_idle(backgrounds, text_screens)
+
+        assert idle.path == get_temp_dir() / "idle.png"
+        assert idle.subtitle_path == get_temp_dir() / "idle.ass"

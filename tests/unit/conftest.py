@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dakara_player.media_player.base import MediaPlayerEntry
+from dakara_player.media_player.base import MediaPlayerEntry, get_idle
 from tests.utils import get_temp_dir
 
 
@@ -24,7 +24,10 @@ def playlist_entry():
 
 @pytest.fixture
 def backgrounds():
-    return {"transition": get_temp_dir() / "transition.png"}
+    return {
+        "transition": get_temp_dir() / "transition.png",
+        "idle": get_temp_dir() / "idle.png",
+    }
 
 
 @pytest.fixture
@@ -34,7 +37,10 @@ def durations():
 
 @pytest.fixture
 def text_screens():
-    return {"transition": get_temp_dir() / "transition.ass"}
+    return {
+        "transition": get_temp_dir() / "transition.ass",
+        "idle": get_temp_dir() / "idle.ass",
+    }
 
 
 @pytest.fixture
@@ -70,3 +76,8 @@ def media_player_entry_instrumental_track(
 
     entry.load(backgrounds, durations, text_screens)
     return entry
+
+
+@pytest.fixture
+def idle(backgrounds, text_screens):
+    return get_idle(backgrounds, text_screens)
