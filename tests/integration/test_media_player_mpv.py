@@ -4,9 +4,9 @@ from queue import Queue
 from tempfile import TemporaryDirectory
 from threading import Event
 from time import sleep
-from unittest import skipUnless
 from unittest.mock import MagicMock
 
+import pytest
 from dakara_base.config import Config
 from func_timeout import func_set_timeout
 
@@ -17,15 +17,18 @@ from dakara_player.media_player.base import (
     TRANSITION_TEXT_NAME,
 )
 from dakara_player.media_player.mpv import MediaPlayerMpv
+from dakara_player.mpv.check import is_mpv_available
 from tests.integration.base import TestCasePollerKara
 from tests.utils import assert_no_errors
+
+if not is_mpv_available():
+    pytest.skip("Mpv not installed", allow_module_level=True)
 
 REWIND_FAST_FORWARD_DURATION = 0.5
 REWIND_FAST_FORWARD_DELTA = 1
 DEFAULT_DELTA = 0.2
 
 
-@skipUnless(MediaPlayerMpv.is_available(), "mpv not installed")
 class MediaPlayerMpvIntegrationTestCase(TestCasePollerKara):
     """Test the mpv player class in real conditions."""
 

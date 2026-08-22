@@ -6,15 +6,10 @@ from abc import ABC
 from pathlib import Path
 from pprint import pformat
 
+import python_mpv_jsonipc as mpv
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe
 from packaging.version import Version, parse
-
-try:
-    import python_mpv_jsonipc as mpv
-
-except ImportError:
-    mpv = None
 
 from dakara_player.media_player.base import (
     InvalidStateError,
@@ -25,6 +20,7 @@ from dakara_player.media_player.base import (
     VersionNotFoundError,
     on_playing_this,
 )
+from dakara_player.mpv.check import is_mpv_available
 
 logger = logging.getLogger(__name__)
 mpv_logger = logging.getLogger("mpv")
@@ -78,19 +74,7 @@ class MediaPlayerMpv(MediaPlayer, ABC):
         Returns:
             bool: `True` if mpv is useable.
         """
-        if mpv is None:
-            return False
-
-        for _ in range(PLAYER_IS_AVAILABLE_ATTEMPTS):
-            try:
-                player = mpv.MPV()
-                player.terminate()
-                return True
-
-            except FileNotFoundError:
-                pass
-
-        return False
+        return is_mpv_available()
 
     @staticmethod
     def get_version():
