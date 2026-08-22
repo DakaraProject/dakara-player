@@ -53,8 +53,6 @@ class MediaPlayerMpv(MediaPlayer, ABC):
     def is_available():
         """Indicate if mpv is available.
 
-        Try the detection `PLAYER_IS_AVAILABLE_ATTEMPTS` times.
-
         Returns:
             bool: `True` if mpv is useable.
         """

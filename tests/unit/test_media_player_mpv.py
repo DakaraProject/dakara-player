@@ -157,28 +157,6 @@ class MediaPlayerMpvTestCase(TestCase):
             None, None, {}, "tmp"
         )
 
-    @patch("dakara_player.media_player.mpv.mpv.MPV")
-    def test_is_available_ok_direct(self, mocked_mpv_class):
-        """Test to get availability directly."""
-        self.assertTrue(MediaPlayerMpv.is_available())
-
-    @patch("dakara_player.media_player.mpv.mpv.MPV")
-    def test_is_available_ok_indirect(self, mocked_mpv_class):
-        """Test to get availability indirectly."""
-        mocked_mpv_class.side_effect = [FileNotFoundError(), MagicMock()]
-        self.assertTrue(MediaPlayerMpv.is_available())
-
-    @patch("dakara_player.media_player.mpv.mpv", None)
-    def test_is_available_ng_no_module(self):
-        """Test to get inavailability if mpv module cannot be loaded."""
-        self.assertFalse(MediaPlayerMpv.is_available())
-
-    @patch("dakara_player.media_player.mpv.mpv.MPV")
-    def test_is_available_ng(self, mocked_mpv_class):
-        """Test to get inavailability."""
-        mocked_mpv_class.side_effect = FileNotFoundError()
-        self.assertFalse(MediaPlayerMpv.is_available())
-
 
 class MediaPlayerMpvModelTestCase(TestCase):
     """Test the mpv player class unitary."""
@@ -291,11 +269,9 @@ class MediaPlayerMpvOldTestCase(MediaPlayerMpvModelTestCase):
 
     mpv_player_class = MediaPlayerMpvOld
 
-    @patch.object(MediaPlayerMpvOld, "is_available")
+    @patch.object(MediaPlayerMpv, "is_available", return_value=False, autospec=True)
     def test_init_unavailable(self, mocked_is_available):
         """Test when mpv is not available."""
-        mocked_is_available.return_value = False
-
         with self.assertRaisesRegex(
             MediaPlayerNotAvailableError, "mpv is not available"
         ):

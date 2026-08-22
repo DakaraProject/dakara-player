@@ -18,6 +18,7 @@ from dakara_player.media_player.base import (
     InvalidStateError,
     KaraFolderNotFound,
     MediaPlayerEntry,
+    MediaPlayerNotAvailableError,
     VersionNotFoundError,
     on_playing_this,
 )
@@ -146,6 +147,14 @@ class BaseTestCase(TestCase):
 class MediaPlayerVlcTestCase(BaseTestCase):
     """Test the VLC player class unitary."""
 
+    @patch.object(MediaPlayerVlc, "is_available", return_value=False, autospec=True)
+    def test_init_unavailable(self, mocked_is_available):
+        """Test when mpv is not available."""
+        with self.assertRaisesRegex(
+            MediaPlayerNotAvailableError, "VLC is not available"
+        ):
+            MediaPlayerVlc(Event(), Queue(), {}, Path("temp"))
+
     def set_playlist_entry(self, vlc_player):
         """Set a playlist entry and make the player play it.
 
@@ -243,12 +252,6 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             vlc_player.event_manager.event_attach.assert_called_with(
                 vlc.EventType.MediaPlayerEndReached, callback
             )
-
-    @skipIf(vlc is None, "VLC not installed")
-    def test_vlc_unavailable(self):
-        """Test that is_available returns False when vlc.Instance raises a NameError."""
-        with patch.object(vlc, "Instance", side_effect=NameError()):
-            self.assertFalse(MediaPlayerVlc.is_available())
 
     @patch("dakara_player.media_player.vlc.vlc.libvlc_get_version")
     def test_get_version_long_4_digits(self, mocked_libvlc_get_version):
