@@ -330,7 +330,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
         if not data:
             return
 
-        # call play
+        # call the play method if `play` is in data dictionary
         if play_data := data.pop("play", None):
             self.player.play(play_data)
 
@@ -594,7 +594,7 @@ class MediaPlayerMpvOld(MediaPlayerMpv):
             logger.info(
                 "Now playing '%s' (%s)",
                 self.entry.title,
-                self.player.path,
+                self.player.path,  # print what the player is currently playing
             )
 
             return
@@ -957,6 +957,8 @@ def get_song_data(
         data["audio_files"] = [str(song.instrumental_path)]
 
     elif song.instrumental_track is not None:
+        # mpv uses different index for each track, so we can safely request the
+        # second audio track
         data["audio"] = song.instrumental_track + 1
 
     return data

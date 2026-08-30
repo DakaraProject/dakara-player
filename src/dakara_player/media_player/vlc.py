@@ -516,7 +516,9 @@ class MediaPlayerVlc(MediaPlayer):
             logger.info(
                 "Now playing '%s' (%s)",
                 self.entry.title,
-                mrl_to_path(self.player.get_media().get_mrl()),
+                mrl_to_path(
+                    self.player.get_media().get_mrl()
+                ),  # print what the player is currently playing
             )
 
             return
