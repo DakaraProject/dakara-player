@@ -1303,6 +1303,17 @@ class TestMetadata:
         assert meta["key"] == "value"
 
         # assert marker
+        assert len(meta) == 2
+        assert "set_by" in meta
+        assert meta["set_by"] == "dakara"
+
+    def test_set_alter_marker(self, media):
+        """Test to set metadata and try to tamper with the marker."""
+        key = set_metadata(media, {"set_by": "other"})
+        meta = loads(media.get_meta(key))
+
+        # assert marker
+        assert len(meta) == 1
         assert "set_by" in meta
         assert meta["set_by"] == "dakara"
 
@@ -1316,6 +1327,7 @@ class TestMetadata:
         meta = loads(media.get_meta(key2))
 
         # assert content
+        assert len(meta) == 2
         assert "key" in meta
         assert meta["key"] == "value2"
 
