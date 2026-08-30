@@ -520,59 +520,54 @@ def on_playing_this(what_list, default_return=None):
 
 @dataclass
 class MediaPlayerItem:
-    """Media item. Anything the player is supposed to play.
-
-    Attributes:
-        path (pathlib.Path): Absolute path of the file to play.
-    """
+    """Media item. Anything the player is supposed to play."""
 
     path: Path
+    """Absolute path of the file to play."""
 
 
 @dataclass
 class MediaPlayerItemTransition(MediaPlayerItem):
-    """Media item for transitions.
-
-    Attributes:
-        subtitle_path (pathlib.Path): Absolute path of the screen text file.
-        duration (int): Duration of the transition.
-    """
+    """Media item for transitions."""
 
     subtitle_path: Path
+    """Absolute path of the screen text file."""
+
     duration: int
+    """Duration of the transition."""
 
 
 @dataclass
 class MediaPlayerItemSong(MediaPlayerItem):
-    """Media item for songs.
-
-    Attributes:
-        instrumental_track (int): If provided, number of the audio track to use
-            for instrumental version.
-        instrumental_path (pathlib.Path): If provided, absolute path to the
-            audio file to use for instrumental version.
-    """
+    """Media item for songs."""
 
     instrumental_track: int | None = None
+    """If provided, number of the audio track to use for instrumental
+    version.
+    """
+
     instrumental_path: Path | None = None
+    """If provided, absolute path to the audio file to use for instrumental
+    version.
+    """
 
 
 @dataclass
 class MediaPlayerEntry:
     """Player-agnostic representation of items to play associated with a playlist entry.
 
-    This class leverages all the logic of manipulating media files, so as to
+    This class concentrates all the logic of manipulating media files, so as to
     let media player implementations only focus on their own logic.
-
-    Attributes:
-        kara_folder_path (pathlib.Path): Absolute path to the karaoke directory.
-        playlist_entry (dict): Playlist entry as received from the server.
-        items (dict): Items associated with the playlist entry.
     """
 
     kara_folder_path: Path
+    """Absolute path to the karaoke directory."""
+
     playlist_entry: dict
+    """Playlist entry as received from the server."""
+
     items: dict[str, MediaPlayerItem] = field(init=False, default_factory=dict)
+    """Items associated with the playlist entry."""
 
     def load(
         self,
@@ -724,13 +719,10 @@ class MediaPlayerEntry:
 
 @dataclass
 class MediaPlayerItemIdle(MediaPlayerItem):
-    """Media item for idle screen.
-
-    Attributes:
-        subtitle_path (pathlib.Path): Absolute path of the screen text file.
-    """
+    """Media item for idle screen."""
 
     subtitle_path: Path
+    """Absolute path of the screen text file."""
 
 
 def get_idle(
