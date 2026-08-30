@@ -12,7 +12,7 @@ VLC_DUMMY_INTERFACE = True
 
 
 def display_module_warning() -> None:
-    """Display a warning message thet the dummy VLC interface is being used."""
+    """Display a warning message that the dummy VLC interface is being used."""
     warn(
         "You are using the dummy interface of VLC, because VLC seems to not be "
         "installed on your system. The dummy intervace is fine for unit testing "
@@ -46,7 +46,7 @@ class MediaSlaveType(IntEnum):
 class TrackType(IntEnum):
     video = 0
     audio = 1
-    ext = 3
+    ext = 2
 
 
 @dataclass
@@ -82,6 +82,7 @@ class Media:
         return self.mrl
 
     def tracks_get(self) -> list[Track]:
+        # this is what VLC returns for tests/resources/song2.mkv
         return [
             Track(0, TrackType.video),
             Track(1, TrackType.audio),
