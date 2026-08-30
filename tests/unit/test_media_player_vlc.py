@@ -1,5 +1,8 @@
+import logging
 import re
 from contextlib import ExitStack, contextmanager
+from dataclasses import dataclass
+from json import dumps, loads
 from pathlib import Path
 from queue import Queue
 from threading import Event
@@ -7,18 +10,15 @@ from time import sleep
 from unittest import TestCase, skipIf
 from unittest.mock import MagicMock, PropertyMock, patch
 
-try:
-    import vlc
-
-except (ImportError, OSError):
-    vlc = None
-
+import pytest
 from dakara_base.directory import PlatformDirs
 from packaging.version import parse
 
 from dakara_player.media_player.base import (
     InvalidStateError,
     KaraFolderNotFound,
+    MediaPlayerEntry,
+    MediaPlayerNotAvailableError,
     VersionNotFoundError,
     on_playing_this,
 )
@@ -27,14 +27,25 @@ from dakara_player.media_player.vlc import (
     UnavailableInstanceError,
     UnexpectedInstanceParameterError,
     VlcTooOldError,
+    get_idle_media,
     get_instance,
     get_metadata,
+    get_song_media,
+    get_transition_media,
     set_metadata,
+    update_metadata,
 )
-from dakara_player.mrl import path_to_mrl
 from dakara_player.text import TextGenerator
+from dakara_player.vlc.check import is_vlc_available
 from dakara_player.window import DummyWindowManager, WindowManager
-from tests.utils import get_temp_dir
+
+if is_vlc_available():
+    import vlc
+
+else:
+    from dakara_player.vlc import dummy_interface as vlc
+
+from tests.utils import assert_no_errors, get_temp_dir
 
 
 class BaseTestCase(TestCase):
@@ -45,20 +56,26 @@ class BaseTestCase(TestCase):
         self.id = 42
 
         # create playlist entry file path
-        self.song_file_path = Path("file")
+        self.song_file_path = get_temp_dir() / "file"
 
         # create playlist entry
         self.playlist_entry = {
             "id": self.id,
             "song": {
                 "title": "Song title",
-                "file_path": self.song_file_path,
+                "file_path": "file",
                 "instrumental_file": None,
                 "instrumental_track": None,
             },
             "owner": "me",
             "use_instrumental": False,
         }
+
+        self.entry = MediaPlayerEntry(get_temp_dir(), self.playlist_entry)
+
+        self.media_song = vlc.Media(self.song_file_path.as_uri())
+        self.media_transition = vlc.Media((get_temp_dir() / "transition.png").as_uri())
+        self.media_idle = vlc.Media((get_temp_dir() / "idle.png").as_uri())
 
     @contextmanager
     def get_instance(
@@ -126,35 +143,53 @@ class BaseTestCase(TestCase):
 
 
 @patch("dakara_player.media_player.base.TRANSITION_DURATION", 10)
-@patch("dakara_player.media_player.base.IDLE_DURATION", 20)
+@patch("dakara_player.media_player.vlc.IDLE_DURATION", 20)
 class MediaPlayerVlcTestCase(BaseTestCase):
     """Test the VLC player class unitary."""
 
-    def set_playlist_entry(self, vlc_player, started=True):
+    @patch.object(MediaPlayerVlc, "is_available", return_value=False, autospec=True)
+    def test_init_unavailable(self, mocked_is_available):
+        """Test when mpv is not available."""
+        with self.assertRaisesRegex(
+            MediaPlayerNotAvailableError, "VLC is not available"
+        ):
+            MediaPlayerVlc(Event(), Queue(), {}, Path("temp"))
+
+    def set_playlist_entry(self, vlc_player):
         """Set a playlist entry and make the player play it.
 
         Args:
             vlc_player (MediaPlayerVlc): Instance of the VLC player.
             started (bool): If True, make the player play the song.
         """
-        vlc_player.playlist_entry = self.playlist_entry
-
-        # create mocked transition
-        vlc_player.playlist_entry_data["transition"].media = MagicMock()
-
-        # create mocked song
-        media_song = MagicMock()
-        media_song.get_mrl.return_value = path_to_mrl(
-            vlc_player.kara_folder_path / self.playlist_entry["song"]["file_path"]
+        vlc_player.entry = self.entry
+        vlc_player.entry.load(
+            {"transition": get_temp_dir() / "transition.png"},
+            {"transition": 2},
+            {"transition": get_temp_dir() / "transition.ass"},
         )
-        vlc_player.playlist_entry_data["song"].media = media_song
 
-        # set media has started
-        if started:
-            player = vlc_player.instance.media_player_new.return_value
-            player.get_media.return_value = vlc_player.playlist_entry_data["song"].media
-            vlc_player.playlist_entry_data["transition"].started = True
-            vlc_player.playlist_entry_data["song"].started = True
+    def set_media(
+        self, vlc_player: MediaPlayerVlc, what: str | None = None, started: bool = True
+    ) -> vlc.Media:
+        if what == "idle":
+            set_metadata(self.media_idle, {"started": started, "type": "idle"})
+            vlc_player.player.get_media.return_value = self.media_idle
+            return self.media_idle
+
+        if what == "transition":
+            set_metadata(
+                self.media_transition, {"started": started, "type": "transition"}
+            )
+            vlc_player.player.get_media.return_value = self.media_transition
+            return self.media_transition
+
+        # default to song
+        set_metadata(
+            self.media_song, {"started": started, "track_id_audio": 0, "type": "song"}
+        )
+        vlc_player.player.get_media.return_value = self.media_song
+        return self.media_song
 
     def test_init_window(self):
         """Test to use default or custom window."""
@@ -218,13 +253,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 vlc.EventType.MediaPlayerEndReached, callback
             )
 
-    @skipIf(vlc is None, "VLC not installed")
-    def test_vlc_unavailable(self):
-        """Test that is_available returns False when vlc.Instance raises a NameError."""
-        with patch.object(vlc, "Instance", side_effect=NameError()):
-            self.assertFalse(MediaPlayerVlc.is_available())
-
-    @patch("dakara_player.media_player.vlc.libvlc_get_version")
+    @patch("dakara_player.media_player.vlc.vlc.libvlc_get_version")
     def test_get_version_long_4_digits(self, mocked_libvlc_get_version):
         """Test to get the VLC version when it is long and contains 4 digits."""
         # mock the version of VLC
@@ -236,7 +265,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         # assert the result
         self.assertEqual(version, parse("3.0.11.1"))
 
-    @patch("dakara_player.media_player.vlc.libvlc_get_version")
+    @patch("dakara_player.media_player.vlc.vlc.libvlc_get_version")
     def test_get_version_long(self, mocked_libvlc_get_version):
         """Test to get the VLC version when it is long."""
         # mock the version of VLC
@@ -248,7 +277,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         # assert the result
         self.assertEqual(version, parse("3.0.11"))
 
-    @patch("dakara_player.media_player.vlc.libvlc_get_version")
+    @patch("dakara_player.media_player.vlc.vlc.libvlc_get_version")
     def test_get_version_not_found(self, mocked_libvlc_get_version):
         """Test to get the VLC version when it is not available."""
         # mock the version of VLC
@@ -358,6 +387,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
 
     @patch.object(WindowManager, "get_id")
     @patch.object(WindowManager, "open")
+    @patch.object(MediaPlayerVlc, "generate_text", autospec=True)
     @patch.object(MediaPlayerVlc, "check_kara_folder_path")
     @patch.object(MediaPlayerVlc, "check_version")
     @patch.object(MediaPlayerVlc, "set_vlc_default_callbacks")
@@ -368,6 +398,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         mocked_set_vlc_default_callback,
         mocked_check_version,
         mocked_check_kara_folder_path,
+        mocked_generate_text,
         mocked_open,
         mocked_get_id,
     ):
@@ -380,9 +411,17 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # setup mocks
             mocked_get_version.return_value = "3.0.0 NoName"
 
+            # pre-asserts
+            self.assertIsNone(vlc_player.idle_item)
+            self.assertIsNone(vlc_player.entry)
+
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "INFO") as logger:
                 vlc_player.load()
+
+            # post asserts
+            self.assertIsNotNone(vlc_player.idle_item)
+            self.assertIsNone(vlc_player.entry)
 
             # assert the calls
             mocked_check_kara_folder_path.assert_called_with()
@@ -390,6 +429,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             mocked_background_loader.load.assert_called_with()
             mocked_check_version.assert_called_with()
             mocked_set_vlc_default_callback.assert_called_with()
+            mocked_generate_text.assert_called_with(vlc_player, "idle")
             mocked_open.assert_called_with()
             mocked_get_id.assert_called_with()
 
@@ -401,26 +441,29 @@ class MediaPlayerVlcTestCase(BaseTestCase):
     @patch.object(Path, "is_file")
     def test_set_playlist_entry_error_file(self, mocked_is_file):
         """Test to set a playlist entry that does not exist."""
-        with self.get_instance() as (vlc_player, _, _):
+        with self.get_instance() as (vlc_player, (_, mocked_background_loader, _), _):
             # mock the system call
             mocked_is_file.return_value = False
+            mocked_background_loader.backgrounds = {
+                "transition": get_temp_dir() / "transition.png"
+            }
 
             # mock the callbacks
             vlc_player.set_callback("could_not_play", MagicMock())
             vlc_player.set_callback("error", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
 
             # call the method
             with self.assertLogs("dakara_player.media_player.base", "DEBUG") as logger:
-                vlc_player.set_playlist_entry(self.playlist_entry)
+                vlc_player.set_playlist_entry(self.playlist_entry, autoplay=False)
 
             # call assertions
             mocked_is_file.assert_called_once_with()
 
             # post assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
 
             # assert the callbacks
             vlc_player.callbacks["could_not_play"].assert_called_with(self.id)
@@ -430,15 +473,17 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             self.assertListEqual(
                 logger.output,
                 [
-                    "ERROR:dakara_player.media_player.base:File not found '{}'".format(
-                        get_temp_dir() / self.song_file_path
-                    )
+                    "DEBUG:dakara_player.media_player.base:Setting up transition "
+                    f"screen for 'Song title' ({get_temp_dir() / 'transition.png'})",
+                    "INFO:dakara_player.media_player.base:Setting up "
+                    f"'Song title' ({get_temp_dir() / self.song_file_path})",
+                    "ERROR:dakara_player.media_player.base:File not found "
+                    f"'{get_temp_dir() / self.song_file_path}'",
                 ],
             )
 
     @patch("dakara_player.media_player.vlc.set_metadata")
     @patch("dakara_player.media_player.vlc.get_metadata")
-    @patch.object(MediaPlayerVlc, "manage_instrumental")
     @patch.object(MediaPlayerVlc, "play")
     @patch.object(MediaPlayerVlc, "generate_text")
     @patch.object(Path, "is_file")
@@ -447,7 +492,6 @@ class MediaPlayerVlcTestCase(BaseTestCase):
         mocked_is_file,
         mocked_generate_text,
         mocked_play,
-        mocked_manage_instrumental,
         mocked_get_metadata,
         mocked_set_metadata,
     ):
@@ -464,14 +508,17 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             vlc_player.set_callback("error", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
 
             # call the method
             vlc_player.set_playlist_entry(self.playlist_entry)
-            self.assertFalse(self.playlist_entry["use_instrumental"])
 
             # post assertions
-            self.assertDictEqual(vlc_player.playlist_entry, self.playlist_entry)
+            self.assertEqual(vlc_player.entry.kara_folder_path, get_temp_dir())
+            self.assertEqual(vlc_player.entry.playlist_entry, self.entry.playlist_entry)
+            self.assertEqual(len(vlc_player.entry.items), 2)
+            self.assertIn("transition", vlc_player.entry.items)
+            self.assertIn("song", vlc_player.entry.items)
 
             # assert the callbacks
             vlc_player.callbacks["could_not_play"].assert_not_called()
@@ -481,277 +528,12 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             mocked_is_file.assert_called_with()
             mocked_generate_text.assert_called_with("transition")
             mocked_play.assert_called_with("transition")
-            mocked_manage_instrumental.assert_not_called()
 
-    @patch.object(MediaPlayerVlc, "manage_instrumental_track")
-    @patch.object(MediaPlayerVlc, "get_number_tracks")
-    @patch.object(Path, "exists", return_value=True, autospec=True)
-    def test_manage_instrumental_file(
-        self,
-        mocked_exists,
-        mocked_get_number_tracks,
-        mocked_manage_instrumental_track,
-    ):
-        """Test to add instrumental file."""
-        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
-            video_path = get_temp_dir() / "video"
-            audio_path = get_temp_dir() / "audio"
-
-            # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
-            self.assertIsNotNone(vlc_player.kara_folder_path)
-
-            # set playlist entry to request instrumental
-            self.playlist_entry["use_instrumental"] = True
-            self.playlist_entry["song"]["instrumental_file"] = "audio"
-
-            # mocks
-            mocked_get_number_tracks.return_value = 2
-            mocked_media_song = mocked_instance.media_new_path.return_value
-            vlc_player.playlist_entry_data["song"].media = mocked_media_song
-
-            # call the method
-            with self.assertLogs("dakara_player.media_player", "DEBUG") as logger:
-                vlc_player.manage_instrumental(self.playlist_entry, video_path)
-
-            # post assertions
-            self.assertEqual(vlc_player.playlist_entry_data["song"].track_id_audio, 2)
-
-            # assert the effects on logs
-            self.assertListEqual(
-                logger.output,
-                [
-                    "INFO:dakara_player.media_player.base:Requesting "
-                    f"instrumental file or track for file '{video_path}'",
-                    "INFO:dakara_player.media_player.vlc:Requesting to play "
-                    f"instrumental file '{audio_path}'",
-                ],
-            )
-
-            # assert the call
-            mocked_manage_instrumental_track.assert_not_called()
-
-    @patch.object(MediaPlayerVlc, "manage_instrumental_file")
-    @patch.object(Path, "exists", return_value=False, autospec=True)
-    def test_manage_instrumental_file_error_not_found(
-        self, mocked_exists, mocked_manage_instrumental_file
-    ):
-        """Test to add instrumental file that does not exist."""
-        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
-            video_path = get_temp_dir() / "video"
-            audio_path = get_temp_dir() / "audio"
-
-            # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
-            self.assertIsNotNone(vlc_player.kara_folder_path)
-
-            # set playlist entry to request instrumental
-            self.playlist_entry["use_instrumental"] = True
-            self.playlist_entry["song"]["instrumental_file"] = "audio"
-
-            # mocks
-            mocked_media_song = mocked_instance.media_new_path.return_value
-            vlc_player.playlist_entry_data["song"].media = mocked_media_song
-
-            # call the method
-            with self.assertLogs("dakara_player.media_player.base", "DEBUG") as logger:
-                vlc_player.manage_instrumental(self.playlist_entry, video_path)
-
-            # post assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
-
-            # assert the effects on logs
-            self.assertListEqual(
-                logger.output,
-                [
-                    "INFO:dakara_player.media_player.base:Requesting "
-                    f"instrumental file or track for file '{video_path}'",
-                    "ERROR:dakara_player.media_player.base:Unable to find requested "
-                    f"instrumental file '{audio_path}'",
-                ],
-            )
-
-            mocked_manage_instrumental_file.assert_not_called()
-
-    @patch.object(MediaPlayerVlc, "get_number_tracks")
-    @patch.object(Path, "exists", return_value=True, autospec=True)
-    def test_manage_instrumental_file_error_slaves_add(
-        self,
-        mocked_exists,
-        mocked_get_number_tracks,
-    ):
-        """Test to be unable to add instrumental file."""
-        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
-            audio_path = get_temp_dir() / "audio"
-
-            # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
-            self.assertIsNotNone(vlc_player.kara_folder_path)
-
-            # set playlist entry to request instrumental
-            self.playlist_entry["use_instrumental"] = True
-
-            # mocks
-            mocked_get_number_tracks.return_value = 2
-            mocked_media_song = mocked_instance.media_new_path.return_value
-            vlc_player.playlist_entry_data["song"].media = mocked_media_song
-
-            # make slaves_add method unavailable
-            mocked_media_song = mocked_instance.return_value.media_new_path.return_value
-            mocked_media_song.slaves_add.side_effect = NameError("no slaves_add")
-            vlc_player.playlist_entry_data["song"].media = mocked_media_song
-
-            # call the method
-            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
-                vlc_player.manage_instrumental_file(audio_path)
-
-            # post assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
-
-            # assert the effects on logs
-            self.assertListEqual(
-                logger.output,
-                [
-                    "INFO:dakara_player.media_player.vlc:Requesting to play "
-                    f"instrumental file '{audio_path}'",
-                    "ERROR:dakara_player.media_player.vlc:This version of VLC does "
-                    "not support slaves, cannot add instrumental file",
-                ],
-            )
-
-    @patch.object(MediaPlayerVlc, "manage_instrumental_file")
-    @patch.object(MediaPlayerVlc, "get_track_id_audio_list")
-    @patch.object(MediaPlayerVlc, "get_number_tracks")
-    def test_manage_instrumental_track(
-        self,
-        mocked_get_number_tracks,
-        mocked_get_track_id_audio_list,
-        mocked_manage_instrumental_file,
-    ):
-        """Test add instrumental track."""
-        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
-            video_path = get_temp_dir() / "video"
-
-            # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
-            self.assertIsNotNone(vlc_player.kara_folder_path)
-
-            # set playlist entry to request instrumental
-            self.playlist_entry["use_instrumental"] = True
-            self.playlist_entry["song"]["instrumental_track"] = 1
-
-            # mocks
-            mocked_get_track_id_audio_list.return_value = [0, 99, 42]
-            mocked_media_song = mocked_instance.media_new_path.return_value
-            vlc_player.playlist_entry_data["song"].media = mocked_media_song
-
-            # call the method
-            with self.assertLogs("dakara_player.media_player", "DEBUG") as logger:
-                vlc_player.manage_instrumental(self.playlist_entry, video_path)
-
-            # post assertions
-            self.assertEqual(vlc_player.playlist_entry_data["song"].track_id_audio, 99)
-
-            # assert the effects on logs
-            self.assertListEqual(
-                logger.output,
-                [
-                    "INFO:dakara_player.media_player.base:Requesting "
-                    f"instrumental file or track for file '{video_path}'",
-                    "INFO:dakara_player.media_player.vlc:Requesting to play "
-                    "instrumental track 1 (#99)",
-                ],
-            )
-
-            # assert the call
-            mocked_get_number_tracks.assert_not_called()
-            mocked_manage_instrumental_file.assert_not_called()
-
-    @patch.object(MediaPlayerVlc, "get_track_id_audio_list")
-    def test_manage_instrumental_no_instrumental_found(
-        self, mocked_get_track_id_audio_list
-    ):
-        """Test to cannot find instrumental."""
-        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
-            # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
-
-            # set playlist entry to request instrumental
-            self.playlist_entry["use_instrumental"] = True
-
-            # mocks
-            mocked_get_track_id_audio_list.return_value = [99]
-            mocked_media_song = mocked_instance.return_value.media_new_path.return_value
-            vlc_player.playlist_entry_data["song"].media = mocked_media_song
-
-            # call the method
-            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
-                vlc_player.manage_instrumental_track(1)
-
-            # post assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
-
-            # assert the effects on logs
-            self.assertListEqual(
-                logger.output,
-                [
-                    "ERROR:dakara_player.media_player.vlc:Unable to find requested "
-                    "instrumental track 1"
-                ],
-            )
-
-    @patch.object(MediaPlayerVlc, "manage_instrumental_file")
-    @patch.object(MediaPlayerVlc, "manage_instrumental_track")
-    def test_manage_instrumental_no_fields(
-        self,
-        mocked_manage_instrumental_track,
-        mocked_manage_instrumental_file,
-    ):
-        """Test add instrumental track."""
-        with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
-            video_path = get_temp_dir() / "video"
-
-            # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
-            self.assertIsNotNone(vlc_player.kara_folder_path)
-
-            # set playlist entry to request instrumental
-            self.playlist_entry["use_instrumental"] = True
-
-            # mocks
-            mocked_media_song = mocked_instance.media_new_path.return_value
-            vlc_player.playlist_entry_data["song"].media = mocked_media_song
-
-            # call the method
-            with self.assertLogs("dakara_player.media_player", "DEBUG") as logger:
-                vlc_player.manage_instrumental(self.playlist_entry, video_path)
-
-            # post assertions
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].track_id_audio)
-
-            # assert the effects on logs
-            self.assertListEqual(
-                logger.output,
-                [
-                    "INFO:dakara_player.media_player.base:Requesting "
-                    "instrumental file or track for file '{}'".format(video_path),
-                    "WARNING:dakara_player.media_player.base:No instrumental "
-                    "file or track specified for file '{}'".format(video_path),
-                ],
-            )
-
-            # assert the call
-            mocked_manage_instrumental_file.assert_not_called()
-            mocked_manage_instrumental_track.assert_not_called()
-
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_set_pause_idle(self, mocked_is_playing_this):
+    def test_set_pause_idle(self):
         """Test to set pause when the player is idle."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             player = mocked_instance.media_player_new.return_value
-
-            # mock
-            mocked_is_playing_this.side_effect = lambda what: what == "idle"
+            self.set_media(vlc_player, "idle")
 
             # call method
             vlc_player.pause()
@@ -759,14 +541,11 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert call
             player.pause.assert_not_called()
 
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_restart_transition(self, mocked_is_playing_this):
+    def test_restart_transition(self):
         """Test to restart on transition screen."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             player = mocked_instance.media_player_new.return_value
-
-            # mock
-            mocked_is_playing_this.side_effect = lambda what: what == "transition"
+            self.set_media(vlc_player, "idle")
 
             # call method
             vlc_player.restart()
@@ -774,13 +553,11 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert call
             player.set_time.assert_not_called()
 
-    @patch.object(MediaPlayerVlc, "is_playing_this")
     @patch.object(MediaPlayerVlc, "clear_playlist_entry")
-    def test_skip_idle(self, mocked_clear_playlist_entry, mocked_is_playing_this):
+    def test_skip_idle(self, mocked_clear_playlist_entry):
         """Test to skip on idle screen."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
-            # mock
-            mocked_is_playing_this.side_effect = lambda what: what == "idle"
+            self.set_media(vlc_player, "idle")
 
             # call method
             vlc_player.skip(True)
@@ -788,14 +565,11 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert call
             vlc_player.clear_playlist_entry.assert_not_called()
 
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_rewind_transition(self, mocked_is_playing_this):
+    def test_rewind_transition(self):
         """Test to rewind on transition screen."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             player = mocked_instance.media_player_new.return_value
-
-            # mock
-            mocked_is_playing_this.side_effect = lambda what: what == "transition"
+            self.set_media(vlc_player, "transition")
 
             # call method
             vlc_player.rewind()
@@ -803,14 +577,11 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert call
             player.set_time.assert_not_called()
 
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_fast_forward_transition(self, mocked_is_playing_this):
+    def test_fast_forward_transition(self):
         """Test to advance on transition screen."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             player = mocked_instance.media_player_new.return_value
-
-            # mock
-            mocked_is_playing_this.side_effect = lambda what: what == "transition"
+            self.set_media(vlc_player, "transition")
 
             # call method
             vlc_player.fast_forward()
@@ -818,32 +589,30 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert call
             player.set_time.assert_not_called()
 
+    @patch.object(Path, "is_file", autospec=True, return_value=True)
     @patch.object(MediaPlayerVlc, "create_thread")
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_end_reached_transition(
-        self, mocked_is_playing_this, mocked_create_thread
-    ):
+    def test_handle_end_reached_transition(self, mocked_create_thread, mocked_is_file):
         """Test song end callback after a transition screen."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
-            vlc_player.playlist_entry_data["song"].started = False
+            self.set_media(vlc_player, "transition")
 
             # mock the call
-            mocked_is_playing_this.side_effect = lambda what: what == "transition"
             vlc_player.set_callback("finished", MagicMock())
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
                 vlc_player.handle_end_reached("event")
 
+            assert_no_errors(vlc_player)
+
             # assert effect on logs
             self.assertListEqual(
                 logger.output,
                 [
                     "DEBUG:dakara_player.media_player.vlc:End reached callback called",
-                    "DEBUG:dakara_player.media_player.vlc:Will play '{}'".format(
-                        get_temp_dir() / self.song_file_path
-                    ),
+                    "DEBUG:dakara_player.media_player.vlc:Finished playing transition "
+                    "for 'Song title'",
                 ],
             )
 
@@ -854,73 +623,40 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             )
 
     @patch.object(MediaPlayerVlc, "create_thread")
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_end_reached_song(
-        self, mocked_is_playing_this, mocked_create_thread
-    ):
+    def test_handle_end_reached_song(self, mocked_create_thread):
         """Test song end callback after a song."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
+            self.set_media(vlc_player, "song")
 
             # mock the call
             vlc_player.set_callback("finished", MagicMock())
-            mocked_is_playing_this.side_effect = lambda what: what == "song"
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG"):
                 vlc_player.handle_end_reached("event")
 
-            # post assert
-            self.assertIsNone(vlc_player.playlist_entry_data["song"].media)
+            assert_no_errors(vlc_player)
 
             # assert the call
             vlc_player.callbacks["finished"].assert_called_with(42)
             mocked_create_thread.assert_not_called()
 
     @patch.object(MediaPlayerVlc, "create_thread")
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_end_reached_song_too_fast(
-        self, mocked_is_playing_this, mocked_create_thread
-    ):
-        """Test song end callback after a song with instantaneous response
-        from server.
-        """
-        with self.get_instance() as (vlc_player, _, _):
-            self.set_playlist_entry(vlc_player)
-
-            # mock the call
-            vlc_player.set_callback(
-                "finished", lambda _: self.set_playlist_entry(vlc_player, started=False)
-            )
-            mocked_is_playing_this.side_effect = lambda what: what == "song"
-
-            # call the method
-            with self.assertLogs("dakara_player.media_player.vlc", "DEBUG"):
-                vlc_player.handle_end_reached("event")
-
-            # post assert
-            self.assertTrue(vlc_player.errors.empty())
-            self.assertIsNotNone(vlc_player.playlist_entry_data["song"].media)
-
-            # assert the call
-            mocked_create_thread.assert_not_called()
-
-    @patch.object(MediaPlayerVlc, "create_thread")
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_end_reached_idle(
-        self, mocked_is_playing_this, mocked_create_thread
-    ):
+    def test_handle_end_reached_idle(self, mocked_create_thread):
         """Test song end callback after an idle screen."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
+            self.set_media(vlc_player, "idle")
 
             # mock the call
             vlc_player.set_callback("finished", MagicMock())
-            mocked_is_playing_this.side_effect = lambda what: what == "idle"
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG"):
                 vlc_player.handle_end_reached("event")
+
+            assert_no_errors(vlc_player)
 
             # assert the call
             vlc_player.callbacks["finished"].assert_not_called()
@@ -929,17 +665,17 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             )
 
     @patch.object(MediaPlayerVlc, "create_thread")
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_end_reached_invalid(
-        self, mocked_is_playing_this, mocked_create_thread
-    ):
+    def test_handle_end_reached_invalid(self, mocked_create_thread):
         """Test song end callback on invalid state."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
+            media = self.set_media(
+                vlc_player,
+            )
+            set_metadata(media, {"type": "unknown"})
 
             # mock the call
             vlc_player.set_callback("finished", MagicMock())
-            mocked_is_playing_this.return_value = False
 
             self.assertFalse(vlc_player.stop.is_set())
 
@@ -956,19 +692,20 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             mocked_create_thread.assert_not_called()
 
     @patch.object(MediaPlayerVlc, "skip")
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_encountered_error(self, mocked_is_playing_this, mocked_skip):
+    def test_handle_encountered_error(self, mocked_skip):
         """Test error callback."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
+            self.set_media(vlc_player, "song")
 
             # mock the call
-            mocked_is_playing_this.side_effect = lambda what: what == "song"
             vlc_player.set_callback("error", MagicMock())
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
                 vlc_player.handle_encountered_error("event")
+
+            assert_no_errors(vlc_player)
 
             # assert effect on logs
             self.assertListEqual(
@@ -988,20 +725,21 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             mocked_skip.assert_called_with()
 
     @patch.object(MediaPlayerVlc, "get_timing")
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_playing_resumed(self, mocked_is_playing_this, mocked_get_timing):
+    def test_handle_playing_resumed(self, mocked_get_timing):
         """Test playing callback when resuming."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
+            self.set_media(vlc_player, "song")
 
             # mock the call
             vlc_player.set_callback("resumed", MagicMock())
-            mocked_is_playing_this.side_effect = lambda what: what == "song"
             mocked_get_timing.return_value = 25
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
                 vlc_player.handle_playing("event")
+
+            assert_no_errors(vlc_player)
 
             # assert effect on logs
             self.assertListEqual(
@@ -1014,63 +752,60 @@ class MediaPlayerVlcTestCase(BaseTestCase):
 
             # assert the call
             vlc_player.callbacks["resumed"].assert_called_with(42, 25)
-            mocked_is_playing_this.assert_called_with("song")
 
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_playing_transition_starts(self, mocked_is_playing_this):
+    def test_handle_playing_transition_starts(self):
         """Test playing callback when transition starts."""
+
         with self.get_instance() as (vlc_player, _, _):
-            self.set_playlist_entry(vlc_player, started=False)
+            self.set_playlist_entry(vlc_player)
+            media = self.set_media(vlc_player, "transition", started=False)
 
             # mock the call
             vlc_player.set_callback("started_transition", MagicMock())
-            vlc_player.playlist_entry_data["transition"].started = False
-            mocked_is_playing_this.side_effect = lambda what: what == "transition"
+            vlc_player.player.get_media.return_value = media
 
             # pre assert
-            self.assertFalse(vlc_player.playlist_entry_data["transition"].started)
-            self.assertFalse(vlc_player.playlist_entry_data["song"].started)
+            self.assertFalse(get_metadata(media)["started"])
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
                 vlc_player.handle_playing("event")
+
+            assert_no_errors(vlc_player)
 
             # assert effect on logs
             self.assertListEqual(
                 logger.output,
                 [
                     "DEBUG:dakara_player.media_player.vlc:Playing callback called",
-                    "INFO:dakara_player.media_player.vlc:Playing transition for "
+                    "INFO:dakara_player.media_player.vlc:Playing transition screen for "
                     "'Song title'",
                 ],
             )
 
             # post assert
-            self.assertTrue(vlc_player.playlist_entry_data["transition"].started)
-            self.assertFalse(vlc_player.playlist_entry_data["song"].started)
+            self.assertTrue(get_metadata(media)["started"])
 
             # assert the call
             vlc_player.callbacks["started_transition"].assert_called_with(42)
 
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_playing_song(self, mocked_is_playing_this):
+    def test_handle_playing_song_starts(self):
         """Test playing callback when song starts."""
         with self.get_instance() as (vlc_player, _, _):
             self.set_playlist_entry(vlc_player)
-            vlc_player.playlist_entry_data["song"].started = False
+            media = self.set_media(vlc_player, "song", started=False)
 
             # mock the call
             vlc_player.set_callback("started_song", MagicMock())
-            vlc_player.playlist_entry_data["transition"].started = True
-            vlc_player.playlist_entry_data["song"].started = False
-            mocked_is_playing_this.side_effect = lambda what: what == "song"
 
             # pre assert
-            self.assertFalse(vlc_player.playlist_entry_data["song"].started)
+            self.assertFalse(get_metadata(media)["started"])
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
                 vlc_player.handle_playing("event")
+
+            assert_no_errors(vlc_player)
 
             # assert effect on logs
             self.assertListEqual(
@@ -1078,33 +813,32 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 [
                     "DEBUG:dakara_player.media_player.vlc:Playing callback called",
                     "INFO:dakara_player.media_player.vlc:Now playing 'Song title' "
-                    "('{}')".format(get_temp_dir() / self.song_file_path),
+                    "({})".format(get_temp_dir() / self.song_file_path),
                 ],
             )
 
             # post assert
-            self.assertTrue(vlc_player.playlist_entry_data["song"].started)
+            self.assertTrue(get_metadata(media)["started"])
 
             # assert the call
             vlc_player.callbacks["started_song"].assert_called_with(42)
 
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_playing_media_starts_track_id(self, mocked_is_playing_this):
+    def test_handle_playing_song_starts_track_id(self):
         """Test playing callback when media starts with requested track ID."""
         with self.get_instance() as (vlc_player, (mocked_instance, _, _), _):
             mocked_player = mocked_instance.media_player_new.return_value
             self.set_playlist_entry(vlc_player)
-            vlc_player.playlist_entry_data["song"].track_id_audio = 99
+            media = self.set_media(vlc_player, "song", started=False)
+            update_metadata(media, {"track_id_audio": 99})
 
             # mock the call
             vlc_player.set_callback("started_song", MagicMock())
-            vlc_player.playlist_entry_data["transition"].started = True
-            vlc_player.playlist_entry_data["song"].started = False
-            mocked_is_playing_this.side_effect = lambda what: what == "song"
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
                 vlc_player.handle_playing("event")
+
+            assert_no_errors(vlc_player)
 
             # assert effect on logs
             self.assertListEqual(
@@ -1112,9 +846,9 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 [
                     "DEBUG:dakara_player.media_player.vlc:Playing callback called",
                     "DEBUG:dakara_player.media_player.vlc:Requesting to play audio "
-                    "track 99",
+                    "track #99",
                     "INFO:dakara_player.media_player.vlc:Now playing 'Song title' "
-                    "('{}')".format(get_temp_dir() / self.song_file_path),
+                    "({})".format(get_temp_dir() / self.song_file_path),
                 ],
             )
 
@@ -1122,18 +856,16 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             vlc_player.callbacks["started_song"].assert_called_with(42)
             mocked_player.audio_set_track.assert_called_with(99)
 
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_playing_idle_starts(self, mocked_is_playing_this):
+    def test_handle_playing_idle_starts(self):
         """Test playing callback when idle screen starts."""
         with self.get_instance() as (vlc_player, _, _):
-            # mock the call
-            vlc_player.playlist_entry_data["transition"].started = False
-            vlc_player.playlist_entry_data["song"].started = False
-            mocked_is_playing_this.side_effect = lambda what: what == "idle"
+            self.set_media(vlc_player, "idle", started=False)
 
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
                 vlc_player.handle_playing("event")
+
+            assert_no_errors(vlc_player)
 
             # assert effect on logs
             self.assertListEqual(
@@ -1144,12 +876,11 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 ],
             )
 
-    @patch.object(MediaPlayerVlc, "is_playing_this")
-    def test_handle_playing_invalid(self, mocked_is_playing_this):
+    def test_handle_playing_invalid(self):
         """Test playing callback on invalid state."""
         with self.get_instance() as (vlc_player, _, _):
-            # setup mock
-            mocked_is_playing_this.return_value = False
+            media = self.set_media(vlc_player)
+            update_metadata(media, {"type": "unknown"})
 
             self.assertFalse(vlc_player.stop.is_set())
 
@@ -1174,6 +905,8 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # call the method
             with self.assertLogs("dakara_player.media_player.vlc", "DEBUG") as logger:
                 vlc_player.handle_paused("event")
+
+            assert_no_errors(vlc_player)
 
             # assert effect on logs
             self.assertListEqual(
@@ -1221,7 +954,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert the instance
             self.assertDictEqual(
                 vlc_player.durations,
-                {"transition": 10, "idle": 20, "rewind_fast_forward": 10},
+                {"transition": 10, "rewind_fast_forward": 10},
             )
 
     def test_custom_durations(self):
@@ -1234,7 +967,7 @@ class MediaPlayerVlcTestCase(BaseTestCase):
             # assert the instance
             self.assertDictEqual(
                 vlc_player.durations,
-                {"transition": 5, "idle": 20, "rewind_fast_forward": 10},
+                {"transition": 5, "rewind_fast_forward": 10},
             )
 
     @patch("dakara_player.media_player.base.PLAYER_CLOSING_DURATION", 0)
@@ -1322,71 +1055,6 @@ class MediaPlayerVlcTestCase(BaseTestCase):
                 vlc_player.set_window(99)
 
 
-@patch("dakara_player.media_player.vlc.METADATA_KEYS_COUNT", 10)
-class SetMetadataTestCase(TestCase):
-    """Test the set_metadata function."""
-
-    def test_set_first(self):
-        """Test to set metadata in first field."""
-        media = MagicMock()
-        media.get_meta.return_value = None
-
-        set_metadata(media, {"data": "value"})
-
-        media.set_meta.assert_called_with(0, '{"data": "value"}')
-
-    def test_set_second(self):
-        """Test to set metadata in second field."""
-        media = MagicMock()
-        media.get_meta.side_effect = ["value", None]
-
-        set_metadata(media, {"data": "value"})
-
-        media.set_meta.assert_called_with(1, '{"data": "value"}')
-
-    def test_set_fail(self):
-        """Test error when unable to set metadata in any field."""
-        media = MagicMock()
-        media.get_meta.return_value = "value"
-
-        with self.assertRaises(ValueError):
-            set_metadata(media, {"data": "value"})
-
-
-@patch("dakara_player.media_player.vlc.METADATA_KEYS_COUNT", 10)
-class GetMetadataTestCase(TestCase):
-    """Test the get_metadata function."""
-
-    def test_get_first(self):
-        """Test to get metadata from first field."""
-        media = MagicMock()
-        media.get_meta.return_value = '{"data": "value"}'
-
-        self.assertEqual(get_metadata(media), {"data": "value"})
-
-    def test_get_second_none(self):
-        """Test to get metadata from second field with first being none."""
-        media = MagicMock()
-        media.get_meta.side_effect = [None, '{"data": "value"}']
-
-        self.assertEqual(get_metadata(media), {"data": "value"})
-
-    def test_get_second_text(self):
-        """Test to get metadata from second field with first being text."""
-        media = MagicMock()
-        media.get_meta.side_effect = ["value", '{"data": "value"}']
-
-        self.assertEqual(get_metadata(media), {"data": "value"})
-
-    def test_get_fail(self):
-        """Test error when unable to get metadata from any field."""
-        media = MagicMock()
-        media.get_meta.return_value = "value"
-
-        with self.assertRaises(ValueError):
-            get_metadata(media)
-
-
 @patch.object(MediaPlayerVlc, "is_playing_this")
 class OnPlayingThisTestCase(BaseTestCase):
     """Test the decorator for returning early if the player is playing
@@ -1451,3 +1119,308 @@ class GetInstanceTestCase(TestCase):
         """Test instance."""
         self.assertIs(mocked_vlc.Instance.return_value, get_instance())
         mocked_vlc.Instance.assert_called_with()
+
+
+@dataclass
+class DummyTrack:
+    id: int
+    type: vlc.TrackType
+
+
+class TestMediaPlayerEntryVlc:
+    def test_get_transition_media(self, media_player_entry):
+        """Test to get a transition."""
+        transition = get_transition_media(media_player_entry.items["transition"], [])
+
+        assert transition is not None
+        assert transition.get_mrl() == (get_temp_dir() / "transition.png").as_uri()
+        assert get_metadata(transition) == {"type": "transition", "started": False}
+
+    def test_get_song_media(self, media_player_entry):
+        """Test to get a song."""
+        song = get_song_media(media_player_entry.items["song"], [])
+
+        assert song is not None
+        assert song.get_mrl() == (get_temp_dir() / "file.mkv").as_uri()
+        assert get_metadata(song) == {
+            "type": "song",
+            "started": False,
+            "track_id_audio": None,
+        }
+
+    def test_get_song_media_instrumental_file(
+        self, media_player_entry_instrumental_file, mocker
+    ):
+        """Test to get a song with instrumental file."""
+        mocker.patch.object(
+            vlc.Media,
+            "tracks_get",
+            return_value=[
+                DummyTrack(0, vlc.TrackType.video),
+                DummyTrack(1, vlc.TrackType.audio),
+            ],
+            autospec=True,
+        )
+        mocker.patch.object(vlc.Media, "parse", autospec=True)
+
+        song = get_song_media(media_player_entry_instrumental_file.items["song"], [])
+
+        assert get_metadata(song) == {
+            "type": "song",
+            "started": False,
+            "track_id_audio": 2,
+        }
+
+    def test_get_song_media_instrumental_file_no_slaves_add(
+        self, media_player_entry_instrumental_file, mocker, caplog
+    ):
+        """Test to be unable to add instrumental file."""
+        mocker.patch.object(
+            vlc.Media,
+            "tracks_get",
+            return_value=[
+                DummyTrack(0, vlc.TrackType.video),
+                DummyTrack(1, vlc.TrackType.audio),
+            ],
+            autospec=True,
+        )
+        mocker.patch.object(vlc.Media, "parse", autospec=True)
+        mocker.patch.object(
+            vlc.Media,
+            "slaves_add",
+            side_effect=NameError("no slaves_add"),
+            autospec=True,
+        )
+
+        song = get_song_media(media_player_entry_instrumental_file.items["song"], [])
+
+        assert get_metadata(song) == {
+            "type": "song",
+            "started": False,
+            "track_id_audio": None,
+        }
+        assert caplog.record_tuples == [
+            (
+                "dakara_player.media_player.vlc",
+                logging.ERROR,
+                "This version of VLC does not support slaves, cannot add "
+                "instrumental file",
+            )
+        ]
+
+    def test_get_song_media_instrumental_track(
+        self, media_player_entry_instrumental_track, mocker, caplog
+    ):
+        """Test to get a song with instrumental track."""
+        mocker.patch.object(
+            vlc.Media,
+            "tracks_get",
+            return_value=[
+                DummyTrack(0, vlc.TrackType.video),
+                DummyTrack(1, vlc.TrackType.audio),
+                DummyTrack(2, vlc.TrackType.audio),
+            ],
+            autospec=True,
+        )
+        mocker.patch.object(vlc.Media, "parse", autospec=True)
+
+        caplog.set_level(logging.DEBUG)
+
+        song = get_song_media(media_player_entry_instrumental_track.items["song"], [])
+
+        assert get_metadata(song) == {
+            "type": "song",
+            "started": False,
+            "track_id_audio": 2,
+        }
+        assert caplog.record_tuples == [
+            (
+                "dakara_player.media_player.vlc",
+                logging.DEBUG,
+                "Instrumental track is #2 for VLC",
+            ),
+        ]
+
+    def test_get_song_media_instrumental_track_no_track(
+        self, media_player_entry_instrumental_track, mocker, caplog
+    ):
+        """Test to get a song with instrumental track when this track is
+        missing."""
+        mocker.patch.object(
+            vlc.Media,
+            "tracks_get",
+            return_value=[
+                DummyTrack(0, vlc.TrackType.video),
+                DummyTrack(1, vlc.TrackType.audio),
+            ],
+            autospec=True,
+        )
+        mocker.patch.object(vlc.Media, "parse", autospec=True)
+
+        caplog.set_level(logging.INFO)
+
+        song = get_song_media(media_player_entry_instrumental_track.items["song"], [])
+
+        assert get_metadata(song) == {
+            "type": "song",
+            "started": False,
+            "track_id_audio": None,
+        }
+        assert caplog.record_tuples == [
+            (
+                "dakara_player.media_player.vlc",
+                logging.ERROR,
+                "Unable to find requested instrumental track 1",
+            ),
+        ]
+
+
+def test_get_idle_media(idle):
+    media = get_idle_media(idle, [])
+
+    assert media.get_mrl() == (get_temp_dir() / "idle.png").as_uri()
+
+
+@pytest.fixture
+def media() -> vlc.Media:
+    return vlc.Media("nowhere")
+
+
+@pytest.fixture
+def media_set(media) -> vlc.Media:
+    set_metadata(media, {"key": "value"})
+    return media
+
+
+class TestMetadata:
+    def test_set_first(self, media):
+        """Test to set metadata for the first time."""
+        key = set_metadata(media, {"key": "value"})
+        meta = loads(media.get_meta(key))
+
+        # assert content
+        assert "key" in meta
+        assert meta["key"] == "value"
+
+        # assert marker
+        assert len(meta) == 2
+        assert "set_by" in meta
+        assert meta["set_by"] == "dakara"
+
+    def test_set_alter_marker(self, media):
+        """Test to set metadata and try to tamper with the marker."""
+        key = set_metadata(media, {"set_by": "other"})
+        meta = loads(media.get_meta(key))
+
+        # assert marker
+        assert len(meta) == 1
+        assert "set_by" in meta
+        assert meta["set_by"] == "dakara"
+
+    def test_set_second(self, media):
+        """Test to set metadata for the second time."""
+        key1 = set_metadata(media, {"key": "value1"})
+        key2 = set_metadata(media, {"key": "value2"})
+
+        assert key1 == key2
+
+        meta = loads(media.get_meta(key2))
+
+        # assert content
+        assert len(meta) == 2
+        assert "key" in meta
+        assert meta["key"] == "value2"
+
+    def test_set_slot_not_empty(self, media):
+        """Test to set metadata in second slot when the first one is not empty."""
+        media.set_meta(0, "foo")
+        media.set_meta(1, "bar")
+        key = set_metadata(media, {"key": "value"})
+
+        assert key == 2
+
+        meta = loads(media.get_meta(key))
+
+        # assert content
+        assert "key" in meta
+        assert meta["key"] == "value"
+
+    def test_set_fail(self, media, mocker):
+        """Test error when unable to set metadata in any field."""
+        mocker.patch.object(vlc.Media, "get_meta", return_value="value", autospec=True)
+
+        with pytest.raises(ValueError):
+            set_metadata(media, {"key": "value"})
+
+    def test_get_first(self, media_set):
+        """Test to get metadata from the first time."""
+        meta = get_metadata(media_set)
+
+        assert "key" in meta
+        assert meta["key"] == "value"
+
+    def test_get_second(self, media_set):
+        """Test to get metadata from the first time."""
+        get_metadata(media_set)
+        meta = get_metadata(media_set)
+
+        assert "key" in meta
+        assert meta["key"] == "value"
+
+    def test_get_slot_not_empty(self, media):
+        """Test to get metadata from second slot when the first one is not empty."""
+        media.set_meta(0, "foo")
+        media.set_meta(1, "bar")
+        set_metadata(media, {"key": "value"})
+
+        get_metadata(media)
+        meta = get_metadata(media)
+
+        assert "key" in meta
+        assert meta["key"] == "value"
+
+    def test_get_fail(self, media):
+        """Test error when metadata is not set."""
+        with pytest.raises(ValueError):
+            get_metadata(media)
+
+    def test_get_fail_slot_not_empty(self, media):
+        """Test error when metadata is not set with first slot being not empty."""
+        media.set_meta(0, "foo")
+        media.set_meta(1, "bar")
+
+        with pytest.raises(ValueError):
+            get_metadata(media)
+
+    def test_get_fail_no_marker(self, media):
+        """Test error when metadata do not have the marker."""
+        media.set_meta(0, dumps({"foo": "bar"}))
+        media.set_meta(1, dumps({"foo": "baz"}))
+
+        with pytest.raises(ValueError):
+            get_metadata(media)
+
+    def test_update_first(self, media_set):
+        """Test update metadata for the first time."""
+        update_metadata(media_set, {"foo": "bar"})
+
+        meta = get_metadata(media_set)
+
+        assert "key" in meta
+        assert meta["key"] == "value"
+        assert "foo" in meta
+        assert meta["foo"] == "bar"
+
+    def test_update_second(self, media_set):
+        """Test update metadata for the second time."""
+        key1 = update_metadata(media_set, {"foo": "bar"})
+        key2 = update_metadata(media_set, {"foo": "bar"})
+
+        assert key1 == key2
+
+        meta = get_metadata(media_set)
+
+        assert "key" in meta
+        assert meta["key"] == "value"
+        assert "foo" in meta
+        assert meta["foo"] == "bar"

@@ -31,6 +31,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Default transition screen duration is increased to 5 seconds.
+
 ## 1.10.0 - 2026-08-13
 
 ### Added

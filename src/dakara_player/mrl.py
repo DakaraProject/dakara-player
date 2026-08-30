@@ -4,7 +4,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 
-def mrl_to_path(file_mrl):
+def mrl_to_path(file_mrl: str) -> Path:
     """Convert a MRL to a filesystem path.
 
     VLC stores file paths as MRL, we have to bring it back to a more classic
@@ -24,15 +24,3 @@ def mrl_to_path(file_mrl):
         path_string = path_string[1:]
 
     return Path(path_string).resolve()
-
-
-def path_to_mrl(file_path):
-    """Convert a filesystem path to MRL.
-
-    Args:
-        file_path (pathlib.Path or str): Path to the resource.
-
-    Returns:
-        str: Path to the resource within MRL format.
-    """
-    return file_path.as_uri()

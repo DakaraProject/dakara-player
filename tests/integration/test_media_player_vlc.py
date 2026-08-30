@@ -3,15 +3,10 @@ from pathlib import Path
 from queue import Queue
 from tempfile import TemporaryDirectory
 from threading import Event
-from unittest import skipIf, skipUnless
+from unittest import skipIf
 from unittest.mock import MagicMock
 
-try:
-    import vlc
-
-except (ImportError, OSError):
-    vlc = None
-
+import pytest
 from dakara_base.config import Config
 from func_timeout import func_set_timeout
 
@@ -21,14 +16,22 @@ from dakara_player.media_player.vlc import (
     MediaPlayerVlc,
 )
 from dakara_player.mrl import mrl_to_path
+from dakara_player.vlc.check import is_vlc_available
+
+if is_vlc_available():
+    import vlc
+
+else:
+    pytest.skip("VLC not installed", allow_module_level=True)
+
 from tests.integration.base import TestCasePollerKara
+from tests.utils import assert_no_errors
 
 REWIND_FAST_FORWARD_DURATION = 0.5
 REWIND_FAST_FORWARD_DELTA = 0.5
 DEFAULT_DELTA = 0.2
 
 
-@skipUnless(MediaPlayerVlc.is_available(), "VLC not installed")
 class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     """Test the VLC player class in real conditions."""
 
@@ -107,14 +110,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             yield vlc_player, temp, output
 
             if check_error:
-                # display errors in queue if any
-                if not vlc_player.errors.empty():
-                    _, error, traceback = vlc_player.errors.get(5)
-                    error.with_traceback(traceback)
-                    raise error
-
-                # assert no errors to fail test if any
-                self.assertFalse(vlc_player.stop.is_set())
+                assert_no_errors(vlc_player)
 
     def test_metadata_keys_count(self):
         """Test the number of metadata keys."""
@@ -124,7 +120,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
     def test_start(self):
         """Test the initial state of the player without instructions."""
         with self.get_instance() as (vlc_player, _, _):
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             self.assertFalse(vlc_player.is_playing_this("idle"))
             self.assertFalse(vlc_player.is_playing_this("transition"))
             self.assertFalse(vlc_player.is_playing_this("song"))
@@ -166,16 +162,12 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.set_callback("started_song", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             self.assertIsNone(vlc_player.player.get_media())
             self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
 
             # call the method
             vlc_player.set_playlist_entry(self.playlist_entry1, autoplay=False)
-
-            # check media did not started
-            self.assertFalse(vlc_player.playlist_entry_data["transition"].started)
-            self.assertFalse(vlc_player.playlist_entry_data["song"].started)
 
             # start playing
             vlc_player.play("transition")
@@ -185,11 +177,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # post assertions for transition screen
             self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
-            self.assertIsNotNone(vlc_player.playlist_entry)
-
-            # check transition media only started
-            self.assertTrue(vlc_player.playlist_entry_data["transition"].started)
-            self.assertFalse(vlc_player.playlist_entry_data["song"].started)
+            self.assertIsNotNone(vlc_player.entry)
 
             # check media exists
             media = vlc_player.player.get_media()
@@ -216,10 +204,6 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # post assertions for song
             self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
-
-            # check song media also started
-            self.assertTrue(vlc_player.playlist_entry_data["transition"].started)
-            self.assertTrue(vlc_player.playlist_entry_data["song"].started)
 
             # check media exists
             media = vlc_player.player.get_media()
@@ -264,7 +248,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.set_callback("started_song", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             self.assertIsNone(vlc_player.player.get_media())
             self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
 
@@ -311,7 +295,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.set_callback("started_song", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             self.assertIsNone(vlc_player.player.get_media())
             self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
 
@@ -358,7 +342,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.set_callback("started_song", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             self.assertIsNone(vlc_player.player.get_media())
             self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
 
@@ -510,7 +494,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.set_callback("updated_timing", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             self.assertIsNone(vlc_player.player.get_media())
             self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
 
@@ -522,7 +506,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # post assertions for song
             self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
-            self.assertIsNotNone(vlc_player.playlist_entry)
+            self.assertIsNotNone(vlc_player.entry)
 
             # wait a bit for the player to play
             self.wait(
@@ -538,7 +522,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             self.assertAlmostEqual(vlc_player.player.get_time(), 0, delta=DEFAULT_DELTA)
 
             # check the song is not stopped
-            self.assertIsNotNone(vlc_player.playlist_entry)
+            self.assertIsNotNone(vlc_player.entry)
             vlc_player.callbacks["finished"].assert_not_called()
 
             # assert callback
@@ -556,7 +540,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.set_callback("finished", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             self.assertIsNone(vlc_player.player.get_media())
             self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
 
@@ -568,7 +552,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # post assertions for song
             self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
-            self.assertIsNotNone(vlc_player.playlist_entry)
+            self.assertIsNotNone(vlc_player.entry)
 
             # check media exists
             media = vlc_player.player.get_media()
@@ -582,7 +566,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.skip()
 
             # check the song is stopped accordingly
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             vlc_player.callbacks["finished"].assert_called_with(
                 self.playlist_entry1["id"]
             )
@@ -595,7 +579,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # post assertions for song
             self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
-            self.assertIsNotNone(vlc_player.playlist_entry)
+            self.assertIsNotNone(vlc_player.entry)
 
             # check media exists
             media = vlc_player.player.get_media()
@@ -615,7 +599,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.set_callback("finished", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             self.assertIsNone(vlc_player.player.get_media())
             self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
 
@@ -666,7 +650,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.set_callback("updated_timing", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             self.assertIsNone(vlc_player.player.get_media())
             self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
 
@@ -678,7 +662,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # post assertions for song
             self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
-            self.assertIsNotNone(vlc_player.playlist_entry)
+            self.assertIsNotNone(vlc_player.entry)
 
             # wait a bit for the player to play
             self.wait(
@@ -709,7 +693,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.set_callback("started_song", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             self.assertIsNone(vlc_player.player.get_media())
             self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
 
@@ -721,7 +705,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # post assertions for song
             self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
-            self.assertIsNotNone(vlc_player.playlist_entry)
+            self.assertIsNotNone(vlc_player.entry)
 
             # request playlist entry to rewind
             vlc_player.rewind()
@@ -745,7 +729,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.set_callback("updated_timing", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             self.assertIsNone(vlc_player.player.get_media())
             self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
 
@@ -757,7 +741,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # post assertions for song
             self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
-            self.assertIsNotNone(vlc_player.playlist_entry)
+            self.assertIsNotNone(vlc_player.entry)
 
             # wait a bit for the player to play
             self.wait(
@@ -794,7 +778,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
             vlc_player.set_callback("finished", MagicMock())
 
             # pre assertions
-            self.assertIsNone(vlc_player.playlist_entry)
+            self.assertIsNone(vlc_player.entry)
             self.assertIsNone(vlc_player.player.get_media())
             self.assertEqual(vlc_player.player.get_state(), vlc.State.NothingSpecial)
 
@@ -806,7 +790,7 @@ class MediaPlayerVlcIntegrationTestCase(TestCasePollerKara):
 
             # post assertions for song
             self.assertEqual(vlc_player.player.get_state(), vlc.State.Playing)
-            self.assertIsNotNone(vlc_player.playlist_entry)
+            self.assertIsNotNone(vlc_player.entry)
 
             # request playlist entry to advance
             vlc_player.fast_forward()
