@@ -624,12 +624,20 @@ def get_metadata(media: vlc.Media) -> dict:
         ValueError: If the media has no valid metadata.
     """
     for key in range(METADATA_KEYS_COUNT):
+        # load metadata from media
+        meta = media.get_meta(key)
+
+        # continue if the slot is empty
+        if meta is None:
+            continue
+
+        # try to convert the content of the slot
         try:
-            value = json.loads(media.get_meta(key))
+            value = json.loads(meta)
             value.pop(METADATA_MARKER_KEY)
             return value
 
-        except (json.JSONDecodeError, TypeError, KeyError):
+        except (json.JSONDecodeError, TypeError, KeyError, AttributeError):
             continue
 
     raise ValueError("This media has no set metadata")
@@ -648,7 +656,13 @@ def update_metadata(media: vlc.Media, metadata: dict) -> int:
     Returns:
         int: Key where metadata are written.
     """
-    return set_metadata(media, {**get_metadata(media), **metadata})
+    try:
+        metadata_current = get_metadata(media)
+
+    except ValueError:
+        metadata_current = {}
+
+    return set_metadata(media, {**metadata_current, **metadata})
 
 
 def get_instance(instance_parameters=None):
@@ -724,6 +738,7 @@ def get_song_media(song: MediaPlayerItemSong, media_parameters: list[str]) -> vl
         song.path.as_uri(),
         *media_parameters,
     )
+    media.parse()
     set_metadata(media, {"type": "song", "started": False, "track_id_audio": None})
 
     # manage instrumental
@@ -752,7 +767,6 @@ def set_instrumental_file(song: MediaPlayerItemSong, media: vlc.Media) -> None:
     assert song.instrumental_path is not None
 
     # get number of tracks of the media
-    media.parse()
     number_tracks = len(list(media.tracks_get()))
 
     try:
@@ -787,7 +801,6 @@ def set_instrumental_track(song: MediaPlayerItemSong, media: vlc.Media) -> None:
     assert song.instrumental_track is not None
 
     # get audio track IDs
-    media.parse()
     track_id_audio_list = [
         item.id for item in media.tracks_get() if item.type == vlc.TrackType.audio
     ]

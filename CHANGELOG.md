@@ -31,6 +31,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- Fixed a crash when accessing VLC media metadata if one slot contains unexpected non-null values.
+- Fixed a crash when using instrumental entries with VLC.
+
 ### Changed
 
 - Default transition screen duration is increased to 5 seconds.
