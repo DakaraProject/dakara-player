@@ -1400,6 +1400,15 @@ class TestMetadata:
         with pytest.raises(ValueError):
             get_metadata(media)
 
+    def test_update_empty(self, media):
+        """Test update metadata when the media has no metadata yet."""
+        update_metadata(media, {"foo": "bar"})
+
+        meta = get_metadata(media)
+
+        assert "foo" in meta
+        assert meta["foo"] == "bar"
+
     def test_update_first(self, media_set):
         """Test update metadata for the first time."""
         update_metadata(media_set, {"foo": "bar"})
