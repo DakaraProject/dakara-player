@@ -1379,6 +1379,22 @@ class TestMetadata:
         assert "key" in meta
         assert meta["key"] == "value"
 
+    def test_get_slot_unexpected(self, media, mocker):
+        """Test to get metadata from second slot when the first one contains
+        unexpected values.
+
+        This case is hard to setup as metadata slots should only contain text
+        values.
+        """
+        # set the slot artificially
+        mocker.patch(
+            "dakara_player.media_player.vlc.json.loads", return_value=42, autospec=True
+        )
+
+        # assert no slot is set
+        with pytest.raises(ValueError):
+            get_metadata(media)
+
     def test_get_fail(self, media):
         """Test error when metadata is not set."""
         with pytest.raises(ValueError):
